@@ -358,8 +358,8 @@ class ProxyBase(Base):
     manage_proxyInfo = DTMLFile('zmi/proxy_info', globals())
 
     _properties = (
-        {'id':'RepoId', 'type':'string', 'mode':''},
-        {'id':'VersionInfos', 'type':'string', 'mode':''},
+        {'id': 'RepoId', 'type': 'string', 'mode': ''},
+        {'id': 'VersionInfos', 'type': 'string', 'mode': ''},
         )
     RepoId = ComputedAttribute(getRepoId, 1)
     VersionInfos = ComputedAttribute(getVersionInfos, 1)
@@ -550,7 +550,7 @@ def addProxyFolder(container, id, repoid=None, version_infos=None,
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:
-        REQUEST.RESPONSE.redirect(container.absolute_url()+'/manage_main')
+        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
 
 def addProxyDocument(container, id, repoid=None, version_infos=None,
                      REQUEST=None):
@@ -560,7 +560,7 @@ def addProxyDocument(container, id, repoid=None, version_infos=None,
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:
-        REQUEST.RESPONSE.redirect(container.absolute_url()+'/manage_main')
+        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
 
 def addProxyFolderishDocument(container, id, repoid=None, version_infos=None,
                               REQUEST=None):
@@ -570,4 +570,4 @@ def addProxyFolderishDocument(container, id, repoid=None, version_infos=None,
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:
-        REQUEST.RESPONSE.redirect(container.absolute_url()+'/manage_main')
+        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
