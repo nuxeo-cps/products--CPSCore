@@ -36,14 +36,15 @@ This code uses if possible the following methods on the user folder:
   - getAllowedRolesAndUsersOfUser
 """
 
+import re
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl.PermissionRole import rolesForPermissionOn
 from Products import CMFCore
 from random import randrange
 from types import ListType
-import re
+from warnings import warn
+from Products.CPSUtil.id import generateId
 
-#
 # some shared constants
 # see AllowedModules to check if they are public
 KEYWORD_DOWNLOAD_FILE = 'downloadFile'
@@ -176,3 +177,12 @@ def resetSessionLanguageSelection(request):
         del request.SESSION[SESSION_LANGUAGE_KEY]
     except KeyError:
         pass
+
+def makeId(s, lower=0, portal_type=None):
+    warn("The method, "
+         "'Products.CPSCore.utils.makeId' "
+         "is a deprecated compatiblity alias for "
+         "'Products.CPSUtil.id.generateId'; "
+         "please use the new method instead.",
+         DeprecationWarning)
+    return generateId(s, lower=lower, portal_type=portal_type)
