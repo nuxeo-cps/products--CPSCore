@@ -45,7 +45,7 @@ from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import TimeoutCache, getCache
 from Products.CPSCore.utils import _isinstance
-from Products.CPSCore.utils import isUserAgentMsie
+from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
      KEYWORD_VIEW_LANGUAGE, KEYWORD_VIEW_ZIP, SESSION_LANGUAGE_KEY, \

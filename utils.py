@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-15 -*-
-# (C) Copyright 2003 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2003-2005 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -217,15 +217,6 @@ def makeId(s, lower=0, portal_type=None):
         newid = str(int(DateTime())) + str(randrange(1000, 10000))
         return newid
     return id
-
-def isUserAgentMsie(request):
-    """Return wether the user agent performing the request is
-    an MSIE user agent"""
-    user_agent = request.get('HTTP_USER_AGENT')
-    if user_agent.find('MSIE') != -1:
-        return 1
-    else:
-        return 0
 
 def resetSessionLanguageSelection(request):
     """Clear documents language selection done by switchLanguage"""
