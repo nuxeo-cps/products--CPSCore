@@ -51,6 +51,7 @@ from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder
 from Products.CPSCore.CPSBase import CPSBaseDocument
+from Products.CPSCore.CPSBase import CPSBaseBTreeFolder
 
 DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
 
@@ -1140,6 +1141,30 @@ factory_type_information = (
      'allowed_content_types': (),
      'actions': (),
      },
+    {'id': 'CPS Proxy BTree Folder',
+     'description': 'A proxy to a folder.',
+     'title': '',
+     'content_icon': 'folder_icon.png',
+     'product': 'CPSCore',
+     'meta_type': 'CPS Proxy BTree Folder',
+     'factory': 'addProxyBTreeFolder',
+     'immediate_view': '',
+     'filter_content_types': 1,
+     'allowed_content_types': (),
+     'actions': (),
+     },
+    {'id': 'CPS Proxy BTree Folderish Document',
+     'description': 'A proxy to a folderish document.',
+     'title': '',
+     'content_icon': 'folder_icon.png',
+     'product': 'CPSCore',
+     'meta_type': 'CPS Proxy BTree Folderish Document',
+     'factory': 'addProxyBTreeFolderishDocument',
+     'immediate_view': '',
+     'filter_content_types': 1,
+     'allowed_content_types': (),
+     'actions': (),
+     },
     )
 
 class ProxyFolder(ProxyBase, CPSBaseFolder):
@@ -1259,6 +1284,105 @@ class ProxyFolderishDocument(ProxyFolder):
 InitializeClass(ProxyFolderishDocument)
 
 
+class ProxyBTreeFolder(ProxyBase, CPSBaseBTreeFolder):
+    """A proxy btree folder is a folder whose data is indirected to a document
+    in a repository."""
+
+    meta_type = 'CPS Proxy BTree Folder'
+
+    def __init__(self, id, **kw):
+        CPSBaseBTreeFolder.__init__(self, id)
+        ProxyBase.__init__(self, **kw)
+
+    def getCPSCustomCSS(self):
+        """
+        Return the cps custom CSS from this folder
+        or from one of its parents if they have one.
+        """
+
+        portal = self.portal_url.getPortalObject()
+        current = self.getContent()
+        current_proxy = self
+
+        while current.id != portal.id and \
+                  getattr(current, 'cps_custom_css', "") == "":
+            current_proxy = current_proxy.aq_inner.aq_parent
+            current = current_proxy.getContent()
+
+        if current.id == portal.id:
+            return ""
+        else:
+            return current.cps_custom_css
+
+    manage_options = (CPSBaseFolder.manage_options[:1] +
+                      ProxyBase.proxybase_manage_options +
+                      CPSBaseFolder.manage_options[1:]
+                      )
+
+InitializeClass(ProxyBTreeFolder)
+
+
+class ProxyBTreeFolderishDocument(ProxyBTreeFolder):
+    """A proxy btree folderish document is a folderish document,
+    whose data is indirected to a document in a repository."""
+
+    meta_type = 'CPS Proxy BTree Folderish Document'
+    # portal_type will be set to the target's portal_type after creation
+
+    _isFolderishDocument = 1
+
+    security = ClassSecurityInfo()
+
+    #
+    # Utility methods
+    #
+
+    security.declareProtected(View, 'thisProxyFolderishDocument')
+    def thisProxyFolderishDocument(self):
+        """Return this proxy folderish document.
+
+        Used by acquisition.
+        """
+        return self
+
+    security.declareProtected(View, 'topProxyFolderishDocument')
+    def topProxyFolderishDocument(self):
+        """Return the top enclosing proxy folderish document.
+
+        Used by acquisition.
+        """
+        container = aq_parent(aq_inner(self))
+        try:
+            return container.topProxyFolderishDocument()
+        except AttributeError:
+            return self
+
+    #
+    # Freezing
+    #
+
+    security.declarePrivate('freezeProxy')
+    def freezeProxy(self):
+        """Freeze the proxy and all subproxies.
+
+        (Called by CPSWorkflow.)
+        """
+        # XXX use an event?
+        pxtool = getToolByName(self, 'portal_proxies')
+        self._freezeProxyRecursive(self, pxtool)
+
+    security.declarePrivate('_freezeProxyRecursive')
+    def _freezeProxyRecursive(self, ob, pxtool):
+        """Freeze this proxy and recurse."""
+        if not _isinstance(ob, ProxyBase):
+            return
+        self._freezeProxy(ob, pxtool)
+        for subob in ob.objectValues():
+            self._freezeProxyRecursive(subob, pxtool)
+
+InitializeClass(ProxyBTreeFolderishDocument)
+
+
 def addProxyFolder(container, id, REQUEST=None, **kw):
     """Add a proxy folder."""
     # container is a dispatcher when called from ZMI
@@ -1281,6 +1405,24 @@ def addProxyFolderishDocument(container, id, REQUEST=None, **kw):
     """Add a proxy folderish document."""
     # container is a dispatcher when called from ZMI
     ob = ProxyFolderishDocument(id, **kw)
+    id = ob.getId()
+    container._setObject(id, ob)
+    if REQUEST is not None:
+        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
+
+def addProxyBTreeFolder(container, id, REQUEST=None, **kw):
+    """Add a proxy btree folder."""
+    # container is a dispatcher when called from ZMI
+    ob = ProxyBTreeFolder(id, **kw)
+    id = ob.getId()
+    container._setObject(id, ob)
+    if REQUEST is not None:
+        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
+
+def addProxyBTreeFolderishDocument(container, id, REQUEST=None, **kw):
+    """Add a proxy btree folderish document."""
+    # container is a dispatcher when called from ZMI
+    ob = ProxyBTreeFolderishDocument(id, **kw)
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:

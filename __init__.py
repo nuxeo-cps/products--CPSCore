@@ -75,11 +75,15 @@ tools = (
 contentClasses = (ProxyBase.ProxyFolder,
                   ProxyBase.ProxyDocument,
                   ProxyBase.ProxyFolderishDocument,
+                  ProxyBase.ProxyBTreeFolder,
+                  ProxyBase.ProxyBTreeFolderishDocument,
                   )
 
 contentConstructors = (ProxyBase.addProxyFolder,
                        ProxyBase.addProxyDocument,
                        ProxyBase.addProxyFolderishDocument,
+                       ProxyBase.addProxyBTreeFolder,
+                       ProxyBase.addProxyBTreeFolderishDocument,
                        CPSMembershipTool.addCPSMembershipTool,
                        CPSRegistrationTool.addCPSRegistrationTool,
                        )

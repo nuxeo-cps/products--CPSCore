@@ -38,6 +38,7 @@ from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
+from Products.BTreeFolder2.CMFBTreeFolder import CMFBTreeFolder
 
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
@@ -176,6 +177,140 @@ class CPSBaseFolder(TypeConstructor, TypeContainer, CPSBaseDocument):
         )
 
 InitializeClass(CPSBaseFolder)
+
+
+class CPSBaseBTreeDocument(CMFCatalogAware, CMFBTreeFolder, PortalContent,
+                           DefaultDublinCoreImpl, PropertyManager):
+    """The base container document which is based on BTree."""
+
+    meta_type = 'CPS Base BTree Document'
+    portal_type = None
+
+    #_isDiscussable = 1
+    isPrincipiaFolderish = 0
+    __dav_collection__ = 0
+    isAnObjectManager = 0
+
+    security = ClassSecurityInfo()
+
+    _properties = (
+        {'id':'title', 'type':'string', 'mode':'w', 'label':'Title'},
+        {'id':'description', 'type':'text', 'mode':'w', 'label':'Description'},
+        )
+    title = ''
+    description = ''
+
+    def __init__(self, id, **kw):
+        self.id = id
+        dckw = {}
+        for p in ('title', 'subject', 'description', 'contributors',
+                  'effective_date', 'expiration_date', 'format',
+                  'language', 'rights'):
+            if kw.has_key(p):
+                dckw[p] = kw[p]
+
+        CMFBTreeFolder.__init__(self, id)
+        DefaultDublinCoreImpl.__init__(self, **dckw)
+
+    security.declareProtected(ModifyPortalContent, 'setTitle')
+    # def setTitle() needs a better permission than PortalFolder's
+
+    def _checkId(self, id, allow_dup=0):
+        CMFBTreeFolder.inheritedAttribute('_checkId')(self, id, allow_dup)
+
+        # This method prevents people other than the portal manager
+        # from overriding skinned names.
+        if not allow_dup:
+            if not _checkPermission( 'Manage portal', self):
+                ob = self
+                while ob is not None and not getattr(ob, '_isPortalRoot', 0):
+                    ob = aq_parent(aq_inner(ob))
+                if ob is not None:
+                    # If the portal root has an object by this name,
+                    # don't allow an override.
+                    # FIXME: needed to allow index_html for join code
+                    if (hasattr(ob, id) and
+                        id != 'index_html' and
+                        not id.startswith('.')):
+                        raise 'Bad Request', (
+                            'The id "%s" is reserved.' % id)
+                    # Otherwise we're ok.
+
+    security.declareProtected(ModifyPortalContent, 'edit')
+    def edit(self, **kw):
+        """Edit the document."""
+        self.manage_changeProperties(**kw)
+        self.reindexObject()
+        evtool = getEventService(self)
+        # Note: usually we're not a proxy. The repository will listen
+        # for this event and propagate it to the relevant proxies.
+        evtool.notify('sys_modify_object', self, {})
+
+    security.declareProtected(View, 'SearchableText')
+    def SearchableText(self):
+        """The searchable text for this object.
+
+        Automatically derived from all string properties.
+        """
+        try:
+            values = self.propertyValues()
+        except AttributeError, err:
+            LOG('CPSBase.SearchableText', ERROR,
+                'unable to get propertyValues for obj %s, '
+                'AttributeError on %s' % (self.absolute_url(1), err))
+            values = []
+        strings = []
+        for val in values:
+            if isinstance(val, StringType) or isinstance(val, UnicodeType):
+                strings.append(val)
+
+        try:
+            res = ' '.join(strings)
+        except UnicodeError:
+            ustrings = []
+            for s in strings:
+                if isinstance(s, UnicodeType):
+                    ustrings.append(s)
+                else:
+                    ustrings.append(unicode(s, defaultencoding, 'ignore'))
+            res = ' '.join(ustrings)
+        return res
+
+    #
+    # ZMI
+    #
+
+    manage_options = (
+        PropertyManager.manage_options[:1] + # Properties
+        ObjectManager.manage_options[:1] + # Contents
+        PortalContent.manage_options + # DublinCore, Edit, View, Owner, Secu
+        FindSupport.manage_options # Find
+        )
+
+InitializeClass(CPSBaseBTreeDocument)
+
+
+class CPSBaseBTreeFolder(TypeConstructor, TypeContainer, CPSBaseBTreeDocument):
+    """The base folder which is based on BTree."""
+
+    meta_type = 'CPS Base BTree Folder'
+
+    isPrincipiaFolderish = 1
+    __dav_collection__ = 1
+    isAnObjectManager = 1
+
+    #
+    # ZMI
+    #
+
+    manage_options = (
+        ObjectManager.manage_options[:1] + # Contents
+        PropertyManager.manage_options[:1] + # Properties
+        PortalContent.manage_options + # DublinCore, Edit, View, Owner, Secu
+        FindSupport.manage_options # Find
+        )
+
+InitializeClass(CPSBaseBTreeFolder)
 
 
 def CPSBase_adder(container, object, REQUEST=None):

@@ -102,6 +102,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         proxy_type_name = {
             'folder':            'CPS Proxy Folder',
             'folderishdocument': 'CPS Proxy Folderish Document',
+            'btreefolder':            'CPS Proxy BTree Folder',
+            'btreefolderishdocument': 'CPS Proxy BTree Folderish Document',
             }.get(proxy_type,    'CPS Proxy Document')
         if docid is None:
             repotool = getToolByName(self, 'portal_repository')

@@ -47,7 +47,7 @@ if 'cps_proxy_type' not in ftiprops_ids:
 
 if 'cps_display_as_document_in_listing' not in ftiprops_ids:
     FTI._properties = FTI._properties + (
-        {'id': 'cps_display_as_document_in_listing', 'type': 'boolean', 
+        {'id': 'cps_display_as_document_in_listing', 'type': 'boolean',
          'mode':'w', 'label': 'CPS Display as document in listing'},
         )
     FTI.cps_display_as_document_in_listing = 0
@@ -55,7 +55,8 @@ if 'cps_display_as_document_in_listing' not in ftiprops_ids:
 
 def getProxyTypesAllowed(self):
     """Return the list of allowed portal types strings"""
-    return ['','document','folder','folderishdocument']
+    return ['','document','folder','folderishdocument', 'btreefolder',
+            'btreefolderishdocument']
 
 FTI.getProxyTypesAllowed = getProxyTypesAllowed
 FTI.getProxyTypesAllowed__roles__ = PermissionRole(View)
