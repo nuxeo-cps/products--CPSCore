@@ -481,10 +481,10 @@ class CPSMembershipTool(MembershipTool):
                     'Error during wrapUser', error=sys.exc_info())
         return u
 
-    # CMF 1.5 method
+    # CMF 1.5 method plus check_permission argument
     security.declareProtected(ManageUsers, 'deleteMembers')
     def deleteMembers(self, member_ids, delete_memberareas=1,
-                      delete_localroles=1):
+                      delete_localroles=1, check_permission=1):
         """Delete members specified by member_ids.
 
         XXX does not implement local roles deletion.
@@ -492,7 +492,11 @@ class CPSMembershipTool(MembershipTool):
 
         # Delete members in acl_users.
         acl_users = self.acl_users
-        if _checkPermission(ManageUsers, acl_users):
+        # Don't know why CMF needs to check permission here ?
+        if check_permission and not _checkPermission(ManageUsers, acl_users):
+            raise Unauthorized("You need the 'Manage users' "
+                               "permission for the underlying User Folder.")
+        else:
             if type(member_ids) is StringType:
                 member_ids = (member_ids,)
             member_ids = list(member_ids)
@@ -508,9 +512,6 @@ class CPSMembershipTool(MembershipTool):
                     raise NotImplementedError(
                         "The underlying User Folder "
                         "doesn't support deleting members.")
-        else:
-            raise Unauthorized("You need the 'Manage users' "
-                               "permission for the underlying User Folder.")
 
         # Delete member data in portal_memberdata.
         mdtool = getToolByName(self, 'portal_memberdata', None)
