@@ -100,7 +100,7 @@ class CPSMembershipTool(MembershipTool):
     # and thus makes it possible to easily monkry-patch it. Would nethertheless
     # be more elegant to provide an API for changing roles that can manage
     # local roles (with proper permissions on methods of this API)
-    roles_managing_local_roles = ['WorkspaceManager', 'SectionManager']
+    roles_managing_local_roles = ('WorkspaceManager', 'SectionManager')
 
     security = ClassSecurityInfo()
 
