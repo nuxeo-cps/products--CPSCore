@@ -6,12 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- When copying/pasting an object, workflow history was not pasted
-  on the new object.
-- Use the object when checking allowed behaviours, not its rpath. (Besides, the
-  code goes through CMFCore/WorkflowTool, which doesn't understand rpaths.)
-- Fix relative path calculation for LanguageSwitchers.
-- Use more semantical HTML markup
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
