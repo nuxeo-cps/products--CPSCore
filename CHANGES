@@ -6,10 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Modify utils.py in order to cope with Zope 2.7.1+ handling of None objects and TextIndexNG2's direct access to the meta_type of a catalog aware object.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Add the Language method (mainly for indexing) computing another language
-  revision.
-- new wrapper method relative_path and relative_path_depth for indexing
-  and catalog metadata purpose
+-
