@@ -16,6 +16,12 @@
 # 02111-1307, USA.
 #
 # $Id$
+"""
+This tool is an example of code you can have that listens to events
+and acts on them.
+
+It doesn't have any use in real life.
+"""
 
 from Globals import InitializeClass
 from OFS.Folder import Folder
