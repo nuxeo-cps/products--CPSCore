@@ -122,6 +122,23 @@ class CPSWorkflowTool(WorkflowTool):
         else:
             return 1
 
+    security.declarePublic('getAllowedPortalTypes')
+    def getAllowedPortalTypes(self, ob):
+        """Get the list of portal types allowed for creating.
+
+           Note that all creation transitions are taken into account, not just
+           'create'.
+        """
+        ttool = getToolByName(self, 'portal_types')
+        getInitialTransitions = ttool.getInitialTransitions
+        allowed = []
+        for type in ttool.listTypeInfo():
+            if getInitialTransitions(ob, type.getId(),
+                                     TRANSITION_INITIAL_CREATE):
+                allowed.append(type)
+        
+        return allowed
+    
     security.declarePublic('getAllowedPublishingTransitions')
     def getAllowedPublishingTransitions(self, ob):
         """Get the list of allowed initial transitions for publishing."""
