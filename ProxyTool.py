@@ -238,7 +238,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             # Proxy construction not finished.
             return None, None
         # XXX fix absolute_url is not unit test friendly
-        LOG('ProxyTool.getBestRevision', DEBUG,
+        LOG('ProxyTool.getBestRevision', TRACE,
             'proxy:%s lang:%s languages: %s' % (proxy.absolute_url(),
                                                 lang, languages))
         if lang == 'default':
@@ -287,7 +287,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 lang = languages[0]
             last_check = check
 
-        LOG('ProxyTool.getBestRevision', DEBUG,
+        LOG('ProxyTool.getBestRevision', TRACE,
             'return lang: %s, rev: %s choice: %s' %
             (lang, language_revs[lang], last_check))
         return lang, language_revs[lang]
