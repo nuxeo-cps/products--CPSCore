@@ -347,11 +347,16 @@ class CPSMembershipTool(MembershipTool):
     security.declarePublic('getHomeFolder')
     def getHomeFolder(self, id=None, verifyPermission=0):
         """Return a member's home folder object, or None."""
+        member = self.getAuthenticatedMember()
+
+        if member.getProperty('homeless', 0):
+            return None
+
         if id is None:
-            member = self.getAuthenticatedMember()
             if not hasattr(member, 'getMemberId'):
                 return None
             id = member.getMemberId()
+
         members = self.getMembersFolder()
         if members:
             try:
