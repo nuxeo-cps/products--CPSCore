@@ -38,7 +38,7 @@ from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 
 from Products.NuxCPS3.EventServiceTool import getEventService
-from Products.NuxCPS3.CPSTypes import TypeConstructor
+from Products.NuxCPS3.CPSTypes import TypeConstructor, TypeContainer
 
 
 defaultencoding = sys.getdefaultencoding()
@@ -123,7 +123,7 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
 InitializeClass(CPSBaseDocument)
 
 
-class CPSBaseFolder(CPSBaseDocument, TypeConstructor):
+class CPSBaseFolder(CPSBaseDocument, TypeConstructor, TypeContainer):
     """The base from which all CPS folder objects derive."""
 
     meta_type = 'CPS Base Folder'
