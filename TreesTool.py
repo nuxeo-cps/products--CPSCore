@@ -34,8 +34,8 @@ from Products.CMFCore.CMFCorePermissions \
 from Products.CMFCore.utils \
     import SimpleItemWithProperties, UniqueObject, getToolByName
 
-from Products.CPSCore.utils \
-    import _allowedRolesAndUsers, _getAllowedRolesAndUsers
+from Products.CPSCore.utils import getAllowedRolesAndUsersOfUser
+from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject
 
 
 class TreesTool(UniqueObject, Folder):
@@ -318,7 +318,7 @@ class TreeCache(SimpleItemWithProperties):
                 else:
                     LOG('TreeCache', ERROR, '_get_info returned non-dict %s'
                         % `r`)
-        allowed_roles_and_users = _allowedRolesAndUsers(ob)
+        allowed_roles_and_users = getAllowedRolesAndUsersOfObject(ob)
         local_roles = {}
         for k, v in ob.get_local_roles():
             local_roles['user:'+k] = v
@@ -461,7 +461,7 @@ class TreeCache(SimpleItemWithProperties):
 
         try:
             user = mtool.getAuthenticatedMember().getUser()
-            allowed_roles_and_users = _getAllowedRolesAndUsers(user)
+            allowed_roles_and_users = getAllowedRolesAndUsersOfUser(user)
         except TypeError: 
             # XXX?? getUser() takes exactly 2 arguments (1 given)
             allowed_roles_and_users = ['Anonymous', 'group:role:Anonymous']
