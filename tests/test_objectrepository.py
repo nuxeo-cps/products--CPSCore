@@ -133,6 +133,23 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
         self.assertEquals(ortool.listAll(), [('foo', 1), ('foo', 2)])
         self.assertEquals(ortool.listDocids(), ['foo'])
 
+    def test_docidMethods(self):
+        ortool = self.root.portal_repository
+
+        docid = ortool.getFreeDocid()
+        # check that docid actually exists and is a number
+        self.assert_(docid.isdigit())
+        # check that first revision for a given docid is __0001
+        self.assertEquals(ortool.getFreeRevision(docid), 1)
+        # check that next revision for a docid which already
+        # has revision __0002 in the repository is __0003
+        ortool._tree[docid + '__0002'] = 'dummy'
+        self.assertEquals(ortool.getFreeRevision(docid), 3)
+        # check that next revision for a docid which already
+        # has revision __9998 in the repository is __9999
+        ortool._tree[docid + '__9998'] = 'dummy'
+        self.assertEquals(ortool.getFreeRevision(docid), 9999)
+
 
 def test_suite():
     loader = unittest.TestLoader()
