@@ -247,10 +247,25 @@ def __cps_wrapper_getattr__(self, name):
 IndexableObjectWrapper.__getattr__ = __cps_wrapper_getattr__
 
 def container_path(self):
-    """This is used to produce an index with the parent url."""
+    """This is used to produce an index
+    return the parent full path."""
     ob = self._IndexableObjectWrapper__ob
     return '/'.join(ob.getPhysicalPath()[:-1])
 IndexableObjectWrapper.container_path = container_path
+
+def relative_path(self):
+    """This is used to produce a metadata
+    return a path relative to the portal."""
+    ob = self._IndexableObjectWrapper__ob
+    return ob.portal_url.getRelativeContentURL(ob)
+IndexableObjectWrapper.relative_path = relative_path
+
+def relative_path_depth(self):
+    """This is used to produce an index
+    return the path depth relative to the portal."""
+    ob = self._IndexableObjectWrapper__ob
+    return len(ob.portal_url.getRelativeContentPath(ob))
+IndexableObjectWrapper.relative_path_depth = relative_path_depth
 
 
 LOG('CPSCore.utils', INFO, 'Patching Zope TopicIndex.clear method')
