@@ -19,6 +19,8 @@
 """Miscellaneous utility functions.
 """
 
+import string
+
 def _isinstance(ob, cls):
     try:
         return isinstance(ob, cls)
@@ -27,17 +29,17 @@ def _isinstance(ob, cls):
         # instead of returning 0 for ExtensionClasses.
         return 0
 
-_translation_table = maketrans(
-    r'\;/ &:ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜİàáâãäåçèéêëìíîïñòóôõöøùúûüıÿ',
-    r'______AAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy')
+_translation_table = string.maketrans(
+    r"'\;/ &:ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜİàáâãäåçèéêëìíîïñòóôõöøùúûüıÿ",
+    r"_______AAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy")
 
 # XXX: this assumes we're using latin-1
 def makeId(s, lower=0):
     "Make id from string"
-     s = s.replace('Æ', 'AE')
-     s = s.replace('æ', 'ae')
-     id = s.translate(tr)
-     if lower:
-         id = id.lower()
-     return id
+    s = s.replace('Æ', 'AE')
+    s = s.replace('æ', 'ae')
+    id = s.translate(_translation_table)
+    if lower:
+        id = id.lower()
+    return id
 
