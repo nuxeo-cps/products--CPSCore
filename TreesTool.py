@@ -121,7 +121,7 @@ class TreeCache(SimpleItemWithProperties):
     title = ''
     root = ''
     type_names = []
-    meta_types = ('CPS Proxy Folder',)
+    meta_types = ('CPS Proxy Folder', 'CPS Proxy Folderish Document',)
     info_method = ''
 
     def __init__(self, id, **kw):
@@ -143,7 +143,7 @@ class TreeCache(SimpleItemWithProperties):
         ttool = getToolByName(self, 'portal_types')
         for ti in ttool.listTypeInfo():
             id = ti.getId()
-            if id not in ('CPS Proxy Folder', 'CPS Proxy Document'):
+            if id not in ('CPS Proxy Folder', 'CPS Proxy Document', 'CPS Proxy Folderish Document',):
                 res.append(id)
         res.sort()
         return res
