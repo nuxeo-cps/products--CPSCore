@@ -27,6 +27,7 @@ from AccessControl import ClassSecurityInfo
 from AccessControl.SecurityManagement import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.User import UnrestrictedUser
+from Acquisition import aq_parent, aq_inner
 
 from Products.CMFCore.CMFCorePermissions import View, ManagePortal
 from Products.CMFCore.CMFCorePermissions import ListPortalMembers
@@ -197,7 +198,7 @@ class CPSMembershipTool(MembershipTool):
         """Create a member area."""
 
         aclu = self.acl_users
-        parent = self.aq_inner.aq_parent
+        parent = aq_parent(aq_inner(self))
         ws_root =  getattr(parent, WORKSPACES, None)
         members =  getattr(ws_root, MEMBERS, None)
 
@@ -221,6 +222,9 @@ class CPSMembershipTool(MembershipTool):
 
             f = getattr(members, member_id)
             # TODO set workspace properties ? title ..
+            portal_cpscalendar = getToolByName(self, 'portal_cpscalendar', None)
+            if portal_cpscalendar:
+                portal_cpscalendar.createUserCalendar(f, id)
 
             # Grant ownership to Member
             try:
