@@ -22,6 +22,10 @@ $Id$
  o Former local roles for a given stack stored within the status of the object
    + for the moment stored as an attribute of the ds
 
+ o Hierchical stack: be able to insert users at intermediate levels
+   (e.g. move forward the already affected delegatees, and insert users at
+   the (now free) given level)
+
  x Cope with anonymous access in general
 
  x Give possibility to reset stacks
