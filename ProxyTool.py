@@ -79,10 +79,11 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # Create the proxy to that document
         # The proxy is a normal CMF object except that we change its
         # portal_type after construction.
-        ob = container.constructContent(proxy_type_name, id,
-                                        final_type_name=type_name,
-                                        repoid=repoid,
-                                        version_infos=version_infos)
+        ob = self.constructContent(container, # XXX
+                                   proxy_type_name, id,
+                                   final_type_name=type_name,
+                                   repoid=repoid,
+                                   version_infos=version_infos)
         return ob
 
     security.declarePrivate('listProxies')
@@ -267,6 +268,64 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # Get all the permissions managed by all the workflows.
         wftool = getToolByName(self, 'portal_workflow')
         return wftool.getManagedPermissions()
+
+    #
+    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    # This does object construction like TypesTool but without security
+    # checks (which are already done by WorkflowTool).
+    #
+
+    def _constructInstance_fti(self, container, ti, id, *args, **kw):
+        if not ti.product or not ti.factory:
+            raise ValueError('Product factory for %s was undefined: %s.%s'
+                             % (ti.getId(), ti.product, ti.factory))
+        p = container.manage_addProduct[ti.product]
+        meth = getattr(p, ti.factory, None)
+        if meth is None:
+            raise ValueError('Product factory for %s was invalid: %s.%s'
+                             % (ti.getId(), ti.product, ti.factory))
+        if getattr(aq_base(meth), 'isDocTemp', 0):
+            newid = meth(meth.aq_parent, self.REQUEST, id=id, *args, **kw)
+        else:
+            newid = meth(id, *args, **kw)
+        newid = newid or id
+        return container._getOb(newid)
+
+    def _constructInstance_sti(self, container, ti, id, *args, **kw):
+        constr = container.restrictedTraverse(ti.constructor_path)
+        constr = aq_base(constr).__of__(container)
+        return constr(container, id, *args, **kw)
+
+    security.declarePrivate('constructContent')
+    def constructContent(self, container, type_name, id, final_type_name=None,
+                         *args, **kw):
+        """Construct an CMFish object without all the security checks.
+
+        Do not insert into any workflow.
+
+        Returns the object.
+        """
+        ttool = getToolByName(self, 'portal_types')
+        ti = ttool.getTypeInfo(type_name)
+        if ti is None:
+            raise ValueError('No type information for %s' % type_name)
+        if isinstance(ti, FactoryTypeInformation):
+            ob = self._constructInstance_fti(container, ti, id, *args, **kw)
+        elif isinstance(ti, ScriptableTypeInformation):
+            ob = self._constructInstance_sti(container, ti, id, *args, **kw)
+        else:
+            raise ValueError('Unknown type information class for %s' %
+                             type_name)
+        if ob.getId() != id:
+            # Sanity check
+            raise ValueError('Constructing %s, id changed from %s to %s' %
+                             (type_name, id, ob.getId()))
+        if final_type_name is None:
+            final_type_name = type_name
+        ob._setPortalTypeName(final_type_name)
+        ob.reindexObject(idxs=['portal_type', 'Type'])
+        # XXX should notify something
+        return ob
 
     #
     # Internal
