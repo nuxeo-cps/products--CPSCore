@@ -29,7 +29,7 @@ from Products.CMFCore.utils import getToolByName, _checkPermission
 from Products.CMFCore.CMFCorePermissions import AddPortalContent
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
-from Products.NuxCPS3.WorkflowConfiguration import WorkflowConfiguration_id
+from Products.NuxCPS3.CPSWorkflowConfiguration import CPSWorkflowConfiguration_id
 
 
 
@@ -145,7 +145,7 @@ class CPSWorkflowTool(WorkflowTool):
                 'getChainFor: no container for ob %s' % (ob,))
             return ()
         # Find placeful workflow configuration object.
-        wfconf = getattr(container, WorkflowConfiguration_id, None)
+        wfconf = getattr(container, CPSWorkflowConfiguration_id, None)
         if wfconf is not None:
             chain = wfconf.getPlacefulChainFor(pt)
             if chain is not None:

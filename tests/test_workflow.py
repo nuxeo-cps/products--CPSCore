@@ -29,8 +29,8 @@ from OFS.SimpleItem import SimpleItem
 
 from Products.NuxCPS3.CPSWorkflow import CPSWorkflowDefinition
 from Products.NuxCPS3.CPSWorkflow import UNCREATED_STATE
-from Products.NuxCPS3.WorkflowConfiguration import addWorkflowConfiguration
-from Products.NuxCPS3.WorkflowConfiguration import WorkflowConfiguration_id
+from Products.NuxCPS3.CPSWorkflowConfiguration import addCPSWorkflowConfiguration
+from Products.NuxCPS3.CPSWorkflowConfiguration import CPSWorkflowConfiguration_id
 
 
 class Dummy(SimpleItem):
@@ -179,16 +179,16 @@ class WorkflowToolTests(SecurityRequestTest):
         f._setObject(f2.id, f2)
         f2 = f.f2
         # setup placeful workflows
-        addWorkflowConfiguration(f)
-        config = getattr(f, WorkflowConfiguration_id)
+        addCPSWorkflowConfiguration(f)
+        config = getattr(f, CPSWorkflowConfiguration_id)
         config.setChain('Dummy Content', ('wf',))
         # check placeful
         dummy = f.dummy
         chain = wft.getChainFor(dummy)
         self.assertEqual(tuple(chain), ('wf',))
         # add new sub folder
-        addWorkflowConfiguration(f2)
-        config2 = getattr(f2, WorkflowConfiguration_id)
+        addCPSWorkflowConfiguration(f2)
+        config2 = getattr(f2, CPSWorkflowConfiguration_id)
         config2.setChain('Dummy Content', ('wf2',))
         # check inheritance order
         chain = wft.getChainFor('Dummy Content', f2)

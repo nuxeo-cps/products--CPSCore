@@ -32,8 +32,8 @@ import MirrorTool
 import ProxyTool
 import ObjectRepository
 import CPSWorkflowTool
-from WorkflowConfiguration import WorkflowConfiguration
-from WorkflowConfiguration import addWorkflowConfiguration
+from CPSWorkflowConfiguration import CPSWorkflowConfiguration
+from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
 
 import CPSFolder
 import CPSDummyDocument
@@ -97,9 +97,9 @@ def initialize(registrar):
 
     # Workflow Configuration Object
     registrar.registerClass(
-        WorkflowConfiguration,
+        CPSWorkflowConfiguration,
         permission='Manager portal',
-        constructors=(addWorkflowConfiguration,)
+        constructors=(addCPSWorkflowConfiguration,)
     )
 
     # CPS Content and Folder objects

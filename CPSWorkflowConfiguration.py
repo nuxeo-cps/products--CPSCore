@@ -16,7 +16,7 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Workflow configuration object.
+"""CPS workflow configuration object.
 
 This is a placeful definition of the portal_type -> workflow chain
 mapping.
@@ -37,18 +37,18 @@ from Products.CMFCore.WorkflowTool import WorkflowTool
 from CPSWorkflowPermissions import ManageWorkflows
 
 
-WorkflowConfiguration_meta_type = 'CPS Workflow Configuration'
-WorkflowConfiguration_id = '.portal_workflow_configuration'
+CPSWorkflowConfiguration_meta_type = 'CPS Workflow Configuration'
+CPSWorkflowConfiguration_id = '.portal_workflow_configuration'
 
-class WorkflowConfiguration(SimpleItem):
+class CPSWorkflowConfiguration(SimpleItem):
     """Workflow Configuration.
 
     A workflow configuration object describes placefully what workflow
     chain are to be used for what portal_type.
     """
 
-    id = WorkflowConfiguration_id
-    meta_type = WorkflowConfiguration_meta_type
+    id = CPSWorkflowConfiguration_id
+    meta_type = CPSWorkflowConfiguration_meta_type
     portal_type = None
 
     security = ClassSecurityInfo()
@@ -85,7 +85,7 @@ class WorkflowConfiguration(SimpleItem):
         # Ask above.
         parent = aq_parent(aq_inner(aq_parent(aq_inner(self))))
         try:
-            higher_conf = parent.aq_acquire(WorkflowConfiguration_id,
+            higher_conf = parent.aq_acquire(CPSWorkflowConfiguration_id,
                                             containment=1)
         except AttributeError:
             # Nothing placeful found.
@@ -205,12 +205,12 @@ class WorkflowConfiguration(SimpleItem):
             REQUEST.set('manage_tabs_message', 'Added.')
             return self.manage_editForm(REQUEST)
 
-InitializeClass(WorkflowConfiguration)
+InitializeClass(CPSWorkflowConfiguration)
 
-def addWorkflowConfiguration(container, REQUEST=None):
+def addCPSWorkflowConfiguration(container, REQUEST=None):
     """Add a Workflow Configuration."""
     # container is a dispatcher when called from ZMI
-    ob = WorkflowConfiguration()
+    ob = CPSWorkflowConfiguration()
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:
