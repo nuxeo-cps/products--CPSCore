@@ -276,7 +276,9 @@ class ObjectRepositoryTool(UniqueObject,
         newob = self.copyContent(ob, newid)
         if hasattr(newob, '_cps_frozen'):
             delattr(newob, '_cps_frozen')
-        # The security will be correctly reset by the caller.
+        # Reset permission to acquiring, so that when the security is reset
+        # by the caller, everything works.
+        modifyRolesForPermission(newob, ModifyPortalContent, [])
         # XXX add some info to the history
         return newob, newrev
 
