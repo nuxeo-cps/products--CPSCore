@@ -159,7 +159,7 @@ class ProxyBase(Base):
     security.declarePublic('title_or_id')
     def title_or_id(self):
         """The object's title or id."""
-        return self.getId()
+        return self.Title() or self.getId()
 
     security.declarePublic('SearchableText')
     def SearchableText(self):
