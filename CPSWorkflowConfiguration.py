@@ -38,7 +38,7 @@ from CPSWorkflowPermissions import ManageWorkflows
 
 
 CPSWorkflowConfiguration_meta_type = 'CPS Workflow Configuration'
-CPSWorkflowConfiguration_id = '.portal_workflow_configuration'
+CPSWorkflowConfiguration_id = '.cps_workflow_configuration'
 
 class CPSWorkflowConfiguration(SimpleItem):
     """Workflow Configuration.
@@ -57,7 +57,7 @@ class CPSWorkflowConfiguration(SimpleItem):
         self._chains_by_type = PersistentMapping()
         # The None value means "use the default chain".
         # If a key is present, then the chain is overloaded,
-        #    otherwise the acquired config is used.
+        #    otherwise any acquired config is used.
         # XXX There is no way to override locally the default chain...
 
     #
