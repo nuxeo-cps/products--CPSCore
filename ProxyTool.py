@@ -167,6 +167,20 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             #    % (repoid, version_info))
             repotool.freezeVersion(repoid, version_info)
 
+    security.declarePrivate('unshareContent')
+    def unshareContent(self, hubid):
+        """Unshare content (after a copy/paste for instance."""
+        repotool = getToolByName(self, 'portal_repository')
+        if not self._hubid_to_info.has_key(hubid):
+            LOG('ProxyTool', ERROR, 'Getting unknown hubid %s' % hubid)
+            return None
+        repoid, version_infos = self._hubid_to_info[hubid]
+        new_version_infos = {}
+        for lang, vi in version_infos.items():
+            new_vi = repotool.copyVersion(repoid, vi)
+            new_version_infos[lang] = new_vi
+        self._hubid_to_info[hubid] = (repoid, new_version_infos)
+
     security.declarePrivate('setSecurity')
     def setSecurity(self, ob):
         """Reapply the security info to the versions of a proxy.

@@ -137,7 +137,7 @@ class TypeContainer(Base):
         return ob
 
     #
-    # Cut/Copy/Paste
+    # CPS Cut/Copy/Paste
     #
 
     security.declareProtected(copy_or_move, 'manage_CPScopyObjects')
@@ -162,6 +162,8 @@ class TypeContainer(Base):
     def manage_CPSpasteObjects(self, cp):
         """Paste objects (from an earlier copy)."""
         wftool = getToolByName(self, 'portal_workflow')
+        pxtool = getToolByName(self, 'portal_proxies')
+        hubtool = getToolByName(self, 'portal_eventservice')
         try:
             cp = _cb_decode(cp)
         except: # XXX
@@ -210,6 +212,11 @@ class TypeContainer(Base):
                 self._setObject(id, ob)
                 ob = self._getOb(id)
                 ob.manage_afterClone(ob)
+                # unshare content after copy
+                hubid = hubtool.getHubId(ob)
+                if hubid is not None:
+                    pxtool.unshareContent(hubid)
+                # notify interested parties
                 if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
                     ob.manage_afterCMFAdd(ob, self)
         elif op == 1:
@@ -235,6 +242,7 @@ class TypeContainer(Base):
                 # try to make ownership implicit if possible
                 ob = self._getOb(id)
                 ob.manage_changeOwnershipType(explicit=0)
+                # notify interested parties
                 if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
                     ob.manage_afterCMFAdd(ob, self)
 

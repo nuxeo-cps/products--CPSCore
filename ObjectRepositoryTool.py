@@ -225,7 +225,7 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
     def isVersionFrozen(self, repoid, version_info):
         """Is a version frozen?"""
         ob = self.getObjectVersion(repoid, version_info)
-        return not not ob._cps_frozen
+        return getattr(ob, '_cps_frozen', 0)
 
     security.declarePrivate('copyVersion')
     def copyVersion(self, repoid, version_info):
@@ -242,7 +242,8 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
                 break
             newv += 1
         newob = self.copyContent(ob, newid)
-        newob._cps_frozen = 0
+        if hasattr(newob, '_cps_frozen'):
+            delattr(newob, '_cps_frozen')
         # Reset (acquire) modification permission.
         modifyRolesForPermission(newob, ModifyPortalContent, [])
         # XXX add some info to the history
