@@ -324,6 +324,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     security.declarePrivate('isCreationAllowedIn')
     def isCreationAllowedIn(self, ob, get_details=0):
         """Is the creation of subobjects allowed?"""
+        LOG('WF', DEBUG, 'isCreationAllowedIn wf=%s' % (self.getId(),))
         sdef = self._getWorkflowStateOf(ob)
         if sdef is None:
             if get_details:
@@ -332,13 +333,17 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 return 0
         res = []
         for tid in sdef.transitions:
+            LOG('WF', DEBUG, 'Test transition %s' % tid)
             tdef = self.transitions.get(tid, None)
             if tdef is None:
                 continue
             if tdef.transition_behavior != TRANSITION_BEHAVIOR_SUBCREATE:
+                LOG('WF', DEBUG, '  Note a subcreate')
                 continue
             if not self._checkTransitionGuard(tdef, ob):
+                LOG('WF', DEBUG, '  Guard failed')
                 continue
+            LOG('WF', DEBUG, '  Ok')
             if get_details:
                 return 1, ''
             else:

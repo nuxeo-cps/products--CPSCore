@@ -69,6 +69,7 @@ class CPSWorkflowTool(WorkflowTool):
         wf_ids = self.getChainFor(container)
         for wf_id in wf_ids:
             wf = self.getWorkflowById(wf_id)
+            LOG('CPSWFT', DEBUG, 'wf %s' % wf_id)
             if not hasattr(aq_base(wf), 'isCreationAllowedIn'):
                 # Not a CPS workflow.
                 continue
