@@ -138,6 +138,11 @@ class IndexableObjectWrapper:
 def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
     """Wraps the object with workflow and accessibility
     information just before cataloging."""
+
+    # Don't index repository objects
+    if 'portal_repository' in object.getPhysicalPath():
+        return
+
     LOG('CatalogToolPatch.catalog_object', DEBUG, 'index uid %s  obj %s' % (
         uid, object))
     wf = getattr(self, 'portal_workflow', None)
