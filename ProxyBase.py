@@ -224,7 +224,7 @@ class ProxyBase(Base):
         if ob is None:
             raise KeyError(name)
         if name == KEYWORD_DOWNLOAD_FILE:
-            downloader = FileDownloader(ob)
+            downloader = FileDownloader(ob, self)
             return downloader.__of__(self)
         #LOG('ProxyBase.getitem', TRACE, '  Aha, retrieved %s from doc' % name)
         try:
@@ -529,8 +529,15 @@ class FileDownloader(Acquisition.Explicit):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
-    def __init__(self, ob):
+    def __init__(self, ob, proxy):
+        """
+        Init the FileDownloader with the document and proxy to which it pertains.
+
+        ob is the document that owns the file and proxy is the proxy of this
+        same document
+        """
         self.ob = ob
+        self.proxy = proxy
         self.state = 0
         self.attrname = None
         self.file = None
@@ -570,11 +577,27 @@ class FileDownloader(Acquisition.Explicit):
             # Got attribute, swallow filename
             self.filename = name
             self.state = 2
+            self.meta_type = getattr(self.file, 'meta_type', '')
             return self
-        elif name in ('index_html', 'HEAD'):
+        elif name in ('index_html', 'absolute_url', 'content_type', 'HEAD', 'PUT'):
             return getattr(self, name)
         else:
             raise KeyError(name)
+
+    security.declareProtected(View, 'absolute_url')
+    def absolute_url(self):
+        url = self.proxy.absolute_url() + '/' + KEYWORD_DOWNLOAD_FILE
+        if self.state > 0:
+            url += '/' + self.attrname
+        if self.state > 1:
+            url += '/' + self.filename
+        return url
+
+    security.declareProtected(View, 'content_type')
+    def content_type(self):
+        if self.state != 2:
+            return None
+        return self.file.content_type
 
     security.declareProtected(View, 'index_html')
     def index_html(self, REQUEST, RESPONSE):
@@ -589,6 +612,15 @@ class FileDownloader(Acquisition.Explicit):
             RESPONSE.setHeader('Content-Length', '0')
             return ''
 
+    # Attribut checked by ExternalEditor to know if it can "WebDAV" on this
+    # object.
+    def EditableBody(self):
+        if self.state != 2:
+            return None
+        file = self.file
+        if file is not None:
+            return str(self.file.data)
+
     security.declareProtected(View, 'HEAD')
     def HEAD(self, REQUEST, RESPONSE):
         """Retrieve the HEAD information for HTTP."""
@@ -601,6 +633,17 @@ class FileDownloader(Acquisition.Explicit):
             RESPONSE.setHeader('Content-Type', 'text/plain')
             RESPONSE.setHeader('Content-Length', '0')
             return ''
+
+    security.declareProtected(ModifyPortalContent, 'PUT')
+    def PUT(self, REQUEST, RESPONSE):
+        """Handle HTTP (and presumably FTP?) PUT requests (WebDAV)."""
+        LOG('FileDownloader', DEBUG, 'PUT()')
+        if self.state != 2:
+            LOG('ProxyBase', DEBUG, 'BadRequest: Cannot PUT with state != 2')
+            raise 'BadRequest', 'Cannot PUT with state != 2'
+        document = self.proxy.getEditableContent()
+        file = getattr(document, self.attrname)
+        return file.PUT(REQUEST, RESPONSE)
 
 InitializeClass(FileDownloader)
 
