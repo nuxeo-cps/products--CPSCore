@@ -1,5 +1,5 @@
 # (c) 2002-2003 Nuxeo SARL <http://nuxeo.com/>
-# (c) 2002-2003 Julien Jalon <mailto:jj@nuxeo.com>
+# Author: Julien Jalon <mailto:jj@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -27,7 +27,7 @@ from Acquisition import aq_base, aq_parent
 
 _marker = []
 
-def call_meth(meth, elements):
+def _callMeth(meth, elements):
     if getattr(aq_base(meth), 'isDocTemp', 0):
         return meth(aq_parent(meth), elements['REQUEST'])
     else:
@@ -242,7 +242,7 @@ class CallElement:
         object = _normalizeObject(self._object)
         meth = object.restrictedTraverse(self._method_name)
         if callable(meth):
-            return call_meth(meth, self._elements)
+            return _callMeth(meth, self._elements)
         else:
             return meth
 
@@ -261,7 +261,7 @@ class ActionCallElement(CallElement):
         else:
             meth = object
         if callable(meth):
-            result = call_meth(meth, self._elements)
+            result = _callMeth(meth, self._elements)
             evtool = getEventService(object)
             evtool.notify(self._method_name, object, {})
             return result

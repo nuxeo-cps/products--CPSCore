@@ -19,22 +19,18 @@
 # $Id$
 """Event Service
 
-The Event Service receives events and dispatches them to interested
-parties.
+The Event Service receives events and dispatches them to interested parties.
 """
 
 from zLOG import LOG, ERROR, DEBUG
 from DateTime import DateTime
 import random
-from types import StringType, UnicodeType, TupleType
 
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner, aq_base
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
 
-from BTrees.IOBTree import IOBTree
-from BTrees.OIBTree import OIBTree
 from OFS.Folder import Folder
 
 from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties

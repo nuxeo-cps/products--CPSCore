@@ -22,7 +22,7 @@
 from zLOG import LOG, ERROR, DEBUG
 from types import StringType
 from Acquisition import aq_base, aq_parent, aq_inner
-from Globals import InitializeClass, DTMLFile, PersistentMapping
+from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo, Unauthorized
 
 from Products.CMFCore.utils import _checkPermission

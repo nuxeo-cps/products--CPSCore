@@ -22,11 +22,9 @@
 
 from zLOG import LOG, ERROR, DEBUG
 from types import StringType
-from Acquisition import aq_base, aq_parent, aq_inner
-from Globals import InitializeClass, PersistentMapping, DTMLFile
+from Acquisition import aq_parent, aq_inner
+from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
-
-from OFS.Folder import Folder
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.WorkflowCore import ObjectMoved, ObjectDeleted

@@ -24,20 +24,18 @@ from types import DictType
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
-from AccessControl.PermissionRole import rolesForPermissionOn
 from ZODB.PersistentMapping import PersistentMapping
 from ZODB.PersistentList import PersistentList
 
 from OFS.Folder import Folder
 
-from Products.CMFCore.CMFCorePermissions import View
-from Products.CMFCore.CMFCorePermissions import ManagePortal
-from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
+from Products.CMFCore.CMFCorePermissions \
+    import View, ManagePortal, ViewManagementScreens
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import UniqueObject, getToolByName
 
-from Products.NuxUserGroups.CatalogToolWithGroups import _allowedRolesAndUsers
-from Products.NuxUserGroups.CatalogToolWithGroups import _getAllowedRolesAndUsers
+from Products.NuxUserGroups.CatalogToolWithGroups \
+    import _allowedRolesAndUsers, _getAllowedRolesAndUsers
 
 
 class TreesTool(UniqueObject, Folder):

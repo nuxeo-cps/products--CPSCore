@@ -20,11 +20,10 @@
 
 from zLOG import LOG, INFO
 
-from Acquisition import aq_base
 from Products.CMFCore import utils
-from Products.CMFCore.DirectoryView import registerDirectory
 from Products.CMFCore.CMFCorePermissions import AddPortalContent, ManagePortal
 
+# Don't remove.
 import AllowModules
 
 import ElementsTool

@@ -37,19 +37,17 @@ class Class1:
     meta_type = 'type1'
 
     def getPhysicalPath(self, *args, **kw):
-      return ('', 'testsite', 'instance1')
+        return ('', 'testsite', 'instance1')
 
 class Class2:
 
     meta_type = 'type2'
 
     def getPhysicalPath(self, *args, **kw):
-      return ('', 'testsite', 'instance2')
+        return ('', 'testsite', 'instance2')
 
 class SynchronousNotificationsTest(unittest.TestCase):
-    """\
-    Test portal_elements
-    """
+    """Test portal_elements"""
 
     def setUp(self):
         get_transaction().begin()
@@ -80,7 +78,7 @@ class SynchronousNotificationsTest(unittest.TestCase):
 
     def test_0_notification_by_type_and_event_type(self):
         """Test that our subscriber is notified.
-        Filter is done on object meta_type and event_type
+        Filtering is done on object meta_type and event_type
         """
         tool = self.tool
         subscriber = self.subscriber
@@ -109,7 +107,7 @@ class SynchronousNotificationsTest(unittest.TestCase):
 
     def test_1_notification_by_type(self):
         """Test that our subscriber is notified.
-        Filter is done on object meta_type
+        Filtering is done on object meta_type
         """
         tool = self.tool
         subscriber = self.subscriber
@@ -135,7 +133,7 @@ class SynchronousNotificationsTest(unittest.TestCase):
 
     def test_2_notification_by_event_type(self):
         """Test that our subscriber is notified.
-        Filter is done on event type
+        Filtering is done on event type
         """
         tool = self.tool
         subscriber = self.subscriber

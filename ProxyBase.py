@@ -243,8 +243,8 @@ class ProxyBase(Base):
     # Staging
     #
 
-    security.declarePrivate('serialize_proxy')
-    def serialize_proxy(self):
+    security.declarePrivate('serializeProxy')
+    def serializeProxy(self):
         """Serialize the proxy, without subobjects.
 
         Assumes no persistent attributes.
@@ -313,11 +313,12 @@ class ProxyBase(Base):
                 +class_name
                 +ser)
 
+    # FIXME: this should go to a unit test
     security.declarePublic('test_serialize') # XXX tests
     def test_serialize(self):
         """Test serialization."""
-        ser = self.serialize_proxy()
-        ob = unserialize_proxy(ser)
+        ser = self.serializeProxy()
+        ob = unserializeProxy(ser)
         return `ob.__dict__`
 
     #
@@ -442,7 +443,7 @@ InitializeClass(ProxyBase)
 # Serialization
 #
 
-def unserialize_proxy(ser, ob=None):
+def unserializeProxy(ser, ob=None):
     """Unserialize a proxy from a string.
 
     If ob is not None, modify that object in place.

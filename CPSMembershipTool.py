@@ -1,8 +1,7 @@
 # (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
-# Authors: Florent Guillaime <fg@nuxeo.com>
+# Authors: Florent Guillaume <fg@nuxeo.com>
 #          Alexandre Fernandez <alex@nuxeo.com>
 #          Julien Anguenot <ja@nuxeo.com>
-#
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -38,7 +37,7 @@ from zLOG import LOG, DEBUG
 
 # XXX : to move somewhere else
 WORKSPACES = "workspaces"
-MEMBERS    = "members"
+MEMBERS = "members"
 
 class CPSMembershipTool(MembershipTool):
     """ Replace MonkeyPatch of Membershiptool by real object use."""
@@ -46,8 +45,7 @@ class CPSMembershipTool(MembershipTool):
     #
     # Actions for CPS
     #
-
-    _actions =[
+    _actions = [
       AI( id='login'
         , title='Login'
         , description='Click here to Login'
@@ -85,9 +83,7 @@ class CPSMembershipTool(MembershipTool):
 
     security.declareProtected(View, 'getMergedLocalRoles')
     def getMergedLocalRoles(self, object, withgroups=1, withpath=0):
-        """
-        return aquisition roles
-        """
+        """Return aquisition roles"""
         return mergedLocalRoles(object, withgroups, withpath)
 
     security.declareProtected(View, 'setLocalGroupRoles')
@@ -139,15 +135,16 @@ class CPSMembershipTool(MembershipTool):
             # XXX : GOTTA FIX THAT IN A MORE PROPER WAY
             # Hack to pass workflow guards
             manage_setLocalGroupRoles(members, 'role:Anonymous',
-                                      ['WorkspaceManager'] )
+                                      ['WorkspaceManager'])
 
             members.invokeFactory('Workspace', member_id)
 
             manage_delLocalGroupRoles(members, ['role:Anonymous'])
             # TODO set workspace properties ? title ..
-            f=getattr(members, member_id)
+            f = getattr(members, member_id)
             # Grant ownership to Member
-            try: f.changeOwnership(user)
+            try: 
+                f.changeOwnership(user)
             except AttributeError:
                 pass  # Zope 2.1.x compatibility
             f.manage_setLocalRoles(member_id, ['Owner', 'WorkspaceManager'])
@@ -163,10 +160,10 @@ class CPSMembershipTool(MembershipTool):
             id = member.getMemberId()
         parent = self.aq_inner.aq_parent
 
-        ws_root =  getattr(parent, WORKSPACES, None)
+        ws_root = getattr(parent, WORKSPACES, None)
         try:
-            members =  getattr(ws_root, MEMBERS, None)
-            folder  =  getattr(members, id, None)
+            members = getattr(ws_root, MEMBERS, None)
+            folder = getattr(members, id, None)
             if verifyPermission and not _checkPermission('View', folder):
                 # Don't return the folder if the user can't get to it.
                 return None
@@ -183,9 +180,7 @@ class CPSMembershipTool(MembershipTool):
 InitializeClass(MembershipTool)
 
 def addCPSMembershipTool(dispatcher, **kw):
-    """
-    add a membership tool
-    """
+    """Add a membership tool"""
     mt = CPSMembershipTool(**kw)
     id = mt.getId()
     container = dispatcher.Destination()

@@ -3,7 +3,7 @@ Simple test for portal_elements
 """
 
 import Zope
-from Acquisition import aq_base, aq_parent, aq_inner
+from Acquisition import aq_base
 import unittest
 
 from AccessControl.SecurityManagement import newSecurityManager
@@ -15,9 +15,7 @@ from security import PermissiveSecurityPolicy, AnonymousUser
 from Products.CPSCore.ElementsTool import ElementsTool
 
 class ElementsToolTest(unittest.TestCase):
-    """\
-    Test portal_elements
-    """
+    """Test portal_elements"""
 
     def setUp(self):
         get_transaction().begin()
@@ -53,23 +51,17 @@ class ElementsToolTest(unittest.TestCase):
         return portal_elements.getElements(portal.REQUEST, object)
 
     def test_new(self):
-        """\
-        Test that creation of Elements tool is correct
-        """
+        """Test that creation of Elements tool is correct"""
         self._make_tool()
         portal_elements = self.root.testsite.portal_elements
         self.assertEqual(portal_elements.meta_type, 'CPS Elements Tool')
 
     def test_get_elements(self):
-        """\
-        Test we can correctly get elements mapping
-        """
+        """Test we can correctly get elements mapping"""
         elements = self._get_elements()
 
     def test_default_elements(self):
-        """\
-        Test default elements sets in portal_elements
-        """
+        """Test default elements sets in portal_elements"""
         elements = self._get_elements()
         portal = self.root.testsite
         self.assertEqual(aq_base(elements['PORTAL']), aq_base(portal))
@@ -80,9 +72,7 @@ class ElementsToolTest(unittest.TestCase):
         self.assertEqual(elements['REQUEST'], self.root.REQUEST)
 
     def test_default_elements2(self):
-        """\
-        Test container/object default elements
-        """
+        """Test container/object default elements"""
         portal = self.root.testsite
         Members = portal.Members
         index_html = Members.index_html
@@ -94,9 +84,7 @@ class ElementsToolTest(unittest.TestCase):
         self.assertEqual(aq_base(elements['SITE_BASE']), aq_base(portal))
 
     def test_bases_elements(self):
-        """\
-        Test container/object default elements
-        """
+        """Test container/object default elements"""
         portal = self.root.testsite
         Members = portal.Members
         index_html = Members.index_html

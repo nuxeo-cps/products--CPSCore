@@ -1,5 +1,5 @@
-# (C) Copyright 2002 Nuxeo SARL <http://nuxeo.com>
-# Author: Julien Jalon <jj@nuxeo.com>
+# (C) Copyright 2003 Nuxeo SARL <http://nuxeo.com>
+# Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -17,11 +17,10 @@
 #
 # $Id$
 
-from Globals import InitializeClass, DTMLFile
+from Globals import InitializeClass
 from OFS.Folder import Folder
 from AccessControl import ClassSecurityInfo
 from Products.CMFCore.utils import UniqueObject, getToolByName
-from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 
 class MirrorTool(UniqueObject, Folder):
     """Mirror Tool just mirrors the site hierarchy.
