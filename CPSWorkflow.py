@@ -21,12 +21,14 @@
 """
 
 from zLOG import LOG, ERROR, DEBUG
+from cgi import escape
 from types import StringType
 from Acquisition import aq_parent, aq_inner
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.WorkflowCore import ObjectMoved, ObjectDeleted
 from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import addWorkflowFactory
@@ -37,7 +39,9 @@ from Products.DCWorkflow.States import States as DCWFStates
 from Products.DCWorkflow.Transitions \
     import TransitionDefinition as DCWFTransitionDefinition
 from Products.DCWorkflow.Transitions import Transitions as DCWFTransitions
+from Products.DCWorkflow.Transitions import TRIGGER_AUTOMATIC
 from Products.DCWorkflow.Transitions import TRIGGER_USER_ACTION
+from Products.DCWorkflow.Transitions import TRIGGER_WORKFLOW_METHOD
 from Products.DCWorkflow.Expression import StateChangeInfo
 from Products.DCWorkflow.Expression import createExprContext
 
@@ -75,6 +79,40 @@ TRANSITION_BEHAVIOR_CHECKIN = 36
 TRANSITION_BEHAVIOR_FREEZE = 37
 TRANSITION_BEHAVIOR_MERGE = 38
 
+
+trigger_export_dict = {
+    TRIGGER_AUTOMATIC: 'automatic',
+    TRIGGER_USER_ACTION: 'user_action',
+    TRIGGER_WORKFLOW_METHOD: 'workflow_method',
+    }
+#trigger_import_dict = {}
+#for k,v in trigger_export_dict.items():
+#    trigger_import_dict[v] = k
+
+behavior_export_dict = {
+    TRANSITION_ALLOWSUB_CREATE: 'allow_sub_create',
+    TRANSITION_ALLOWSUB_DELETE: 'allow_sub_delete',
+    TRANSITION_ALLOWSUB_MOVE: 'allow_sub_delete',
+    TRANSITION_ALLOWSUB_COPY: 'allow_sub_copy',
+    TRANSITION_ALLOWSUB_PUBLISHING: 'allow_sub_publishing',
+    TRANSITION_ALLOWSUB_CHECKOUT: 'allow_sub_checkout',
+
+    TRANSITION_INITIAL_CREATE: 'initial_create',
+    TRANSITION_INITIAL_MOVE: 'initial_move',
+    TRANSITION_INITIAL_COPY: 'initial_copy',
+    TRANSITION_INITIAL_PUBLISHING: 'initial_clone',
+    TRANSITION_INITIAL_CHECKOUT: 'initial_checkout',
+    TRANSITION_ALLOW_CHECKIN: 'allow_checkin',
+
+    TRANSITION_BEHAVIOR_DELETE: 'behavior_delete',
+    TRANSITION_BEHAVIOR_MOVE: 'behavior_move',
+    TRANSITION_BEHAVIOR_COPY: 'behavior_copy',
+    TRANSITION_BEHAVIOR_PUBLISHING: 'behavior_clone',
+    TRANSITION_BEHAVIOR_CHECKOUT: 'behavior_checkout',
+    TRANSITION_BEHAVIOR_CHECKIN: 'behavior_checkin',
+    TRANSITION_BEHAVIOR_FREEZE: 'behavior_freeze',
+    TRANSITION_BEHAVIOR_MERGE: 'behavior_merge',
+    }
 
 class CPSStateDefinition(DCWFStateDefinition):
     meta_type = 'CPS Workflow State'
@@ -671,8 +709,154 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         res.sort()
         return map((lambda (id, val): val), res)
 
+    #
+    # XML Serialization
+    #
+
+    def _varExprsToXML(self, var_exprs, indent=''):
+        nindent = indent+'  '
+        if var_exprs is None:
+            return indent+'<variables></variables>'
+        contents = 'XXXTODO'
+        return indent+_renderXMLTag('variables', contents=contents)
+
+    def _permissionsToXML(self, permissions, indent=''):
+        nindent = indent+'  '
+        res = ['']
+        for permission in permissions:
+            res.append(nindent+_renderXMLTag('permission',
+                                             contents=permission))
+        res.append(indent)
+        contents = '\n'.join(res)
+        return indent+_renderXMLTag('permissions', contents=contents)
+
+    def _rolesToXML(self, roles, indent=''):
+        nindent = indent+'  '
+        res = ['']
+        for role in roles:
+            res.append(nindent+_renderXMLTag('role',
+                                             contents=role))
+        res.append(indent)
+        contents = '\n'.join(res)
+        return indent+_renderXMLTag('roles', contents=contents)
+
+    def _guardToXML(self, guard, indent=''):
+        if guard is None:
+            return indent+'<guard></guard>'
+        nindent = indent+'  '
+        res = ['']
+        res.append(self._permissionsToXML(guard.permissions, indent=nindent))
+        res.append(self._rolesToXML(guard.roles, indent=nindent))
+        res.append(indent)
+        contents = '\n'.join(res)
+        return indent+_renderXMLTag('guard', contents=contents)
+
+    def _behaviorsToXML(self, tdef, indent=''):
+        nindent = indent+'  '
+        res = ['']
+        for behavior in tdef.transition_behavior:
+            type = behavior_export_dict.get(behavior, behavior)
+            kwargs = {'type': type}
+            if behavior == TRANSITION_BEHAVIOR_PUBLISHING:
+                kwargs['transitions'] = ' '.join(
+                    tdef.clone_allowed_transitions)
+            elif behavior == TRANSITION_BEHAVIOR_CHECKOUT:
+                kwargs['transitions'] = ' '.join(
+                    tdef.checkout_allowed_initial_transitions)
+            elif behavior == TRANSITION_BEHAVIOR_CHECKIN:
+                kwargs['transitions'] = ' '.join(
+                    tdef.checkin_allowed_transitions)
+            res.append(nindent+_renderXMLTag('behavior', **kwargs))
+        res.append(indent)
+        behaviors = '\n'.join(res)
+        return indent+_renderXMLTag('behaviors', contents=behaviors)
+
+    def _transitionToXML(self, tid, indent=''):
+        nindent = indent+'  '
+        LOG('_transitionToXML', DEBUG, 'tid=%s' % `tid`)
+        tdef = self.transitions.get(tid)
+        trigger = trigger_export_dict.get(tdef.trigger_type,
+                                          tdef.trigger_type)
+        behaviors = self._behaviorsToXML(tdef, indent=nindent)
+        guard = self._guardToXML(tdef.guard, indent=nindent)
+        var_exprs = self._varExprsToXML(tdef.var_exprs, indent=nindent)
+        contents = '\n'+behaviors+'\n'+guard+'\n'+var_exprs+'\n'+indent
+        return indent+_renderXMLTag(
+            'transition',
+            id=tid,
+            title=tdef.title,
+            description=tdef.description,
+            destination=tdef.new_state_id,
+            trigger=trigger,
+            actionName=tdef.actbox_name,
+            actionUrl=tdef.actbox_url,
+            actionCategory=tdef.actbox_category,
+            beforeScript=tdef.script_name,
+            afterScript=tdef.after_script_name,
+            contents=contents,
+            )
+
+    def _transitionsToXML(self, indent=''):
+        nindent = indent+'  '
+        res = ['']
+        for tid in self.transitions.keys():
+            res.append(self._transitionToXML(tid, indent=nindent))
+        res.append(indent)
+        contents = '\n'.join(res)
+        return indent+_renderXMLTag('transitions', contents=contents)
+
+    def toXML(self, indent=''):
+        """Serialize the workflow to XML.
+
+        Returns an XML string, without header.
+        """
+        nindent = indent+'  '
+        contents = '\n'+self._transitionsToXML(indent=nindent)+'\n'+indent
+        return _renderXMLTag('workflow',
+                             id=self.getId(),
+                             title=self.title,
+                             contents=contents,
+                             )
+
+    #
+    # ZMI
+    #
+
+    manage_options = DCWorkflowDefinition.manage_options + (
+        {'label': 'Export', 'action': 'manage_exportWorkflow'},
+        )
+
+    security.declareProtected(ManagePortal, 'manage_exportWorkflow')
+    manage_exportWorkflow = DTMLFile('zmi/workflow_export', globals())
+
 
 InitializeClass(CPSWorkflowDefinition)
 
 addWorkflowFactory(CPSWorkflowDefinition, id='cps_workflow',
                    title='Web-configurable workflow for CPS')
+
+
+def _renderXMLTag(tagname, **kw):
+    """Render an XML tag."""
+    if kw.get('css_class'):
+        kw['class'] = kw['css_class']
+        del kw['css_class']
+    if kw.has_key('contents'):
+        contents = kw['contents']
+        del kw['contents']
+    else:
+        contents = None
+    attrs = []
+    for key, value in kw.items():
+        if value is None:
+            value = key
+        if value != '':
+            attrs.append('%s="%s"' % (key, escape(str(value))))
+    if attrs:
+        res = '<%s %s>' % (tagname, ' '.join(attrs))
+    else:
+        res = '<%s>' % tagname
+    if contents is not None:
+        res += contents
+    res += '</%s>' % tagname
+    return res

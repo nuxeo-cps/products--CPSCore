@@ -1,0 +1,17 @@
+<dtml-var manage_page_header>
+<dtml-let management_view="'Export'">
+<dtml-var manage_tabs>
+</dtml-let>
+
+<p>
+  You will find below an XML export for this Workflow.
+</p>
+<b>
+  XXX Unfinished code!
+</b>
+
+<pre>
+<dtml-var toXML html_quote>
+</pre>
+
+<dtml-var manage_page_footer>
