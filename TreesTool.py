@@ -361,7 +361,9 @@ class TreeCache(SimpleItemWithProperties):
         d = tree.data.copy() # .data because tree is PersistentMapping
         pointers.append(tree)
         flat.append(d)
-        if d.has_key('children'):
+        has_children = d.has_key('children')
+        d['nb_children'] = has_children and len(d['children']) or 0
+        if has_children:
             del d['children']
             for subtree in tree['children']:
                 self._flatten(subtree, pointers, flat)
@@ -390,10 +392,7 @@ class TreeCache(SimpleItemWithProperties):
 
     security.declareProtected(View, 'getTree')
     def getTree(self):
-        """Return the cached tree.
-
-        Eeach node is a dictionnary containing the following information:
-        """
+        """Return the cached tree."""
         return deepcopy(self._tree) # XXX untested, probably fails
 
     security.declareProtected(View, 'getList')
@@ -403,25 +402,36 @@ class TreeCache(SimpleItemWithProperties):
         Only return the part between start_depth and stop_depth inclusive,
         that are under the prefix (an rpath).
         If filter=1, skip unviewable entries.
+
+        Eeach node is a dictionnary containing the following information:
+          id
+          url (do not use)
+          path
+          rpath
+          depth
+          hubid
+          allowed_roles_users
+          children    (for the tree)
+          nb_children (for the list)
+          visible (0 or 1, when filter=0)
         """
-        if filter:
-            mtool = getToolByName(self, 'portal_membership')
-            try:
-                user = mtool.getAuthenticatedMember().getUser()
-                allowed_roles_users = _getAllowedRolesAndUsers(user)
-            except TypeError: # XXXXX?? getUser() takes exactly 2 arguments (1 given)
-                allowed_roles_users = ['Anonymous']
+        mtool = getToolByName(self, 'portal_membership')
+        try:
+            user = mtool.getAuthenticatedMember().getUser()
+            allowed_roles_users = _getAllowedRolesAndUsers(user)
+        except TypeError: # XXXXX?? getUser() takes exactly 2 arguments (1 given)
+            allowed_roles_users = ['Anonymous']
         res = []
         for info in self._flat:
             # check filter
-            if filter:
-                ok = 0
-                for ur in info['allowed_roles_users']:
-                    if ur in allowed_roles_users:
-                        ok = 1
-                        break
-                if not ok:
-                    continue
+            visible = 0
+            for ur in info['allowed_roles_users']:
+                if ur in allowed_roles_users:
+                    visible = 1
+                    break
+            if filter and not visible:
+                continue
+            info['visible'] = visible
             # check prefix
             if prefix is not None:
                 rpath = info['rpath']
