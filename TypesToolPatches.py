@@ -47,7 +47,7 @@ if 'cps_proxy_type' not in ftiprops_ids:
 
 
 def getProxyTypesAllowed(self):
-    """ """
+    """ return the list of allowed portal types strings """
     return ['','document','folder','folderishdocument']
 
 FTI.getProxyTypesAllowed = getProxyTypesAllowed
