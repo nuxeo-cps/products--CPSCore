@@ -22,6 +22,7 @@
 from zLOG import LOG, ERROR, DEBUG, TRACE
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base, aq_parent, aq_inner
+from AccessControl import Unauthorized
 from AccessControl import ClassSecurityInfo
 from AccessControl.PermissionRole import rolesForPermissionOn
 from BTrees.OOBTree import OOBTree
@@ -344,6 +345,69 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                         }
                 res.append(info)
         return res
+
+    security.declarePublic('getArchivedInfosForDocid')
+    def getArchivedInfosForDocid(self, docid, REQUEST=None):
+        """Get info about the archived revisions for a docid.
+
+        Returns a list of dicts with info:
+          rev, lang, modified, rpaths, is_frozen
+
+        (Called by user code to display a history.)
+        """
+        if REQUEST is not None:
+            raise Unauthorized("Not accessible TTW.")
+        if not docid:
+            return []
+        repotool = getToolByName(self, 'portal_repository')
+        revs = repotool.listRevisions(docid)
+        res = []
+        for rev in revs:
+            ob = repotool.getObjectRevision(docid, rev)
+            base_ob = aq_base(ob)
+            #title = ob.title_or_id()
+            rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
+            if hasattr(base_ob, 'Language'):
+                lang = ob.Language()
+            elif hasattr(base_ob, 'language'):
+                lang = ob.language
+            else:
+                lang = None
+            if hasattr(base_ob, 'modified') and callable(ob.modified):
+                modified = ob.modified()
+            elif hasattr(base_ob, 'modification_date'):
+                modified = ob.modification_date
+            else:
+                modified = None
+            is_frozen = repotool.isRevisionFrozen(docid, rev)
+            info = {
+                'rev': rev,
+                #'title': title, # security-sensitive
+                'lang': lang or 'en',
+                'modified': modified,
+                'rpaths': rpaths,
+                'is_frozen': is_frozen,
+                }
+            res.append(info)
+        return res
+
+    security.declarePrivate('revertProxyToRevisions')
+    def revertProxyToRevisions(self, proxy, language_revs, freeze):
+        """Revert a proxy to older revisions.
+
+        If freeze=1 (default), freeze the current revisions.
+        """
+        repotool = getToolByName(self, 'portal_repository')
+        if freeze:
+            proxy.freezeProxy()
+        docid = proxy.getDocid()
+        if not language_revs.has_key(proxy.getDefaultLanguage()):
+            raise ValueError("Default language would be missing")
+        for lang, rev in language_revs.items():
+            if not repotool.hasObjectRevision(docid, rev):
+                raise ValueError("No revision %s for docid %s" % (rev, docid))
+            proxy.setLanguageRevision(lang, rev)
+        proxy.proxyChanged()
 
     security.declarePrivate('_reindexProxiesForObject')
     def _reindexProxiesForObject(self, ob):

@@ -413,6 +413,19 @@ class ProxyBase(Base):
             return 1
 
     #
+    # Revision management
+    #
+
+    security.declareProtected(ModifyPortalContent, 'revertToRevisions')
+    def revertToRevisions(self, language_revs, freeze=1):
+        """Revert this proxy to older revisions.
+
+        If freeze=1 (default), freeze the current revisions.
+        """
+        pxtool = getToolByName(self, 'portal_proxies')
+        pxtool.revertProxyToRevisions(self, language_revs, freeze)
+
+    #
     # ZMI
     #
 

@@ -13,3 +13,5 @@ New internal features:
 - TreesTool: minor spelling mistake that has been hanging around for too
   long...
 - Better ProxyTool Management tab to debug and fix the proxies.
+- New methods to query the proxy tool about archived revisions of a
+  docid and to revert a proxy to older revisions.
