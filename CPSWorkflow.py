@@ -39,6 +39,8 @@ from Products.DCWorkflow.States import StateDefinition as DCWFStateDefinition
 from Products.DCWorkflow.States import States as DCWFStates
 from Products.DCWorkflow.Transitions import TransitionDefinition as DCWFTransitionDefinition
 from Products.DCWorkflow.Transitions import Transitions as DCWFTransitions
+from Products.DCWorkflow.Expression import StateChangeInfo
+from Products.DCWorkflow.Expression import createExprContext
 
 from Products.DCWorkflow.DCWorkflow import TRIGGER_USER_ACTION
 TRIGGER_CREATION = 10
