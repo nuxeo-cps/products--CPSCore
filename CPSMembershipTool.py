@@ -46,10 +46,6 @@ from Products.CPSCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
 
 from zLOG import LOG, DEBUG, ERROR
 
-# XXX : to move somewhere else
-WORKSPACES = "workspaces"
-MEMBERS = "members"
-
 
 class CPSUnrestrictedUser(UnrestrictedUser):
     """Unrestricted user that still has an id."""
@@ -302,30 +298,6 @@ class CPSMembershipTool(MembershipTool):
             self.createMemberContent(member=member,
                                      member_id=member_id,
                                      member_folder=member_folder)
-
-
-    security.declarePublic('getHomeFolder')
-    def getHomeFolder(self, id=None, verifyPermission=0):
-        """Return a member's home folder object, or None."""
-
-        if id is None:
-            member = self.getAuthenticatedMember()
-            if not hasattr(member, 'getMemberId'):
-                return None
-            id = member.getMemberId()
-        parent = self.aq_inner.aq_parent
-
-        ws_root = getattr(parent, WORKSPACES, None)
-        try:
-            members = getattr(ws_root, MEMBERS, None)
-            folder = getattr(members, id, None)
-            if verifyPermission and not _checkPermission('View', folder):
-                # Don't return the folder if the user can't get to it.
-                return None
-            return folder
-        except KeyError:
-            pass
-        return None
 
     security.declarePrivate('listActions')
     def listActions(self, info=None):
