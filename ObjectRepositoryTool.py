@@ -423,6 +423,9 @@ class ObjectRepositoryTool(UniqueObject,
     # Management
     #
 
+    # Protect tool's default view against unauthorized accesses
+    security.declareProtected(ManagePortal, 'manage_main')
+
     security.declareProtected(ManagePortal, 'getManagementInformation')
     def getManagementInformation(self):
         """Return management info.
