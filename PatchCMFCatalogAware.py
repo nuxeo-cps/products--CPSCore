@@ -24,6 +24,7 @@ and add event service notifications
 
 from zLOG import LOG, DEBUG
 
+from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 # XXX those patch can't be there as manage_XXXs are already defined over there
@@ -51,7 +52,38 @@ def manage_beforeDelete(self, *args, **kw):
         self.cps_old_manage_beforeDelete(*args, **kw)
     notify(self, 'sys_del_object', self, *args, **kw)
 
+
+def reindexObjectSecurity(self, reindex_self=1):
+    """
+        Reindex security-related indexes on the object
+        (and its descendants).
+
+        Add an optional argument ro reindex self or not since it's
+        useless to reindex it in here like during creation time since we
+        could use the first reindexObject by adding the allowedRolesAndUsers.
+
+    """
+    catalog = getToolByName(self, 'portal_catalog', None)
+    if catalog is not None:
+        path = '/'.join(self.getPhysicalPath())
+        for brain in catalog.searchResults(path=path):
+            ob = brain.getObject()
+            if ob is None:
+                # Ignore old references to deleted objects.
+                continue
+            s = getattr(ob, '_p_changed', 0)
+            catalog.reindexObject(ob, idxs=['allowedRolesAndUsers'],
+                                  update_metadata=0)
+            if s is None: ob._p_deactivate()
+        # Reindex the object itself, as the PathIndex only gave us
+        # the descendants.
+        if reindex_self:
+            catalog.reindexObject(self, idxs=['allowedRolesAndUsers'],
+                                  update_metadata=0)
+
+
 patch_action(CMFCatalogAware, manage_afterAdd)
 patch_action(CMFCatalogAware, manage_beforeDelete)
+CMFCatalogAware.reindexObjectSecurity = reindexObjectSecurity
 
 LOG('PatchCMFCatalogAware', DEBUG, 'Patched')
