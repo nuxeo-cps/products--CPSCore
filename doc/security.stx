@@ -1,0 +1,76 @@
+Security in CPS
+
+  $Id$
+
+  The following details all the internal places in CPS where we deal
+  with security. It tries to list all security-related modifications
+  that can happen to an object and the invariants that we need to
+  maintain.
+
+  Security synthesis
+
+    A proxy has security applied to it by the workflow. This typically
+    controls visibility and modifiability. The document itself, in the
+    repository, must be protected by the same security settings. In
+    addition, there is the problem that several proxies with different
+    workflow states and thus different security settings can point to
+    the same document, so a "security synthesis" has to be done.
+
+    The security synthesis must take each proxy, find which users have
+    specific workflow permissions, merge them, and apply the result to
+    the object in the repository. This is done by
+    ProxyTool.setSecurity().
+
+    There is a small complication here, which is that Zope 2 cannot
+    directly give a permission to a user, but only permissions to roles
+    and roles to users. So the repository tool has specific roles that
+    are designed to map only to one permission.
+
+  Changing local roles
+
+    When changing a local role on a proxy, there may be many impacted
+    objects (all subobjects, and all the revisions they point to). If
+    the local roles are available in the catalog (localRoles metadata),
+    then all modifications to the subobjects (which are implicit) can be
+    done directly in the catalog without touching the subobjects
+    themselves (XXX implemented in NuxCPS3, not backported to CPSCore
+    yet). The revisions they point to must have their security
+    resynthesized.
+
+  Changing permission settings
+
+    This is only costly when it happens on a container, so only is a
+    problem if sections/workspaces have several workflow states. When
+    they change state, all subobjects (proxies) have new implicit
+    permission settings that must be indexed in the catalog, and the
+    revisions they point to must have their security resynthesized.
+
+  Invariants
+
+  - allowedRolesAndUsers index in the catalog must be correct for the
+    proxy and the revisions
+
+  - localRoles index in the catalog too (XXX implemented in NuxCPS3, not
+    backported to CPSCore yet)
+
+  - proxy-specific indexes on the object in the repository must be
+    correct (proxyIds, proxyRpaths, etc.) (XXX not implemented yet)
+
+  Local role change on a proxy
+
+    ...
+
+  Workflow state change on a proxy
+
+    ...
+
+  New revision added to a proxy
+
+    ...
+
+  Revision removed from a proxy
+
+    In theory, if the revision is now orphanned, the security settings
+    on the revision need to be reset so that no access is possible.
+    (Modulo archive access of course -- XXX unresolved at the time of
+    this writing).
