@@ -34,3 +34,7 @@ setDefaultRoles(ManageWorkflows, ('Manager',))
 
 ViewArchivedRevisions = 'View archived revisions'
 setDefaultRoles(ViewArchivedRevisions, ('Manager',))
+
+ChangeSubobjectsOrder = 'Change subobjects order'
+setDefaultRoles(ChangeSubobjectsOrder, ('Manager',))
+
