@@ -53,7 +53,7 @@ from Products.CPSCore.CPSBase import CPSBaseDocument
 KEYWORD_DOWNLOAD_FILE = 'downloadFile'
 KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
 KEYWORD_ARCHIVED_LANGUAGE = 'switchLanguage'
-PROBLEMATIC_FILES_SUFFIXES = ('.sxw', '.sxc')
+PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
 
 
 class ProxyBase(Base):

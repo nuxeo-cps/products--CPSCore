@@ -13,4 +13,4 @@ permission from being able to search by effective date
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Cleanup of details.
-
+- In FileDownloader added ".exe" as a problematic file suffix too.
