@@ -12,6 +12,13 @@ Proxies, document repository and workflows
     publication so that the site's anonymous or general users can see
     them.
 
+  Internationalization
+
+    Site languages are managed through a Localizer instance at the root
+    of the portal, which must be named 'Localizer' . The default
+    language in Localizer will be the default language for the
+    documents.
+
   Proxies
 
     A proxy is a placeholder for a document (either contentish or
@@ -28,9 +35,11 @@ Proxies, document repository and workflows
       (differentiated by their rev) to which this proxy is related,
 
     - has a mapping of language -> rev, where language can be 'fr' or
-      'en' for instance, or '*' for a default language (always present);
-      rev is an integer. Together (docid, rev) identify a unique
-      document's revision in the document repository,
+      'en' for instance; rev is an integer. Together (docid, rev)
+      identify a unique document's revision in the document repository,
+
+    - has a default language, which is used for instance to find what
+      language to display if the user language is not available,
 
     - has security information applied to it to control its visibility,
       depending on its workflow state.
@@ -63,7 +72,12 @@ Proxies, document repository and workflows
     ever be modified again. In this state, it's not modifiable. This
     frozen state exists for all revisions corresponding to a workflow
     state that is frozen. This is used to ensure that a given published
-    revision, for instance, is not modified.
+    revision, for instance, is not modified. "Freezing" a revision must
+    be understood as "mark this revision as to be lazily copied for any
+    future modification".
+
+    In addition, whenever a document is created in a given language, its
+    'setLanguage' method is called to initialize the language.
 
   Document views
 
@@ -95,11 +109,17 @@ Proxies, document repository and workflows
 
     - any data accessor (Title(), Description(), etc.).
 
+    Because the views for a portal type must have meaning when applied
+    to a proxy object, all views must be provided by CMF skins. Having
+    the view being directly implemented as a method in the python class
+    of the CMF object won't work, as all views will be applied to
+    proxies from CMF's point of view.
+
   Edition
 
     When a document is published in a section, it keeps the same
     revision as the one in the workspace from which it has been
-    published, so that there is not too many versions. But the revision
+    published, so that there are not too many versions. But the revision
     is marked "frozen", because by being published there is a promise to
     the section reviewer that the document won't change without his
     review. When the author wants to modify his document in the
@@ -140,54 +160,105 @@ Proxies, document repository and workflows
     Workflows control all the operations of a site, and all the security
     checks.
 
-    A transition type has been added to DCWorkflow: "Initial
-    Transition". An initial transition is a virtual transition followed
-    when an object is created in a container. When asking for the
-    creation of a portal type, only those that have a suitable initial
-    transition will be allowed. The standard "initial state" of
-    DCWorkflow is not used.
+    A number of transition flags have been added to DCWorkflow. These
+    flags govern some special CPS behavior of the transition. They can
+    be subdivded in several categories.
 
-    Transitions also have a additional fields, the "behavior". This
-    controls special CPS behavior that will occur when the transition
-    exists or is followed:
+    Allowing subobject behavior
 
-    - "allow subobject creation" is useful in the workflow of a
-      container (workspace for instance), and controls the general
-      possibility of adding subobjects.
+      A container has responsibility for globally allowing certain
+      behaviors for its subobjects. This covers creation, deletion,
+      moving into the container, copying into the container, publishing
+      into the container, checkout into the container.
 
-    - "allow subobject deletion" and "allow subobject copy" is used by
-      the manage_CPScopyObjects, manage_CPScutObjects and
-      manage_CPSpasteObjects methods. This will be integrated into core
-      Zope methods later.
+      Once a container allows certain operation, the workflow for the
+      portal type itself will have to allow the operation too.
 
-    - "freeze object" is used by all transitions going to a state where
-      the object should not be modified anymore. This may in the future
-      move to be a property of the state itself.
+      Some of these behavior are checked by the manage_CPScopyObjects,
+      manage_CPScutObjects and manage_CPSpasteObjects methods. This will
+      be integrated into core Zope methods later.
 
-    - "clone with initial transitions" is used as a mechanism for
-      publishing (and later will be reworked for checkouts).
+    Initial transitions
+
+      An initial transition is a transition followed when an object is
+      created (or published, checked out, etc.) in a container. It does
+      not have an initial state, but the destination state is the one
+      the object will have after creation. When asking for the creation
+      of a portal type, only those that have a suitable initial
+      transition will be allowed. The standard "initial state" of
+      DCWorkflow is not used.
+
+      "Transition for checkin" is logically grouped together with those.
+      It's a transition an object will follow when it is on the
+      receiving end of a checkin (i.e., when it is the reference object
+      into which a modification is checked back in).
+
+    Specific behavior
+
+      - "Freeze object" is used by all transitions going to a state
+        where the object should not be modified anymore. This may in the
+        future move to be a property of the state itself.
+
+      - "Publishing, with initial transitions" is used as a mechanism
+        for publishing an object into another container.
+
+      - "Checkout, with initial transitions" is used to checkout an
+        object into another container.
+
+      - "Checkin, with allowed transitions" is used to checkin an object
+        back into its original version.
 
   Publishing
 
-    "Publishing" is used here to represent any kind of operation that
-    involves taking a document in a workspace and requesting its
-    publication in a section.
+    The term "Publishing" is used here to represent any kind of
+    operation that involves taking a document in a workspace and
+    requesting its publication in a section.
 
     In such an operation, two containers are used, which means two
     workflows. There is a source workflow for the document, that has to
-    allow a "clone" operation, and in the destination container two
+    have a "publishing" operation, and in the destination container two
     conditions must be met: the destination container has to allow
-    subobject creation (note that local roles of the source container
+    subobject publising (note that local roles of the source container
     have no meaning in the destination container), and the destination
     workflow for the portal type of the document has to have some
-    initial transition, which will be used when the document is
-    "published" or "submitted" in the section. The guards (conditions)
-    on these initial transitions express who is authorized to do which
-    initial transition, and can thus distinguish between a "submit" and
-    a direct "publish".
+    initial transition for publishing, which will be used when the
+    document is "published" or "submitted" in the section. The guards
+    (conditions) on these initial transitions express who is authorized
+    to do which initial transition, and can thus distinguish between a
+    "submit" and a direct "publish".
 
     Note: a way to take into account the local roles of the source
-    container will maybe have to be devised.
+    container will maybe have to be devised in the future.
+
+    The 'doActionFor' call for a publishing transition takes 2
+    arguments, 'dest_container' and 'initial_transition'. They describe
+    the destination container into which the publishing must occur, and
+    the initial transition to follow there. This initial transition will
+    be validated against the allowed initial transitions specified in
+    the workflow.
+
+  Checkout and checkin
+
+    Checkout and checkin are a way to take a document from a reference
+    version, make modifications to it, and fold back the modifications
+    into the original.
+
+    The 'doActionFor' call for a checkout operation takes 2 mandatory
+    arguments, 'dest_container', 'initial_transition' and an optional
+    'language_map'. The first two are similar to what happens for
+    publishing, and 'language_map' is a mapping of new languages to old
+    languages, used to specify what languages will appear in the checked
+    out document and what language they are based on. This can be used
+    to checkout a version into a new language for translation. If
+    'language_map' is not present, then all languages are copied.
+
+    The 'doActionFor' call for a checkin operation takes 2 arguments,
+    'dest_object' and 'checkin_transition'. They describe the
+    destination object into which to merge changes, and the checkin
+    transition this destination object will follow after changes are
+    merged.
+
+    Note that after a checkin the working document is deleted.
 
   Document lifecycle
 
@@ -278,10 +349,5 @@ Proxies, document repository and workflows
         proxy), or publish the new version and remove the previous one.
 
         Having two versions of the same document in the published state
-        must be avoided in a section workflow. This will be avoided
-        automatically in the future because the "publish" transition
-        will be parametrized so that any approved version is merged with
-        any existing published version. This is a kind of checkin
-        operation, and will be necessary for multilingual documents,
-        where an English version can be submitted and will have to be
-        added to an existing French version for instance.
+        should be avoided in a section workflow. This can be avoided by
+        skin code that checks for these cases.
