@@ -759,7 +759,7 @@ class LanguageSwitcher(Acquisition.Explicit):
     def __bobo_traverse__(self, REQUEST, lang):
         proxy = self.proxy
         utool = getToolByName(self, 'portal_url')
-        rpath = utool.getRelativeUrl()
+        rpath = utool.getRelativeUrl(proxy)
         # store information by the time of the request to change the
         # language used for viewing the current document, bypassing Localizer.
         # XXX Use rpath in the key not to propagate the change to other
@@ -769,7 +769,6 @@ class LanguageSwitcher(Acquisition.Explicit):
         #  Return the proxy, and so have the same context than without language
         #  switcher.
         return proxy
-        # XXX lack a _setId
 
 InitializeClass(LanguageSwitcher)
 

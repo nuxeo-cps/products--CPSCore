@@ -10,6 +10,7 @@ Bug fixes:
   on the new object.
 - Use the object when checking allowed behaviours, not its rpath. (Besides, the
   code goes through CMFCore/WorkflowTool, which doesn't understand rpaths.)
+- Fix relative path calculation for LanguageSwitchers.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
