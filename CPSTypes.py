@@ -124,7 +124,7 @@ class TypeConstructor(Base):
         if final_type_name is None:
             final_type_name = type_name
         ob._setPortalTypeName(final_type_name)
-        ob.reindexObject(idxs=['portal_type', 'Type'])
+        ##ob.reindexObject(idxs=['portal_type', 'Type'])
         # XXX should notify something
         return ob
 

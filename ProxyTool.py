@@ -145,7 +145,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             ob, rev = repotool.createRevision(docid, type_name, *args, **kw)
         if hasattr(aq_base(ob), 'setLanguage'):
             ob.setLanguage(lang)
-            ob.reindexObject(idxs=['Language'])
+            ##ob.reindexObject(idxs=['Language'])
         proxy.setLanguageRevision(lang, rev)
         proxy.proxyChanged()
         #LOG('ProxyTool', TRACE, "  created rev=%s" % rev)
@@ -753,7 +753,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if final_type_name is None:
             final_type_name = type_name
         ob._setPortalTypeName(final_type_name)
-        ob.reindexObject(idxs=['portal_type', 'Type'])
+        ##ob.reindexObject(idxs=['portal_type', 'Type'])
         # XXX should notify something
         return ob
 
