@@ -20,12 +20,13 @@
 from zLOG import LOG, ERROR, DEBUG
 from ExtensionClass import Base
 from ComputedAttribute import ComputedAttribute
-from Globals import InitializeClass
+from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import AccessContentsInformation
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
+from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.NuxCPS3.CPSBase import CPSBaseFolder
@@ -59,12 +60,12 @@ class ProxyBase(Base):
         """
         self._version_infos = version_infos.copy()
 
-    security.declarePrivate('getVersionInfos')
+    security.declareProtected(ViewManagementScreens, 'getVersionInfos')
     def getVersionInfos(self):
         """Return the version infos for this proxy."""
         return self._version_infos.copy()
 
-    security.declarePrivate('getRepoId')
+    security.declareProtected(ViewManagementScreens, 'getRepoId')
     def getRepoId(self):
         """Return the repoid for this proxy."""
         return self._repoid
@@ -179,6 +180,15 @@ class ProxyBase(Base):
     # ZMI
     #
 
+    proxybase_manage_options = (
+        {'label': 'Proxy',
+         'action': 'manage_proxyInfo',
+         },
+        )
+
+    security.declareProtected(ViewManagementScreens, 'manage_proxyInfo')
+    manage_proxyInfo = DTMLFile('zmi/proxy_info', globals())
+
     _properties = (
         {'id':'RepoId', 'type':'string', 'mode':''},
         {'id':'VersionInfos', 'type':'string', 'mode':''},
@@ -227,6 +237,11 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
         CPSBaseFolder.__init__(self, id)
         ProxyBase.__init__(self, repoid, version_infos)
 
+    manage_options = (CPSBaseFolder.manage_options[:1] +
+                      ProxyBase.proxybase_manage_options +
+                      CPSBaseFolder.manage_options[1:]
+                      )
+
 InitializeClass(ProxyFolder)
 
 
@@ -240,6 +255,10 @@ class ProxyDocument(ProxyBase, CPSBaseDocument):
     def __init__(self, id, repoid=None, version_infos=None):
         CPSBaseDocument.__init__(self, id)
         ProxyBase.__init__(self, repoid, version_infos)
+
+    manage_options = (ProxyBase.proxybase_manage_options +
+                      CPSBaseDocument.manage_options
+                      )
 
 InitializeClass(ProxyDocument)
 
