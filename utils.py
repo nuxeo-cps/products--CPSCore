@@ -41,6 +41,9 @@ from AccessControl.PermissionRole import rolesForPermissionOn
 from Products.CMFCore import utils
 from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
      CatalogTool
+from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
+from DateTime.DateTime import DateTime
+from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 
 LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
 
@@ -162,6 +165,40 @@ def _getAllowedRolesAndUsers(user):
 def _listAllowedRolesAndUsers(self, user):
     return _getAllowedRolesAndUsers(user)
 CatalogTool._listAllowedRolesAndUsers = _listAllowedRolesAndUsers
+
+
+LOG('CPSCore.utils', INFO, 'Patching CMF Catalog IndexableObjectWrapper')
+def __cps_wrapper_getattr__(self, name):
+    """This is the indexable wrapper getter for CPS,
+    proxy try to get the repository document attributes,
+    document in the repository hide some attributes to save some space."""
+    vars = self._IndexableObjectWrapper__vars
+    if vars.has_key(name):
+        return vars[name]
+    ob = self._IndexableObjectWrapper__ob
+    # XXX TODO: use isinstance ProxyBase fix import mess
+    if hasattr(ob, '_docid') and name not in (
+        'getId', 'id', 'path', 'getPhysicalPath', 'splitPath',
+        'modified', 'uid'):
+        ob = ob.getContent()
+    elif 'portal_repository' in ob.getPhysicalPath():
+        if name in ('SearchableText', ):
+            raise AttributeError
+    return getattr(ob, name)
+IndexableObjectWrapper.__getattr__ = __cps_wrapper_getattr__
+
+
+LOG('CPSCore.utils', INFO, 'Patching CMF TopicIndex.clear method')
+def topicindex_clear(self):
+    """Fixing cmf method that remove all filter."""
+    for fid, filteredSet in self.filteredSets.items():
+        filteredSet.clear()
+TopicIndex.clear = topicindex_clear
+
+
+LOG('CPSCore.utils', INFO, 'Patching CMF DublinCore never expires date')
+# this remove the overflow pb when using a DateIndex for expires
+DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
 
 # Local role monkey patching ends here
 

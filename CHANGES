@@ -3,7 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- XXX : new patch to make IndexableObjectWrapper works this way:
+  proxy try to get the repository document attributes,
+  document in the repository hide some attributes to save some space.
+  this enable a normal usage of the catalog to find proxy
 Bug fixes:
 ~~~~~~~~~~
 -
