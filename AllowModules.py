@@ -40,7 +40,7 @@ ModuleSecurityInfo('AccessControl').declarePublic('Unauthorized')
 ModuleSecurityInfo('types').declarePublic('IntType', 'StringType',
                                           'ListType', 'DictType',
                                           'TupleType')
-
+ModuleSecurityInfo('DateTime.DateTime').declarePublic('DateTimeError')
 ModuleSecurityInfo('Products.CPSCore.utils').declarePublic('resetSessionLanguageSelection')
 
 ModuleSecurityInfo(
