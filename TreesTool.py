@@ -62,7 +62,6 @@ class TreesTool(UniqueObject, Folder):
             % (event_type, '/'.join(object.getPhysicalPath())))
         if not object.isPrincipiaFolderish:
             return
-        id = object.getId()
         LOG('TreesTool', DEBUG, 'Notifying...')
         for tree in self.objectValues():
             tree.notify_tree(event_type, object, infos)
