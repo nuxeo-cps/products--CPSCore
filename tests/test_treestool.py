@@ -78,15 +78,6 @@ class DummyMember(SimpleItem):
         return self
 
 
-def flatkeys(tree, key='rpath'):
-    rpath = tree[key]
-    children = tree['children']
-    if not children:
-        return rpath
-    else:
-        return (rpath, tuple([flatkeys(child, key=key)
-                              for child in children]))
-
 class TreesToolTest(unittest.TestCase):
 
     def test_propagated_events(self):
