@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Adding missing import in utils
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
