@@ -29,6 +29,7 @@ from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.User import UnrestrictedUser
 
 from Products.CMFCore.CMFCorePermissions import View, ManagePortal
+from Products.CMFCore.CMFCorePermissions import ListPortalMembers
 from Products.CMFCore.ActionsTool import ActionInformation as AI
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import _checkPermission
@@ -259,6 +260,13 @@ class CPSMembershipTool(MembershipTool):
     def listActions(self, info=None):
         """List actions available through the tool."""
         return self._actions
+
+    # We redefine this to fix a security declaration problem in CMF <= 1.4.1.
+    security.declareProtected(ListPortalMembers, 'searchMembers')
+    def searchMembers(self, search_param, search_term, *args, **kw):
+        """Search the membership."""
+        return MembershipTool.searchMembers(self, search_param, search_term,
+                                            *args, **kw)
 
 InitializeClass(MembershipTool)
 
