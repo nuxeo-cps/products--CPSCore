@@ -119,7 +119,7 @@ class CPSWorkflowTool(WorkflowTool):
             wf.doActionFor(ob, transition)
         return id
 
-    # overloaded
+    # Overloaded for placeful workflow definitions
     def getChainFor(self, ob, container=None):
         """Return the chain that applies to the given object.
 
