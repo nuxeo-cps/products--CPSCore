@@ -7,6 +7,7 @@ New features:
 Bug fixes:
 ~~~~~~~~~~
 - fix P1 #368: Republishing a folderishdocument does not update subdocuments.
+- fix P2 #288: Incorrect signature for CPSMembershipTool.searchMembers.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
