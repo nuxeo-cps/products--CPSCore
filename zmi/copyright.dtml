@@ -86,7 +86,7 @@ Corporation.  Specific attributions are listed in the
 accompanying credits file.
 </p>
 
-<hr>
+<hr />
 
 <A NAME="PYTHON">
 
@@ -123,10 +123,10 @@ PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.</strong></p>
 
-<hr>
+<hr />
 <p>Zope uses the xmlrpclib module:</p>
 
-Copyright &copy; 1999 by Secret Labs AB<br>
+Copyright &copy; 1999 by Secret Labs AB<br />
 Copyright &copy; 1999 by Fredrik Lundh</p>
 
 <p>By obtaining, using, and/or copying this software and/or its
@@ -150,7 +150,7 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</strong></p>
 
-<hr>
+<hr />
 <p>Zope uses the C expat library by James Clark, for parsing XML text.</p>
 
 <P>Copyright (c) 1998, 1999 James Clark.  Expat is subject to the <A
@@ -158,7 +158,7 @@ HREF="http://www.mozilla.org/NPL/NPL-1_1Final.html">Mozilla Public
 License Version 1.1</A>.
 </p>
 
-<hr>
+<hr />
 
 <A NAME="CREDITS">
 
@@ -225,7 +225,7 @@ License Version 1.1</A>.
  Paul Everitt, <a href="mailto:paul@zope.com">paul@zope.com</a>.
 </P>
 
-<hr>
+<hr />
 
 <A NAME="CPS">
 <H2>

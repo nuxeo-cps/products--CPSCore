@@ -132,7 +132,7 @@ function toggleSelect() {
   <dtml-in event_type>
     <dtml-var sequence-item>
     <dtml-unless sequence-end>
-      <br>
+      <br />
     </dtml-unless>
   </dtml-in>
   </div>
