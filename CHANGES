@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- #466: Ensured that EventService delivers notifications robustly.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
