@@ -43,20 +43,22 @@ from Products.CMFCore.permissions import ModifyPortalContent
 from Products.CMFCore.permissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
+from Products.CPSUtil.timeoutcache import TimeoutCache, getCache
 from Products.CPSCore.utils import _isinstance
 from Products.CPSCore.utils import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
-     KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY, REQUEST_LANGUAGE_KEY
+     KEYWORD_VIEW_LANGUAGE, KEYWORD_VIEW_ZIP, SESSION_LANGUAGE_KEY, \
+     REQUEST_LANGUAGE_KEY
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder
 from Products.CPSCore.CPSBase import CPSBaseDocument
 from Products.CPSCore.CPSBase import CPSBaseBTreeFolder
 
 DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
-
 PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
-
+CACHE_ZIP_VIEW_KEY = 'CPS_ZIP_VIEW'
+CACHE_ZIP_VIEW_TIMEOUT = 180            # time to cache in second
 
 class ProxyBase(Base):
     """Mixin class for proxy types.
@@ -250,6 +252,9 @@ class ProxyBase(Base):
         if name == KEYWORD_DOWNLOAD_FILE:
             downloader = FileDownloader(ob, self)
             return downloader.__of__(self)
+        elif name == KEYWORD_VIEW_ZIP:
+            zipview = ViewZip(ob, self)
+            return zipview.__of__(self)
         try:
             res = getattr(ob, name)
         except AttributeError:
@@ -997,6 +1002,113 @@ class VirtualProxy(ProxyBase, CPSBaseDocument):
 
 InitializeClass(VirtualProxy)
 
+# initialize zip_cache to store unzipped documents
+zip_cache = getCache(CACHE_ZIP_VIEW_KEY)
+zip_cache.setTimeout(CACHE_ZIP_VIEW_TIMEOUT)
+
+class ViewZip(Acquisition.Explicit):
+    """Intermediate object allowing to view zipped content
+
+    Returned by a proxy during traversal of .../viewZip/.
+
+    Parses URLs of the form .../viewZip/attrname/mydocname.zip/path/in/archive
+    the content is cached using a TimeoutCache.
+    """
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+
+    def __init__(self, ob, proxy):
+        """
+        Init the ViewZip with the document and proxy to which it pertains.
+
+        ob is the document that owns the file and proxy is the proxy of this
+        same document
+        """
+        self.ob = ob
+        self.proxy = proxy
+        self.state = 0
+        self.attrname = None
+        self.file = None
+        self.filepath = []
+
+    def __repr__(self):
+        s = '<ViewZip for %s' % `self.ob`
+        if self.state > 0:
+            s += '/'+self.attrname
+        if self.state > 1:
+            s += '/'+ '/'.join(self.filepath)
+        s += '>'
+        return s
+
+    def __bobo_traverse__(self, request, name):
+        state = self.state
+        ob = self.ob
+        if state == 0:
+            # First call, swallow attribute which should be a zipfile
+            if not hasattr(aq_base(ob), name):
+                LOG('ViewZip.getitem', DEBUG,
+                    "Not a base attribute: '%s'" % name)
+                raise KeyError(name)
+            file = getattr(ob, name)
+            if file is not None and not _isinstance(file, File):
+                LOG('ViewZip.getitem', DEBUG,
+                    "Attribute '%s' is not a File but %s" %
+                    (name, `file`))
+                raise KeyError(name)
+            self.attrname = name
+            self.file = file
+            self.state = 1
+            return self
+        else:
+            if name in ('index_html', 'absolute_url', 'content_type'):
+                return getattr(self, name)
+            # extract file path in the zip
+            self.filepath.append(name)
+            self.state += 1
+            return self
+
+    security.declareProtected(View, 'absolute_url')
+    def absolute_url(self):
+        url = self.proxy.absolute_url() + '/' + KEYWORD_VIEW_ZIP
+        if self.state > 0:
+            url += '/' + self.attrname
+        if self.state > 1:
+            url += '/' + '/'.join(self.filepath)
+        return url
+
+    security.declareProtected(View, 'content_type')
+    def content_type(self):
+        if self.state != 2:
+            return None
+        return self.file.content_type
+
+    security.declareProtected(View, 'index_html')
+    def index_html(self, REQUEST, RESPONSE):
+        """Publish the file or image."""
+        filename = self.filepath[0]
+        filepath = '/'.join(self.filepath[1:])
+        key = self.absolute_url()
+        content = zip_cache[key]        # return None if timeout or not present
+        if content is None:
+            LOG('ViewZip', DEBUG, 'extract %s from %s' % (filepath, filename))
+            # XXX this is very ineficiant as str(file.data) load all the
+            # content in memory, ofs file should implement a file-like object
+            # with all stdio methods seek, tell, read, close...
+            # another way will be to use a DiskFile
+            zipfile = ZipFile(StringIO(str(self.file.data)), 'r')
+            try:
+                content = zipfile.read(filepath)
+            except KeyError:
+                LOG('ViewZip', DEBUG,
+                    'not found %s: %s' % (filename, filepath))
+                content = 0
+            # cache for next access
+            zip_cache[key] = content
+        # render content keeping original html base
+        RESPONSE.setBase(None)
+        return content
+
+InitializeClass(ViewZip)
 
 #
 # Serialization
