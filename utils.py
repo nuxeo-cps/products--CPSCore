@@ -337,6 +337,6 @@ def isUserAgentMsie(request):
     an MSIE user agent"""
     user_agent = request.get('HTTP_USER_AGENT')
     if user_agent.find('MSIE') != -1:
-        return True
+        return 1
     else:
-        return False
+        return 0
