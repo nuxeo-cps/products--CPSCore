@@ -686,7 +686,7 @@ class FileDownloader(Acquisition.Explicit):
         # XXX: Note that using edit() modifies the file attribute twice.
         # We shouldn't use the file.PUT() method but it is helpful to get the
         # needed response object.
-        if _isinstance(document, CPSDocumentMixin):
+        if getattr(aq_base(document), '_has_generic_edit_method', 0):
             document.edit({self.attrname: file})
         return response
 
