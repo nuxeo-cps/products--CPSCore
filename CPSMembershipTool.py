@@ -370,10 +370,12 @@ class CPSMembershipTool(MembershipTool):
         if member is None:
             member = self.getAuthenticatedMember()
 
-        portal_directories = getToolByName(self, 'portal_directories')
-        memberEntry = portal_directories.members.getEntry(member.getMemberId())
-        if memberEntry:
-            ret = memberEntry.get('homeless', 0)
+        if hasattr(member, 'getProperty'):
+            ret = member.getProperty('homeless', 0)
+            if ret and ret != '0':
+                ret = 1
+            else:
+                ret = 0
 
         return ret
 
