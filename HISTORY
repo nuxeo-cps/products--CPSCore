@@ -1,4 +1,23 @@
 *******************************************
+** CPSCore V3.1.1 [R1 build 2003-10/18-10:27 by anguenot]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+
+New features:
+~~~~~~~~~~~~~
+-
+
+Bug fixes:
+~~~~~~~~~~
+- P2 #202 Join broken, cannot register any longer.
+
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Cosmetic cleanup.
+- Small changes to README.
+*******************************************
 ** CPSCore V3.1.0 [R1 build 2003-10/03-15:17 by ben]
 
 ZODB Requires:
