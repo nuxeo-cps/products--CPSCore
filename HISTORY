@@ -1,4 +1,24 @@
 *******************************************
+** CPSCore V3.16.1 [R1 build 2004/07/28-09:32 by anguenot]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- fix P1 #368: Republishing a folderishdocument does not update subdocuments.
+- fix P2 #288: Incorrect signature for CPSMembershipTool.searchMembers.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Cleanups in section_content_wf.
+- In WebDAV PUT, try to use the edit() method if the document recognizes
+  _has_generic_edit_method.
+- CPSBase : _checkId from PortalFolder redefined for being able to defined .cps_xxx at the root of the portal too. (actually .whatever stuffs).
+
+*******************************************
 ** CPSCore V3.16.0 [R1 build 2004/07/07-17:06 by madarche]
 
 Requires:

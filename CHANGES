@@ -6,11 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- fix P1 #368: Republishing a folderishdocument does not update subdocuments.
-- fix P2 #288: Incorrect signature for CPSMembershipTool.searchMembers.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Cleanups in section_content_wf.
-- In WebDAV PUT, try to use the edit() method if the document recognizes
-  _has_generic_edit_method.
-- CPSBase : _checkId from PortalFolder redefined for being able to defined .cps_xxx at the root of the portal too. (actually .whatever stuffs).
+-
