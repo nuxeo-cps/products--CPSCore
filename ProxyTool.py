@@ -256,8 +256,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         return repotool.getObjectRevision(docid, rev)
 
     # XXX was def getProxyInfoFromRepoId(self, repoid, workflow_vars=()):
-    security.declarePublic('getProxyInfoFromDocid')
-    def getProxyInfoFromDocid(self, docid, workflow_vars=()):
+    security.declarePublic('getProxyInfosFromDocid')
+    def getProxyInfosFromDocid(self, docid, workflow_vars=()):
         """Get the proxy infos from a docid.
 
         Info is a dict with:
