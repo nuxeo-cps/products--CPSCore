@@ -19,7 +19,7 @@
 """Trees Tool, that caches some information about the site's hierarchies.
 """
 
-from zLOG import LOG, DEBUG
+from zLOG import LOG, DEBUG, ERROR
 from types import DictType
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base, aq_parent, aq_inner
@@ -62,7 +62,6 @@ class TreesTool(UniqueObject, Folder):
             % (event_type, '/'.join(object.getPhysicalPath())))
         if not object.isPrincipiaFolderish:
             return
-        LOG('TreesTool', DEBUG, 'Notifying...')
         for tree in self.objectValues():
             tree.notify_tree(event_type, object, infos)
 
@@ -153,7 +152,7 @@ class TreeCache(SimpleItemWithProperties):
     security.declarePrivate('notify_tree')
     def notify_tree(self, event_type, object, infos):
         """Hook called when the tree changes."""
-        LOG('Tree.notify_tree', DEBUG, 'Event %s for %s'
+        LOG('TreeCache.notify_tree', DEBUG, 'Event %s for %s'
             % (event_type, '/'.join(object.getPhysicalPath())))
         urltool = getToolByName(self, 'portal_url')
         portal = urltool.getPortalObject()
@@ -173,10 +172,11 @@ class TreeCache(SimpleItemWithProperties):
                 rpath = urltool.getRelativeUrl(object) # XXX use infos
                 if rpath != root:
                     return
-                LOG('notify_tree', DEBUG, 'Added a new root %s' % root)
+                LOG('TreeCache.notify_tree', DEBUG,
+                    'Added a new root %s' % root)
                 self.rebuild()
                 return
-            LOG('notify_tree', DEBUG, '  Adding object')
+            LOG('TreeCache.notify_tree', DEBUG, '  Adding object')
             # XXX Here we have to be careful not to readd something
             # we already have, which can happen for a rename: we
             # have already received the sys_order_object event
@@ -185,7 +185,8 @@ class TreeCache(SimpleItemWithProperties):
             id = object.getId()
             for child in tree['children']:
                 if child['id'] == id:
-                    LOG('notify_tree', DEBUG, '   Aha, already there')
+                    LOG('TreeCache.notify_tree', DEBUG,
+                        '   Aha, already there')
                     # Already there.
                     return
             # XXX adds at end... should find from container order.
@@ -203,14 +204,14 @@ class TreeCache(SimpleItemWithProperties):
                 rpath = urltool.getRelativeUrl(object)
                 if rpath != root:
                     return
-                LOG('notify_tree', DEBUG, 'Deleting root %s' % root)
+                LOG('TreeCache.notify_tree', DEBUG, 'Deleting root %s' % root)
                 self._clear()
                 return
             id = object.getId()
             children = tree['children']
             for i in range(len(children)):
                 if children[i]['id'] == id:
-                    LOG('notify_tree', DEBUG, '  Del pos %s' % i)
+                    LOG('TreeCache.notify_tree', DEBUG, '  Del pos %s' % i)
                     children.pop(i)
                     rebuild = 1
                     break
@@ -219,7 +220,6 @@ class TreeCache(SimpleItemWithProperties):
             tree = self._find_tree(container)
             if tree is None:
                 return
-            LOG('notify_tree', DEBUG, '  Found tree')
             # XXX We recompute the whole subtree, we could be more intelligent
             depth = tree['depth']
             children = self._get_children(container, depth+1, plen)
@@ -228,11 +228,9 @@ class TreeCache(SimpleItemWithProperties):
         else: # event_type in ('sys_modify_security', 'modify_object')
             tree = self._find_tree(object)
             if tree is None:
-                LOG('notify_tree', DEBUG, '  Not found tree')
                 return
-            LOG('notify_tree', DEBUG, '  Found tree')
             info = self._get_info(object, plen)
-            LOG('notify_tree', DEBUG, '  Updating info %s' % `info`)
+            LOG('TreeCache.notify_tree', DEBUG, '  Updating info %s' % `info`)
             # Ensure script-provided data doesn't conflict.
             for k in ('depth', 'children'):
                 if info.has_key(k):
