@@ -178,13 +178,9 @@ class CPSMembershipTool(MembershipTool):
         if recursive:
             path = '/'.join(obj.getPhysicalPath())
             user_ids = ['user:%s' % id for id in member_ids]
-            LOG('CPSMembershipTool.deleteLocalRoles', DEBUG,
-                "Search localUsersWithRoles from %s for %s" % (path, user_ids))
             portal_catalog = getToolByName(self, 'portal_catalog')
             results = portal_catalog(cps_filter_sets='searchable', path=path,
                                      localUsersWithRoles=user_ids)
-            LOG("\n\nCPSMembershipTool.deleteLocalRoles\n\n", DEBUG,
-                str([r.id for r in results]))
             for brain in results:
                 ob = brain.getObject()
                 ob.manage_delLocalRoles(userids=member_ids)
