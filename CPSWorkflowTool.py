@@ -389,7 +389,7 @@ class CPSWorkflowTool(WorkflowTool):
             % (ob.getId(), initial_transition, initial_behavior))
         if not _isinstance(ob, ProxyBase):
             LOG('_insertWorkflowRecursive', DEBUG, "  Is not a proxy")
-            return # XXX correct?
+            #return # XXX correct?
         self._insertWorkflow(ob, initial_transition, initial_behavior, kwargs)
         for subob in ob.objectValues():
             self._insertWorkflowRecursive(subob, initial_transition,
