@@ -12,3 +12,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - code re-indent sf
+- action isproxytype become cps_proxytype property
