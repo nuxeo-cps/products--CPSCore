@@ -9,4 +9,4 @@ Bug fixes:
 - Make sure the home folder is never acquired.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Centralized declaration of roles allowed to manage local roles
