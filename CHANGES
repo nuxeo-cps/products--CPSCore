@@ -17,3 +17,4 @@ New internal features:
 - Move files related to permissions around.
 - Cleanup the API for role-related utility functions in utils.
 - Removed unused variable.
+- Added an optional revision parameter to getContent.

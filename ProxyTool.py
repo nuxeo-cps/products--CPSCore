@@ -222,13 +222,15 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         return lang, language_revs[lang]
 
     security.declarePrivate('getContent')
-    def getContent(self, proxy, lang=None, editable=0):
+    def getContent(self, proxy, lang=None, revision=None, editable=0):
         """Get the object best matched by a given proxy.
 
         Returns the object.
         Raises KeyError if the language cannot be found.
 
         If lang is not passed, takes into account the user language.
+
+        If revision is passed, this specific revision is returned.
 
         If editable, the returned content must be an unfrozen version,
         so a cloning and a version upgrade may happen behind the scene.
@@ -243,6 +245,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         lang, rev = self.getBestRevision(proxy, lang=lang)
         if lang is None:
             return None # Proxy not yet finished.
+
+        if revision is not None:
+            rev = revision
 
         if editable:
             newob, newrev = repotool.getUnfrozenRevision(docid, rev)
@@ -512,6 +517,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 continue
             ob = portal.unrestrictedTraverse(rpath)
             merged = mergedLocalRoles(ob, withgroups=1).items()
+            LOG('_setSecurityOnRevision', DEBUG, ' rpath=%s merged=%s' %
+                (rpath, merged))
             for perm in allperms:
                 proles = rolesForPermissionOn(perm, ob)
                 for user, lroles in merged:
