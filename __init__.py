@@ -55,6 +55,7 @@ import ObjectRepositoryTool
 import CPSWorkflowTool
 import TreesTool
 import CPSMembershipTool
+import OrderedFolderSupportPatch
 
 from CPSWorkflowConfiguration import CPSWorkflowConfiguration
 from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
