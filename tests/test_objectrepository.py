@@ -101,10 +101,10 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
 
         # Remove rest one by one
         ortool.delObjectRevision('ahah', 1)
-        self.assertEqual(tuple(ortool.listAll()), (('ahah', 2),))
+        self.assertEqual(ortool.listAll(), [('ahah', 2)])
         self.assertEquals(ortool.listDocids(), ['ahah'])
         ortool.delObjectRevision('ahah', 2)
-        self.assertEqual(tuple(ortool.listAll()), ())
+        self.assertEqual(ortool.listAll(), [])
         self.assertEquals(ortool.listDocids(), [])
 
 

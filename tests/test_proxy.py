@@ -92,20 +92,20 @@ class ProxyToolTest(SecurityRequestTest):
 
     def test_add_del_modify(self):
         ptool = self.root.portal_proxies
-        self.assertEqual(tuple(ptool.listProxies()), ())
+        self.assertEqual(ptool.listProxies(), [])
 
         proxy1 = ProxyBase(language_revs={'*': 78})
         proxy2 = ProxyBase(language_revs={'*': 90})
 
         ptool._addProxy(proxy1, '123')
-        self.assertEquals(tuple(ptool.listProxies()),
-            (('123', (None, {'*': 78})),))
+        self.assertEquals(ptool.listProxies(),
+            [('123', (None, {'*': 78}))])
 
         # Check that we can't add two proxies with same id
         self.assertRaises(ValueError, ptool._addProxy, proxy2, '123')
         # No side effects
-        self.assertEquals(tuple(ptool.listProxies()),
-            (('123', (None, {'*': 78})),))
+        self.assertEquals(ptool.listProxies(),
+            [('123', (None, {'*': 78}))])
 
         ptool._addProxy(proxy2, '456')
         items = ptool.listProxies()
@@ -119,8 +119,8 @@ class ProxyToolTest(SecurityRequestTest):
             [('123', (None, {'*': 78}))])
 
         ptool._modifyProxy(proxy2, '123')
-        self.assertEquals(tuple(ptool.listProxies()),
-            (('123', (None, {'*': 90})),))
+        self.assertEquals(ptool.listProxies(),
+            [('123', (None, {'*': 90}))])
         ptool._delProxy('123')
         self.assertEquals(len(ptool.listProxies()), 0)
 
