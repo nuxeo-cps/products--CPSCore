@@ -3,14 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
-- Made it possible for MSIE to download OpenOffice.org files in restricted
-  access areas.
+-
 Bug fixes:
 ~~~~~~~~~~
-- Fixed the naming problem that was causing in the log file the alert 
-  "Init Ambiguous name for method != 'manage_main'".
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Using PNG files instead of GIF files.
-- optimization: docid generation should be faster
-
+-
