@@ -50,7 +50,7 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
         self.root.id = 'root'
         root = self.root
 
-        from Products.NuxCPS3.ObjectRepositoryTool import ObjectRepositoryTool
+        from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
         ortool = ObjectRepositoryTool()
         root._setObject('portal_repository', ortool)
 

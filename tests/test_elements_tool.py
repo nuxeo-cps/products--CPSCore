@@ -12,7 +12,7 @@ from AccessControl.SecurityManager import setSecurityPolicy
 from Testing.makerequest import makerequest
 from security import PermissiveSecurityPolicy, AnonymousUser
 
-from Products.NuxCPS3.ElementsTool import ElementsTool
+from Products.CPSCore.ElementsTool import ElementsTool
 
 class ElementsToolTest(unittest.TestCase):
     """\

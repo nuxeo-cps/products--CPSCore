@@ -27,10 +27,10 @@ from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 from OFS.Folder import Folder
 from OFS.SimpleItem import SimpleItem
 
-from Products.NuxCPS3.CPSWorkflow import CPSWorkflowDefinition
-from Products.NuxCPS3.CPSWorkflow import TRIGGER_CREATION
-from Products.NuxCPS3.CPSWorkflowConfiguration import addCPSWorkflowConfiguration
-from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
+from Products.CPSCore.CPSWorkflow import CPSWorkflowDefinition
+from Products.CPSCore.CPSWorkflow import TRIGGER_CREATION
+from Products.CPSCore.CPSWorkflowConfiguration import addCPSWorkflowConfiguration
+from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
 
 
 class Dummy(SimpleItem):
@@ -75,7 +75,7 @@ class WorkflowToolTests(SecurityRequestTest):
         from Products.CMFCore.WorkflowTool import addWorkflowFactory
         addWorkflowFactory(CPSWorkflowDefinition, id='cps wfdef')
 
-        from Products.NuxCPS3.CPSWorkflowTool import addCPSWorkflowTool
+        from Products.CPSCore.CPSWorkflowTool import addCPSWorkflowTool
         addCPSWorkflowTool(root)
 
     def tearDown( self ):

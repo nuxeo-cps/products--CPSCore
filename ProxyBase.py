@@ -33,11 +33,11 @@ from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
-from Products.NuxCPS3.cpsutils import _isinstance
+from Products.CPSCore.cpsutils import _isinstance
 
-from Products.NuxCPS3.EventServiceTool import getEventService
-from Products.NuxCPS3.CPSBase import CPSBaseFolder
-from Products.NuxCPS3.CPSBase import CPSBaseDocument
+from Products.CPSCore.EventServiceTool import getEventService
+from Products.CPSCore.CPSBase import CPSBaseFolder
+from Products.CPSCore.CPSBase import CPSBaseDocument
 
 
 class ProxyBase(Base):
@@ -462,7 +462,7 @@ factory_type_information = (
      'description': 'A proxy to a folder.',
      'title': '',
      'content_icon': 'folder_icon.gif',
-     'product': 'NuxCPS3',
+     'product': 'CPSCore',
      'meta_type': 'CPS Proxy Folder',
      'factory': 'addProxyFolder',
      'immediate_view': '',
@@ -474,7 +474,7 @@ factory_type_information = (
      'description': 'A proxy to a document.',
      'title': '',
      'content_icon': 'document_icon.gif',
-     'product': 'NuxCPS3',
+     'product': 'CPSCore',
      'meta_type': 'CPS Proxy Document',
      'factory': 'addProxyDocument',
      'immediate_view': '',
@@ -486,7 +486,7 @@ factory_type_information = (
      'description': 'A proxy to a folderish document.',
      'title': '',
      'content_icon': 'folder_icon.gif',
-     'product': 'NuxCPS3',
+     'product': 'CPSCore',
      'meta_type': 'CPS Proxy Folderish Document',
      'factory': 'addProxyFolderishDocument',
      'immediate_view': '',

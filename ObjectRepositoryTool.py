@@ -37,8 +37,8 @@ from Products.CMFCore.PortalFolder import PortalFolder
 from Products.DCWorkflow.utils import modifyRolesForPermission
 from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2
 
-from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
-from Products.NuxCPS3.CPSTypes import TypeConstructor, TypeContainer
+from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
+from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
 
 
 class NoWorkflowConfiguration:

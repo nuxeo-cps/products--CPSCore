@@ -32,22 +32,22 @@ from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
-from Products.NuxCPS3.cpsutils import _isinstance
+from Products.CPSCore.cpsutils import _isinstance
 
-from Products.NuxCPS3.ProxyBase import ProxyBase, ProxyFolderishDocument
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_CREATE
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_DELETE
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_MOVE
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_COPY
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_PUBLISHING
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_CHECKOUT
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_CREATE
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_MOVE
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_COPY
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_PUBLISHING
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_CHECKOUT
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOW_CHECKIN
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_PUBLISHING
+from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolderishDocument
+from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOWSUB_CREATE
+from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOWSUB_DELETE
+from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOWSUB_MOVE
+from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOWSUB_COPY
+from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOWSUB_PUBLISHING
+from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOWSUB_CHECKOUT
+from Products.CPSCore.CPSWorkflow import TRANSITION_INITIAL_CREATE
+from Products.CPSCore.CPSWorkflow import TRANSITION_INITIAL_MOVE
+from Products.CPSCore.CPSWorkflow import TRANSITION_INITIAL_COPY
+from Products.CPSCore.CPSWorkflow import TRANSITION_INITIAL_PUBLISHING
+from Products.CPSCore.CPSWorkflow import TRANSITION_INITIAL_CHECKOUT
+from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOW_CHECKIN
+from Products.CPSCore.CPSWorkflow import TRANSITION_BEHAVIOR_PUBLISHING
 
 
 CPSWorkflowConfig_id = '.cps_workflow_configuration'

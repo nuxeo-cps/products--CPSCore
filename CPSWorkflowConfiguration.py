@@ -33,7 +33,7 @@ from Products.CMFCore.utils import getToolByName
 
 from CPSWorkflowPermissions import ManageWorkflows
 
-from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
+from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
 
 
 class CPSWorkflowConfiguration(SimpleItem):

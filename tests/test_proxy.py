@@ -43,7 +43,7 @@ class ProxyToolTests(SecurityRequestTest):
         self.root.id = 'root'
         root = self.root
 
-        from Products.NuxCPS3.ProxyTool import ProxyTool
+        from Products.CPSCore.ProxyTool import ProxyTool
         ptool = ProxyTool()
         root._setObject('portal_proxies', ptool)
 

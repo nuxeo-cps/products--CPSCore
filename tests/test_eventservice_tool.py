@@ -12,7 +12,7 @@ from AccessControl.SecurityManager import setSecurityPolicy
 from Testing.makerequest import makerequest
 from security import PermissiveSecurityPolicy, AnonymousUser
 
-from Products.NuxCPS3.EventServiceTool import EventServiceTool
+from Products.CPSCore.EventServiceTool import EventServiceTool
 
 class EventServiceToolTest(unittest.TestCase):
     """\

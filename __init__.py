@@ -85,7 +85,7 @@ def initialize(registrar):
     utils.ToolInit(
         'CPS Tools',
         tools = tools,
-        product_name = 'NuxCPS3',
+        product_name = 'CPSCore',
         icon = 'tool.gif',
     ).initialize(registrar)
 

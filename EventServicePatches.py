@@ -22,7 +22,7 @@
 
 from zLOG import LOG, DEBUG
 from Acquisition import aq_base
-from Products.NuxCPS3.EventServiceTool import getEventService
+from Products.CPSCore.EventServiceTool import getEventService
 
 
 def notify(context, event_type, object, *args, **kw):

@@ -42,9 +42,9 @@ from Products.DCWorkflow.Transitions import TRIGGER_USER_ACTION
 from Products.DCWorkflow.Expression import StateChangeInfo
 from Products.DCWorkflow.Expression import createExprContext
 
-from Products.NuxCPS3.EventServiceTool import getEventService
-from Products.NuxCPS3.cpsutils import _isinstance
-from Products.NuxCPS3.ProxyBase import ProxyBase
+from Products.CPSCore.EventServiceTool import getEventService
+from Products.CPSCore.cpsutils import _isinstance
+from Products.CPSCore.ProxyBase import ProxyBase
 
 #TRANSITION_BEHAVIOR_SUBCREATE = 1
 #TRANSITION_BEHAVIOR_CLONE = 2

@@ -1,5 +1,5 @@
 
-from Products.NuxCPS3.ElementsMapping import ElementsMapping
+from Products.CPSCore.ElementsMapping import ElementsMapping
 
 class DummyRequest:
     def __init__(self):

@@ -36,8 +36,8 @@ from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 
-from Products.NuxCPS3.EventServiceTool import getEventService
-from Products.NuxCPS3.CPSTypes import TypeConstructor, TypeContainer
+from Products.CPSCore.EventServiceTool import getEventService
+from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
 
 
 defaultencoding = sys.getdefaultencoding()

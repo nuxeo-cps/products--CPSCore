@@ -36,11 +36,11 @@ from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
-from Products.NuxCPS3.cpsutils import _isinstance
+from Products.CPSCore.cpsutils import _isinstance
 
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
-from Products.NuxCPS3.ProxyBase import ProxyBase
-from Products.NuxCPS3.EventServiceTool import getEventService
+from Products.CPSCore.ProxyBase import ProxyBase
+from Products.CPSCore.EventServiceTool import getEventService
 
 
 class ProxyTool(UniqueObject, SimpleItemWithProperties):
