@@ -45,6 +45,13 @@ if 'cps_proxy_type' not in ftiprops_ids:
         )
     FTI.cps_proxy_type = ''
 
+if 'cps_display_as_document_in_listing' not in ftiprops_ids:
+    FTI._properties = FTI._properties + (
+        {'id':'cps_display_as_document_in_listing', 'type': 'boolean', 'mode':'w',
+         'label':'CPS Display as document in listing'},
+        )
+    FTI.cps_display_as_document_in_listing = 0
+
 
 def getProxyTypesAllowed(self):
     """ return the list of allowed portal types strings """
