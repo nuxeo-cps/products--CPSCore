@@ -64,6 +64,8 @@ import CPSRegistrationTool
 import OrderedFolderSupportPatch
 import CopyrightPatch
 
+import TransactionCommitSubscribers
+
 import ProxyBase
 
 tools = (
