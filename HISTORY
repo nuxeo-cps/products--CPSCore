@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.15.3 [R1 build 2004/07/07-12:04 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Adding missing import in utils
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.15.2 [R1 build 2004/07/07-09:12 by madarche]
 
 Requires:
