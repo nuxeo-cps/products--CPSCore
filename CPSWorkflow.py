@@ -74,7 +74,7 @@ TRANSITION_BEHAVIOR_PUBLISHING = 34
 TRANSITION_BEHAVIOR_CHECKOUT = 35
 TRANSITION_BEHAVIOR_CHECKIN = 36
 TRANSITION_BEHAVIOR_FREEZE = 37
-
+TRANSITION_BEHAVIOR_MERGE = 38
 
 
 class CPSStateDefinition(DCWFStateDefinition):
@@ -320,7 +320,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 raise WorkflowException("Missing language_map for "
                                         "checkout transition=%s" %
                                         tdef.getId())
-
         if TRANSITION_BEHAVIOR_CHECKIN in behavior:
             dest_objects = kwargs.get('dest_objects')
             if dest_objects is None:
@@ -366,8 +365,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         #
         evtool = getEventService(self)
         # XXX pass a whole sci ?
-        infos = {'kw': kwargs}
-        evtool.notify('workflow_%s' % tdef.getId(), ob, infos)
+        evtool.notify('workflow_%s' % tdef.getId(), ob, {'kw': kwargs})
         #
         ###
 
@@ -386,7 +384,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         ### CPS: Behavior.
         #
 
-        do_delete = 0
+        delete_ob = None
 
         if TRANSITION_BEHAVIOR_MOVE in behavior:
             raise NotImplementedError
@@ -408,7 +406,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             for dest_object in dest_objects:
                 wftool.checkinObject(ob, dest_object, checkin_transition)
             # Now delete the original object.
-            do_delete = 1
+            delete_ob = ob
 
         if TRANSITION_BEHAVIOR_FREEZE in behavior:
             # Freeze the object.
@@ -418,7 +416,18 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 ob.proxyChanged()
 
         if TRANSITION_BEHAVIOR_DELETE in behavior:
-            do_delete = 1
+            delete_ob = ob
+
+        if TRANSITION_BEHAVIOR_MERGE in behavior:
+            container = aq_parent(aq_inner(ob))
+            dest_ob = wftool.mergeObject(ob, container,
+                                         self.state_var, new_state)
+            if dest_ob is not None:
+                delete_ob = ob
+                # Provide info to the UI to get a correct redirect.
+                res = ('ObjectMoved', utool.getRelativeUrl(dest_ob))
+                moved_exc = ObjectMoved(dest_ob, res)
+                ob = dest_ob
         #
         ###
 
@@ -464,10 +473,13 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
         ### CPS: Delete. Done after setting status, to keep history.
         #
-        if do_delete:
-            container = aq_parent(aq_inner(ob))
-            container._delObject(ob.getId())
-            raise ObjectDeleted
+        if delete_ob is not None:
+            container = aq_parent(aq_inner(delete_ob))
+            container._delObject(delete_ob.getId())
+            if moved_exc is not None:
+                raise moved_exc
+            else:
+                raise ObjectDeleted
         #
         ###
 

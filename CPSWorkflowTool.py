@@ -418,6 +418,102 @@ class CPSWorkflowTool(WorkflowTool):
         pxtool.checkinRevisions(ob, dest_ob)
         self.doActionFor(dest_ob, transition)
 
+    security.declarePrivate('mergeObject')
+    def mergeObject(self, ob, dest_container, state_var, new_state):
+        """Merge a proxy into some existing one.
+
+        Merging is the act of adding the revisions of a proxy into an
+        existing one in the same container.
+
+        Returns the destination object, or None if no merging was found.
+
+        Does not do deletion of the source object. The destination
+        object is guaranteed to be different than the source.
+
+        (Called by CPSWorkflow during merge transition.)
+        """
+        dest_ob, None = self._checkObjectMergeable(ob, dest_container,
+                                                   state_var, new_state)
+        if dest_ob is not None:
+            pxtool = getToolByName(self, 'portal_proxies')
+            pxtool.checkinRevisions(ob, dest_ob)
+        return dest_ob
+
+    security.declarePublic('isObjectMergeable')
+    def isObjectMergeable(self, ob, dest_container, state_var, new_state):
+        """Check if a proxy can be merged into some existing one
+        in the destination container.
+
+        dest_container can be an rpath.
+
+        Returns the destination rpath, and language_revs, or None, None
+        """
+        dest_ob, language_revs = self._checkObjectMergeable(ob, dest_container,
+                                                            state_var,
+                                                            new_state)
+        if dest_ob is not None:
+            utool = getToolByName(self, 'portal_url')
+            return utool.getRelativeUrl(dest_ob), language_revs
+        else:
+            return None, None
+
+    security.declarePrivate('_checkObjectMergeable')
+    def _checkObjectMergeable(self, ob, dest_container, state_var, new_state):
+        """Check if a proxy can be merged into some existing one
+        in the destination container.
+
+        dest_container can be an rpath.
+
+        Return the destination proxy and language_revs, or None, None.
+        """
+        LOG('_checkObjectMergeable', DEBUG,
+            'check ob=%s dest=%s var=%s state=%s'
+            % (ob.getId(), dest_container, state_var, new_state))
+        if not _isinstance(ob, ProxyBase):
+            LOG('_checkObjectMergeable', DEBUG, ' Not a proxy')
+            return None, None
+
+        utool = getToolByName(self, 'portal_url')
+        pxtool = getToolByName(self, 'portal_proxies')
+
+        rpath = utool.getRelativeUrl(ob)
+        if isinstance(dest_container, StringType):
+            container_rpath = dest_container
+        else:
+            container_rpath = utool.getRelativeUrl(dest_container)
+        if container_rpath:
+            container_rpath += '/'
+        infos = pxtool.getProxyInfosFromDocid(ob.getDocid(),
+                                              [state_var])
+        dest_ob = None
+        language_revs = None
+        for info in infos:
+            dob = info['object']
+            drpath = info['rpath']
+            if drpath != container_rpath+dob.getId():
+                # Proxy not in the dest container.
+                LOG('_checkObjectMergeable', DEBUG,
+                    '  Not in dest: %s' % drpath)
+                continue
+            if info[state_var] != new_state:
+                # Proxy not in the correct state.
+                LOG('_checkObjectMergeable', DEBUG,
+                    '  Bad state=%s: %s' % (info[state_var], drpath))
+                continue
+            if drpath == rpath:
+                # Skip ourselves.
+                LOG('_checkObjectMergeable', DEBUG,
+                    '  Ourselves: %s' % drpath)
+                continue
+            # Get the first one that matches.
+            dest_ob = dob
+            language_revs = info['language_revs']
+            LOG('_checkObjectMergeable', DEBUG, ' Found %s' % drpath)
+            break
+        if dest_ob is None:
+            LOG('_checkObjectMergeable', DEBUG, ' NotFound')
+        return dest_ob, language_revs
+
     #
     # Constrained workflow transitions for folderish documents.
     #
@@ -431,9 +527,10 @@ class CPSWorkflowTool(WorkflowTool):
         # Don't recurse for initial transitions! # XXX urgh
         isproxyfolderishdoc = _isinstance(ob, ProxyFolderishDocument)
         if isproxyfolderishdoc and not kw.has_key('clone_data'):
-            self._doActionForRecursive(ob, action, wf_id=wf_id, *args, **kw)
+            return self._doActionForRecursive(ob, action, wf_id=wf_id,
+                                              *args, **kw)
         else:
-            self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
+            return self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
 
     security.declarePrivate('_doActionFor')
     def _doActionFor(self, ob, action, wf_id=None, *args, **kw):

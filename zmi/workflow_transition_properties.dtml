@@ -186,6 +186,15 @@ Initiated by WorkflowMethod
         Delete object
       </td>
     </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="38"
+            <dtml-if "38 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Merge object with existing in same state
+      </td>
+    </tr>
     <tr valign="top">
       <td>
         <input type="checkbox" name="transition_behavior:int:list" value="34"

@@ -61,6 +61,8 @@
          <code><dtml-var "', '.join(checkin_allowed_transitions)" html_quote></code>)
        <dtml-elif "behavior == 37">
          Freeze object
+       <dtml-elif "behavior == 38">
+         Merge object
        </dtml-if>
        <dtml-unless sequence-end>
        ;
