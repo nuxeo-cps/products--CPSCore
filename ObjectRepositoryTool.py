@@ -203,6 +203,14 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
             version_infos.append(version_info)
         return version_infos
 
+    security.declarePublic('getRepoIdAndVersionFromId')
+    def getRepoIdAndVersionFromId(self, id):
+        """Get repoid and version_info from an id."""
+        if hasattr(self, id):
+            return self._split_id(id)
+        else:
+            return (None, None)
+
     security.declarePrivate('freezeVersion')
     def freezeVersion(self, repoid, version_info):
         """Freeze a version of a document.

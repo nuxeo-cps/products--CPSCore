@@ -149,6 +149,21 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                     infos.setdefault(hubid, []).append(lang)
         return infos
 
+    security.declarePublic('getProxiesFromId')
+    def getProxiesFromId(self, id):
+        """Get the proxy infos from a repo id (gotten from the catalog)."""
+        repotool = getToolByName(self, 'portal_repository')
+        hubtool = getToolByName(self, 'portal_eventservice')
+        repoid, version_info = repotool.getRepoIdAndVersionFromId(id)
+        if repoid is None:
+            return {}
+        infos = self.getMatchingProxies(repoid, version_info)
+        res = {}
+        for hubid, langs in infos.items():
+            rpath = hubtool.getLocation(hubid, relative=1)
+            res[rpath] = langs
+        return res
+
     security.declarePrivate('freezeProxy')
     def freezeProxy(self, hubid):
         """Freeze a proxy.
