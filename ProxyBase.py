@@ -30,6 +30,7 @@ import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
 from OFS.Image import File
+from webdav.WriteLockInterface import WriteLockInterface
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import View
@@ -226,7 +227,7 @@ class ProxyBase(Base):
         if name == KEYWORD_DOWNLOAD_FILE:
             downloader = FileDownloader(ob, self)
             return downloader.__of__(self)
-        #LOG('ProxyBase.getitem', TRACE, '  Aha, retrieved %s from doc' % name)
+        #LOG('ProxyBase.getitem', TRACE, "  Aha, retrieved %s from doc" % name)
         try:
             res = getattr(ob, name)
         except AttributeError:
@@ -327,7 +328,7 @@ class ProxyBase(Base):
                 stuff[k] = v
                 continue
             LOG('ProxyBase', DEBUG,
-                'Warning: serialize of %s found unknown %s=%s'
+                "Warning: serialize of %s found unknown %s=%s"
                 % (self.getId(), k, v))
             stuff[k] = v # Serialize it anyway
         # now serialize stuff
@@ -370,7 +371,7 @@ class ProxyBase(Base):
     # overloaded
     def reindexObject(self, idxs=[]):
         """Called to reindex when the object has changed."""
-        LOG('ProxyBase', DEBUG, 'reindex idxs=%s for %s'
+        LOG('ProxyBase', DEBUG, "reindex idxs=%s for %s"
             % (idxs, '/'.join(self.getPhysicalPath())))
         if not idxs or 'allowedRolesAndUsers' in idxs:
             # XXX should use an event for that
@@ -382,7 +383,7 @@ class ProxyBase(Base):
     # overloaded
     def reindexObjectSecurity(self):
         """Called to security-related indexes."""
-        LOG('ProxyBase', DEBUG, 'reindex security for %s'
+        LOG('ProxyBase', DEBUG, "reindex security for %s"
             % '/'.join(self.getPhysicalPath()))
         # XXX should use an event for that
         self._setSecurityRecursive(self)
@@ -526,6 +527,8 @@ class FileDownloader(Acquisition.Explicit):
     Parses URLs of the form .../downloadFile/attrname/mydocname.pdf
     """
 
+    __implements__ = (WriteLockInterface,)
+
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
@@ -555,7 +558,7 @@ class FileDownloader(Acquisition.Explicit):
     def __bobo_traverse__(self, request, name):
         state = self.state
         ob = self.ob
-        LOG('FileDownloader.getitem', DEBUG, 'state=%s name=%s'
+        LOG('FileDownloader.getitem', DEBUG, "state=%s name=%s"
             % (state, name))
         if state == 0:
             # First call, swallow attribute
@@ -579,7 +582,8 @@ class FileDownloader(Acquisition.Explicit):
             self.state = 2
             self.meta_type = getattr(self.file, 'meta_type', '')
             return self
-        elif name in ('index_html', 'absolute_url', 'content_type', 'HEAD', 'PUT'):
+        elif name in ('index_html', 'absolute_url', 'content_type',
+                      'HEAD', 'PUT', 'LOCK', 'UNLOCK',):
             return getattr(self, name)
         else:
             raise KeyError(name)
@@ -637,13 +641,56 @@ class FileDownloader(Acquisition.Explicit):
     security.declareProtected(ModifyPortalContent, 'PUT')
     def PUT(self, REQUEST, RESPONSE):
         """Handle HTTP (and presumably FTP?) PUT requests (WebDAV)."""
-        LOG('FileDownloader', DEBUG, 'PUT()')
+        LOG('FileDownloader', DEBUG, "PUT()")
         if self.state != 2:
-            LOG('ProxyBase', DEBUG, 'BadRequest: Cannot PUT with state != 2')
-            raise 'BadRequest', 'Cannot PUT with state != 2'
+            LOG('ProxyBase', DEBUG, "BadRequest: Cannot PUT with state != 2")
+            raise 'BadRequest', "Cannot PUT with state != 2"
         document = self.proxy.getEditableContent()
         file = getattr(document, self.attrname)
         return file.PUT(REQUEST, RESPONSE)
+
+    security.declareProtected(ModifyPortalContent, 'LOCK')
+    def LOCK(self, REQUEST, RESPONSE):
+        """Handle HTTP (and presumably FTP?) LOCK requests (WebDAV)."""
+        LOG('FileDownloader', DEBUG, "LOCK()")
+        if self.state != 2:
+            LOG('ProxyBase', DEBUG, "BadRequest: Cannot LOCK with state != 2")
+            raise 'BadRequest', "Cannot LOCK with state != 2"
+        document = self.proxy.getEditableContent()
+        file = getattr(document, self.attrname)
+        return file.LOCK(REQUEST, RESPONSE)
+
+    security.declareProtected(ModifyPortalContent, 'UNLOCK')
+    def UNLOCK(self, REQUEST, RESPONSE):
+        """Handle HTTP (and presumably FTP?) UNLOCK requests (WebDAV)."""
+        LOG('FileDownloader', DEBUG, "UNLOCK()")
+        if self.state != 2:
+            LOG('ProxyBase', DEBUG, "BadRequest: Cannot UNLOCK with state != 2")
+            raise 'BadRequest', "Cannot UNLOCK with state != 2"
+        document = self.proxy.getEditableContent()
+        file = getattr(document, self.attrname)
+        return file.UNLOCK(REQUEST, RESPONSE)
+
+    def wl_lockValues(self, killinvalids=0):
+        """Handle HTTP (and presumably FTP?) wl_lockValues requests (WebDAV)."""
+        LOG('FileDownloader', DEBUG, "wl_lockValues()")
+        if self.state != 2:
+            LOG('ProxyBase', DEBUG, "BadRequest: Cannot wl_lockValues with state != 2")
+            raise 'BadRequest', "Cannot wl_lockValues with state != 2"
+        document = self.proxy.getEditableContent()
+        file = getattr(document, self.attrname)
+        return file.wl_lockValues(killinvalids)
+
+    def wl_isLocked(self):
+        """Handle HTTP (and presumably FTP?) wl_isLocked requests (WebDAV)."""
+        LOG('FileDownloader', DEBUG, "wl_isLocked()")
+        if self.state != 2:
+            LOG('ProxyBase', DEBUG, "BadRequest: Cannot wl_isLocked with state != 2")
+            raise 'BadRequest', "Cannot wl_isLocked with state != 2"
+        document = self.proxy.getEditableContent()
+        file = getattr(document, self.attrname)
+        return file.wl_isLocked()
+
 
 InitializeClass(FileDownloader)
 
