@@ -816,7 +816,7 @@ class CPSWorkflowTool(WorkflowTool):
         """
         return self.getDelegateesDataStructures(ob).get(stack_id)
 
-    security.declarePublic('canManageStackFor')
+    security.declarePublic('canManageStack')
     def canManageStack(self, ob, stack_id):
         """Can the authenticated use or the user given it's member_id
         manage the stack given its id.
