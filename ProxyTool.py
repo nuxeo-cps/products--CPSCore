@@ -411,7 +411,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """Get info about the archived revisions for a docid.
 
         Returns a list of dicts with info:
-          rev, lang, modified, rpaths, is_frozen
+          rev, lang, modified, rpaths, is_frozen, is_archived
 
         (Called by ProxyBase.)
         """
@@ -445,9 +445,28 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 'modified': modified,
                 'rpaths': rpaths,
                 'is_frozen': is_frozen,
+                'is_archived': not rpaths,
                 }
             res.append(info)
         return res
+
+    security.declarePrivate('delProxyArchivedRevisions')
+    def delProxyArchivedRevisions(self, proxy, revs):
+        """Delete some archived revisions of a proxy.
+        """
+        repotool = getToolByName(self, 'portal_repository')
+        docid = proxy.getDocid()
+
+        # Check that revs are really archived.
+        for rev in revs:
+            if not repotool.hasObjectRevision(docid, rev):
+                raise ValueError("Revision %s does not exist" % rev)
+            rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
+            if rpaths:
+                raise ValueError("Revision %s is not archived" % rev)
+        # Delete
+        for rev in revs:
+            repotool.delObjectRevision(docid, rev)
 
     security.declarePrivate('revertProxyToRevisions')
     def revertProxyToRevisions(self, proxy, language_revs, freeze):

@@ -469,6 +469,13 @@ class ProxyBase(Base):
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool.revertProxyToRevisions(self, language_revs, freeze)
 
+    security.declareProtected(ModifyPortalContent, 'delArchivedRevisions')
+    def delArchivedRevisions(self, revs):
+        """Delete some archived revisions of this proxy.
+        """
+        pxtool = getToolByName(self, 'portal_proxies')
+        pxtool.delProxyArchivedRevisions(self, revs)
+
     security.declareProtected(View, 'getArchivedInfos')
     def getArchivedInfos(self):
         """Get info about the archived revisions for this proxy.
