@@ -390,7 +390,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
         The container is the context in which the guard is evaluated.
         """
-        LOG('WF', DEBUG, 'wf=%s get crtr' % self.getId())
+        LOG('WF', DEBUG, 'wf=%s get creationtransitions' % self.getId())
         res = []
         for tdef in self.transitions.values():
             LOG('WF', DEBUG, '  trans %s' % tdef.getId())
