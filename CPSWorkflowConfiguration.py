@@ -79,27 +79,18 @@ class CPSWorkflowConfiguration(SimpleItem):
         Returns None if no placeful chain is found.
         Acquires from parent configurations if needed.
         """
-        LOG('CPSWFCFG', DEBUG, 'getpl url=%s pt=%s start=%s'
-            % (self.absolute_url(), portal_type, start_here))
         if not start_here:
-            LOG('CPSWFCFG', DEBUG, 'under')
             if self._chains_by_type_under.has_key(portal_type):
                 chain = self._chains_by_type_under[portal_type]
-                LOG('CPSWFCFG', DEBUG, ' got chain %s' % `chain`)
                 return self._get_chain_or_default(portal_type, chain)
-            LOG('CPSWFCFG', DEBUG, ' no chain')
-        LOG('CPSWFCFG', DEBUG, 'local')
         if self._chains_by_type.has_key(portal_type):
             chain = self._chains_by_type[portal_type]
-            LOG('CPSWFCFG', DEBUG, ' got chain %s' % `chain`)
             return self._get_chain_or_default(portal_type, chain)
-        LOG('CPSWFCFG', DEBUG, 'no chain, ask above')
         # Ask above.
         parent = aq_parent(aq_inner(aq_parent(aq_inner(self))))
         try:
             higher_conf = parent.aq_acquire(CPSWorkflowConfig_id,
                                             containment=1)
-            LOG('CPSWFCFG', DEBUG, 'found in parent...')
         except AttributeError:
             # Nothing placeful found.
             return None
