@@ -17,19 +17,11 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Event Service and Object Hub
+"""Event Service
 
 The Event Service receives events and dispatches them to interested
 parties.
-
-The Object Hub maintains an association between a location and a hubid,
-and can be queried for those.
 """
-
-# The two are in the same tool (for now) moment because they have close
-# relationships: the object hub has to know about add/remove events, and
-# the event service has to pass the hubid to subscribers as additional
-# info.
 
 from zLOG import LOG, ERROR, DEBUG
 from DateTime import DateTime
@@ -188,11 +180,6 @@ class EventServiceTool(UniqueObject, Folder):
 
     def __init__(self, *args, **kw):
         self._notification_dict = {}
-        # rlocation is a path relative to the root of the portal,
-        # without an initial slash.
-        #   '' = portal, 'Members' = members dir, etc.
-        self._hubid_to_rlocation = IOBTree()
-        self._rlocation_to_hubid = OIBTree()
         """
         # notification_dict is typically:
         {'sys_add_object':
@@ -223,13 +210,14 @@ class EventServiceTool(UniqueObject, Folder):
         """Notifies subscribers of an event
 
         infos is a dictionnary with keys:
-          hubid
+          rpath
           args, kw  (for sys_add_object, sys_del_object (unused))
 
         This method is private.
         """
-        hubid = self._objecthub_notify(event_type, object, infos)
-        infos['hubid'] = hubid
+        utool = getToolByName(self, 'portal_url')
+        rpath = utool.getRelativeUrl(object)
+        infos['rpath'] = rpath
         notification_dict = self._notification_dict
         portal = aq_parent(aq_inner(self))
         for ev_type in (event_type, '*'):
@@ -247,6 +235,8 @@ class EventServiceTool(UniqueObject, Folder):
                     subscriber_id = sub_def['subscriber']
                     subscriber = getattr(portal, subscriber_id, None)
                     if subscriber is None:
+                        LOG('EventServiceTool', ERROR, 'No subscriber %s'
+                            % subscriber_id)
                         continue
                     action = sub_def['action']
                     meth = getattr(subscriber, action)
@@ -261,49 +251,6 @@ class EventServiceTool(UniqueObject, Folder):
         if event_type.startswith('sys_'):
             raise Unauthorized, event_type
         return self.notify(event_type, object, infos)
-
-    #
-    # ObjectHub API
-    #
-    # XXX security?
-    security.declarePublic('getHubId')
-    def getHubId(self, object_or_location):
-        """Get the hubid of an object or location, or None."""
-        #LOG('getHubId', DEBUG, 'for ob_or_loc=%s' % `object_or_location`)
-        t = type(object_or_location)
-        if t in (StringType, UnicodeType):
-            location = object_or_location
-        elif t == TupleType:
-            location = '/'.join(object_or_location)
-        else:
-            location = '/'.join(object_or_location.getPhysicalPath())
-        rlocation = self._get_rlocation(location)
-        #LOG('getHubId', DEBUG, 'rlocation=%s' % rlocation)
-        if rlocation is None:
-            LOG('EventServiceTool', ERROR,
-                'Hub: getHubId for bad location %s' % location)
-            return None
-        #hubid = self._rlocation_to_hubid.get(rlocation)
-        #LOG('getHubId', DEBUG, 'hubid=%s' % hubid)
-        return self._rlocation_to_hubid.get(rlocation)
-
-    # XXX security?
-    security.declarePublic('getLocation')
-    def getLocation(self, hubid, relative=0):
-        """Get the location of a hubid, or None."""
-        rlocation = self._hubid_to_rlocation.get(hubid)
-        if rlocation is None:
-            LOG('EventServiceTool', ERROR,
-                'Hub: getLocation for bad hubid %s' % hubid)
-            return None
-        if relative:
-            return rlocation
-        utool = getToolByName(self, 'portal_url')
-        ppath = utool.getPortalPath()
-        if rlocation:
-            return '%s/%s' % (ppath, rlocation)
-        else:
-            return ppath
 
     #
     # misc
@@ -329,89 +276,12 @@ class EventServiceTool(UniqueObject, Folder):
         self._notification_dict = notification_dict
 
     #
-    # ObjecHub misc
-    #
-    def _get_rlocation(self, location):
-        """Get a rlocation from a location.
-
-        A rlocation is a location relative to the portal root.
-        Returns '' for the portal itself.
-        Returns None if the passed location is not under the portal.
-        """
-        if not location.startswith('/'):
-            return location
-        # make relative to portal
-        utool = getToolByName(self, 'portal_url')
-        ppath = utool.getPortalPath()
-        if not location.startswith(ppath):
-            # not under the portal
-            return None
-        location = location[len(ppath)+1:]
-        return location
-
-    def _generate_hubid(self, rlocation):
-        """Generate and register a new hubid for a rlocation.
-
-        Returns then new hubid.
-        """
-        index = getattr(self, '_v_nextid', 0)
-        if index % 4000 == 0:
-            index = randid()
-        hubid_to_rlocation = self._hubid_to_rlocation
-        while not hubid_to_rlocation.insert(index, rlocation):
-            index = randid()
-        self._rlocation_to_hubid[rlocation] = index
-        self._v_nextid = index + 1
-        return index
-
-    def _objecthub_notify(self, event_type, object, infos):
-        """Treat an event from the object hub's point of view.
-
-        Returns the hubid of the impacted object.
-        """
-        location = '/'.join(object.getPhysicalPath())
-        rlocation = self._get_rlocation(location)
-        if rlocation is None:
-            LOG('EventServiceTool', ERROR,
-                'Hub: notify %s for bad location %s' % (event_type, location))
-            return None
-        if event_type == 'sys_add_object':
-            return self._register(rlocation)
-        elif event_type == 'sys_del_object':
-            return self._unregister(rlocation)
-        else:
-            return self._rlocation_to_hubid.get(rlocation)
-
-    def _register(self, rlocation):
-        """Register a location and return its hubid."""
-        if self._rlocation_to_hubid.has_key(rlocation):
-            LOG('EventServiceTool', ERROR,
-                'Hub: attempted to re-register location %s' % rlocation)
-            return self._rlocation_to_hubid[rlocation]
-        return self._generate_hubid(rlocation)
-
-    def _unregister(self, rlocation):
-        """Unregister a location and return the hubid it had."""
-        hubid = self._rlocation_to_hubid.get(rlocation)
-        if hubid is None:
-            LOG('EventServiceTool', ERROR,
-                'Hub: attempted to unregister unknown location %s' % rlocation)
-            return None
-        del self._rlocation_to_hubid[rlocation]
-        del self._hubid_to_rlocation[hubid]
-        return hubid
-
-    #
     # ZMI
     #
     manage_options = (
         {
             'label': 'Subscribers',
             'action': 'manage_editSubscribersForm',
-        },
-        {
-            'label': 'ObjectHub',
-            'action': 'manage_listHubIds',
         },
         ) + Folder.manage_options[1:]
 
@@ -443,25 +313,6 @@ class EventServiceTool(UniqueObject, Folder):
             REQUEST.RESPONSE.redirect(
                 '%s/manage_editSubscribersForm' % (self.absolute_url(), )
             )
-
-    #
-    # HubId ZMI
-    #
-    security.declareProtected(ViewManagementScreens, 'manage_listHubIds')
-    manage_listHubIds = DTMLFile('zmi/event_listHubIds', globals())
-
-    security.declareProtected(ViewManagementScreens, 'manage_getHubIds')
-    def manage_getHubIds(self):
-        """Return all hubids and rlocations."""
-        return self._rlocation_to_hubid.items()
-
-    # XXX security?
-    security.declarePublic('manage_redirectHubId')
-    def manage_redirectHubId(self, hubid, RESPONSE):
-        """Redirect to the management page of the object for a hubid."""
-        location = self.getLocation(hubid)
-        if location is not None:
-            RESPONSE.redirect(location+'/manage_workspace')
 
 
 InitializeClass(EventServiceTool)

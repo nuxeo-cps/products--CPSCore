@@ -35,6 +35,7 @@ from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.DCWorkflow.utils import modifyRolesForPermission
+from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2
 
 from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
 from Products.NuxCPS3.CPSTypes import TypeConstructor, TypeContainer
@@ -72,8 +73,8 @@ def set_local_roles_with_groups(ob, lroles):
             gid = k[6:]
             gdict[gid] = list(roles)
     changed = 0
-    uroles = ob.__ac_local_roles__ or {}
-    groles = ob.__ac_local_group_roles__ or {}
+    uroles = getattr(ob, '__ac_local_roles__', None) or {}
+    groles = getattr(ob, '__ac_local_group_roles__', None) or {}
     if uroles != udict:
         #LOG('obrep', DEBUG, ' set udict=%s' % (udict,))
         ob.__ac_local_roles__ = udict
@@ -86,8 +87,8 @@ def set_local_roles_with_groups(ob, lroles):
     return changed
 
 
-# XXX we'll want a btreefolder2 here, not a folder
-class ObjectRepositoryTool(UniqueObject, PortalFolder,
+class ObjectRepositoryTool(UniqueObject,
+                           BTreeFolder2, PortalFolder,
                            TypeConstructor, TypeContainer):
     """An object repository stores objects that can be
     available in several versions.
@@ -95,8 +96,10 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
     It can be queried for the best version of a given object matching
     a set of constraints, for instance on language.
 
-    repoid is an identifier unique to the repository that describes a set
-    of versions of one object.
+    docid is an identifier unique to the repository that describes a set
+    of revisions of one object.
+
+    rev is a revision of one object.
     """
 
     id = 'portal_repository'
@@ -106,120 +109,137 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
     security = ClassSecurityInfo()
 
     def __init__(self):
-        pass
+        BTreeFolder2.__init__(self, self.id)
 
     #
     # API
     #
 
-    security.declarePrivate('invokeFactory')
-    def invokeFactory(self, type_name,
-                      repoid=None, version_info=None,
-                      *args, **kw):
-        """Create an object with repoid and version in the repository.
+    security.declarePrivate('getFreeDocid')
+    def getFreeDocid(self):
+        """Get a free docid."""
+        # XXX a bit inefficient
+        docidsd = {}
+        for id in self.objectIds():
+            docid, rev = self._split_id(id)
+            docidsd[docid] = None
+        while 1:
+            docid = str(random.randrange(1,2147483600))
+            if not docidsd.has_key(docid):
+                return docid
 
-        If repoid is None, a new one is generated
-        If version_info is None, 1 is used.
-        Returns the used repoid and version.
+    security.declarePrivate('getFreeRevision')
+    def getFreeRevision(self, docid):
+        """Get a free revision for a docid."""
+        # Return a revision one more than the last used.
+        # XXX a bit inefficient
+        maxrev = 0
+        for id in self.objectIds():
+            did, rev = self._split_id(id)
+            if did == docid and rev > maxrev:
+                maxrev = rev
+        return maxrev+1
 
-        (Called by the proxy tool.)
+    security.declarePrivate('createRevision') # XXX renamed from invokeFactory
+    def createRevision(self, docid_, type_name_, *args, **kw):
+        """Create an object with docid and a new revision in the repository.
+
+        Returns the newly created object and its revision.
+
+        (Called by ProxyTool.)
         """
-        if version_info is None:
-            version_info = 1
-        if repoid is None:
-            while 1:
-                repoid = str(random.randrange(1,2147483600))
-                id = self._get_id(repoid, version_info)
-                if not hasattr(self, id):
-                    break
-        else:
-            id = self._get_id(repoid, version_info)
-            if hasattr(self, id):
-                raise ValueError('A document with repoid=%s and version=%s '
-                                 'already exists' % (repoid, version_info))
-        self.constructContent(type_name, id, *args, **kw)
-        return (repoid, version_info)
+        rev = self.getFreeRevision(docid_)
+        id = self._get_id(docid_, rev)
+        ob = self.constructContent(type_name_, id, *args, **kw)
+        return ob, rev
 
-    security.declarePrivate('delObjectVersion')
-    def delObjectVersion(self, repoid, version_info):
-        """Delete a version of an object."""
-        id = self._get_id(repoid, version_info)
+    security.declarePrivate('delObjectRevision')
+    def delObjectRevision(self, docid, rev):
+        """Delete a revision of an object."""
+        id = self._get_id(docid, rev)
         self._delObject(id)
 
-    security.declarePrivate('hasObjectVersion')
-    def hasObjectVersion(self, repoid, version_info):
-        """Test whether the repository has a given version of an object."""
-        id = self._get_id(repoid, version_info)
-        return hasattr(self, id)
+    security.declarePrivate('hasObjectRevision')
+    def hasObjectRevision(self, docid, rev):
+        """Test whether the repository has a given revision of an object."""
+        id = self._get_id(docid, rev)
+        return self.hasObject(id)
 
-    security.declarePrivate('getObjectVersion')
-    def getObjectVersion(self, repoid, version_info):
-        """Get a version of an object."""
-        id = self._get_id(repoid, version_info)
+    # XXX was def getObjectVersion(self, repoid, version_info):
+    security.declarePrivate('getObjectRevision')
+    def getObjectRevision(self, docid, rev):
+        """Get a revision of an object.
+
+        (Called by ProxyTool.)
+        """
+        id = self._get_id(docid, rev)
         try:
             return self._getOb(id)
-        except AttributeError:
-            LOG('ObjectRepositoryTool', ERROR,
-                'getObjectVersion: no object %s' % repoid)
-            return None
+        except KeyError:
+            LOG('ObjectRepositoryTool', DEBUG, 'subids=%s'
+                % `list(self.objectIds())`)
+            raise
 
-    security.declarePrivate('delObject')
-    def delObject(self, repoid):
-        """Delete all the versions of an object."""
-        prefix = self._get_id_prefix(repoid)
-        for id in self.objectIds():
+    security.declarePrivate('delObjectRevisions')
+    def delObjectRevisions(self, docid):
+        """Delete all the revisions of an object."""
+        prefix = self._get_id_prefix(docid)
+        for id in self.objectIds(): # XXX costly
             if id.startswith(prefix):
                 self._delObject(id)
 
     security.declarePrivate('listAll')
     def listAll(self):
-        """List all (repoid, version_info) in the repository."""
+        """List all (docid, rev) in the repository."""
         items = []
         for id in self.objectIds():
-            repoid, version_info = self._split_id(id)
-            if repoid is None:
+            docid, rev = self._split_id(id)
+            if docid is None:
                 continue
-            items.append((repoid, version_info))
+            items.append((docid, rev))
         return items
 
-    security.declarePrivate('listRepoIds')
-    def listRepoIds(self):
-        """List all the repoids in the repository."""
+    security.declarePrivate('listDocids')
+    def listDocids(self):
+        """List all the docids in the repository."""
         idd = {}
         has = idd.has_key
         for id in self.objectIds():
-            repoid, version_info = self._split_id(id)
-            if repoid is None:
+            docid, rev = self._split_id(id)
+            if docid is None:
                 continue
-            if has(repoid):
+            if has(docid):
                 continue
-            idd[repoid] = None
+            idd[docid] = None
         return idd.keys()
 
-    security.declarePrivate('listVersions')
-    def listVersions(self, repoid):
-        """List all the versions of a given object."""
-        rid = repoid
-        version_infos = []
+    security.declarePrivate('listRevisions')
+    def listRevisions(self, docid):
+        """List all the versions available for a given docid."""
+        did = docid
+        revs = []
         for id in self.objectIds():
-            repoid, version_info = self._split_id(id)
-            if repoid is None:
+            docid, rev = self._split_id(id)
+            if docid is None:
                 continue
-            if rid != repoid:
+            if did != docid:
                 continue
-            version_infos.append(version_info)
-        return version_infos
+            revs.append(rev)
+        return revs
 
-    security.declarePublic('getRepoIdAndVersionFromId')
-    def getRepoIdAndVersionFromId(self, id):
-        """Get repoid and version_info from an id."""
-        if hasattr(self, id):
+    security.declarePublic('getDocidAndRevisionFromObjectId')
+    def getDocidAndRevisionFromObjectId(self, id):
+        """Get docid and rev from an object id (gotten from catalog).
+
+        (Called by ProxyTool.)
+        """
+        if self.hasObject(id):
             return self._split_id(id)
         else:
             return (None, None)
 
-    security.declarePrivate('freezeVersion')
-    def freezeVersion(self, repoid, version_info):
+    security.declarePrivate('freezeRevision')
+    def freezeRevision(self, docid, rev):
         """Freeze a version of a document.
 
         Any modification to a frozen version should be forbidden by the
@@ -229,52 +249,49 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
 
         (Called by ProxyTool.)
         """
-        ob = self.getObjectVersion(repoid, version_info)
+        ob = self.getObjectRevision(docid, rev)
         # Don't write to ZODB if already frozen.
         if not getattr(aq_base(ob), '_cps_frozen', 0):
             ob._cps_frozen = 1
             # Unacquire modification permission.
             modifyRolesForPermission(ob, ModifyPortalContent, ('Manager',))
 
-    security.declarePrivate('isVersionFrozen')
-    def isVersionFrozen(self, repoid, version_info):
+    security.declarePrivate('isRevisionFrozen')
+    def isRevisionFrozen(self, docid, rev): # XXX unused?
         """Is a version frozen?"""
-        ob = self.getObjectVersion(repoid, version_info)
+        ob = self.getObjectRevision(docid, rev)
         return getattr(ob, '_cps_frozen', 0)
 
-    security.declarePrivate('copyVersion')
-    def copyVersion(self, repoid, version_info):
-        """Copy a version of an object into a new version.
+    security.declarePrivate('copyRevision') # YYY
+    def copyRevision(self, docid, rev):
+        """Copy a revision of an object into a new revision.
 
-        Return the newly created (unfrozen) version.
+        Returns the newly created (unfrozen) object and its revision.
+
+        May be called by ProxyTool.
         """
-        ob = self.getObjectVersion(repoid, version_info)
-        newv = version_info + 1
-        while 1:
-            # Find a free version
-            newid = self._get_id(repoid, newv)
-            if not hasattr(self, newid):
-                break
-            newv += 1
+        ob = self.getObjectRevision(docid, rev)
+        newrev = self.getFreeRevision(docid)
+        newid = self._get_id(docid, newrev)
         newob = self.copyContent(ob, newid)
         if hasattr(newob, '_cps_frozen'):
             delattr(newob, '_cps_frozen')
-        # Reset (acquire) modification permission.
-        modifyRolesForPermission(newob, ModifyPortalContent, [])
+        # The security will be correctly reset by the caller.
         # XXX add some info to the history
-        return newv
+        return newob, newrev
 
-    security.declarePrivate('getUnfrozenVersion')
-    def getUnfrozenVersion(self, repoid, version_info):
-        """Return the version of an unfrozen version of an object.
+    security.declarePrivate('getUnfrozenRevision')
+    def getUnfrozenRevision(self, docid, rev):
+        """Get an unfrozen version of an object.
+
+        Returns the unfrozen object and its revision.
 
         (Called by ProxyTool.)
         """
-        ob = self.getObjectVersion(repoid, version_info)
+        ob = self.getObjectRevision(docid, rev)
         if not getattr(aq_base(ob), '_cps_frozen', 0):
-            return version_info
-        newv = self.copyVersion(repoid, version_info)
-        return newv
+            return ob, rev
+        return self.copyRevision(docid, rev)
 
     security.declarePrivate('getPermissionRole')
     def getPermissionRole(self, perm):
@@ -303,8 +320,8 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
     def _registerPermissionRolesFor(self, ob):
         """Register all special permission roles mentionned in ob."""
         done = {}
-        lroles = ob.__ac_local_roles__ or {}
-        lroles.update(ob.__ac_local_group_roles__ or {})
+        lroles = getattr(ob, '__ac_local_roles__', None) or {}
+        lroles.update(getattr(ob, '__ac_local_group_roles__', None) or {})
         for k, roles in lroles.items():
             for role in roles:
                 if done.has_key(role):
@@ -326,8 +343,8 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
                     # Register if needed.
                     self.getPermissionRole(perm)
 
-    security.declarePrivate('setObjectSecurity')
-    def setObjectSecurity(self, repoid, version_info, userperms):
+    security.declarePrivate('setRevisionSecurity')
+    def setRevisionSecurity(self, docid, rev, userperms):
         """Set the security on an object.
 
         userperms is a dict of {user: [sequence of permissions]}
@@ -335,9 +352,10 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
 
         (Called by ProxyTool.)
         """
-        LOG('obrep', DEBUG, 'setObjectSecurity repoid=%s v=%s perms=%s' %
-            (repoid, version_info, userperms))
-        ob = self.getObjectVersion(repoid, version_info)
+        LOG('ObjectRepositoryTool', DEBUG,
+            'setRevisionSecurity docid=%s rev=%s perms=%s' %
+            (docid, rev, userperms))
+        ob = self.getObjectRevision(docid, rev)
         lroles = {}
         for user, perms in userperms.items():
             roles = [self.getPermissionRole(perm) for perm in perms]
@@ -350,12 +368,10 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
     # Staging
     #
 
-    security.declarePrivate('exportObjectVersion')
-    def exportObjectVersion(self, repoid, version_info):
-        """Export a given version of an object into a string."""
-        ob = self.getObjectVersion(repoid, version_info)
-        if ob is None:
-            return None
+    security.declarePrivate('exportObjectRevision')
+    def exportObjectRevision(self, docid, rev):
+        """Export a given revision of an object into a string."""
+        ob = self.getObjectRevision(docid, rev)
         f = StringIO()
         ob._p_jar.exportFile(ob._p_oid, f)
         return f.getvalue()
@@ -371,12 +387,12 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
             where = aq_parent(aq_inner(where))
             connection = where._p_jar
         ob = connection.importFile(f)
-        id = ob.getId()
-        if hasattr(aq_base(self), id):
-            self._delObject(id)
         # Register special permissions roles.
         self._registerPermissionRolesFor(ob)
         # Set the object (this will recatalog).
+        id = ob.getId()
+        if self.hasObject(id):
+            self._delObject(id)
         self._setObject(id, ob)
 
     #
@@ -390,18 +406,18 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
         Return a list of ids used, and of those that are used by no proxy.
         """
         pxtool = getToolByName(self, 'portal_proxies')
-        infos = pxtool.getVersionsUsed()
+        infos = pxtool.getRevisionsUsed()
         used = []
         unused = []
         for id in self.objectIds():
-            repoid, vi = self._split_id(id)
-            if repoid is None:
+            docid, rev = self._split_id(id)
+            if docid is None:
                 LOG('ObjectRepositoryTool', DEBUG, 'bad id %s' % id)
                 continue
-            if not infos.has_key(repoid):
+            if not infos.has_key(docid):
                 unused.append(id)
                 continue
-            if not infos[repoid].has_key(vi):
+            if not infos[docid].has_key(rev):
                 unused.append(id)
                 continue
             used.append(id)
@@ -410,30 +426,30 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
                 }
 
     #
-    # Misc
+    # Id generation
     #
 
-    def _get_id_prefix(self, repoid):
-        return '%s__' % repoid
+    def _get_id_prefix(self, docid):
+        return '%s__' % docid
 
-    def _get_id(self, repoid, version_info):
-        id = '%s__%04d' % (repoid, version_info)
-        return id
+    def _get_id(self, docid, rev):
+        return '%s__%04d' % (docid, rev)
 
     def _split_id(self, id):
         try:
-            repoid, version_info = id.split('__')
-            version_info = int(version_info)
+            docid, rev = id.split('__')
+            rev = int(rev)
         except ValueError:
             LOG('ObjectRepositoryTool', ERROR, 'Cannot split id %s' % id)
             return (None, None)
-        return (repoid, version_info)
+        else:
+            return (docid, rev)
 
     #
     # Forbid any workflow
     #
 
-    # This done later by using setattr because the id is variable
+    # This done later by using setattr because the id is variable.
     #.cps_workflow_configuration = NoWorkflowConfiguration()
 
     #
@@ -444,7 +460,7 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
         {'label': 'Management',
          'action': 'manage_repoInfo',
         },
-        ) + PortalFolder.manage_options
+        ) + BTreeFolder2.manage_options
 
     security.declareProtected(ManagePortal, 'manage_repoInfo')
     manage_repoInfo = DTMLFile('zmi/repo_repoInfo', globals())
@@ -458,10 +474,10 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
                                   '?manage_tabs_message=Purged.')
 
     # XXX security?
-    security.declarePublic('manage_redirectVersion')
-    def manage_redirectVersion(self, repoid, version, RESPONSE):
-        """Redirect to the object for a repoid+version."""
-        ob = self.getObjectVersion(repoid, version)
+    security.declarePublic('manage_redirectRevision')
+    def manage_redirectRevision(self, docid, rev, RESPONSE):
+        """Redirect to the object for a docid+rev."""
+        ob = self.getObjectRevision(docid, rev)
         RESPONSE.redirect(ob.absolute_url()+'/manage_workspace')
 
 

@@ -155,7 +155,6 @@ class TreeCache(SimpleItemWithProperties):
         """Hook called when the tree changes."""
         LOG('Tree.notify_tree', DEBUG, 'Event %s for %s'
             % (event_type, '/'.join(object.getPhysicalPath())))
-        hubtool = getToolByName(self, 'portal_eventservice')
         urltool = getToolByName(self, 'portal_url')
         portal = urltool.getPortalObject()
         plen = len(portal.getPhysicalPath())
@@ -171,7 +170,7 @@ class TreeCache(SimpleItemWithProperties):
                 root = self.root
                 if root.endswith('/'):
                     root = root[:-1]
-                rpath = urltool.getRelativeUrl(object)
+                rpath = urltool.getRelativeUrl(object) # XXX use infos
                 if rpath != root:
                     return
                 LOG('notify_tree', DEBUG, 'Added a new root %s' % root)
@@ -223,7 +222,7 @@ class TreeCache(SimpleItemWithProperties):
             LOG('notify_tree', DEBUG, '  Found tree')
             # XXX We recompute the whole subtree, we could be more intelligent
             depth = tree['depth']
-            children = self._get_children(container, depth+1, plen, hubtool)
+            children = self._get_children(container, depth+1, plen)
             tree['children'] = children
             rebuild = 1
         else: # event_type in ('sys_modify_security', 'modify_object')
@@ -232,7 +231,7 @@ class TreeCache(SimpleItemWithProperties):
                 LOG('notify_tree', DEBUG, '  Not found tree')
                 return
             LOG('notify_tree', DEBUG, '  Found tree')
-            info = self._get_info(object, plen, hubtool)
+            info = self._get_info(object, plen)
             LOG('notify_tree', DEBUG, '  Updating info %s' % `info`)
             # Ensure script-provided data doesn't conflict.
             for k in ('depth', 'children'):
@@ -303,7 +302,7 @@ class TreeCache(SimpleItemWithProperties):
         LOG('Tree', DEBUG, ' Returns ok=%s' % ok)
         return ok
 
-    def _get_info(self, ob, plen, hubtool):
+    def _get_info(self, ob, plen):
         """Get info on one object."""
         info = None
         if self.info_method:
@@ -315,12 +314,12 @@ class TreeCache(SimpleItemWithProperties):
                 else:
                     LOG('TreeCache', ERROR, '_get_info returned non-dict %s'
                         % `r`)
-        allowed_roles_users = _allowedRolesAndUsers(ob)
-        localroles = {}
+        allowed_roles_and_users = _allowedRolesAndUsers(ob)
+        local_roles = {}
         for k, v in ob.get_local_roles():
-            localroles['user:'+k] = v
+            local_roles['user:'+k] = v
         for k, v in ob.get_local_group_roles():
-            localroles['group:'+k] = v
+            local_roles['group:'+k] = v
         if info is None:
             # Empty info
             info = self._new_tree()
@@ -329,33 +328,31 @@ class TreeCache(SimpleItemWithProperties):
                      'url': ob.absolute_url(),
                      'path': '/'.join(ppath),
                      'rpath': '/'.join(ppath[plen:]),
-                     'hubid': hubtool.getHubId(ob),
-                     'allowed_roles_users': allowed_roles_users,
-                     'localroles': localroles,
+                     'allowed_roles_and_users': allowed_roles_and_users,
+                     'local_roles': local_roles,
                      })
         return info
 
-    def _get_children(self, ob, depth, plen, hubtool):
+    def _get_children(self, ob, depth, plen):
         children = PersistentList()
         for subob in ob.objectValues():
             if self._is_candidate(subob, plen):
-                children.append(self._get_tree_r(subob, depth, plen, hubtool))
+                children.append(self._get_tree_r(subob, depth, plen))
         return children
 
-    def _get_tree_r(self, ob, depth, plen, hubtool):
+    def _get_tree_r(self, ob, depth, plen):
         """Rebuild, starting at ob."""
-        tree = self._get_info(ob, plen, hubtool)
-        children = self._get_children(ob, depth+1, plen, hubtool)
+        tree = self._get_info(ob, plen)
+        children = self._get_children(ob, depth+1, plen)
         tree['depth'] = depth
         tree['children'] = children
         return tree
 
     def _get_tree(self, ob, depth):
-        hubtool = getToolByName(self, 'portal_eventservice')
         urltool = getToolByName(self, 'portal_url')
         portal = urltool.getPortalObject()
         plen = len(portal.getPhysicalPath())
-        return self._get_tree_r(ob, depth, plen, hubtool)
+        return self._get_tree_r(ob, depth, plen)
 
     def _finish_rebuild(self):
         pointers = PersistentList()
@@ -448,9 +445,8 @@ class TreeCache(SimpleItemWithProperties):
           path
           rpath
           depth
-          hubid
-          allowed_roles_users
-          localroles
+          allowed_roles_and_users
+          local_roles (local, no merging)
           children    (for the tree)
           nb_children (for the list)
           visible (0 or 1, when filter=0)
@@ -458,15 +454,15 @@ class TreeCache(SimpleItemWithProperties):
         mtool = getToolByName(self, 'portal_membership')
         try:
             user = mtool.getAuthenticatedMember().getUser()
-            allowed_roles_users = _getAllowedRolesAndUsers(user)
+            allowed_roles_and_users = _getAllowedRolesAndUsers(user)
         except TypeError: # XXXXX?? getUser() takes exactly 2 arguments (1 given)
-            allowed_roles_users = ['Anonymous', 'group:role:Anonymous']
+            allowed_roles_and_users = ['Anonymous', 'group:role:Anonymous']
         res = []
         for info in self._flat:
             # check filter
             visible = 0
-            for ur in info['allowed_roles_users']:
-                if ur in allowed_roles_users:
+            for ur in info['allowed_roles_and_users']:
+                if ur in allowed_roles_and_users:
                     visible = 1
                     break
             if filter and not visible:

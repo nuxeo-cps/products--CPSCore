@@ -21,14 +21,16 @@
 """
 
 from zLOG import LOG, ERROR, DEBUG
-from types import TupleType, IntType
+from types import StringType
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass, PersistentMapping, DTMLFile
 from AccessControl import ClassSecurityInfo
 
 from OFS.Folder import Folder
 
-from Products.CMFCore.WorkflowCore import ObjectMoved
+from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.WorkflowCore import ObjectMoved, ObjectDeleted
+from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import addWorkflowFactory
 
 from Products.DCWorkflow.DCWorkflow import DCWorkflowDefinition
@@ -36,17 +38,42 @@ from Products.DCWorkflow.States import StateDefinition as DCWFStateDefinition
 from Products.DCWorkflow.States import States as DCWFStates
 from Products.DCWorkflow.Transitions import TransitionDefinition as DCWFTransitionDefinition
 from Products.DCWorkflow.Transitions import Transitions as DCWFTransitions
+from Products.DCWorkflow.Transitions import TRIGGER_USER_ACTION
 from Products.DCWorkflow.Expression import StateChangeInfo
 from Products.DCWorkflow.Expression import createExprContext
 
-TRIGGER_CREATION = 10
+from Products.NuxCPS3.cpsutils import _isinstance
+from Products.NuxCPS3.ProxyBase import ProxyBase
 
-TRANSITION_BEHAVIOR_NORMAL = 0
-TRANSITION_BEHAVIOR_SUBCREATE = 1
-TRANSITION_BEHAVIOR_CLONE = 2
-TRANSITION_BEHAVIOR_FREEZE = 3
-TRANSITION_BEHAVIOR_SUBDELETE = 4
-TRANSITION_BEHAVIOR_SUBCOPY = 5
+#TRANSITION_BEHAVIOR_SUBCREATE = 1
+#TRANSITION_BEHAVIOR_CLONE = 2
+#TRANSITION_BEHAVIOR_FREEZE = 3
+#TRANSITION_BEHAVIOR_SUBDELETE = 4
+#TRANSITION_BEHAVIOR_SUBCOPY = 5
+#TRANSITION_BEHAVIOR_CREATION = 6
+
+TRANSITION_ALLOWSUB_CREATE = 10
+TRANSITION_ALLOWSUB_DELETE = 11
+TRANSITION_ALLOWSUB_MOVE = 12 # Into this container.
+TRANSITION_ALLOWSUB_COPY = 13 # Same...
+TRANSITION_ALLOWSUB_PUBLISHING = 14
+TRANSITION_ALLOWSUB_CHECKOUT = 15
+
+TRANSITION_INITIAL_CREATE = 20
+TRANSITION_INITIAL_MOVE = 22
+TRANSITION_INITIAL_COPY = 23
+TRANSITION_INITIAL_PUBLISHING = 24
+TRANSITION_INITIAL_CHECKOUT = 25
+TRANSITION_ALLOW_CHECKIN = 26
+
+TRANSITION_BEHAVIOR_DELETE = 31
+TRANSITION_BEHAVIOR_MOVE = 32
+TRANSITION_BEHAVIOR_COPY = 33
+TRANSITION_BEHAVIOR_PUBLISHING = 34
+TRANSITION_BEHAVIOR_CHECKOUT = 35
+TRANSITION_BEHAVIOR_CHECKIN = 36
+TRANSITION_BEHAVIOR_FREEZE = 37
+
 
 
 class CPSStateDefinition(DCWFStateDefinition):
@@ -73,7 +100,8 @@ class CPSTransitionDefinition(DCWFTransitionDefinition):
 
     transition_behavior = ()
     clone_allowed_transitions = []
-    checkout_original_transition_id = ' '
+    checkout_allowed_initial_transitions = []
+    checkin_allowed_transitions = []
 
     _properties_form = DTMLFile('zmi/workflow_transition_properties',
                                 globals())
@@ -81,15 +109,18 @@ class CPSTransitionDefinition(DCWFTransitionDefinition):
     def setProperties(self, title, new_state_id,
                       transition_behavior=None,
                       clone_allowed_transitions=None,
-                      checkout_original_transition_id=None,
+                      checkout_allowed_initial_transitions=None,
+                      checkin_allowed_transitions=None,
                       REQUEST=None, **kw):
         """Set the properties."""
         if transition_behavior is not None:
             self.transition_behavior = tuple(transition_behavior)
         if clone_allowed_transitions is not None:
             self.clone_allowed_transitions = clone_allowed_transitions
-        if checkout_original_transition_id is not None:
-            self.checkout_original_transition_id = checkout_original_transition_id
+        if checkout_allowed_initial_transitions is not None:
+            self.checkout_allowed_initial_transitions = checkout_allowed_initial_transitions
+        if checkin_allowed_transitions is not None:
+            self.checkin_allowed_transitions = checkin_allowed_transitions
         # Now call original method.
         if REQUEST is not None:
             kw.update(REQUEST.form)
@@ -156,31 +187,12 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     #
 
     security.declarePrivate('notifyCreated')
-    def notifyCreated(self, ob, creation_transition=None):
+    def notifyCreated(self, ob):
         """Notified when a CMF object has been created.
 
-        Only does workflow insertion if called with a
-        creation_transition.
-        The guard on the creation transition is evaluated in the
-        context of the container.
+        Does nothing for CPS as all is done by wftool.invokeFactory.
         """
-        if creation_transition is None:
-            LOG('notifyCreated', DEBUG, 'Workflow %s called without a '
-                'creation_transition' % self.getId())
-            return
-        tdef = self.transitions.get(creation_transition, None)
-        if tdef is None:
-            raise WorkflowException("No creation transition '%s'" %
-                                    creation_transition)
-        if tdef.trigger_type != TRIGGER_CREATION:
-            raise WorkflowException("Transition %s is not a creation "
-                                    "transition" % creation_transition)
-        container = aq_parent(aq_inner(ob))
-        if not self._checkTransitionGuard(tdef, container):
-            LOG('CPSWorkflowDefinition', DEBUG, "notifyCreated "
-                "Unauthorized transition %s" % creation_transition)
-            raise Unauthorized
-        self._changeStateOf(ob, tdef)
+        pass
 
     security.declarePrivate('updateRoleMappingsFor')
     def updateRoleMappingsFor(self, ob):
@@ -203,7 +215,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
         # Figure out the old and new states.
         old_sdef = self._getWorkflowStateOf(ob)
-        ### CPS: Allow creation transitions to have no old state.
+        ### CPS: Allow initial transitions to have no old state.
         #
         if old_sdef is not None:
             old_state = old_sdef.getId()
@@ -227,32 +239,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             raise WorkflowException, (
                 'Destination state undefined: ' + new_state)
 
-        ### CPS: Behavior.
-        #
-        LOG('CPSWorkflow', DEBUG, 'Behavior in wf %s, trans %s: %s'
-            % (self.getId(), tdef.getId(), tdef.transition_behavior))
-        # XXX forward-compatibility
-        behavior = tdef.transition_behavior
-        if not isinstance(behavior, TupleType):
-            behavior = (behavior,)
-        if TRANSITION_BEHAVIOR_CLONE in behavior:
-            # Clone the object.
-            clone_data = kwargs.get('clone_data')
-            if clone_data is None:
-                raise WorkflowException('Missing clone_data for clone '
-                                        'transition %s' % tdef.getid())
-            wftool = aq_parent(aq_inner(self))
-            portal = aq_parent(aq_inner(wftool))
-            for container_path, creation_transitions in clone_data.items():
-                container = portal.restrictedTraverse(container_path)
-                wftool.cloneObject(ob, container, creation_transitions)
-        if TRANSITION_BEHAVIOR_FREEZE in behavior:
-            # Freeze the object.
-            # XXX use an event?
-            ob.freezeProxy()
-        #
-        ###
-
         # Execute the "before" script.
         if tdef is not None and tdef.script_name:
             script = self.scripts[tdef.script_name]
@@ -264,6 +250,129 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             except ObjectMoved, moved_exc:
                 ob = moved_exc.getNewObject()
                 # Re-raise after transition
+
+        ### CPS: Behavior. # XXX some should be after the transition???
+        #
+        behavior = tdef.transition_behavior
+        LOG('CPSWorkflow', DEBUG, 'Behavior in wf %s, trans %s: %s'
+            % (self.getId(), tdef.getId(), behavior))
+
+        wftool = aq_parent(aq_inner(self))
+
+        if TRANSITION_BEHAVIOR_MOVE in behavior:
+            raise NotImplementedError
+            ## Check allowed from source container.
+            #src_container = aq_parent(aq_inner(ob))
+            #ok, why = wftool.isBehaviorAllowedFor(src_container,
+            #                                     TRANSITION_ALLOWSUB_MOVE,
+            #                                     get_details=1)
+            #if not ok:
+            #    raise WorkflowException("src_container=%s does not allow "
+            #                            "subobject move (%s)" %
+            #                            (src_container.getId(), why))
+            ## Now check dest container.
+            #dest_container = kwargs.get('dest_container')
+            #if dest_container is None:
+            #    raise WorkflowException('Missing dest_container for move '
+            #                            'transition=%s' % tdef.getId())
+            #dest_container = self._object_maybe_rpath(dest_container)
+            #ok, why = wftool.isBehaviorAllowedFor(dest_container, #XXXincorrect
+            #                                     TRANSITION_INITIAL_MOVE,
+            #                                  transition=self.dest_transition,
+            #                                     get_details=1)
+            #if not ok:
+            #    raise WorkflowException("dst_container=%s does not allow "
+            #                            "object initial move (%s)" %
+            #                            (dst_container.getId(), why))
+            #XXX now do move (recreate into dest container)
+            #XXX raise ObjectDeleted ??? ObjectMoved ???
+
+        if TRANSITION_BEHAVIOR_COPY in behavior:
+            raise NotImplementedError
+
+        if TRANSITION_BEHAVIOR_PUBLISHING in behavior:
+            dest_container = kwargs.get('dest_container')
+            if dest_container is None:
+                raise WorkflowException("Missing dest_container for publishing"
+                                        " transition=%s" % tdef.getId())
+            dest_container = self._object_maybe_rpath(dest_container)
+            initial_transition = kwargs.get('initial_transition')
+            if initial_transition is None:
+                raise WorkflowException("Missing initial_transition for "
+                                        "publishing transition=%s" %
+                                        tdef.getId())
+            if initial_transition not in tdef.clone_allowed_transitions:
+                raise WorkflowException("Incorrect initial_transition %s, "
+                                        "allowed=%s"
+                                        % (initial_transition,
+                                           tdef.clone_allowed_transitions))
+            wftool.cloneObject(ob, dest_container, initial_transition)
+
+        if TRANSITION_BEHAVIOR_CHECKOUT in behavior:
+            dest_container = kwargs.get('dest_container')
+            if dest_container is None:
+                raise WorkflowException("Missing dest_container for checkout"
+                                        " transition=%s" % tdef.getId())
+            dest_container = self._object_maybe_rpath(dest_container)
+            initial_transition = kwargs.get('initial_transition')
+            if initial_transition is None:
+                raise WorkflowException("Missing initial_transition for "
+                                        "checkout transition=%s" %
+                                        tdef.getId())
+            if initial_transition not in tdef.checkout_allowed_initial_transitions:
+                raise WorkflowException("Incorrect initial_transition %s, "
+                                        "allowed=%s"
+                                        % (initial_transition,
+                                    tdef.checkout_allowed_initial_transitions))
+            wftool.checkoutObject(ob, dest_container, initial_transition,
+                                  kwargs.get('language_map'))
+
+
+        if TRANSITION_BEHAVIOR_CHECKIN in behavior:
+            dest_object = kwargs.get('dest_object')
+            if dest_object is None:
+                raise WorkflowException("Missing dest_object for checkin"
+                                        " transition=%s" % tdef.getId())
+            dest_object = self._object_maybe_rpath(dest_object)
+            checkin_transition = kwargs.get('checkin_transition')
+            if checkin_transition is None:
+                raise WorkflowException("Missing checkin_transition for "
+                                        "checkin transition=%s" % tdef.getId())
+            if checkin_transition not in tdef.checkin_allowed_transitions:
+                raise WorkflowException("Incorrect checkin_transition %s, "
+                                        "allowed=%s"
+                                        % (checkin_transition,
+                                           tdef.checkin_allowed_transitions))
+            # Doc checkin.
+            wftool.checkinObject(ob, dest_object, checkin_transition)
+            # Now delete original object.
+            container = aq_parent(aq_inner(ob))
+            container._delObject(ob.getId())
+            raise ObjectDeleted
+
+        if TRANSITION_BEHAVIOR_FREEZE in behavior:
+            # Freeze the object.
+            if _isinstance(ob, ProxyBase):
+                # XXX use an event?
+                ob.freezeProxy()
+                ob.proxyChanged()
+
+        if TRANSITION_BEHAVIOR_DELETE in behavior: # XXX do after transition
+            raise NotImplementedError
+            ## Check that container allows delete.
+            #container = aq_parent(aq_inner(ob))
+            #ok, why = wftool.isBehaviorAllowedFor(container,
+            #                                     TRANSITION_ALLOWSUB_DELETE,
+            #                                     get_details=1)
+            #if not ok:
+            #    raise WorkflowException("Container=%s does not allow "
+            #                            "subobject deletion (%s)" %
+            #                            (container.getId(), why))
+            #container._delObject(ob.getId())
+            #raise ObjectDeleted
+
+        #
+        ###
 
         # Update variables.
         state_values = new_sdef.var_values
@@ -328,39 +437,60 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     # API
     #
 
-    def _hasTransitionBehaviors(self, ob, behaviors, get_details=0):
-        """Is some behaviors allowed ?
+    security.declarePrivate('insertIntoWorkflow')
+    def insertIntoWorkflow(self, ob, initial_transition, initial_behavior):
+        """Insert an object into the workflow.
 
-        Tests that all the specified behaviors are allowed in a single
-        transition.
+        The guard on the initial transition is evaluated in the
+        context of the container of the object.
+
+        (Called by WorkflowTool when inserting an object into the workflow
+        after a create, copy, publishing, etc.)
         """
-        LOG('WF', DEBUG, '_hasTransitionBehavior ob=%s wf=%s beh=%s'
-            % (ob.getId(), self.getId(), behaviors))
+        tdef = self.transitions.get(initial_transition, None)
+        if tdef is None:
+            raise WorkflowException("No initial transition '%s'" %
+                                    initial_transition)
+        # Check it's really an initial transition.
+        if initial_behavior not in tdef.transition_behavior:
+            raise WorkflowException("workflow=%s transition=%s"
+                                    " not a behavior=%s" %
+                                    (self.getId(), initial_transition,
+                                     initial_behavior))
+        container = aq_parent(aq_inner(ob))
+        if not self._checkTransitionGuard(tdef, container):
+            raise WorkflowException("Unauthorized transition %s"
+                                    % initial_transition)
+        self._changeStateOf(ob, tdef)
+
+
+    security.declarePrivate('isBehaviorAllowedFor')
+    def isBehaviorAllowedFor(self, ob, behavior, transition=None,
+                             get_details=0):
+        """Is the behavior allowed?
+
+        Tests that the specified behavior is allowed in a transition.
+
+        If transition is present, only check a transition with this name.
+        """
+        LOG('WF', DEBUG, 'isBehaviorAllowedFor ob=%s wf=%s beh=%s'
+            % (ob.getId(), self.getId(), behavior))
         sdef = self._getWorkflowStateOf(ob)
         if sdef is None:
             if get_details:
                 return 0, 'no state'
             else:
                 return 0
-        if isinstance(behaviors, IntType):
-            behaviors = [behaviors]
         res = []
         for tid in sdef.transitions:
+            if transition is not None and transition != tid:
+                continue
             LOG('WF', DEBUG, ' Test transition %s' % tid)
             tdef = self.transitions.get(tid, None)
             if tdef is None:
                 continue
-            transition_behavior = tdef.transition_behavior
-            # XXX forward-compatibility
-            if not isinstance(transition_behavior, TupleType):
-                transition_behavior = (transition_behavior,)
-            ok = 1
-            for behavior in behaviors:
-                if behavior not in transition_behavior:
-                    LOG('WF', DEBUG, '  Not a %s' % (behavior,))
-                    ok = 0
-                    break
-            if not ok:
+            if behavior not in tdef.transition_behavior:
+                LOG('WF', DEBUG, '  Not a %s' % (behavior,))
                 continue
             if not self._checkTransitionGuard(tdef, ob):
                 LOG('WF', DEBUG, '  Guard failed')
@@ -371,66 +501,105 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             else:
                 return 1
         if get_details:
-            return 0, 'state %s has no %s behavior' % (sdef.getId(), behavior)
+            return 0, ('state=%s (transition=%s) has no behavior=%s'
+                       % (sdef.getId(), transition, behavior))
         else:
             return 0
 
-    security.declarePrivate('areBehaviorsAllowedIn')
-    def areBehaviorsAllowedIn(self, ob, behaviors, get_details=0):
-        """Are all these behaviors allowed ?"""
-        return self._hasTransitionBehaviors(ob, behaviors,
-                                            get_details=get_details)
-
-    security.declarePrivate('getCreationTransitions')
-    def getCreationTransitions(self, container):
-        """Get the possible creation transitions according to this
-        workflow.
-
-        The container is the context in which the guard is evaluated.
-        """
-        #LOG('WF', DEBUG, 'wf=%s get creationtransitions' % self.getId())
-        res = []
-        for tdef in self.transitions.values():
-            #LOG('WF', DEBUG, '  trans %s' % tdef.getId())
-            if tdef.trigger_type != TRIGGER_CREATION:
-                #LOG('WF', DEBUG, '    no, not creation')
-                continue
-            if not self._checkTransitionGuard(tdef, container):
-                #LOG('WF', DEBUG, '    no, not guard')
-                continue
-            #LOG('WF', DEBUG, '    ok')
-            res.append(tdef.getId())
-        res.sort()
-        #LOG('WF', DEBUG, '  returning %s' % `res`)
-        return res
-
-    security.declarePrivate('getCloneAllowedTransitions')
-    def getCloneAllowedTransitions(self, ob):
-        """Get the list of allowed initial transitions for clone."""
+    security.declarePrivate('getAllowedPublishingTransitions')
+    def getAllowedPublishingTransitions(self, ob):
+        """Get the list of allowed initial transitions for publishing."""
         sdef = self._getWorkflowStateOf(ob)
         if sdef is None:
             return []
-        res = []
+        d = {}
         for tid in sdef.transitions:
             tdef = self.transitions.get(tid, None)
             if tdef is None:
                 continue
-            # XXX forward-compatibility
-            behavior = tdef.transition_behavior
-            if not isinstance(behavior, TupleType):
-                behavior = (behavior,)
-            if TRANSITION_BEHAVIOR_CLONE not in behavior:
+            if TRANSITION_BEHAVIOR_PUBLISHING not in tdef.transition_behavior:
                 continue
             if not self._checkTransitionGuard(tdef, ob):
                 continue
-            allowed = tdef.clone_allowed_transitions
-            res.extend([t for t in allowed if t not in res])
-        return res
+            for t in tdef.clone_allowed_transitions:
+                d[t] = None
+        return d.keys()
+
+    security.declarePrivate('getInitialTransitions')
+    def getInitialTransitions(self, context, behavior):
+        """Get the possible initial transitions in a context according to
+        this workflow.
+
+        context: the context in which the guard is evaluated.
+
+        behavior: the type of initial transition to check for.
+
+        Returns a sequence of transition names.
+        """
+        LOG('WF', DEBUG, "getInitialTransitions behavior=%s " % behavior)
+        transitions = []
+        for tdef in self.transitions.values():
+            LOG('WF', DEBUG, ' Test transition %s' % tdef.getId())
+            if behavior not in tdef.transition_behavior:
+                LOG('WF', DEBUG, '  Not a %s' % behavior)
+                continue
+            if not self._checkTransitionGuard(tdef, context):
+                LOG('WF', DEBUG, '  Guard failed')
+                continue
+            LOG('WF', DEBUG, '  Ok')
+            transitions.append(tdef.getId())
+        LOG('WF', DEBUG, ' Returning transitions=%s' % (transitions,))
+        return transitions
 
     security.declarePrivate('getManagedPermissions')
     def getManagedPermissions(self):
         """Get the permissions managed by this workflow."""
         return self.permissions
+
+    def _object_maybe_rpath(self, ob):
+        if isinstance(ob, StringType):
+            rpath = ob
+            if not rpath or rpath.find('..') >= 0 or rpath.startswith('/'):
+                raise Unauthorized(rpath)
+            portal = getToolByName(self, 'portal_url').getPortalObject()
+            ob = portal.unrestrictedTraverse(rpath)
+        return ob
+
+    # debug
+    security.declarePrivate('listObjectActions')
+    def listObjectActions(self, info):
+        '''
+        Allows this workflow to
+        include actions to be displayed in the actions box.
+        Called only when this workflow is applicable to
+        info.content.
+        Returns the actions to be displayed to the user.
+        '''
+        LOG('listObjectActions', DEBUG, 'Called for wf %s' % self.getId())
+        ob = info.content
+        sdef = self._getWorkflowStateOf(ob)
+        if sdef is None:
+            return None
+        res = []
+        for tid in sdef.transitions:
+            LOG('listObjectActions', DEBUG, ' Checking %s' % tid)
+            tdef = self.transitions.get(tid, None)
+            if tdef is not None and tdef.trigger_type == TRIGGER_USER_ACTION:
+                if tdef.actbox_name:
+                    if self._checkTransitionGuard(tdef, ob):
+                        res.append((tid, {
+                            'id': tid,
+                            'name': tdef.actbox_name % info,
+                            'url': tdef.actbox_url % info,
+                            'permissions': (),  # Predetermined.
+                            'category': tdef.actbox_category}))
+                        LOG('listObjectActions', DEBUG, '  Guard ok')
+                    else:
+                        LOG('listObjectActions', DEBUG, '  Guard failed')
+                else:
+                    LOG('listObjectActions', DEBUG, '  No user-visible action')
+        res.sort()
+        return map((lambda (id, val): val), res)
 
 
 InitializeClass(CPSWorkflowDefinition)

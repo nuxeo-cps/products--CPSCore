@@ -11,15 +11,15 @@
     <div class="list-item">Language</div>
   </td>
   <td width="10%" align="left">
-    <div class="list-item">Version</div>
+    <div class="list-item">Revision</div>
   </td>
   <td width="80%" align="left">
     <div class="list-item">Title</div>
   </td>
 </tr>
-<dtml-let ppath="portal_url.getPortalPath()" repoid=getRepoId>
-<dtml-in "getVersionInfos().items()">
-<dtml-let lang=sequence-key version=sequence-item>
+<dtml-let ppath="portal_url.getPortalPath()" docid=getDocid>
+<dtml-in "getLanguageRevisions().items()">
+<dtml-let lang=sequence-key rev=sequence-item>
 <dtml-if sequence-odd>
   <tr class="row-normal">
 <dtml-else>
@@ -32,17 +32,17 @@
   </td>
   <td align="left">
     <div class="list-item">
-      &dtml-version;
+      &dtml-rev;
     </div>
   </td>
   <td align="left">
     <div class="list-item">
-      <a href="&dtml-ppath;/portal_repository/manage_redirectVersion?repoid:int=&dtml.url_quote-repoid;&amp;version:int=&dtml.url_quote-version;">
+      <a href="&dtml-ppath;/portal_repository/manage_redirectRevision?docid:int=&dtml.url_quote-docid;&amp;rev:int=&dtml.url_quote-rev;">
         <dtml-let doc="getContent(lang=lang)">
           <dtml-if "doc is not _.None">
             <dtml-var "getContent(lang=lang).title_or_id()" html_quote>
           <dtml-else>
-            <em>Broken object (&dtml-repoid;)</em>
+            <em>Broken object (&dtml-docid;)</em>
           </dtml-if>
         </dtml-let>
       </a>

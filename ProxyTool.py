@@ -25,6 +25,7 @@ from Globals import PersistentMapping
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
 from AccessControl.PermissionRole import rolesForPermissionOn
+from BTrees.OOBTree import OOBTree
 
 from Products.CMFCore.CMFCorePermissions import View
 from Products.CMFCore.CMFCorePermissions import ManagePortal
@@ -35,14 +36,28 @@ from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
+from Products.NuxCPS3.cpsutils import _isinstance
+
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
 from Products.NuxCPS3.ProxyBase import ProxyBase
 from Products.NuxCPS3.EventServiceTool import getEventService
 
 
 class ProxyTool(UniqueObject, SimpleItemWithProperties):
-    """A proxy tool manages relationships between proxy objects
-    and the documents they point to.
+    """The proxy tool caches global informations about all proxies.
+
+    The global information is used to find quickly all the proxies
+    matching certain criteria:
+
+    - rpath -> (docid, {lang: rev})
+
+    - docid -> [rpaths]
+
+    - docid, rev -> [rpaths]
+
+
+
+    - also workflow state ?
 
     The proxy tool must be registered with the event service to receive
     sys_add_object and sys_del_object events, with action 'proxy'.
@@ -57,62 +72,160 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         self._clear()
 
     def _clear(self):
-        self._hubid_to_info = PersistentMapping()
+        self._rpath_to_infos = OOBTree()
+        self._docid_rev_to_rpaths = OOBTree()
+        self._docid_to_rpaths = OOBTree()
 
     #
     # External API
     #
 
-    security.declarePrivate('createProxy')
-    def createProxy(self, proxy_type, container, type_name, id, *args, **kw):
-        """Create a new proxy to a new document.
+    security.declarePrivate('createEmptyProxy')
+    def createEmptyProxy(self, proxy_type, container, type_name, id,
+                         docid=None):
+        """Create an empty proxy.
 
-        Returns the created proxy object.
-        Does not insert the proxy into any workflow.
-        proxy_type is one of 'folder', 'document' or 'folderishdocument'.
+        If docid is None, generate a new one.
+
+        (Called by WorkflowTool.)
         """
-        LOG('createProxy', DEBUG, 'Called with proxy_type=%s container=%s '
-            'type_name=%s id=%s' % (proxy_type, container.getId(),
-                                    type_name, id))
-        if proxy_type == 'folder':
-            proxy_type_name = 'CPS Proxy Folder'
-        elif proxy_type == 'folderishdocument':
-            proxy_type_name = 'CPS Proxy Folderish Document'
-        else:
-            proxy_type_name = 'CPS Proxy Document'
-        # Create the document in the repository
+        LOG('ProxyTool', DEBUG, "createEmptyProxy called with proxy_type=%s "
+            "container=%s type_name=%s id=%s docid=%s"
+            % (proxy_type, container.getId(), type_name, id, docid))
+        proxy_type_name = {
+            'folder':            'CPS Proxy Folder',
+            'folderishdocument': 'CPS Proxy Folderish Document',
+            }.get(proxy_type,    'CPS Proxy Document')
+        if docid is None:
+            repotool = getToolByName(self, 'portal_repository')
+            docid = repotool.getFreeDocid()
+        proxy = self.constructContent(container,
+                                      proxy_type_name, id,
+                                      final_type_name=type_name,
+                                      docid=docid)
+        return proxy
+
+
+    security.declarePrivate('createRevision')
+    def createRevision(self, proxy_, lang_, *args, **kw):
+        """Create a language's revision for a proxy.
+
+        Returns the revision.
+
+        (Called by WorkflowTool.)
+        """
+        proxy = proxy_ # prevent name collision in **kw
+        lang = lang_
+        LOG('ProxyTool', DEBUG, "createRevision lang=%s for %s" %
+            ('/'.join(proxy.getPhysicalPath()), lang))
         repotool = getToolByName(self, 'portal_repository')
-        repoid, version_info = repotool.invokeFactory(type_name, *args, **kw)
-        version_infos = {'*': version_info}
-        # Create the proxy to that document
-        # The proxy is a normal CMF object except that we change its
-        # portal_type after construction.
-        ob = self.constructContent(container, # XXX
-                                   proxy_type_name, id,
-                                   final_type_name=type_name,
-                                   repoid=repoid,
-                                   version_infos=version_infos)
-        return ob
+        docid = proxy.getDocid()
+        type_name = proxy.getPortalTypeName()
+        ob, rev = repotool.createRevision(docid, type_name, *args, **kw)
+        if hasattr(aq_base(ob), 'setLanguage'):
+            ob.setLanguage(lang)
+            # XXX reindex ?
+        proxy.setLanguageRevision(lang, rev)
+        proxy.proxyChanged()
+        LOG('ProxyTool', DEBUG, "  created rev=%s" % rev)
+        return rev
+
+
+
+
+    security.declarePrivate('checkoutRevisions')
+    def checkoutRevisions(self, proxy, new_proxy, language_map):
+        """Checkout a proxy's revisions into a new proxy.
+
+        Uses a language map to decide the language correspondances.
+
+        All copied revisions are frozen.
+        """
+        repotool = getToolByName(self, 'portal_repository')
+        docid = proxy.getDocid()
+
+        if language_map is None:
+            # Keep same languages, simple checkout.
+            for lang, rev in proxy._getLanguageRevisions().items():
+                repotool.freezeRevision(docid, rev)
+                new_proxy.setLanguageRevision(lang, rev)
+
+        else:
+            # Checkout with specific languages.
+            new_language_revs = {}
+            for new_lang, lang in language_map.items():
+                real_lang, rev = self.getBestRevision(proxy, lang)
+                if new_lang == real_lang:
+                    new_rev = rev
+                    repotool.freezeRevision(docid, rev)
+                else:
+                    # Create a new revision, because the language changed.
+                    new_ob, new_rev = repotool.copyRevision(docid, rev)
+                    if hasattr(aq_base(new_ob), 'setLanguage'):
+                        new_ob.setLanguage(new_lang)
+                        # XXX reindex ?
+
+                new_proxy.setLanguageRevision(new_lang, new_rev)
+
+        new_proxy.proxyChanged()
+
+    security.declarePrivate('checkinRevisions')
+    def checkinRevisions(self, proxy, dest_proxy):
+        """Checkin a proxy's revisions into a destination proxy."""
+        for lang, rev in proxy._getLanguageRevisions().items():
+            dest_proxy.setLanguageRevision(lang, rev)
+        dest_proxy.proxyChanged()
 
     security.declarePrivate('listProxies')
     def listProxies(self):
         """List all proxies.
 
-        Returns a sequence of (hubid, (repoid, version_infos)).
+        Returns a sequence of (rpath, language_revs).
         NOTE that the version_infos mapping should not be mutated!
         """
-        all = self._hubid_to_info.items()
-        all.sort() # Sort by hubid.
+        all = list(self._rpath_to_infos.items())
+        all.sort() # Sort by rpath.
         return all
 
+    security.declarePrivate('getBestRevision')
+    def getBestRevision(self, proxy, lang=None):
+        """Get the best language and revision for a proxy.
+
+        Returns lang, rev.
+        """
+        if lang is None:
+            # Find the user-preferred language.
+            portal = getToolByName(self, 'portal_url').getPortalObject()
+            if hasattr(portal, 'Localizer'):
+                lang = portal.Localizer.get_selected_language()
+            else:
+                lang = 'en'
+        default_language = proxy.getDefaultLanguage()
+        language_revs = proxy._getLanguageRevisions()
+        if language_revs.has_key(lang):
+            # Ok.
+            pass
+        elif language_revs.has_key(default_language):
+            # Default language is available.
+            lang = default_language
+        else:
+            if not language_revs:
+                # Proxy construction not finished.
+                return None, None
+            # Find the first available language.
+            langs = language_revs.keys()
+            langs.sort()
+            lang = langs[0]
+        return lang, language_revs[lang]
+
     security.declarePrivate('getContent')
-    def getContent(self, hubid, lang=None, editable=0):
-        # XXX should this take a hubid or a proxy as argument?
+    def getContent(self, proxy, lang=None, editable=0):
         """Get the object best matched by a given proxy.
 
+        Returns the object.
+        Raises KeyError if the language cannot be found.
+
         If lang is not passed, takes into account the user language.
-        Returns an object, and the lang and version used. XXX
-        Returns None, None, None if there is no match.
 
         If editable, the returned content must be an unfrozen version,
         so a cloning and a version upgrade may happen behind the scene.
@@ -120,81 +233,67 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         (Called by ProxyBase.)
         """
         repotool = getToolByName(self, 'portal_repository')
-        if not self._hubid_to_info.has_key(hubid):
-            LOG('ProxyTool', ERROR, 'Getting unknown hubid %s' % hubid)
-            return None, None, None
-        repoid, version_infos = self._hubid_to_info[hubid]
-        if lang is None:
-            # XXX get preferred language here - abstract the negociation
-            # XXX use Localizer methods
-            lang = '*'
+
+        docid = proxy.getDocid()
+
         # Find version to use.
-        if version_infos.has_key(lang):
-            version_info = version_infos[lang]
-        elif version_infos.has_key('*'):
-            version_info = version_infos['*']
-            lang = '*'
-        else:
-            LOG('ProxyTool', DEBUG, 'Found no matching version for hubid %s, repoid %s, lang %s, infos %s' % (hubid, repoid, lang, version_infos))
-            return None, None, None
+        lang, rev = self.getBestRevision(proxy, lang=lang)
+        if lang is None:
+            return None # Proxy not yet finished.
+
         if editable:
-            LOG('ProxyTool', DEBUG, 'Wants editable instead of v=%s' %
-                version_info)
-            version_info = repotool.getUnfrozenVersion(repoid, version_info)
-            LOG('ProxyTool', DEBUG, ' Got v=%s' % version_info)
-            # Now update info
-            version_infos[lang] = version_info
-            self._hubid_to_info[hubid] = (repoid, version_infos)
-            # XXX should store it in the object too ?
-            # XXX should send event
-            #       (both are done by caller in ProxyBase)
-        return repotool.getObjectVersion(repoid, version_info), lang, version_info
+            newob, newrev = repotool.getUnfrozenRevision(docid, rev)
 
-    security.declarePrivate('getMatchingProxies')
-    def getMatchingProxies(self, repoid, version_info=None):
-        """Get the proxies matching a given version of an object.
+            LOG('ProxyTool', DEBUG,
+                'getContent editable, rev=%s -> %s' % (rev, newrev))
 
-        Returns a mapping of {hubid: [list of lang]}
-        If version_info is None, returns a mapping of {hubids: version_infos}.
+            if newrev != rev:
+                # XXX what do we do if there's a tag?
+                # XXX - forbid it ?
+                # XXX - inc tag ?
+
+                proxy.setLanguageRevision(lang, rev)
+                proxy.proxyChanged()
+
+            return newob
+
+        return repotool.getObjectRevision(docid, rev)
+
+    # XXX was def getProxyInfoFromRepoId(self, repoid, workflow_vars=()):
+    security.declarePublic('getProxyInfoFromDocid')
+    def getProxyInfoFromDocid(self, docid, workflow_vars=()):
+        """Get the proxy infos from a docid.
+
+        Info is a dict with:
+
+        - object: the proxy
+
+        - rpath: the proxy path relative to the portal
+
+        - visible: a boolean describing the visibility of the proxy
+
+        - language_revs: the revisions for each language
+
+        - all specified workflow vars.
+
+        (Called by user code to get object full history.)
         """
-        infos = {}
-        # XXX must be made faster using a second mapping (repoid, vi) -> hubid
-        for hubid, (rid, version_infos) in self._hubid_to_info.items():
-            if repoid != rid:
-                continue
-            if version_info is None:
-                infos[hubid] = version_infos
-            else:
-                for lang, vi in version_infos.items():
-                    if version_info == vi:
-                        infos.setdefault(hubid, []).append(lang)
-        return infos
-
-    security.declarePublic('getProxyInfoFromRepoId')
-    def getProxyInfoFromRepoId(self, repoid, workflow_vars=()):
-        """Get the proxy infos from a repoid.
-
-        Returns also info for the specified workflow vars.
-        Flags the proxies that are not visible.
-        """
-        repotool = getToolByName(self, 'portal_repository')
-        hubtool = getToolByName(self, 'portal_eventservice')
         wftool = getToolByName(self, 'portal_workflow')
         portal = aq_parent(aq_inner(self))
-        infos = self.getMatchingProxies(repoid, version_info=None)
+        rpaths = self._docid_to_rpaths[docid]
         res = []
-        for hubid, version_infos in infos.items():
-            rpath = hubtool.getLocation(hubid, relative=1)
+        for rpath in rpaths:
             try:
                 ob = portal.unrestrictedTraverse(rpath)
             except KeyError:
-                LOG('getProxiesFromRepoId', DEBUG, 'rpath=%s hubid=%s id=%s infos=%s' % (rpath, hubid, id, infos))
+                LOG('ProxyTool', DEBUG,
+                    'getProxiesFromRepoId no ob rpath=%s' % rpath)
                 continue
+            docid2, language_revs = self._rpath_to_infos[rpath]
             visible = _checkPermission(View, ob)
             info = {'object': ob,
                     'rpath': rpath,
-                    'hubid': hubid,
-                    'version_infos': version_infos,
+                    'language_revs': language_revs,
                     'visible': visible,
                     }
             for var in workflow_vars:
@@ -202,119 +301,139 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             res.append(info)
         return res
 
-    security.declarePublic('getProxiesFromId')
-    def getProxiesFromId(self, id):
-        """Get the proxy infos from a repo id (gotten from the catalog).
+    # XXX was def getProxiesFromId(self, id):
+    security.declarePublic('getProxiesFromObjectId')
+    def getProxiesFromObjectId(self, id):
+        """Get the proxy infos from an object id (gotten from the catalog).
+
+        Returns a list of dictionnaries with:
+
+        - object: the proxy
+
+        - rpath: the proxy's rpath
+
+        - docid: the proxy docid
+
+        - language_revs: the association between language and revs
 
         Only returns the proxies that are visible.
+
+        (Called by user code after a catalog search.)
+        XXX should be transformed into a full searchResults method XXX
         """
         repotool = getToolByName(self, 'portal_repository')
-        hubtool = getToolByName(self, 'portal_eventservice')
         portal = aq_parent(aq_inner(self))
-        repoid, version_info = repotool.getRepoIdAndVersionFromId(id)
-        if repoid is None:
+        docid, rev = repotool.getDocidAndRevisionFromObjectId(id)
+        if docid is None:
             return []
-        infos = self.getMatchingProxies(repoid, version_info)
+        rpaths = self._docid_rev_to_rpaths[(docid, rev)]
         res = []
-        for hubid, langs in infos.items():
-            rpath = hubtool.getLocation(hubid, relative=1)
+        for rpath in rpaths:
+            docid2, language_revs = self._rpath_to_infos[rpath]
             try:
+                # XXX costly if search
+                # XXX We should be able to filter by visibility directly
                 ob = portal.unrestrictedTraverse(rpath)
             except KeyError:
-                LOG('getProxiesFromId', DEBUG, 'rpath=%s hubid=%s id=%s infos=%s' % (rpath, hubid, id, infos))
+                LOG('ProxyTool', DEBUG,
+                    'getProxiesFromObjectId rpath=%s id=%s' % (rpath, id))
                 continue
             if _checkPermission(View, ob):
-                res.append({'object': ob,
-                            'rpath': rpath,
-                            'hubid': hubid,
-                            'langs': langs,
-                            })
+                info = {'object': ob,
+                        'rpath': rpath,
+                        'docid': docid,
+                        'language_revs': language_revs.copy(),
+                        }
+                res.append(info)
         return res
 
+    # XXX implement this
+    security.declarePublic('searchResults')
+    def searchResults(self, **kw):
+        """Return the proxies matching a search in the catalog.
+        """
+        raise NotImplementedError
+
+
     security.declarePrivate('freezeProxy')
-    def freezeProxy(self, hubid):
+    def freezeProxy(self, proxy):
         """Freeze a proxy.
 
-        (Called by ProxyBase.)
+        (Also called by ProxyBase.)
         """
         # XXX use an event?
-        #LOG('ProxyTool', DEBUG, 'Freezeing hubid=%s' % hubid)
-        if not self._hubid_to_info.has_key(hubid):
-            #LOG('ProxyTool', ERROR, 'Getting unknown hubid %s' % hubid)
-            raise ValueError(hubid)
-        repoid, version_infos = self._hubid_to_info[hubid]
         repotool = getToolByName(self, 'portal_repository')
-        for lang, version_info in version_infos.items():
+        docid = proxy.getDocid()
+        for lang, rev in proxy._getLanguageRevisions().items():
             #LOG('ProxyTool', DEBUG, ' Freezeing repoid=%s v=%s'
             #    % (repoid, version_info))
-            repotool.freezeVersion(repoid, version_info)
+            repotool.freezeRevision(docid, rev)
 
     security.declarePrivate('unshareContent')
-    def unshareContent(self, hubid):
-        """Unshare content (after a copy/paste for instance)."""
+    def unshareContent(self, proxy):
+        """Unshare content (after a copy/paste for instance).
+
+        XXX incorrect ! should create new docid.
+
+        Called from paste.
+        """
+        if not _isinstance(proxy, ProxyBase):
+            return
         repotool = getToolByName(self, 'portal_repository')
-        if not self._hubid_to_info.has_key(hubid):
-            LOG('ProxyTool', ERROR, 'Getting unknown hubid %s' % hubid)
-            return None
-        repoid, version_infos = self._hubid_to_info[hubid]
-        new_version_infos = {}
-        for lang, vi in version_infos.items():
-            new_vi = repotool.copyVersion(repoid, vi)
-            new_version_infos[lang] = new_vi
-        # Now update info
-        self._hubid_to_info[hubid] = (repoid, new_version_infos)
+        docid = proxy.getDocid()
+        new_language_revs = {}
+        for lang, rev in proxy._getLanguageRevisions().items():
+            new_ob, new_rev = repotool.copyRevision(docid, rev)
+            proxy.setLanguageRevision(lang, new_rev)
+        proxy.proxyChanged()
 
     security.declarePrivate('setSecurity')
-    def setSecurity(self, ob):
-        """Reapply the security info to the versions of a proxy.
+    def setSecurity(self, proxy, skip_rpath=None):
+        """Reapply correct security info to the revisions of a proxy.
 
-        (Called by ProxyBase.) XXX but should use an event
+        If skip_rpath, don't take that rpath into account (used when a
+        deletion is processed).
+
+        (Called by ProxyBase and self.) XXX but should use an event
         """
         # XXX should not get directly an object... or should it?
-        #LOG('setSecurity', DEBUG, '--- ob %s' % '/'.join(ob.getPhysicalPath()))
-        try:
-            isproxy = isinstance(ob, ProxyBase)
-        except TypeError:
-            # In python 2.1 isinstance() raises TypeError
-            # instead of returning 0 for ExtensionClasses.
-            isproxy = 0
-        if not isproxy:
+        LOG('setSecurity', DEBUG, '--- proxy %s'
+            % '/'.join(proxy.getPhysicalPath()))
+        if not _isinstance(proxy, ProxyBase):
             return
-        # XXX should be sent also by the one sending an event instead of
-        #     calling this directly
-        evtool = getEventService(self)
-        evtool.notify('sys_modify_security', ob, {})
 
-        hubtool = getToolByName(self, 'portal_eventservice')
-        repotool = getToolByName(self, 'portal_repository')
-        # Gather versions
-        repoid = ob.getRepoId()
-        version_infos = ob.getVersionInfos()
-        versions = {}
-        for lang, version_info in version_infos.items():
-            versions[version_info] = None
-        versions = versions.keys()
-        #LOG('setSecurity', DEBUG, 'repoid %s versions %s' % (repoid, versions))
-        # Gather the hubids of proxies pointing to any version
-        hubids = {}
-        for version_info in versions:
-            # For each version, get all the proxies pointing to it
-            infos = self.getMatchingProxies(repoid, version_info)
-            for hubid in infos.keys():
-                hubids[hubid] = None
-        hubids = hubids.keys()
-        #LOG('setSecurity', DEBUG, 'hubids %s' % (hubids,))
-        # Get user permissions for users that have a (merged) local role
+        # Gather revisions.
+        docid = proxy.getDocid()
+        revs = {}
+        for lang, rev in proxy._getLanguageRevisions().items():
+            revs[rev] = None
+        revs = revs.keys()
+
+        # Gather the rpaths of proxies pointing to any revision.
+        rpaths = {}
+        for rev in revs:
+            # For each revision, get all the proxies pointing to it.
+            # XXX
+            # XXX NOTE, the object may not be in the indexes yet...
+            # XXX _createObject -> _insertWorkflow -> _reindexWorkflowVariables
+            # XXX -> reindex() -> setSecurity
+            # XXX
+            # XXX The CMF Add event is only sent after that...
+            # XXX
+            rev_rpaths = self._docid_rev_to_rpaths[(docid, rev)]
+            for rpath in rev_rpaths:
+                if rpath != skip_rpath:
+                    rpaths[rpath] = None
+        rpaths = rpaths.keys()
+        #LOG('setSecurity', DEBUG, 'rpaths=%s' % (rpaths,))
+
+        # Get user permissions for users that have a (merged) local role.
         allperms = self._getRelevantPermissions()
         #LOG('setSecurity', DEBUG, 'relevant perms %s' % (allperms,))
         userperms = {}
         portal = aq_parent(aq_inner(self))
-        for hubid in hubids:
-            location = hubtool.getLocation(hubid)
-            #LOG('setSecurity', DEBUG, 'location %s' % (location,))
-            if location is None:
-                continue
-            ob = portal.unrestrictedTraverse(location)
+        for rpath in rpaths:
+            ob = portal.unrestrictedTraverse(rpath)
             merged = mergedLocalRoles(ob, withgroups=1).items()
             #LOG('setSecurity', DEBUG, 'merged %s' % (merged,))
             # Collect permissions of users
@@ -330,11 +449,19 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                             if perm not in perms:
                                 #LOG('setSecurity', DEBUG, '      addperm')
                                 perms.append(perm)
-        #LOG('setSecurity', DEBUG, 'userperms is %s' % (userperms,))
-        # Now set security on versions.
-        for version_info in versions:
-            repotool.setObjectSecurity(repoid, version_info, userperms)
-            ob = repotool.getObjectVersion(repoid, version_info)
+        #LOG('setSecurity', DEBUG, 'userperms=%s' % (userperms,))
+
+        # Now set security on revisions.
+        repotool = getToolByName(self, 'portal_repository')
+        for rev in revs:
+            repotool.setRevisionSecurity(docid, rev, userperms)
+
+        # XXX should be sent also by the one sending an event instead of
+        #     calling this directly
+        # XXX why this notify ? we're not changing this proxy's security...
+        evtool = getEventService(self)
+        evtool.notify('sys_modify_security', proxy, {})
+
 
     def _getRelevantPermissions(self):
         """Get permissions relevant to security info discovery."""
@@ -382,19 +509,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         ti = ttool.getTypeInfo(type_name)
         if ti is None:
             raise ValueError('No type information for %s' % type_name)
-        try:
-            isfti = isinstance(ti, FactoryTypeInformation)
-        except TypeError:
-            # In python 2.1 isinstance() raises TypeError
-            # instead of returning 0 for ExtensionClasses.
-            isfti = 0
-        try:
-            issti = isinstance(ti, ScriptableTypeInformation)
-        except TypeError:
-            issti = 0
-        if isfti:
+        if _isinstance(ti, FactoryTypeInformation):
             ob = self._constructInstance_fti(container, ti, id, *args, **kw)
-        elif issti:
+        elif _isinstance(ti, ScriptableTypeInformation):
             ob = self._constructInstance_sti(container, ti, id, *args, **kw)
             raise ValueError('Unknown type information class for %s' %
                              type_name)
@@ -413,36 +530,76 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     # Internal
     #
 
-    security.declarePrivate('addProxy')
-    def addProxy(self, hubid, repoid, version_infos):
+    security.declarePrivate('_addProxy')
+    def _addProxy(self, proxy, rpath):
         """Add knowledge about a new proxy.
 
-        The hubid is the one of the proxy.
-        The repoid is the document family pointed to.
-        The version_infos mapping stores a correspondance between language
-        and version. Language may be '*'. Version is an integer.
+        Maintains internal indexes.
         """
-        if self._hubid_to_info.has_key(hubid):
-            LOG('ProxyTool', ERROR,
-                'Adding already added hubid %s, repoid %s' % (hubid, repoid))
-        self._hubid_to_info[hubid] = (repoid, version_infos)
+        docid = proxy.getDocid()
+        language_revs = proxy.getLanguageRevisions()
 
-    security.declarePrivate('delProxy')
-    def delProxy(self, hubid):
-        """Delete knowledge about a proxy."""
-        if not self._hubid_to_info.has_key(hubid):
-            LOG('ProxyTool', ERROR, 'Deleting unknown hubid %s' % hubid)
+        self._rpath_to_infos[rpath] = (docid, language_revs)
+
+        rpaths = self._docid_to_rpaths.get(docid, ())
+        if rpath not in rpaths:
+            rpaths = rpaths + (rpath,)
+            self._docid_to_rpaths[docid] = rpaths
         else:
-            del self._hubid_to_info[hubid]
-
-    security.declarePrivate('modifyProxy')
-    def modifyProxy(self, hubid, repoid, version_infos):
-        """Modify knowledge about a proxy."""
-        if not self._hubid_to_info.has_key(hubid):
             LOG('ProxyTool', ERROR,
-                'Modifying unknown hubid %s, repoid %s' % (hubid, repoid))
-        self.delProxy(hubid)
-        self.addProxy(hubid, repoid, version_infos)
+                'Index _docid_to_rpaths for %s already has rpath=%s: %s'
+                % (docid, rpath, rpaths))
+            raise ValueError, rpath
+
+        revs = {}
+        for lang, rev in language_revs.items():
+            revs[rev] = None
+        for rev in revs.keys():
+            key = (docid, rev)
+            rpaths = self._docid_rev_to_rpaths.get(key, ())
+            if rpath not in rpaths:
+                rpaths = rpaths + (rpath,)
+                self._docid_rev_to_rpaths[key] = rpaths
+            else:
+                LOG('ProxyTool', ERROR,
+                    'Index _docid_rev_to_rpaths for %s already has '
+                    'rpath=%s: %s' % (key, rpath, rpaths))
+                raise ValueError, rpath
+
+
+    security.declarePrivate('_delProxy')
+    def _delProxy(self, rpath):
+        """Delete knowledge about a proxy.
+
+        Maintains internal indexes.
+        """
+        docid, language_revs = self._rpath_to_infos[rpath]
+        del self._rpath_to_infos[rpath]
+
+        rpaths = list(self._docid_to_rpaths[docid])
+        rpaths.remove(rpath)
+        if rpaths:
+            self._docid_to_rpaths[docid] = tuple(rpaths)
+        else:
+            del self._docid_to_rpaths[docid]
+
+        revs = {}
+        for lang, rev in language_revs.items():
+            revs[rev] = None
+        for rev in revs.keys():
+            key = (docid, rev)
+            rpaths = list(self._docid_rev_to_rpaths[key])
+            rpaths.remove(rpath)
+            if rpaths:
+                self._docid_rev_to_rpaths[key] = tuple(rpaths)
+            else:
+                del self._docid_rev_to_rpaths[key]
+
+    security.declarePrivate('_modifyProxy')
+    def _modifyProxy(self, proxy, rpath):
+        """Recompute knowledge about a proxy."""
+        self._delProxy(rpath)
+        self._addProxy(proxy, rpath)
 
     #
     # Event notification
@@ -452,97 +609,85 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     def notify_proxy(self, event_type, object, infos):
         """Notification from the event service.
 
-        Called when a proxy is added/deleted. Updates the list
-        of existing proxies.
-
-        Called when a document is modified. Notifies the proxies
-        that they have implicitly been modified.
+        Called when a proxy is added/deleted/modified.
+        Updates internal indexes.
         """
-        if event_type in ('sys_add_object', 'sys_del_object'):
-            try:
-                isproxy = isinstance(object, ProxyBase)
-            except TypeError:
-                # In python 2.1 isinstance() raises TypeError
-                # instead of returning 0 for ExtensionClasses.
-                isproxy = 0
-            if not isproxy:
+        # XXX Called when a document is modified. Notifies the proxies
+        # that they have implicitly been modified. (Would be used so
+        # that Title is reindexed for instance.)
+
+        if event_type in ('sys_add_object',
+                          'sys_del_object',
+                          'sys_modify_object'):
+            if not _isinstance(object, ProxyBase):
                 return
             LOG('ProxyTool', DEBUG, 'Got %s for %s'
                 % (event_type, '/'.join(object.getPhysicalPath())))
-            hubid = infos['hubid']
+            rpath = infos['rpath']
             dodel = 0
             if event_type == 'sys_add_object':
-                repoid = object.getRepoId()
-                version_infos = object.getVersionInfos()
-                self.addProxy(hubid, repoid, version_infos)
+                self._addProxy(object, rpath)
+            elif event_type == 'sys_modify_object':
+                self._modifyProxy(object, rpath)
             elif event_type == 'sys_del_object':
                 dodel = 1
-            # Refresh security
-            # XXX actually should not take into account this to-be-removed
-            #     proxy...
-            self.setSecurity(object)
+            # Refresh security on the revisions.
+            self.setSecurity(object, skip_rpath=rpath)
             if dodel:
                 # Must be done last...
-                self.delProxy(hubid)
+                self._delProxy(rpath)
             LOG('ProxyTool', DEBUG, '  ... done')
 
     #
     # Management
     #
 
-    security.declareProtected(ManagePortal, 'getVersionsUsed')
-    def getVersionsUsed(self):
+    security.declareProtected(ManagePortal, 'getRevisionsUsed')
+    def getRevisionsUsed(self):
         """Return management info about all the proxies.
 
-        Return a dict of {repoid: dict of {version: None}}
+        Return a dict of {docid: dict of {rev: None}}
         """
-        infos = {}
-        for hubid, (repoid, version_infos) in self._hubid_to_info.items():
-            for lang, vi in version_infos.items():
-                infos.setdefault(repoid, {})[vi] = None
-        return infos
+        res = {}
+        for rpath, infos in self._rpath_to_infos.items():
+            docid, language_revs = infos
+            for lang, rev in language_revs.items():
+                res.setdefault(docid, {})[rev] = None
+        return res
 
     security.declareProtected(ManagePortal, 'getBrokenProxies')
     def getBrokenProxies(self):
         """Return the broken proxies.
 
-        Return a list of (hubid, info).
+        Return a list of (rpath, infos).
         """
-        hubtool = getToolByName(self, 'portal_eventservice')
         portal = aq_parent(aq_inner(self))
         broken = []
-        for hubid, info in self._hubid_to_info.items():
-            rpath = hubtool.getLocation(hubid, relative=1)
+        for rpath, infos in self._rpath_to_infos.items():
             try:
                 ob = portal.unrestrictedTraverse(rpath)
             except (AttributeError, KeyError):
-                broken.append((hubid, info))
+                broken.append((rpath, infos))
         return broken
 
-    def _recurse_rebuild(self, ob, hubtool=None):
+    def _recurse_rebuild(self, ob, utool):
         """Rebuild all proxies recursively."""
-        try:
-            isproxy = isinstance(ob, ProxyBase)
-        except TypeError:
-            isproxy = 0
-        if not isproxy:
+        if not _isinstance(ob, ProxyBase):
             return
-        location = '/'.join(ob.getPhysicalPath())
-        rlocation = hubtool._get_rlocation(location)
-        hubid = hubtool._register(rlocation) # XXX may log error if already
-        self.addProxy(hubid, ob.getRepoId(), ob.getVersionInfos())
+        rpath = utool.getRelativeUrl(ob)
+        self._addProxy(ob, rpath)
         for subob in ob.objectValues():
-            self._recurse_rebuild(subob, hubtool=hubtool)
+            self._recurse_rebuild(subob, utool)
 
     security.declareProtected(ManagePortal, 'rebuildProxies')
     def rebuildProxies(self):
         """Rebuild all proxies."""
-        hubtool = getToolByName(self, 'portal_eventservice')
+        utool = getToolByName(self, 'portal_url')
         portal = aq_parent(aq_inner(self))
         self._clear()
         # Use as roots all the subobs (1st level) of the portal.
         for ob in portal.objectValues():
-            self._recurse_rebuild(ob, hubtool=hubtool)
+            self._recurse_rebuild(ob, utool)
 
     #
     # ZMI
@@ -567,11 +712,10 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     def manage_purgeBrokenProxies(self, REQUEST=None):
         """Purge the broken proxies."""
         broken = self.getBrokenProxies()
-        for hubid, infos in broken:
-            del self._hubid_to_info[hubid]
-        if REQUEST:
-            REQUEST.RESPONSE.redirect(self.absolute_url() +
-                                      '/manage_proxiesInfo?search=1'
-                                      '?manage_tabs_message=Purged.')
+        for rpath, infos in broken:
+            self._delProxy(rpath)
+        REQUEST.RESPONSE.redirect(self.absolute_url() +
+                                  '/manage_proxiesInfo?search=1'
+                                  '?manage_tabs_message=Purged.')
 
 InitializeClass(ProxyTool)

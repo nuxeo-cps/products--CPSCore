@@ -29,10 +29,11 @@ from Acquisition import aq_base, aq_parent, aq_inner
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import View
-from Products.CMFCore.CMFCorePermissions import AccessContentsInformation
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
+
+from Products.NuxCPS3.cpsutils import _isinstance
 
 from Products.NuxCPS3.EventServiceTool import getEventService
 from Products.NuxCPS3.CPSBase import CPSBaseFolder
@@ -42,119 +43,148 @@ from Products.NuxCPS3.CPSBase import CPSBaseDocument
 class ProxyBase(Base):
     """Mixin class for proxy types.
 
-    A proxy stores the repoid of the document family it points to,
-    and a mapping of language -> version.
-    """
+    A proxy stores:
+
+    - docid, the document family it points to.
+
+    - language_revs, a mapping of language -> revision. The revision is
+      an integer representing a single revision of a document.
+
+    - tag, an optional integer tag. A tag is an abstract reference to
+      the mapping language -> revision. It is used to provide branch
+      lineage between proxies. """
 
     security = ClassSecurityInfo()
 
-    def __init__(self, repoid, version_infos):
-        self._repoid = repoid
-        self._version_infos = version_infos
+    def __init__(self, docid=None, default_language=None, language_revs=None,
+                 from_language_revs=None, tag=None):
+        self._docid = docid
+        self._default_language = default_language
+        self._language_revs = language_revs or {}
+        self._from_language_revs = from_language_revs or {}
+        self._tag = None
 
     #
     # API
     #
 
-    security.declarePrivate('setVersionInfos')
-    def setVersionInfos(self, version_infos):
-        """Set the version infos for this proxy.
+    # XXX was def getRepoId(self):
+    security.declareProtected(View, 'getDocid')
+    def getDocid(self):
+        """Get the docid for this proxy."""
+        return self._docid
 
-        The version infos is a dict of language -> version,
-        where language can be '*' for the default, and version
-        is an integer.
+    security.declareProtected(View, 'getDefaultLanguage')
+    def getDefaultLanguage(self):
+        """Get the default language for this proxy."""
+        return self._default_language
+
+    security.declarePrivate('setDefaultLanguage')
+    def setDefaultLanguage(self, default_language):
+        """Set the default language for this proxy.
+
+        (Called by ProxyTool.)
         """
-        self._version_infos = version_infos.copy()
-        # XXX notify event service of change ?
-        # XXX this method is not called yet (will be with i18n)
+        self._default_language = default_language
 
-    security.declareProtected(View, 'getVersionInfos')
-    def getVersionInfos(self):
-        """Return the version infos for this proxy."""
-        return self._version_infos.copy()
+    # XXX was def getVersionInfos(self):
+    security.declareProtected(View, 'getLanguageRevisions')
+    def getLanguageRevisions(self):
+        """Get the mapping of language -> revision."""
+        return self._language_revs.copy()
 
-    security.declareProtected(View, 'getRepoId')
-    def getRepoId(self):
-        """Return the repoid for this proxy."""
-        return self._repoid
+    security.declarePrivate('_getLanguageRevisions')
+    def _getLanguageRevisions(self):
+        """Get the mapping of language -> revision, without copy.
 
-    # XXX permission ?
-    security.declareProtected(AccessContentsInformation, 'getContent')
+        (Called by ProxyTool.)
+        """
+        return self._language_revs
+
+    security.declarePrivate('setLanguageRevision')
+    def setLanguageRevision(self, lang, rev):
+        """Set the revision for a language.
+
+        Does not notify the event service.
+
+        (Called by ProxyTool.)
+        """
+        self._p_changed = 1
+        self._language_revs[lang] = rev
+
+    security.declareProtected(View, 'getFromLanguageRevisions')
+    def getFromLanguageRevisions(self):
+        """Get the originating language mapping for this proxy.
+
+        This is used by checkout and checkin mechanism to find what the
+        origin of a given proxy is.
+        """
+        return self._from_language_revs.copy()
+
+    security.declarePrivate('_getFromLanguageRevisions')
+    def _getFromLanguageRevisions(self):
+        """Get the originating language mapping for this proxy (no copy)."""
+        return self._from_language_revs
+
+    security.declarePrivate('setFromLanguageRevisions')
+    def setFromLanguageRevisions(self, from_language_revs):
+        """Set the originating language mapping for this proxy."""
+        self._from_language_revs = from_language_revs
+
+    security.declareProtected(View, 'getTag')
+    def getTag(self):
+        """Get the tag for this proxy, or None."""
+        return self._tag
+
+    security.declarePrivate('setTag')
+    def setTag(self, tag):
+        """Set the tag for this proxy."""
+        self._tag = tag
+
+    security.declareProtected(View, 'getRevision')
+    def getRevision(self, lang=None):
+        """Get the best revision for a proxy."""
+        pxtool = getToolByName(self, 'portal_proxies')
+        return pxtool.getBestRevision(self, lang=lang)[1]
+
+    security.declareProtected(View, 'getContent')
     def getContent(self, lang=None):
-        """Return the content object referred to by this proxy.
+        """Get the content object referred to by this proxy.
 
         The returned object may depend on the current language.
         """
         return self._getContent(lang=lang)
 
-    security.declareProtected(View, 'getVersion')
-    def getVersion(self, lang=None):
-        """Return the version of this proxy in the current language."""
-        if lang is None:
-            lang = '*' # XXX
-        version_infos = self._version_infos
-        if version_infos.has_key(lang):
-            version_info = version_infos[lang]
-        elif version_infos.has_key('*'):
-            version_info = version_infos['*']
-        else:
-            version_info = 0
-        return version_info
-
     security.declareProtected(ModifyPortalContent, 'getEditableContent')
     def getEditableContent(self, lang=None):
-        """Return the editable content object referred to by this proxy.
+        """Get the editable content object referred to by this proxy.
 
         The returned object may depend on the current language.
         """
         return self._getContent(lang=lang, editable=1)
 
+    security.declarePrivate('_getContent')
     def _getContent(self, lang=None, editable=0):
         """Get the content object, maybe editable."""
-        pxtool = getToolByName(self, 'portal_proxies', None)
-        if pxtool is None:
-            LOG('ProxyBase', ERROR, 'No portal_proxies found')
-            return None
-        hubtool = getToolByName(self, 'portal_eventservice', None)
-        if hubtool is None:
-            LOG('ProxyBase', ERROR, 'No portal_eventservice found')
-            return None
-        hubid = hubtool.getHubId(self)
-        if hubid is None:
-            LOG('ProxyBase', DEBUG, 'No hubid found for proxy object %s'
-                % '/'.join(self.getPhysicalPath()))
-            return None
-        ob, lang, version_info = pxtool.getContent(hubid, lang=lang, editable=editable)
-        if editable and version_info is not None:
-            if version_info != self.getVersion(lang=lang):
-                # Update proxy if version has changed because editable.
-                self._p_changed = 1
-                self._version_infos[lang] = version_info
-                # Notify of this change.
-                evtool = getEventService(self)
-                evtool.notify('sys_modify_object', self, {})
-        return ob
-
-    security.declarePrivate('freezeProxy')
-    def freezeProxy(self):
-        """Freeze the proxy.
-
-        (Called by CPSWorkflow.)
-        """
-        hubtool = getToolByName(self, 'portal_eventservice')
         pxtool = getToolByName(self, 'portal_proxies')
-        self._freezeProxy(self, hubtool, pxtool)
+        return pxtool.getContent(self, lang=lang, editable=editable)
 
-    security.declarePrivate('_freezeProxy')
-    def _freezeProxy(self, ob, hubtool, pxtool):
-        """Freeze the proxy."""
-        # XXX use an event?
-        hubid = hubtool.getHubId(ob)
-        if hubid is not None:
-            pxtool.freezeProxy(hubid)
+    security.declarePrivate('proxyChanged')
+    def proxyChanged(self):
+        """Do necessary notifications after a proxy was changed."""
+        pxtool = getToolByName(self, 'portal_proxies')
+        utool = getToolByName(self, 'portal_url')
+        rpath = utool.getRelativeUrl(self)
+        pxtool._modifyProxy(self, rpath) # XXX or directly event ?
+        pxtool.setSecurity(self)
+        evtool = getEventService(self)
+        evtool.notify('sys_modify_object', self, {})
 
     def __getitem__(self, name):
-        """Transparent traversal of the proxy to the real subobjects."""
+        """Transparent traversal of the proxy to the real subobjects.
+
+        Used for skins that don't take proxies enough into account.
+        """
         if hasattr(self, name):
             raise KeyError, name
         ob = self._getContent()
@@ -171,6 +201,28 @@ class ProxyBase(Base):
             # XXX Maybe incorrect if complex wrapping.
             res = aq_base(res).__of__(self)
         return res
+
+    #
+    # Freezing
+    #
+
+    security.declarePrivate('freezeProxy')
+    def freezeProxy(self):
+        """Freeze the proxy.
+
+        Freezing means that any attempt at modification will create a new
+        revision. This allows for lazy copying.
+
+        (Called by CPSWorkflow.)
+        """
+        pxtool = getToolByName(self, 'portal_proxies')
+        self._freezeProxy(self, pxtool)
+
+    security.declarePrivate('_freezeProxy')
+    def _freezeProxy(self, ob, pxtool):
+        """Freeze the proxy."""
+        # XXX use an event?
+        pxtool.freezeProxy(self)
 
     #
     # Staging
@@ -198,8 +250,9 @@ class ProxyBase(Base):
                  '__ac_local_roles__',
                  '__ac_local_group_roles__',
                  # proxy definition
-                 '_repoid',
-                 '_version_infos',
+                 '_docid',
+                 '_tag',
+                 '_language_revs',
                  # dublin core
                  'title',
                  'description',
@@ -254,19 +307,12 @@ class ProxyBase(Base):
 
     def _setSecurity(self):
         """Propagate security changes made on the proxy."""
-        # Now gather permissions for each version
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool.setSecurity(self)
 
     def _setSecurityRecursive(self, ob, pxtool=None):
         """Propagate security changes made on the proxy."""
-        try:
-            isproxy = isinstance(ob, ProxyBase)
-        except TypeError:
-            # In python 2.1 isinstance() raises TypeError
-            # instead of returning 0 for ExtensionClasses.
-            isproxy = 0
-        if not isproxy:
+        if not _isinstance(ob, ProxyBase):
             return
         if pxtool is None:
             pxtool = getToolByName(self, 'portal_proxies')
@@ -358,13 +404,20 @@ class ProxyBase(Base):
     manage_proxyInfo = DTMLFile('zmi/proxy_info', globals())
 
     _properties = (
-        {'id': 'RepoId', 'type': 'string', 'mode': ''},
-        {'id': 'VersionInfos', 'type': 'string', 'mode': ''},
+        {'id':'PropDocid', 'type':'string', 'mode':''},
+        {'id':'PropDefaultLanguage', 'type':'string', 'mode':''},
+        {'id':'PropLanguageRevisions', 'type':'string', 'mode':''},
+        {'id':'PropFromLanguageRevisions', 'type':'string', 'mode':''},
+        {'id':'PropTag', 'type':'string', 'mode':''},
         )
-    RepoId = ComputedAttribute(getRepoId, 1)
-    VersionInfos = ComputedAttribute(getVersionInfos, 1)
+    PropDocid = ComputedAttribute(getDocid, 1)
+    PropDefaultLanguage = ComputedAttribute(getDefaultLanguage, 1)
+    PropLanguageRevisions = ComputedAttribute(getLanguageRevisions, 1)
+    PropFromLanguageRevisions = ComputedAttribute(getFromLanguageRevisions, 1)
+    PropTag = ComputedAttribute(getTag, 1)
 
 InitializeClass(ProxyBase)
+
 
 #
 # Serialization
@@ -444,9 +497,9 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
     meta_type = 'CPS Proxy Folder'
     # portal_type will be set to the target's portal_type after creation
 
-    def __init__(self, id, repoid=None, version_infos=None):
+    def __init__(self, id, **kw):
         CPSBaseFolder.__init__(self, id)
-        ProxyBase.__init__(self, repoid, version_infos)
+        ProxyBase.__init__(self, **kw)
 
     manage_options = (CPSBaseFolder.manage_options[:1] +
                       ProxyBase.proxybase_manage_options +
@@ -463,9 +516,9 @@ class ProxyDocument(ProxyBase, CPSBaseDocument):
     meta_type = 'CPS Proxy Document'
     # portal_type will be set to the target's portal_type after creation
 
-    def __init__(self, id, repoid=None, version_infos=None):
+    def __init__(self, id, **kw):
         CPSBaseDocument.__init__(self, id)
-        ProxyBase.__init__(self, repoid, version_infos)
+        ProxyBase.__init__(self, **kw)
 
     manage_options = (ProxyBase.proxybase_manage_options +
                       CPSBaseDocument.manage_options
@@ -520,53 +573,43 @@ class ProxyFolderishDocument(ProxyFolder):
         (Called by CPSWorkflow.)
         """
         # XXX use an event?
-        hubtool = getToolByName(self, 'portal_eventservice')
         pxtool = getToolByName(self, 'portal_proxies')
-        self._freezeProxyRecursive(self, hubtool, pxtool)
+        self._freezeProxyRecursive(self, pxtool)
 
     security.declarePrivate('_freezeProxyRecursive')
-    def _freezeProxyRecursive(self, ob, hubtool, pxtool):
+    def _freezeProxyRecursive(self, ob, pxtool):
         """Freeze this proxy and recurse."""
-        try:
-            isproxy = isinstance(ob, ProxyBase)
-        except TypeError:
-            # In python 2.1 isinstance() raises TypeError
-            # instead of returning 0 for ExtensionClasses.
-            isproxy = 0
-        if not isproxy:
+        if not _isinstance(ob, ProxyBase):
             return
-        self._freezeProxy(ob, hubtool, pxtool)
+        self._freezeProxy(ob, pxtool)
         for subob in ob.objectValues():
-            self._freezeProxyRecursive(subob, hubtool, pxtool)
+            self._freezeProxyRecursive(subob, pxtool)
 
 InitializeClass(ProxyFolderishDocument)
 
 
-def addProxyFolder(container, id, repoid=None, version_infos=None,
-                   REQUEST=None):
+def addProxyFolder(container, id, REQUEST=None, **kw):
     """Add a proxy folder."""
     # container is a dispatcher when called from ZMI
-    ob = ProxyFolder(id, repoid=repoid, version_infos=version_infos)
+    ob = ProxyFolder(id, **kw)
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:
         REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
 
-def addProxyDocument(container, id, repoid=None, version_infos=None,
-                     REQUEST=None):
+def addProxyDocument(container, id, REQUEST=None, **kw):
     """Add a proxy document."""
     # container is a dispatcher when called from ZMI
-    ob = ProxyDocument(id, repoid=repoid, version_infos=version_infos)
+    ob = ProxyDocument(id, **kw)
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:
         REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
 
-def addProxyFolderishDocument(container, id, repoid=None, version_infos=None,
-                              REQUEST=None):
+def addProxyFolderishDocument(container, id, REQUEST=None, **kw):
     """Add a proxy folderish document."""
     # container is a dispatcher when called from ZMI
-    ob = ProxyFolderishDocument(id, repoid=repoid, version_infos=version_infos)
+    ob = ProxyFolderishDocument(id, **kw)
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:

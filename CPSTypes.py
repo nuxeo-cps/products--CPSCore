@@ -179,7 +179,7 @@ class TypeContainer(Base):
     def manage_CPScopyObjects(self, ids, REQUEST=None):
         """Copy objects (for later paste)."""
         wftool = getToolByName(self, 'portal_workflow')
-        ok, why = wftool.isBehaviorAllowedIn(self, 'copy', get_details=1)
+        ok, why = wftool.isBehaviorAllowedFor(self, 'copy', get_details=1)
         if not ok:
             raise CopyError, 'Copy not allowed, %s' % why
         return self.manage_copyObjects(ids, REQUEST=REQUEST)
@@ -188,7 +188,7 @@ class TypeContainer(Base):
     def manage_CPScutObjects(self, ids, REQUEST=None):
         """Cut objects (for later paste)."""
         wftool = getToolByName(self, 'portal_workflow')
-        ok, why = wftool.isBehaviorAllowedIn(self, 'cut', get_details=1)
+        ok, why = wftool.isBehaviorAllowedFor(self, 'cut', get_details=1)
         if not ok:
             raise CopyError, 'Cut not allowed, %s' % why
         return self.manage_cutObjects(ids, REQUEST=REQUEST)
@@ -198,14 +198,13 @@ class TypeContainer(Base):
         """Paste objects (from an earlier copy)."""
         wftool = getToolByName(self, 'portal_workflow')
         pxtool = getToolByName(self, 'portal_proxies')
-        hubtool = getToolByName(self, 'portal_eventservice')
         try:
             cp = _cb_decode(cp)
         except: # XXX
             raise CopyError, 'Invalid copy data.'
 
         # Verify pastable into self.
-        ok, why = wftool.isBehaviorAllowedIn(self, 'paste', get_details=1)
+        ok, why = wftool.isBehaviorAllowedFor(self, 'paste', get_details=1)
         if not ok:
             raise CopyError, 'Paste not allowed, %s' % why
 
@@ -224,8 +223,8 @@ class TypeContainer(Base):
             # Verify copy/cutable from source container.
             container = aq_parent(aq_inner(ob))
             if container not in containers:
-                ok, why = wftool.isBehaviorAllowedIn(container, behavior,
-                                                     get_details=1)
+                ok, why = wftool.isBehaviorAllowedFor(container, behavior,
+                                                      get_details=1)
                 if not ok:
                     raise CopyError, '%s not allowed, %s' % (behavior, why)
                 containers.append(container)
@@ -248,9 +247,7 @@ class TypeContainer(Base):
                 ob = self._getOb(id)
                 ob.manage_afterClone(ob)
                 # unshare content after copy
-                hubid = hubtool.getHubId(ob)
-                if hubid is not None:
-                    pxtool.unshareContent(hubid)
+                pxtool.unshareContent(ob)
                 # notify interested parties
                 if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
                     ob.manage_afterCMFAdd(ob, self)

@@ -18,20 +18,53 @@
    Destination state: <code><dtml-if new_state_id>&dtml-new_state_id;<dtml-else>(Remain in state)</dtml-if></code> <br />
    Trigger: <dtml-var expr="(trigger_type == 0 and 'Automatic') or
                             (trigger_type == 1 and 'User action') or
-                            (trigger_type == 2 and 'WorkflowMethod') or
-                            (trigger_type == 10 and 'Initial transition')
-                           ">
+                            (trigger_type == 2 and 'WorkflowMethod')">
    <br />
    <dtml-if transition_behavior>
-     Behavior:
-     <dtml-if "transition_behavior == 1">
-       Allow subobject creation
-     <dtml-elif "transition_behavior == 2">
-       Clone; Allowed transitions:
-       <code><dtml-var "', '.join(clone_allowed_transitions)" html_quote></code>
-     <dtml-elif "transition_behavior == 3">
-       Freeze object
-     </dtml-if>
+     Flags:
+     <dtml-in "transition_behavior">
+     <dtml-let behavior=sequence-item>
+       <dtml-if "behavior == 10">
+         Allow subobject create
+       <dtml-elif "behavior == 11">
+         Allow subobject delete
+       <dtml-elif "behavior == 12">
+         Allow subobject move
+       <dtml-elif "behavior == 13">
+         Allow subobject copy
+       <dtml-elif "behavior == 14">
+         Allow subobject publishing
+       <dtml-elif "behavior == 15">
+         Allow subobject checkout
+       <dtml-elif "behavior == 20">
+         Initial transition for create
+       <dtml-elif "behavior == 22">
+         Initial transition for move
+       <dtml-elif "behavior == 23">
+         Initial transition for copy
+       <dtml-elif "behavior == 24">
+         Initial transition for publishing
+       <dtml-elif "behavior == 25">
+         Initial transition for checkout
+       <dtml-elif "behavior == 26">
+         Transition for checkin
+       <dtml-elif "behavior == 34">
+         Publishing (initial transitions:
+         <code><dtml-var "', '.join(clone_allowed_transitions)" html_quote></code>)
+       <dtml-elif "behavior == 35">
+         Checkout (initial transitions:
+         <code><dtml-var "', '.join(checkout_allowed_initial_transitions)" html_quote></code>)
+       <dtml-elif "behavior == 36">
+         Checkin (transitions:
+         <code><dtml-var "', '.join(checkin_allowed_transitions)" html_quote></code>)
+       <dtml-elif "behavior == 37">
+         Freeze object
+       </dtml-if>
+       <dtml-unless sequence-end>
+       ;
+       </dtml-unless>
+     </dtml-let>
+     </dtml-in>
      <br />
    </dtml-if>
 

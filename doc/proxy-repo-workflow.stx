@@ -3,28 +3,14 @@ Proxies, document repository and workflows
   This document attempts to describe the workings of proxies, the
   document repository and workflows.
 
-  Document repository
+  This is still a work in progress.
 
-    The document repository stores all version of all documents in the
-    site. "Document" means anything that has to be versionned, so this
-    may include for instance the section folders themselves.
+  Vocabulary
 
-    A document in the repository has:
-
-    - a repoid, which is a string,
-
-    - a version_info, which is an integer; several documents may be
-      present with the same repoid but different version_info,
-
-    - a portal_type, which makes it possible to associate actions to it,
-      for instance for the different views,
-
-    - generally, all the attributes describing the "content" of the
-      document,
-
-    - security information to control its visibility (View) and
-      modifiability (Modify portal content), which is the union of all
-      the settings of the proxies that point to it.
+    I call "workspace" a place where documents are usually created and
+    worked on, and "section" a place where documents are put after
+    publication so that the site's anonymous or general users can see
+    them.
 
   Proxies
 
@@ -38,16 +24,46 @@ Proxies, document repository and workflows
 
     - has a portal_type,
 
-    - has a repoid, which is the identifier of the set of documents
-      (differentiated by their versions) to which this proxy is related,
+    - has a docid, which is the identifier of the set of documents
+      (differentiated by their rev) to which this proxy is related,
 
-    - has a mapping of language -> version_info, where language can be
-      'fr' or 'en' for instance, or '*' for a default language (always
-      present); version_info is an integer. Together (repoid,
-      version_info) identify a unique document's version in the
-      repository,
+    - has a mapping of language -> rev, where language can be 'fr' or
+      'en' for instance, or '*' for a default language (always present);
+      rev is an integer. Together (docid, rev) identify a unique
+      document's revision in the document repository,
 
-    - has security information applied to it to control its visibility.
+    - has security information applied to it to control its visibility,
+      depending on its workflow state.
+
+  Document repository
+
+    The document repository stores all version of all documents in the
+    site. "Document" means anything that has to be versionned, so this
+    may include for instance the section folders themselves.
+
+    A document in the repository has:
+
+    - a docid, which is a string,
+
+    - a rev (revision), which is an integer; several documents may be
+      present with the same docid but different rev,
+
+    - a portal_type, which makes it possible to associate actions to it,
+      for instance for the different views,
+
+    - generally, all the attributes describing the "content" of the
+      document,
+
+    - security information to control for instance its visibility (View)
+      and modifiability (Modify portal content) (according to the
+      workflow). The security information is the union of all the
+      settings of the proxies that point to it.
+
+    A revision may be internally "frozen", which means that it won't
+    ever be modified again. In this state, it's not modifiable. This
+    frozen state exists for all revisions corresponding to a workflow
+    state that is frozen. This is used to ensure that a given published
+    revision, for instance, is not modified.
 
   Document views
 
@@ -65,9 +81,10 @@ Proxies, document repository and workflows
 
     - absolute_url(),
 
-    - getId(),
+    - getId(), title_or_id(),
 
-    - objectIds(), objectValues(), objectItems(),
+    - objectIds(), objectValues(), objectItems(), when access to
+      subobjects of a folderish object is needed,
 
     - breadcrumb computations.
 
@@ -78,53 +95,109 @@ Proxies, document repository and workflows
 
     - any data accessor (Title(), Description(), etc.).
 
+  Edition
+
+    When a document is published in a section, it keeps the same
+    revision as the one in the workspace from which it has been
+    published, so that there is not too many versions. But the revision
+    is marked "frozen", because by being published there is a promise to
+    the section reviewer that the document won't change without his
+    review. When the author wants to modify his document in the
+    workspace, the system must provide a new revision. This is done
+    automatically when needed, by using::
+
+      doc = context.getEditableContent()
+
+    instead of::
+
+      doc = context.getContent()
+
+    This way, because we advise CPS that we're about to modify a
+    revision, it's possible to create a new revision when needed.
+
+  Placeful workflow configuration
+
+    In CPS workflows are placeful, this means that we can decide that
+    for a given subtree, a given portal_type will follow a given
+    workflow. A placeful (local) workflows is used for instance to have
+    a subtree dedicated to public content where objects must pass
+    through a reviewing process, and another subtree where the objects
+    can be created and worked upon easily by the members.
+
+    To create a placeful workflow configuration, a 'CPS Workflow
+    Configuration' object must be crated in the ZMI. It's then possible
+    to define for each portal type what workflow it has to follow.
+
+    When a workflow is configured in a folder, it applies to the folder
+    itself and all its subobjects, recursively. Sometimes we want to
+    configure a workflow for all the subobjects of a folder but not for
+    the folder itself. This can be done using a "Below workflow chain".
+
   Workflows
 
     The workflows are based on DCWorkflow with some extensions.
 
-    In CPS workflows are placeful, this means that we can decide that
-    for a given subtree, a given portal_type will follow a given
-    workflow. This is used for instance to have a subtree dedicated to
-    public content where objects must pass through a reviewing process,
-    and another subtree where the objects can be created and worked upon
-    easily by the members.
-
     Workflows control all the operations of a site, and all the security
-    checks. Notably they control (for each portal_type):
+    checks.
 
-    - if objects of this type can be created here (creation transition),
+    A transition type has been added to DCWorkflow: "Initial
+    Transition". An initial transition is a virtual transition followed
+    when an object is created in a container. When asking for the
+    creation of a portal type, only those that have a suitable initial
+    transition will be allowed. The standard "initial state" of
+    DCWorkflow is not used.
 
-    - if objects of this type can be submitted or published here (this
-      is another kind of creation (cloning creation transition),
+    Transitions also have a additional fields, the "behavior". This
+    controls special CPS behavior that will occur when the transition
+    exists or is followed:
 
-    - if subobjects can be created (if the portal_type is folderish),
+    - "allow subobject creation" is useful in the workflow of a
+      container (workspace for instance), and controls the general
+      possibility of adding subobjects.
 
-    - if a given object can be published/submitted elsewhere, this is
-      the "clone" operation,
+    - "allow subobject deletion" and "allow subobject copy" is used by
+      the manage_CPScopyObjects, manage_CPScutObjects and
+      manage_CPSpasteObjects methods. This will be integrated into core
+      Zope methods later.
 
-    - the usual transitions between states,
+    - "freeze object" is used by all transitions going to a state where
+      the object should not be modified anymore. This may in the future
+      move to be a property of the state itself.
 
-    - if common operations can be executed, for instance:
+    - "clone with initial transitions" is used as a mechanism for
+      publishing (and later will be reworked for checkouts).
 
-      - edit
+  Publishing
 
-      - comment
+    "Publishing" is used here to represent any kind of operation that
+    involves taking a document in a workspace and requesting its
+    publication in a section.
 
-      - copy
+    In such an operation, two containers are used, which means two
+    workflows. There is a source workflow for the document, that has to
+    allow a "clone" operation, and in the destination container two
+    conditions must be met: the destination container has to allow
+    subobject creation (note that local roles of the source container
+    have no meaning in the destination container), and the destination
+    workflow for the portal type of the document has to have some
+    initial transition, which will be used when the document is
+    "published" or "submitted" in the section. The guards (conditions)
+    on these initial transitions express who is authorized to do which
+    initial transition, and can thus distinguish between a "submit" and
+    a direct "publish".
 
-      - delete
-
-    - the checkout/checkin operations.
+    Note: a way to take into account the local roles of the source
+    container will maybe have to be devised.
 
   Document lifecycle
 
     This is an attempt to describe the lifecycle of a document. It
-    assumes a site set up with two areas, one which is the workgroups,
-    with folders of portal_type Workgroup, where authors create and
+    assumes a site set up with two areas, one which is the workspaces,
+    with folders of portal_type Workspace, where authors create and
     modify content, and one area which is the hierarchical public
     sections, where folders have portal_type Section.
 
-    There is a workgroup document workflow (actually one for each
+    There is a workspace document workflow (actually one for each
     content portal_type), which describes the workflow followed by
     documents when they are being worked upon.
 
@@ -139,14 +212,14 @@ Proxies, document repository and workflows
 
       A document is created
 
-        In a workgroup, a new document of portal_type News is created.
-        This is possible because the workflow for Workgroup allows
-        subobject creation, and because the workgroup workflow for News
-        has a creation transition.
+        In a workspace, a new document of portal_type News is created.
+        This is possible because the workflow for Workspace allows
+        subobject creation, and because the workspace workflow for News
+        has an initial transition.
 
-        In the workgroup a proxy 'mydoc' with portal_type News is
-        created, it points for all languages to repoid 'abcd' with
-        version 1. In the document repository, a document with repoid
+        In the workspace a proxy 'mydoc' with portal_type News is
+        created, it points for all languages to docid 'abcd' with
+        version 1. In the document repository, a document with docid
         'abcd' and version 1 is created, it has portal_type News. It
         contains the document's data.
 
@@ -154,34 +227,29 @@ Proxies, document repository and workflows
 
       The document is edited
 
-        This is possible because the workgroup workflow for News has an
-        "edit" transition.
+        The scripts that edit the document have to call
+        context.getEditableContent before doing modifications, to ensure
+        that the revision used is really modifiable.
 
         ...
 
-      The document is checked out...
-
-      The document's checkout is edited...
-
-      The document is checked back in...
-
       The document is submitted to a section.
 
-        This is possible because the workgroup workflow for News allows
+        This is possible because the workspace workflow for News allows
         object "cloning" into other folders. To know in what section it
         can be submitted or published, all sections are examined and
         asked if objects can be created in them, and what cloning
-        creation transitions they have for News. The user then choses a
+        initial transitions they have for News. The user then choses a
         section among the possible ones.
 
-        The submission process itself consits of the creation of a new
-        version of the document in the document repository, and the
-        creation of a proxy to that version in the section. A new
-        version is created instead of using the current one because the
-        "pending" state in the section is a "frozen" state, which means
-        that no other editable version of that document is allowed to
-        exist (to ensure that the reviewer sees a non-editable
-        document). In other kinds of workflows, this wouldn't be needed.
+        The submission process itself consits of the creation of a
+        revision of the document in the document repository, and the
+        creation of a proxy to that revision in the section. The current
+        revision is used, but because the "pending" state in the section
+        is a "frozen" state, which means that no other editable version
+        of that document is allowed to exist (to ensure that the
+        reviewer sees a non-editable document), the revision is marked
+        "frozen". In other kinds of workflows, this wouldn't be needed.
 
       A reviewer reviews the document
 
@@ -195,8 +263,10 @@ Proxies, document repository and workflows
 
       The original document is edited
 
-        Because the version is different from the one in the section,
-        there is no conflict.
+        Because the revision is frozen, just before the edit script does
+        its modification, the call to getEditableContent will replace
+        the revision in the proxy in the workspace with a new editable
+        revision, and it is that revision that will be used from now on.
 
       The revised document is re-submitted
 
@@ -208,9 +278,10 @@ Proxies, document repository and workflows
         proxy), or publish the new version and remove the previous one.
 
         Having two versions of the same document in the published state
-        must be avoided in a section workflow.
-
-      The published document is commented
-
-        This is possible because the section workflow for News has a
-        "comment" transition.
+        must be avoided in a section workflow. This will be avoided
+        automatically in the future because the "publish" transition
+        will be parametrized so that any approved version is merged with
+        any existing published version. This is a kind of checkin
+        operation, and will be necessary for multilingual documents,
+        where an English version can be submitted and will have to be
+        added to an existing French version for instance.

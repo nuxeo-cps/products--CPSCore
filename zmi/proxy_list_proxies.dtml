@@ -25,20 +25,20 @@
 
 <table width="100%" cellspacing="0" cellpadding="2" border="0">
 <tr class="list-header">
-  <td width="20%" align="left">
-    <div class="list-item">HubId</div>
+  <td width="70%" align="left">
+    <div class="list-item">Path</div>
   </td>
-  <td width="20%" align="left">
-    <div class="list-item">Repository Id</div>
+  <td width="15%" align="left">
+    <div class="list-item">Docid</div>
   </td>
-  <td width="60%" align="left">
-    <div class="list-item">Versions</div>
+  <td width="15%" align="left">
+    <div class="list-item">Revisions</div>
   </td>
 </tr>
 <dtml-in allitems size=20 start=query_start>
-<dtml-let hubid=sequence-key
-          repoid="_['sequence-item'][0]"
-          version_infos="_['sequence-item'][1]">
+<dtml-let rpath=sequence-key
+          docid="_['sequence-item'][0]"
+          language_revs="_['sequence-item'][1]">
 <dtml-if sequence-odd>
   <tr class="row-normal">
 <dtml-else>
@@ -46,20 +46,20 @@
 </dtml-if>
   <td align="left">
     <div class="list-item">
-      <a href="&dtml-ppath;/portal_eventservice/manage_redirectHubId?hubid:int=&dtml.url_quote_plus-hubid;">&dtml-hubid;</a>
+      <a href="&dtml-ppath;/&dtml-rpath;/manage_main">&dtml-rpath;</a>
     </div>
   </td>
   <td align="left">
     <div class="list-item">
-      &dtml-repoid;
+      &dtml-docid;
     </div>
   </td>
   <td align="left">
     <div class="list-item">
-      <dtml-in "version_infos.items()">
-      <dtml-let lang=sequence-key version=sequence-item>
-        <a href="&dtml-ppath;/portal_repository/manage_redirectVersion?repoid:int=&dtml.url_quote-repoid;&amp;version:int=&dtml.url_quote-version;">
-          &dtml-lang;: &dtml-version;</a>
+      <dtml-in "language_revs.items()">
+      <dtml-let lang=sequence-key rev=sequence-item>
+        <a href="&dtml-ppath;/portal_repository/manage_redirectRevision?docid:int=&dtml.url_quote-docid;&amp;rev:int=&dtml.url_quote-rev;">
+          &dtml-lang;: &dtml-rev;</a>
       </dtml-let>
       </dtml-in>
     </div>

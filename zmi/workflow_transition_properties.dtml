@@ -40,29 +40,19 @@
 <tr>
 <th align="left">Transition type</th>
 <td>
-<dtml-let checked="trigger_type==1 and 'checked' or ' '">
-<input type="radio" name="trigger_type" value="1" &dtml-checked; />
-Initiated by user action
-</dtml-let>
-</td>
-</tr>
-
-<tr>
-<th></th>
-<td>
-<dtml-let checked="trigger_type==10 and 'checked' or ' '">
-<input type="radio" name="trigger_type" value="10" &dtml-checked; />
-Initial transition
-</dtml-let>
-</td>
-</tr>
-
-<tr>
-<th></th>
-<td>
 <dtml-let checked="trigger_type==0 and 'checked' or ' '">
 <input type="radio" name="trigger_type" value="0" &dtml-checked; />
 Automatic
+</dtml-let>
+</td>
+</tr>
+
+<tr>
+<th></th>
+<td>
+<dtml-let checked="trigger_type==1 and 'checked' or ' '">
+<input type="radio" name="trigger_type" value="1" &dtml-checked; />
+Initiated by user action
 </dtml-let>
 </td>
 </tr>
@@ -83,74 +73,204 @@ Initiated by WorkflowMethod
   <dtml-call "REQUEST.set('behavior', (transition_behavior,))">
 </dtml-if>
 <tr>
-<th align="left" valign="top">Transition behavior</th>
+<th align="left" valign="top">Transition flags</th>
 <td>
   <input type="hidden" name="transition_behavior:tokens:default" value="" />
-  <input type="checkbox" name="transition_behavior:int:list" value="1"
-      <dtml-if "1 in behavior">checked</dtml-if> />
-    Allow subobject creation
+
+  <table cellspacing="0" cellpadding="2" border="0" width="100%">
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="10"
+            <dtml-if "10 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Allow subobject create
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="11"
+            <dtml-if "11 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Allow subobject delete
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="12"
+            <dtml-if "12 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Allow subobject move here
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="13"
+            <dtml-if "13 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Allow subobject copy here
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="14"
+            <dtml-if "14 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Allow subobject publishing here
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="15"
+            <dtml-if "15 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Allow subobject checkout here
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="20"
+            <dtml-if "20 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Initial transition for create
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="24"
+            <dtml-if "24 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Initial transition for publishing
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="25"
+            <dtml-if "25 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Initial transition for checkout
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="26"
+            <dtml-if "26 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Transition for checkin
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="37"
+            <dtml-if "37 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Freeze object
+      </td>
+    </tr>
+    <tr valign="top">
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="34"
+            <dtml-if "34 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Publishing, with initial transitions
+        <input type="text" name="clone_allowed_transitions:tokens"
+          value="<dtml-var "' '.join(clone_allowed_transitions)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="35"
+            <dtml-if "35 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Checkout, with initial transitions
+        <input type="text" name="checkout_allowed_initial_transitions:tokens"
+          value="<dtml-var "' '.join(checkout_allowed_initial_transitions)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="36"
+            <dtml-if "36 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Checkin, with allowed transitions
+        <input type="text" name="checkin_allowed_transitions:tokens"
+          value="<dtml-var "' '.join(checkin_allowed_transitions)" html_quote>" size="25" />
+      </td>
+    </tr>
+  <dtml-comment>
+    <tr>
+      <td>&nbsp;</td>
+      <td>
+        <input type="radio" name="checkin_mode" value="1">
+      </td>
+      <td colspan="2" width="100%">
+        Merge all languages
+      </td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>
+        <input type="radio" name="checkin_mode" value="2">
+      </td>
+      <td colspan="2">
+        Merge but clear other languages if ...
+      </td>
+    </tr>
+  </dtml-comment>
+
+  <dtml-comment>
+    <tr>
+      <td>&nbsp;</td>
+      <td>
+        <input type="radio" name="checkout_languages" value="1">
+      </td>
+      <td colspan="2">
+        All languages
+      </td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>
+        <input type="radio" name="checkout_languages" value="2">
+      </td>
+      <td colspan="2">
+        User-specified languages
+      </td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>
+        <input type="checkbox" name="checkin_archive">
+      </td>
+      <td colspan="2">
+        Archive current using transition <input type="text">
+      </td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td colspan="2">
+        <input type="checkbox" name="checkin_archive_if_collision">
+        Only if an existing revision was changed.
+      </td>
+    </tr>
+  </dtml-comment>
+  </table>
 </td>
 </tr>
-
-<tr>
-<th></th>
-<td>
-  <input type="checkbox" name="transition_behavior:int:list" value="4"
-      <dtml-if "4 in behavior">checked</dtml-if> />
-    Allow subobject deletion
-</td>
-</tr>
-
-<tr>
-<th></th>
-<td>
-  <input type="checkbox" name="transition_behavior:int:list" value="5"
-      <dtml-if "5 in behavior">checked</dtml-if> />
-    Allow subobject copy
-</td>
-</tr>
-
-<tr>
-<th></th>
-<td>
-  <input type="checkbox" name="transition_behavior:int:list" value="3"
-      <dtml-if "3 in behavior">checked</dtml-if> />
-    Freeze object
-</td>
-</tr>
-
-<tr>
-<th></th>
-<td>
-  <input type="checkbox" name="transition_behavior:int:list" value="2"
-      <dtml-if "2 in behavior">checked</dtml-if> />
-    Clone, with initial transitions
-    <input type="text" name="clone_allowed_transitions:tokens"
-      value="<dtml-var "' '.join(clone_allowed_transitions)" html_quote>" size="30" />
-</td>
-</tr>
-
-<dtml-comment>
-<tr>
-  <td>
-    <input type="radio" name="transition_behavior" value="2"
-        <dtml-if "transition_behavior == 2">checked</dtml-if> />
-      Checkout,
-      with original following transition
-        <select name="checkout_original_transition_id" size="1">
-          <dtml-in getAvailableTransitionIds sort>
-          <dtml-let trans=sequence-item>
-          <dtml-if "trans != getId()">
-          <dtml-let selected="checkout_original_transition_id == trans and 'selected' or ' '">
-             <option value="&dtml-trans;" &dtml-selected;>&dtml-trans;</option>
-          </dtml-let>
-          </dtml-if>
-          </dtml-let>
-          </dtml-in>
-        </select>
-  </td>
-</tr>
-</dtml-comment>
 
 <tr>
 <th align="left">Script (before)</th>

@@ -23,7 +23,7 @@ from zLOG import LOG, ERROR, DEBUG
 from types import StringType
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass, DTMLFile
-from AccessControl import ClassSecurityInfo, Unauthorized
+from AccessControl import ClassSecurityInfo
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import View
@@ -32,10 +32,22 @@ from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
+from Products.NuxCPS3.cpsutils import _isinstance
+
 from Products.NuxCPS3.ProxyBase import ProxyBase, ProxyFolderishDocument
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBCREATE
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBDELETE
-from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBCOPY
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_CREATE
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_DELETE
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_MOVE
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_COPY
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_PUBLISHING
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOWSUB_CHECKOUT
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_CREATE
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_MOVE
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_COPY
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_PUBLISHING
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_INITIAL_CHECKOUT
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_ALLOW_CHECKIN
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_PUBLISHING
 
 
 CPSWorkflowConfig_id = '.cps_workflow_configuration'
@@ -44,12 +56,8 @@ CPSWorkflowConfig_id = '.cps_workflow_configuration'
 class CPSWorkflowTool(WorkflowTool):
     """A Workflow Tool extending the CMFCore one with CPS features.
 
-    - Creation transition knowledge for CPSWorkflow
+    - Initial transition knowledge for CPSWorkflow
     - Placefulness
-
-    A creation transition is the fact that an object created in a workflow
-    can be created according to several transitions into its initial
-    state. This choice must be available to the user.
     """
 
     id = 'portal_workflow'
@@ -65,41 +73,45 @@ class CPSWorkflowTool(WorkflowTool):
     #    pass
 
     #
+    # Allow user code access to constants.
+    #
+
+    TRANSITION_INITIAL_CREATE =      TRANSITION_INITIAL_CREATE
+    TRANSITION_INITIAL_PUBLISHING =  TRANSITION_INITIAL_PUBLISHING
+    TRANSITION_BEHAVIOR_PUBLISHING = TRANSITION_BEHAVIOR_PUBLISHING
+
+    #
     # API
     #
     security.declarePublic('isCreationAllowedIn')
     def isCreationAllowedIn(self, container, get_details=0):
         """Is the creation of a subobject allowed in the container ?"""
-        return self.isBehaviorAllowedIn(container, 'create',
-                                        get_details=get_details)
+        return self.isBehaviorAllowedFor(container, 'create',
+                                         get_details=get_details)
 
-    security.declarePublic('isBehaviorAllowedIn')
-    def isBehaviorAllowedIn(self, container, behavior, get_details=0):
-        """Is some behavior allowed in the container ?"""
-        if behavior == 'create':
-            behaviors = [TRANSITION_BEHAVIOR_SUBCREATE]
-        elif behavior == 'delete':
-            behaviors = [TRANSITION_BEHAVIOR_SUBDELETE]
-        elif behavior == 'cut':
-            behaviors = [TRANSITION_BEHAVIOR_SUBDELETE,
-                         TRANSITION_BEHAVIOR_SUBCOPY]
-        elif behavior == 'copy':
-            behaviors = [TRANSITION_BEHAVIOR_SUBCOPY]
-        elif behavior == 'paste':
-            behaviors = [TRANSITION_BEHAVIOR_SUBCREATE]
-        else:
-            raise ValueError(behavior)
+    security.declarePublic('isBehaviorAllowedFor')
+    def isBehaviorAllowedFor(self, container, behavior, transition=None,
+                             get_details=0):
+        """Is some behavior allowed in the container?
 
-        wf_ids = self.getChainFor(container)
-        for wf_id in wf_ids:
-            wf = self.getWorkflowById(wf_id)
-            ok, why = wf.areBehaviorsAllowedIn(container, behaviors,
-                                               get_details=1)
+        If transition is present, only check a transition with this name.
+        """
+        behavior = {
+            'create': TRANSITION_ALLOWSUB_CREATE,
+            'delete': TRANSITION_ALLOWSUB_DELETE,
+            'cut':    TRANSITION_ALLOWSUB_MOVE,
+            'copy':   TRANSITION_ALLOWSUB_COPY,
+            'paste':  TRANSITION_ALLOWSUB_CREATE,
+            }.get(behavior, behavior)
+        for wf in self.getWorkflowsFor(container):
+            # XXX deal with non-CPS workflows
+            ok, why = wf.isBehaviorAllowedFor(container, behavior,
+                                              transition, get_details=1)
             if not ok:
-                LOG('isBehaviorAllowedIn', DEBUG, 'not ok for %s: %s' %
+                LOG('isBehaviorAllowedFor', DEBUG, 'not ok for %s: %s' %
                     (behavior, why))
                 if get_details:
-                    return 0, '%s, %s' % (wf_id, why)
+                    return 0, '%s, %s' % (wf.getId(), why)
                 else:
                     return 0
         if get_details:
@@ -107,97 +119,112 @@ class CPSWorkflowTool(WorkflowTool):
         else:
             return 1
 
-    security.declarePublic('getCreationTransitions')
-    def getCreationTransitions(self, container, type_name):
-        """Get the possible creation transitions in a container.
-
-        container can be an rpath.
-        Returns a dict of {wf_id: [sequence of transitions]}.
-        """
-        container = self._container_maybe_rpath(container)
-        LOG('CPSWFT', DEBUG, 'get creation transitions for pt=%s in %s' %
-            (type_name, '/'.join(container.getPhysicalPath())))
-        wf_ids = self.getChainFor(type_name, container=container)
-        creation_transitions = {}
-        for wf_id in wf_ids:
-            wf = self.getWorkflowById(wf_id)
-            if not hasattr(aq_base(wf), 'getCreationTransitions'):
+    security.declarePublic('getAllowedPublishingTransitions')
+    def getAllowedPublishingTransitions(self, ob):
+        """Get the list of allowed initial transitions for publishing."""
+        d = {}
+        for wf in self.getWorkflowsFor(ob):
+            if not hasattr(aq_base(wf), 'getAllowedPublishingTransitions'):
                 # Not a CPS workflow.
                 continue
-            transitions = wf.getCreationTransitions(container)
-            creation_transitions[wf_id] = transitions
-        LOG('CPSWFT', DEBUG, 'creation transitions are %s' %
-            `creation_transitions`)
-        return creation_transitions
+            for t in wf.getAllowedPublishingTransitions(ob):
+                d[t] = None
+        transitions = d.keys()
+        transitions.sort()
+        return transitions
+
+    security.declarePublic('getInitialTransitions')
+    def getInitialTransitions(self, container, type_name, behavior):
+        """Get the initial transitions for a type in a container.
+
+        container: can be an rpath.
+
+        type_name: the portal type to check.
+
+        behavior: the type of transition to check for.
+
+        Returns a sequence of transition names.
+        """
+        container = self._container_maybe_rpath(container)
+        LOG('CPSWFT', DEBUG,
+            "getInitialTransitions container=%s type_name=%s behavior=%s "
+            % ('/'.join(container.getPhysicalPath()), type_name, behavior))
+        d = {}
+        for wf_id in self.getChainFor(type_name, container=container):
+            wf = self.getWorkflowById(wf_id)
+            if wf is None:
+                # Incorrect workflow name in chain.
+                continue
+            if not hasattr(aq_base(wf), 'getInitialTransitions'):
+                # Not a CPS workflow.
+                continue
+            for t in wf.getInitialTransitions(container, behavior):
+                d[t] = None
+        transitions = d.keys()
+        transitions.sort()
+        LOG('CPSWFT', DEBUG, "  Transitions are %s" % `transitions`)
+        return transitions
 
     def _container_maybe_rpath(self, container):
         if isinstance(container, StringType):
             rpath = container
             if not rpath or rpath.find('..') >= 0 or rpath.startswith('/'):
-                raise Unauthorized(rpath)
-            portal = getToolByName(self, 'portal_url').getPortalObject()
+                raise ValueError(rpath)
+            portal = aq_parent(aq_inner(self))
             container = portal.unrestrictedTraverse(rpath)
         return container
 
-    def _getAllCreationTransitions(self, container, type_name,
-                                   creation_transitions):
-        """Get all the creation transitions that will be used."""
-        allowed = self.getCreationTransitions(container, type_name)
-        all_transitions = {}
-        for wf_id, transitions in allowed.items():
-            if not creation_transitions.has_key(wf_id):
-                if not transitions:
-                    raise WorkflowException(
-                        "Workflow %s does not allow creation of %s"
-                        % (wf_id, type_name))
-                # Use first default if nothing specified
-                # XXX parametrize this default ?
-                transition = transitions[0]
-            else:
-                transition = creation_transitions.get(wf_id)
-                if transition not in transitions:
-                    raise WorkflowException(
-                        "Workflow %s cannot create %s using transition %s"
-                        % (wf_id, type_name, transition))
-            all_transitions[wf_id] = transition
-        return all_transitions
+    security.declarePublic('getDefaultLanguage')
+    def getDefaultLanguage(self):
+        """Get the default language for a new object."""
+        portal = aq_parent(aq_inner(self))
+        if hasattr(portal, 'Localizer'):
+            return portal.Localizer.get_default_language()
+        else:
+            return 'en'
 
     security.declarePublic('invokeFactoryFor')
     def invokeFactoryFor(self, container, type_name, id,
-                         creation_transitions={},
+                         language=None, initial_transition=None,
                          *args, **kw):
         """Create an object in a container.
 
-        The variable creation_transitions is a dict of {wf_id:
-        transition}, it is used to decide initial transitions in the
-        object's workflows.
+        The variable initial_transition is the initial transition to use
+        (in all workflows). If None, use the first initial transition
+        for 'create' found.
 
         The object created will be a proxy to a real object if the type
         type_name has an action of id 'isproxytype' and of action
         'folder', 'document' or 'folderishdocument'.
         """
         container = self._container_maybe_rpath(container)
-        LOG('invokeFactoryFor', DEBUG, 'Called with container=%s type_name=%s '
-            'id=%s creation_transitions=%s' % (container.getId(), type_name,
-                                               id, creation_transitions))
+        LOG('invokeFactoryFor', DEBUG,
+            "Called with container=%s type_name=%s id=%s "
+            "language=%s initial_transition=%s" %
+            (container.getId(), type_name, id, language, initial_transition))
+        if language is None:
+            language = self.getDefaultLanguage()
+        if initial_transition is None:
+            # If no initial transition is mentionned, find a default.
+            crtrans = self.getInitialTransitions(container, type_name,
+                                                 TRANSITION_INITIAL_CREATE)
+            if len(crtrans) == 1:
+                initial_transition = crtrans[0]
+            else:
+                raise WorkflowException(
+                    "No initial_transition to create %s (type_name=%s) in %s"
+                    % (id, type_name, container.getId()))
         ob = self._createObject(container, id,
-                                creation_transitions=creation_transitions,
-                                do_clone=0, type_name=type_name,
+                                initial_transition, TRANSITION_INITIAL_CREATE,
+                                language=language, type_name=type_name,
                                 *args, **kw)
         return ob.getId()
 
-    security.declarePrivate('cloneObject')
-    def cloneObject(self, ob, container, creation_transitions):
-        """Clone ob into container according to some creation transitions.
-
-        (Called by a CPS workflow during clone transition.)
-        """
-        LOG('cloneObject', DEBUG, 'Called with ob=%s container=%s '
-            'creation_transitions=%s' % (ob.getId(), container.getId(),
-                                         creation_transitions))
-        # Find a new id...
+    security.declarePublic('findNewId')
+    def findNewId(self, container, id):
+        """Find what will be the new id of an object created in a container."""
+        container = self._container_maybe_rpath(container)
         base_container = aq_base(container)
-        id = ob.getId()
         if hasattr(base_container, id):
             # Collision, find a free one.
             i = 0
@@ -207,34 +234,81 @@ class CPSWorkflowTool(WorkflowTool):
                 if not hasattr(base_container, try_id):
                     id = try_id
                     break
-        new_ob = self._createObject(container, id,
-                                    creation_transitions=creation_transitions,
-                                    do_clone=1, old_ob=ob)
-        return
+        return id
 
-    def _createObject(self, container, id, creation_transitions={},
-                      do_clone=0, type_name=None, old_ob=None,
+    security.declarePrivate('cloneObject')
+    def cloneObject(self, ob, container, initial_transition):
+        """Clone ob into container according to some initial transition.
+
+        (Called by a CPS workflow during publishing transition.)
+        """
+        LOG('cloneObject', DEBUG, 'Called with ob=%s container=%s '
+            'initial_transition=%s' % (ob.getId(), container.getId(),
+                                       initial_transition))
+        id = self.findNewId(container, ob.getId())
+        new_ob = self._createObject(container, id,
+                                    initial_transition,
+                                    TRANSITION_INITIAL_PUBLISHING,
+                                    old_ob=ob)
+        return new_ob
+
+
+    security.declarePrivate('checkoutObject')
+    def checkoutObject(self, ob, container, initial_transition,
+                       language_map):
+        """Checkout ob into container according to some initial transition.
+
+        Checkout the languages according to the language map.
+
+        (Called by CPS Workflow during checkout transition.)
+        """
+        LOG('checkoutObject', DEBUG, "Called with ob=%s container=%s "
+            "initial_transition=%s language_map=%s" %
+            (ob.getId(), container.getId(), initial_transition, language_map))
+        id = self.findNewId(container, ob.getId())
+        new_ob = self._createObject(container, id,
+                                    initial_transition,
+                                    TRANSITION_INITIAL_CHECKOUT,
+                                    language_map=language_map,
+                                    old_ob=ob)
+        return new_ob
+
+    def _createObject(self, container, id,
+                      initial_transition, initial_behavior,
+                      language=None, type_name=None, old_ob=None,
+                      language_map=None,
                       *args, **kw):
-        """Create an object in a container, maybe by cloning."""
+        """Create an object in a container, according to initial behavior."""
         LOG('_createObject', DEBUG, 'Called with container=%s id=%s '
-            'creation_transitions=%s' % (container.getId(), id,
-                                         creation_transitions))
-        # Check that the workflows of the container allow subobject creation.
-        ok, why = self.isCreationAllowedIn(container, get_details=1)
+            'initial_transition=%s' % (container.getId(), id,
+                                       initial_transition))
+        pxtool = getToolByName(self, 'portal_proxies')
+
+        # Check that the workflow of the container allows sub behavior.
+        subbehavior = {
+            TRANSITION_INITIAL_CREATE:     TRANSITION_ALLOWSUB_CREATE,
+            TRANSITION_INITIAL_MOVE:       TRANSITION_ALLOWSUB_MOVE,
+            TRANSITION_INITIAL_COPY:       TRANSITION_ALLOWSUB_COPY,
+            TRANSITION_INITIAL_PUBLISHING: TRANSITION_ALLOWSUB_PUBLISHING,
+            TRANSITION_INITIAL_CHECKOUT:   TRANSITION_ALLOWSUB_CHECKOUT,
+            }.get(initial_behavior)
+        if subbehavior is None:
+            raise WorkflowException("Incorrect initial_behavior=%s" %
+                                    initial_behavior)
+        ok, why = self.isBehaviorAllowedFor(container, subbehavior,
+                                            get_details=1)
         if not ok:
             if why:
                 details = 'not allowed by workflow %s' % why
             else:
                 details = 'no workflow'
             raise WorkflowException("Container %s does not allow "
-                                    "subobject creation (%s)" %
-                                    (container.getId(), details))
+                                    "subobject behavior %s (%s)" %
+                                    (container.getId(),
+                                     subbehavior, details))
         # Find type to create.
-        if do_clone:
+        if initial_behavior != TRANSITION_INITIAL_CREATE:
             type_name = old_ob.getPortalTypeName()
-        # Find the transitions to use.
-        all_transitions = self._getAllCreationTransitions(container, type_name,
-                                                          creation_transitions)
         # Find out if we must create a normal document or a proxy.
         # XXX determine what's the best way to parametrize this
         proxy_type = None
@@ -245,66 +319,96 @@ class CPSWorkflowTool(WorkflowTool):
             proxy_type = ti.getActionById('isproxytype', None)
             if proxy_type is not None:
                 break
-        # Creation or cloning.
-        if do_clone:
+
+        if initial_behavior == TRANSITION_INITIAL_PUBLISHING:
             ob = container.copyContent(old_ob, id)
-            self._insertWorkflowRecursive(ob, all_transitions)
-        else:
-            if proxy_type is not None:
-                # Create a proxy and a document in the repository.
-                pxtool = getToolByName(self, 'portal_proxies')
-                ob = pxtool.createProxy(proxy_type, container, type_name, id,
-                                        *args, **kw)
-            else:
+            ob.manage_afterCMFAdd(ob, container)
+            self._insertWorkflowRecursive(ob, initial_transition,
+                                          initial_behavior)
+        elif initial_behavior == TRANSITION_INITIAL_CREATE:
+            if proxy_type is None:
                 ob = container.constructContent(type_name, id, *args, **kw)
-            self._insertWorkflow(ob, all_transitions)
-        # Send CMF add event
-        ob.manage_afterCMFAdd(ob, container)
+            else:
+                # Create a proxy and a document in the repository.
+                proxy = pxtool.createEmptyProxy(proxy_type, container,
+                                                type_name, id)
+                pxtool.createRevision(proxy, language, *args, **kw)
+                # Set the first language as default language.
+                proxy.setDefaultLanguage(language)
+                ob = proxy
+            ob.manage_afterCMFAdd(ob, container)
+            self._insertWorkflow(ob, initial_transition, initial_behavior)
+        elif initial_behavior == TRANSITION_INITIAL_CHECKOUT:
+            if not _isinstance(old_ob, ProxyBase):
+                raise WorkflowException("Can't checkout non-proxy object %s"
+                                        % '/'.join(old_ob.getPhysicalPath()))
+            old_proxy = old_ob
+            from_language_revs = old_proxy.getLanguageRevisions()
+            docid = old_proxy.getDocid()
+            proxy = pxtool.createEmptyProxy(proxy_type, container,
+                                            type_name, id, docid)
+            pxtool.checkoutRevisions(old_proxy, proxy, language_map)
+            proxy.setDefaultLanguage(old_proxy.getDefaultLanguage())
+            proxy.setFromLanguageRevisions(from_language_revs)
+            ob = proxy
+            ob.manage_afterCMFAdd(ob, container)
+            self._insertWorkflow(ob, initial_transition, initial_behavior)
+        else:
+            raise NotImplementedError(initial_behavior)
         return ob
 
-    def _insertWorkflow(self, ob, all_transitions):
+    def _insertWorkflow(self, ob, initial_transition, initial_behavior):
         """Insert ob into workflows."""
-        # Do creation transitions for all workflows.
-        LOG('_insertWorkflow', DEBUG, 'inserting %s into workflows %s' %
-            (ob.getId(), all_transitions))
+        # Do initial transition for all workflows.
+        LOG('_insertWorkflow', DEBUG,
+            "inserting %s using transition=%s behavior=%s" %
+            (ob.getId(), initial_transition, initial_behavior))
         reindex = 0
-        for wf_id, transition in all_transitions.items():
-            wf = self.getWorkflowById(wf_id)
-            wf.notifyCreated(ob, creation_transition=transition)
+        for wf in self.getWorkflowsFor(ob):
+            if hasattr(aq_base(wf), 'insertIntoWorkflow'):
+                wf.insertIntoWorkflow(ob, initial_transition, initial_behavior)
             reindex = 1
         if reindex:
             self._reindexWorkflowVariables(ob)
 
-    def _insertWorkflowRecursive(self, ob, all_transitions):
-        """Recursively insert into workflows."""
-        LOG('_insertWorkflow', DEBUG, 'recursively inserting %s into workflows %s' %
-            (ob.getId(), all_transitions))
-        try:
-            isproxy = isinstance(ob, ProxyBase)
-        except TypeError:
-            # In python 2.1 isinstance() raises TypeError
-            # instead of returning 0 for ExtensionClasses.
-            isproxy = 0
-        if not isproxy:
-            return # XXX correct?
-        self._insertWorkflow(ob, all_transitions)
-        for subob in ob.objectValues():
-            self._insertWorkflowRecursive(subob, all_transitions)
+    def _insertWorkflowRecursive(self, ob, initial_transition,
+                                 initial_behavior):
+        """Recursively insert into workflows.
 
-    security.declarePublic('getCloneAllowedTransitions')
-    def getCloneAllowedTransitions(self, ob):
-        """Get the list of allowed initial transitions for clone."""
-        # XXX rethink this in the presence of chains with several wfs.
-        res = []
-        wf_ids = self.getChainFor(ob)
-        for wf_id in wf_ids:
-            wf = self.getWorkflowById(wf_id)
-            if not hasattr(aq_base(wf), 'getCloneAllowedTransitions'):
-                # Not a CPS workflow.
-                continue
-            allowed = wf.getCloneAllowedTransitions(ob)
-            res.extend([t for t in allowed if t not in res])
-        return res
+        Only done for proxies... XXX correct?
+        """
+        LOG('_insertWorkflowRecursive', DEBUG,
+            "Recursively inserting %s using transition=%s behavior=%s"
+            % (ob.getId(), initial_transition, initial_behavior))
+        if not _isinstance(ob, ProxyBase):
+            LOG('_insertWorkflowRecursive', DEBUG, "  Is not a proxy")
+            return # XXX correct?
+        self._insertWorkflow(ob, initial_transition, initial_behavior)
+        for subob in ob.objectValues():
+            self._insertWorkflowRecursive(subob, initial_transition,
+                                          initial_behavior)
+
+    security.declarePrivate('checkinObject')
+    def checkinObject(self, ob, dest_ob, transition):
+        """Checkin ob into dest_ob.
+
+        Then make the dest_ob follow the transition.
+
+        (Called by CPS Workflow during checkin transition.)
+        """
+        ok, why = self.isBehaviorAllowedFor(dest_ob, TRANSITION_ALLOW_CHECKIN,
+                                            transition, get_details=1)
+        if not ok:
+            if why:
+                details = 'not allowed by workflow %s' % why
+            else:
+                details = 'no workflow'
+            raise WorkflowException("Object=%s transition=%s does not allow "
+                                    "checkin behavior (%s)" %
+                                    (dest_ob.getId(), transition, details))
+        pxtool = getToolByName(self, 'portal_proxies')
+        pxtool.checkinRevisions(ob, dest_ob)
+        self.doActionFor(dest_ob, transition)
 
     #
     # Constrained workflow transitions for folderish documents.
@@ -317,12 +421,7 @@ class CPSWorkflowTool(WorkflowTool):
         The workflow object must perform its own security checks.
         """
         # Don't recurse for initial transitions! # XXX urgh
-        try:
-            isproxyfolderishdoc = isinstance(ob, ProxyFolderishDocument)
-        except TypeError:
-            # In python 2.1 isinstance() raises TypeError
-            # instead of returning 0 for ExtensionClasses.
-            isproxyfolderishdoc = 0
+        isproxyfolderishdoc = _isinstance(ob, ProxyFolderishDocument)
         if isproxyfolderishdoc and not kw.has_key('clone_data'):
             self._doActionForRecursive(ob, action, wf_id=wf_id, *args, **kw)
         else:
@@ -363,13 +462,7 @@ class CPSWorkflowTool(WorkflowTool):
         """Recursively calls doactionfor."""
         LOG('_doActionForRecursive', DEBUG, 'ob=%s action=%s' %
             (ob.getId(), action))
-        try:
-            isproxy = isinstance(ob, ProxyBase)
-        except TypeError:
-            # In python 2.1 isinstance() raises TypeError
-            # instead of returning 0 for ExtensionClasses.
-            isproxy = 0
-        if not isproxy: # XXX
+        if not _isinstance(ob, ProxyBase): # XXX
             return
         self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
         for subob in ob.objectValues():
@@ -384,6 +477,7 @@ class CPSWorkflowTool(WorkflowTool):
         """Return the chain that applies to the given object.
 
         The first argument is either an object or a portal type name.
+
         Takes into account placeful workflow definitions, by starting
         looking for them at the object itself, or in the container
         if provided.
