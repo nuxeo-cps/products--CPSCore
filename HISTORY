@@ -1,4 +1,24 @@
 *******************************************
+** CPSCore V3.0.1 [R1 build 2003-08/18-08:39 by anguenot]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- 
+Bug fixes:
+~~~~~~~~~~
+- P3 #75: remove undo in portal undo (Patch on UndoTool)
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Code re-indent sf
+- Action isproxytype become cps_proxytype property
+- Adding within CPSMembershipTool the method getCPSCandidateLocalRoles
+  returning the local roles you're able to assign according to the context
+  and your rights.
+
+*******************************************
 ** CPSCore V3.0.0 [R6 build 2003-08/07-16:00 by ben]
 
 - first RC
