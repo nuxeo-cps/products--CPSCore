@@ -19,7 +19,7 @@
 """Proxy Tool that manages proxy objects and their links to real documents.
 """
 
-from zLOG import LOG, ERROR, DEBUG
+from zLOG import LOG, ERROR, DEBUG, TRACE
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
@@ -434,7 +434,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         (Called by ProxyBase and self.) XXX but should use an event
         """
         # XXX should not get directly an object... or should it?
-        LOG('setSecurity', DEBUG, '--- proxy %s'
+        LOG('setSecurity', TRACE, '--- proxy %s'
             % '/'.join(proxy.getPhysicalPath()))
         if not _isinstance(proxy, ProxyBase):
             return
@@ -451,7 +451,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         for lang, rev in proxy._getLanguageRevisions().items():
             revs[rev] = None
         revs = revs.keys()
-        LOG('setSecurity', DEBUG, "gathered revisions %s" % `revs`)
+        LOG('setSecurity', TRACE, "gathered revisions %s" % `revs`)
 
         # Gather the rpaths of proxies pointing to any revision.
         rpaths = {}
@@ -464,7 +464,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             # XXX
             # XXX The CMF Add event is only sent after that...
             # XXX
-            rev_rpaths = self._docid_rev_to_rpaths[(docid, rev)]
+            rev_rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
             for rpath in rev_rpaths:
                 if rpath != skip_rpath:
                     rpaths[rpath] = None
@@ -503,8 +503,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # XXX should be sent also by the one sending an event instead of
         #     calling this directly
         # XXX why this notify ? we're not changing this proxy's security...
-        evtool = getEventService(self)
-        evtool.notify('sys_modify_security', proxy, {})
+        #evtool = getEventService(self)
+        #evtool.notify('sys_modify_security', proxy, {})
 
 
     def _getRelevantPermissions(self):
@@ -661,8 +661,10 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # that they have implicitly been modified. (Would be used so
         # that Title is reindexed for instance.)
 
-        if event_type in ('sys_add_object', 'sys_del_object',
-                          'sys_modify_object', 'modify_object'):
+        if event_type in ('sys_add_object',
+                          'sys_del_object',
+                          'sys_modify_object',
+                          'modify_object'):
             if _isinstance(object, ProxyBase):
                 LOG('ProxyTool', DEBUG, 'Got %s for proxy %s'
                     % (event_type, '/'.join(object.getPhysicalPath())))
@@ -683,7 +685,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 if dodel:
                     # Must be done last...
                     self._delProxy(rpath)
-                LOG('ProxyTool', DEBUG, '  ... done')
+                #LOG('ProxyTool', DEBUG, '  ... done')
             else:
                 repotool = getToolByName(self, 'portal_repository')
                 if repotool.isObjectInRepository(object):
@@ -692,7 +694,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                             % (event_type, '/'.join(object.getPhysicalPath())))
                         # Repo object was modified, reindex all the proxies.
                         self._reindexProxiesForObject(object)
-                        LOG('ProxyTool', DEBUG, '  ... done')
+                        #LOG('ProxyTool', DEBUG, '  ... done')
 
     #
     # Management
@@ -715,6 +717,26 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     def getBrokenProxies(self):
         """Return the broken proxies.
 
+        Broken proxies are those that point to a non-existing repository
+        object.
+
+        Return a list of (rpath, infos).
+        """
+        portal = aq_parent(aq_inner(self))
+        repotool = getToolByName(self, 'portal_repository')
+        broken = []
+        for rpath, infos in self._rpath_to_infos.items():
+            docid, language_revs = infos
+            for lang, rev in language_revs.items():
+                if not repotool.hasObjectRevision(docid, rev):
+                    broken.append((rpath, infos))
+                    break
+        return broken
+
+    security.declareProtected(ManagePortal, 'getBrokenIndexes')
+    def getBrokenIndexes(self):
+        """Return the broken indexes.
+
         Return a list of (rpath, infos).
         """
         portal = aq_parent(aq_inner(self))
@@ -735,15 +757,69 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         for subob in ob.objectValues():
             self._recurse_rebuild(subob, utool)
 
-    security.declareProtected(ManagePortal, 'rebuildProxies')
-    def rebuildProxies(self):
-        """Rebuild all proxies."""
+    security.declareProtected(ManagePortal, 'rebuildProxyIndexes')
+    def rebuildProxyIndexes(self):
+        """Rebuild all proxy indexes."""
         utool = getToolByName(self, 'portal_url')
         portal = aq_parent(aq_inner(self))
         self._clear()
         # Use as roots all the subobs (1st level) of the portal.
         for ob in portal.objectValues():
             self._recurse_rebuild(ob, utool)
+
+    security.declareProtected(ManagePortal, 'rebuildRepositorySecurity')
+    def rebuildRepositorySecurity(self, base_rpath=''):
+        """Rebuild security info on all repo objects.
+
+        If base_rpath is not None, do only objects impacted by proxies
+        under that rpath.
+
+        Return the number of objects scanned and the number that changed.
+        """
+        LOG('rebuildRepositorySecurity', DEBUG, 'Starting')
+        repotool = getToolByName(self, 'portal_repository')
+        allperms = self._getRelevantPermissions()
+        portal = aq_parent(aq_inner(self))
+
+        # Find all objects in repo pointed by relevant proxies.
+        base_rpath_slash = base_rpath + '/'
+        docidrevs = {}
+        rpaths = [] # for debug
+        for rpath, infos in self._rpath_to_infos.items():
+            if rpath == base_rpath or rpath.startswith(base_rpath_slash):
+                rpaths.append(rpath) # for debug
+                docid, language_revs = infos
+                for lang, rev in language_revs.items():
+                    docidrevs[(docid, rev)] = None
+        docidrevs = docidrevs.keys()
+
+        LOG('rebuildRepositorySecurity', DEBUG,
+            " Impacted objects under '%s': %d proxies, %d repo objects."
+            % (base_rpath, len(rpaths), len(docidrevs)))
+
+        # Iterate on all repo objects and compute and apply perms.
+        change_count = 0
+        for docid, rev in docidrevs:
+            userperms = {}
+            rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
+            for rpath in rpaths:
+                ob = portal.unrestrictedTraverse(rpath)
+                merged = mergedLocalRoles(ob, withgroups=1).items()
+                for perm in allperms:
+                    proles = rolesForPermissionOn(perm, ob)
+                    for user, lroles in merged:
+                        for lr in lroles:
+                            if lr in proles:
+                                perms = userperms.setdefault(user, [])
+                                if perm not in perms:
+                                    perms.append(perm)
+            changed = repotool.setRevisionSecurity(docid, rev, userperms)
+            if changed:
+                change_count += 1
+
+        LOG('rebuildRepositorySecurity', DEBUG, 'Done (%d objects, %d changed)'
+            % (len(docidrevs), change_count))
+        return (len(docidrevs), change_count)
 
     #
     # ZMI
@@ -764,14 +840,30 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     security.declareProtected(ManagePortal, 'manage_listProxies')
     manage_listProxies = DTMLFile('zmi/proxy_list_proxies', globals())
 
-    security.declareProtected(ManagePortal, 'manage_purgeBrokenProxies')
-    def manage_purgeBrokenProxies(self, REQUEST=None):
-        """Purge the broken proxies."""
-        broken = self.getBrokenProxies()
+    security.declareProtected(ManagePortal, 'manage_purgeBrokenIndexes')
+    def manage_purgeBrokenIndexes(self, REQUEST=None):
+        """Purge the broken indexes."""
+        broken = self.getBrokenIndexes()
         for rpath, infos in broken:
             self._delProxy(rpath)
         REQUEST.RESPONSE.redirect(self.absolute_url() +
-                                  '/manage_proxiesInfo?search=1'
+                                  '/manage_proxiesInfo?searchbrokenindexes=1'
+                                  '?manage_tabs_message=Purged.')
+
+    security.declareProtected(ManagePortal, 'manage_purgeBrokenProxies')
+    def manage_purgeBrokenProxies(self, REQUEST=None):
+        """Purge the broken proxies."""
+        portal = aq_parent(aq_inner(self))
+        broken = self.getBrokenProxies()
+        for rpath, infos in broken:
+            LOG('purgeBrokenProxies', DEBUG, 'Purging %s' % rpath)
+            ob = portal.unrestrictedTraverse(rpath)
+            container = aq_parent(aq_inner(ob))
+            container.manage_delObjects([ob.getId()])
+            # Shouldn't be necessary but exception during del...
+            self._delProxy(rpath)
+        REQUEST.RESPONSE.redirect(self.absolute_url() +
+                                  '/manage_proxiesInfo?searchbrokenindexes=1'
                                   '?manage_tabs_message=Purged.')
 
 InitializeClass(ProxyTool)
