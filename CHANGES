@@ -13,8 +13,10 @@ Bug fixes:
   direct query to the members directory.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Add a new method to IndexableObjectWrapper: localUsersWithRoles, which returns
-  users having a role on the object _but_ without any merge.
+- add a new method to IndexableObjectWrapper: localUsersWithRoles, 
+  which returns users having a role on the object _but_ without any merge.
+- add a new index/method container_path to IndexableObjectWrapper,
+  this enable searching for children
 - deleting an account will not delete local roles assigned to this user 
   in the datafs, for now this is too costly and not done by default,
   a zmi management screen to prune invalid local roles is planned.
