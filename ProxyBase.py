@@ -959,7 +959,7 @@ class NotAProxy:
     security.declareProtected(View, 'getLanguageRevisions')
     def getLanguageRevisions(self):
         """No mapping."""
-        return {'en': 0}
+        return {self.getLanguage():self.getRevision()}
 
     security.declareProtected(View, 'getFromLanguageRevisions')
     def getFromLanguageRevisions(self):
@@ -969,12 +969,18 @@ class NotAProxy:
     security.declareProtected(View, 'getLanguage')
     def getLanguage(self, lang=None):
         """Get the selected language."""
-        return 'en'
+        # XXX TODO Translation Service should be used in the near future
+        Localizer = getToolByName(self, 'Localizer', None)
+        lang = 'en'
+        if Localizer is not None:
+            # use the portal default language
+            lang = Localizer.get_default_language()
+        return lang
 
     security.declareProtected(View, 'getRevision')
     def getRevision(self, lang=None):
         """Get the best revision."""
-        return 'en'
+        return 0
 
     security.declareProtected(View, 'getContent')
     def getContent(self, lang=None):
