@@ -377,6 +377,10 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                                         % (checkin_transition,
                                            tdef.checkin_allowed_transitions))
             for dest_object in dest_objects:
+                # Check that they have the same docid.
+                if ob.getDocid() != dest_object.getDocid():
+                    raise WorkflowException("Cannot checkin into different "
+                                            "docid")
                 # Check that the default language is still the same than
                 # when we did checkout. # XXX We want to be more flexible.
                 lang = ob.getDefaultLanguage()
