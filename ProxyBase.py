@@ -571,28 +571,35 @@ class FileDownloader(Acquisition.Explicit):
             self.filename = name
             self.state = 2
             return self
-        elif name == 'index_html':
-            return self.index_html
+        elif name in ('index_html', 'HEAD'):
+            return getattr(self, name)
         else:
             raise KeyError(name)
 
+    security.declareProtected(View, 'index_html')
     def index_html(self, REQUEST, RESPONSE):
         """Publish the file or image."""
         if self.state != 2:
             return None
-        filename = self.filename
-        BAD_CHARS = r'\%=;'
-        for c in BAD_CHARS:
-            filename = filename.replace(c, '')
-        RESPONSE.setHeader('Content-Disposition',
-                           'inline; filename=%s' % filename)
         file = self.file
         if file is not None:
             return file.index_html(REQUEST, RESPONSE)
         else:
             RESPONSE.setHeader('Content-Type', 'text/plain')
             RESPONSE.setHeader('Content-Length', '0')
-            RESPONSE.write('')
+            return ''
+
+    security.declareProtected(View, 'HEAD')
+    def HEAD(self, REQUEST, RESPONSE):
+        """Retrieve the HEAD information for HTTP."""
+        if self.state != 2:
+            return None
+        file = self.file
+        if file is not None:
+            return file.HEAD(REQUEST, RESPONSE)
+        else:
+            RESPONSE.setHeader('Content-Type', 'text/plain')
+            RESPONSE.setHeader('Content-Length', '0')
             return ''
 
 InitializeClass(FileDownloader)
