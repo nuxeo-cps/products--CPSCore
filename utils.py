@@ -110,7 +110,7 @@ def allowedRolesAndUsers(self):
     Return a list of roles, users and groups with View permission.
     Used by PortalCatalog to filter out items you're not allowed to see.
     """
-    LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
+    #LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
     ob = self._IndexableObjectWrapper__ob # Eeek, manual name mangling
     return _allowedRolesAndUsers(ob)
 IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
