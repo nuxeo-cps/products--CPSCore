@@ -133,18 +133,27 @@ class IndexationManagerTCSubscriber(BaseTCSubscriber):
         else:
             struct = self._queue[_objects.index(ob)]
 
+            # if no former reindexation requested
             if not struct['reindex']:
+                # Flag for reindexation if idxs
                 struct['reindex'] = idxs is not None and True or False
 
+            # if idxs formerly given and some more added
+            # if struct['idxs'] == [] then we are reindexing
+            # everything thus it won't enter this loop
             if struct['idxs'] and idxs is not None:
                 for idx in idxs:
                     if idx not in struct['idxs']:
                         struct['idxs'].append(idx)
+
+            # Here, we reindex everything
             elif idxs == []:
                 struct['idxs'] = []
 
+            # Flag security reindexation
             if with_security:
                 struct['with_security'] = with_security
+
             ##LOG("Struct---------", DEBUG, str(struct))
 
 ###################################################
