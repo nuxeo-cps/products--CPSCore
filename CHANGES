@@ -9,4 +9,5 @@ Bug fixes:
 - Modify utils.py in order to cope with Zope 2.7.1+ handling of None objects and TextIndexNG2's direct access to the meta_type of a catalog aware object.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Add Language index and method for computing another language revision.
+- Add getRelativeUrl indexes and use it.

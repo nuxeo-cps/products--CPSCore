@@ -199,8 +199,7 @@ class ProxyBase(Base):
     def proxyChanged(self):
         """Do necessary notifications after a proxy was changed."""
         pxtool = getToolByName(self, 'portal_proxies')
-        utool = getToolByName(self, 'portal_url')
-        rpath = utool.getRelativeUrl(self)
+        rpath = self.getRelativeUrl()
         pxtool._modifyProxy(self, rpath) # XXX or directly event ?
         pxtool.setSecurity(self)
         evtool = getEventService(self)
@@ -443,6 +442,22 @@ class ProxyBase(Base):
         else:
             return ''
 
+    security.declarePublic('Language')
+    def Language(self):
+        """Dublin core Language."""
+        # return all available
+        return self.getLanguageRevisions().keys()
+
+    security.declarePublic('getRelativeUrl')
+    def getRelativeUrl(self, utool=None):
+        """Return computed path relative to the portal.
+
+        Mostly useful when indexing proxies and displaying brains.
+        """
+        if utool is None:
+            utool = getToolByName(self, 'portal_url')
+        return utool.getRelativeUrl(self)
+        
     #
     # Helper for proxy folderish documents
     #
@@ -753,16 +768,17 @@ class LanguageSwitcher(Acquisition.Explicit):
 
     def __bobo_traverse__(self, REQUEST, lang):
         proxy = self.proxy
-        ob = proxy._getContent(lang=lang)
-        if ob is None:
-            LOG('LanguageSwitcher.getitem', DEBUG,
-                "Invalid language %s" % repr(lang))
-            raise KeyError(lang)
-        revproxy = VirtualProxy(ob, proxy.getDocid(), proxy.getRevision(), lang)
-        revproxy._setId('%s/%s' % (KEYWORD_ARCHIVED_LANGUAGE, lang))
-        # simulate complete language/revision match for LanguageSelectWidget
-        revproxy._language_revs = proxy.getLanguageRevisions()
-        return revproxy.__of__(proxy)
+        rpath = proxy.getRelativeUrl()
+        # store information by the time of the request to change the
+        # language used for viewing the current document, bypassing Localizer.
+        # XXX Use rpath in the key not to propagate the change to other
+        # documents viewed. Append the keyword to it not to make a too generic
+        # key.
+        REQUEST._cps_switch_language = (rpath, lang)
+        #  Return the proxy, and so have the same context than without language
+        #  switcher.
+        return proxy
+        # XXX lack a _setId
 
 InitializeClass(LanguageSwitcher)
 
