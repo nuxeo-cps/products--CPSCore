@@ -253,9 +253,9 @@ Proxies, document repository and workflows
     'language_map' is not present, then all languages are copied.
 
     The 'doActionFor' call for a checkin operation takes 2 arguments,
-    'dest_object' and 'checkin_transition'. They describe the
-    destination object into which to merge changes, and the checkin
-    transition this destination object will follow after changes are
+    'dest_objects' and 'checkin_transition'. They describe the
+    destination objects into which to merge changes, and the checkin
+    transition the destination objects will follow after changes are
     merged.
 
     Note that after a checkin the working document is deleted.
