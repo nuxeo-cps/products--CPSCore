@@ -50,9 +50,10 @@ CPSSkins/skins/cpsskins_cps3/cpsskins_getNavigationInfo.py
 
   base_obj.getList(start_depth=rel_level-1, stop_depth=rel_level-1)
   # => filter=1, order=1, count_children=0
+  # updated with a fallback for CPS < 3.3
 
 CPSSkins/skins/cpsskins_cps3/cpsskins_listPaths.py
 
   portal_trees[root].getList(start_depth=0, stop_depth=1)
   # ?
-
+  # returns the list of tree roots (sections, workspaces, ...)
