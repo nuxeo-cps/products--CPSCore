@@ -143,14 +143,16 @@ class CPSWorkflowTool(WorkflowTool):
         # Find placeful workflow configuration object.
         wfconf = getattr(container, WorkflowConfiguration_id, None)
         if wfconf is not None:
-            return wfconf.getPlacefulChainFor(pt)
+            chain = wfconf.getPlacefulChainFor(pt)
+            if chain is not None:
+                return chain
         # Nothing placeful found.
         return self.getGlobalChainFor(pt)
 
     security.declarePrivate('getGlobalChainFor')
     def getGlobalChainFor(self, ob):
         """Get the global chain for a given object or portal_type."""
-        return WorkflowTool.inheritedAttribute('getChainFor')(self, ob)
+        return CPSWorkflowTool.inheritedAttribute('getChainFor')(self, ob)
 
     #
     # ZMI

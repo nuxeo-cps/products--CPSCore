@@ -58,30 +58,39 @@ class WorkflowConfiguration(SimpleItem):
         # The None value means "use the default chain".
         # If a key is present, then the chain is overloaded,
         #    otherwise the acquired config is used.
-        # XXX no way to override locally the default chain...
+        # XXX There is no way to override locally the default chain...
 
     #
     # API called by CPS Workflow Tool
     #
 
+    def _get_chain_or_default(self, portal_type):
+        """Return the chain for portal_type, or the Default chain."""
+        chain = self._chains_by_type[portal_type]
+        if chain is not None:
+            return chain
+        wftool = getToolByName(self, 'portal_workflow')
+        # May want to revisit this if we want to placefully override Default
+        return wftool.getDefaultChainFor(portal_type)
+
     security.declarePrivate('getPlacefulChainFor')
     def getPlacefulChainFor(self, portal_type):
         """Get the chain for the given portal_type.
 
-        Acquires from parent configurations if needed.
         Returns None if no placeful chain is found.
+        Acquires from parent configurations if needed.
         """
-        chain = self._chains_by_type.get(portal_type)
-        if chain is not None:
-            return chain
+        if self._chains_by_type.has_key(portal_type):
+            return self._get_chain_or_default(portal_type)
         # Ask above.
-        parent = aq_parent(aq_inner(self))
-        higher_conf = parent.aq_acquire(WorkflowConfiguration_id,
-                                        default=None, containment=1)
-        if higher_conf is not None:
-            return higher_conf.getPlacefulChainFor(portal_type)
-        # Nothing placeful found.
-        return None
+        parent = aq_parent(aq_inner(aq_parent(aq_inner(self))))
+        try:
+            higher_conf = parent.aq_acquire(WorkflowConfiguration_id,
+                                            containment=1)
+        except AttributeError:
+            # Nothing placeful found.
+            return None
+        return higher_conf.getPlacefulChainFor(portal_type)
 
     #
     # Internal API
