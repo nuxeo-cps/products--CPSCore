@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Fixed local group roles deletion by MembershipTool.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
