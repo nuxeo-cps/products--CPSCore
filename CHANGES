@@ -8,6 +8,8 @@ Bug fixes:
 ~~~~~~~~~~
 - Now the 'homeless' attribute of a member is taken into account through a
   direct query to the members directory.
+- XXX reopen #319: Roles locally assigned not deleted with the user account
+  by the time of a better implementation.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
