@@ -6,6 +6,8 @@ New features:
 - Patching the RegistrationTool to help not creating user accounts which would
   have the same homeFolders as already existing user accounts, which is a
   security concern.
+- RegistrationTool is now a CPS subclass where allowed id pattern is a property
+  you can easily change.
 Bug fixes:
 ~~~~~~~~~~
 -

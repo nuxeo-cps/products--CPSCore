@@ -531,7 +531,7 @@ class CPSMembershipTool(MembershipTool):
 
         return tuple(member_ids)
 
-InitializeClass(MembershipTool)
+InitializeClass(CPSMembershipTool)
 
 def addCPSMembershipTool(dispatcher, **kw):
     """Add a membership tool"""

@@ -52,6 +52,7 @@ import ObjectRepositoryTool
 import CPSWorkflowTool
 import TreesTool
 import CPSMembershipTool
+import CPSRegistrationTool
 import OrderedFolderSupportPatch
 import CopyrightPatch
 
@@ -63,7 +64,6 @@ import ProxyBase
 # register CPSWorkflow
 import CPSWorkflow
 import DCWorkflowPatch
-import RegistrationToolPatch
 
 
 tools = (
@@ -72,7 +72,8 @@ tools = (
     ObjectRepositoryTool.ObjectRepositoryTool,
     CPSWorkflowTool.CPSWorkflowTool,
     TreesTool.TreesTool,
-    CPSMembershipTool.CPSMembershipTool
+    CPSMembershipTool.CPSMembershipTool,
+    CPSRegistrationTool.CPSRegistrationTool,
 )
 
 contentClasses = (ProxyBase.ProxyFolder,
@@ -83,7 +84,8 @@ contentClasses = (ProxyBase.ProxyFolder,
 contentConstructors = (ProxyBase.addProxyFolder,
                        ProxyBase.addProxyDocument,
                        ProxyBase.addProxyFolderishDocument,
-                       CPSMembershipTool.addCPSMembershipTool
+                       CPSMembershipTool.addCPSMembershipTool,
+                       CPSRegistrationTool.addCPSRegistrationTool,
                        )
 
 fti = (ProxyBase.factory_type_information +
