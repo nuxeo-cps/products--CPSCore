@@ -362,14 +362,6 @@ class ProxyBase(Base):
                 +class_name
                 +ser)
 
-    # FIXME: this should go to a unit test
-    security.declarePublic('test_serialize') # XXX tests
-    def test_serialize(self):
-        """Test serialization."""
-        ser = self.serializeProxy()
-        ob = unserializeProxy(ser)
-        return `ob.__dict__`
-
     #
     # Security
     #
