@@ -52,14 +52,14 @@ class TreesTool(UniqueObject, Folder):
 
     security.declarePrivate('notify_tree')
     def notify_tree(self, event_type, object, infos):
-        LOG('TreesTool', DEBUG, 'Got %s for %s'
-            % (event_type, '/'.join(object.getPhysicalPath())))
         if event_type not in ('sys_add_cmf_object',
                               'sys_order_object',
                               'sys_del_object',
                               'sys_modify_security',
                               'modify_object'):
             return
+        LOG('TreesTool', DEBUG, 'Got %s for %s'
+            % (event_type, '/'.join(object.getPhysicalPath())))
         if not object.isPrincipiaFolderish:
             return
         id = object.getId()
