@@ -65,6 +65,10 @@ class ProxyToolTests(SecurityRequestTest):
         self.assertEquals(tuple(ptool.listProxies()),
             (('123', (None, {'*': 78})),))
 
+        self.assertRaises(ValueError, ptool._addProxy, proxy2, '123')
+        self.assertEquals(tuple(ptool.listProxies()),
+            (('123', (None, {'*': 78})),))
+
         ptool._addProxy(proxy2, '456')
         items = ptool.listProxies()
         items.sort()
