@@ -1,4 +1,21 @@
 *******************************************
+** CPSCore V3.3.1 [R1 build 2003/12/23-11:03 by ben]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Fix random id collision problem in manage_addSubscriber.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Protect CPSBaseDocument's setTitle by "Modify portal content" and not
+  PortalFolder's "Manage properties".
+
+*******************************************
 ** CPSCore V3.3.0 [R1 build 2003/12/10-17:22 by ben]
 
 ZODB Requires:

@@ -8,9 +8,8 @@ New features:
 
 Bug fixes:
 ~~~~~~~~~~
-- Fix random id collision problem in manage_addSubscriber.
+-
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Protect CPSBaseDocument's setTitle by "Modify portal content" and not
-  PortalFolder's "Manage properties".
+-
