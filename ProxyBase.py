@@ -141,6 +141,12 @@ class ProxyBase(Base):
         """Set the tag for this proxy."""
         self._tag = tag
 
+    security.declareProtected(View, 'getLanguage')
+    def getLanguage(self, lang=None):
+        """Get the selected language for a proxy."""
+        pxtool = getToolByName(self, 'portal_proxies')
+        return pxtool.getBestRevision(self, lang=lang)[0]
+
     security.declareProtected(View, 'getRevision')
     def getRevision(self, lang=None):
         """Get the best revision for a proxy."""
