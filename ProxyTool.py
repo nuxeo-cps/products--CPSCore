@@ -415,6 +415,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 self.delProxy(hubid)
             # Refresh security
             self.setSecurity(object)
+            LOG('ProxyTool', DEBUG, '  ... done')
 
     #
     # Management
