@@ -4,9 +4,13 @@ $Id$
    o stack.render(mode='edit')
    o use schema / layout / widgets to render them
 
+ o views on stack elements
+
  o stack registries
 
  o stack def registries
+
+ o stack elements (to be able to store any kind of object, not just users)
 
  o WorkflowStackDelegate
    + class representing a member within a stack
