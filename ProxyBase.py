@@ -25,6 +25,7 @@ from struct import pack, unpack
 from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
+from AccessControl import Unauthorized
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
 
@@ -432,6 +433,38 @@ class ProxyBase(Base):
         """
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool.revertProxyToRevisions(self, language_revs, freeze)
+
+    #
+    # Translation helpers.
+    #
+
+    security.declareProtected(ModifyPortalContent, 'addLanguageToProxy')
+    def addLanguageToProxy(self, lang, REQUEST=None, *args, **kw):
+        """Add a new language."""
+        if REQUEST is not None:
+            raise Unauthorized("Not accessible TTW")
+        pxtool = getToolByName(self, 'portal_proxies')
+        rev = pxtool.createRevision(self, lang, *args, **kw)
+        return rev
+
+    security.declareProtected(ModifyPortalContent, 'delLanguageFromProxy')
+    def delLanguageFromProxy(self, lang, REQUEST=None):
+        """Delete a language.
+
+        Cannot delete the default language or the last remaining language.
+        """
+        if REQUEST is not None:
+            raise Unauthorized("Not accessible TTW")
+        if lang == self.getDefaultLanguage():
+            raise ValueError("Cannot delete default language '%s'" % lang)
+        language_revs = self._getLanguageRevisions()
+        if not language_revs.has_key(lang):
+            raise ValueError("Cannot delete invalid language '%s'" % lang)
+        if len(language_revs) == 1:
+            raise ValueError("Cannot delete last language '%s'" % lang)
+        del language_revs[lang]
+        self._language_revs = language_revs # XXX no setLanguageRevisions
+        self.proxyChanged()
 
     #
     # ZMI
