@@ -311,7 +311,8 @@ class CPSWorkflowTool(WorkflowTool):
         Invoked by user interface code.
         The workflow object must perform its own security checks.
         """
-        if isinstance(ob, ProxyFolderishDocument):
+        # Don't recurse for initial transitions! # XXX urgh
+        if isinstance(ob, ProxyFolderishDocument) and not kw.has_key('clone_data'):
             self._doActionForRecursive(ob, action, wf_id=wf_id, *args, **kw)
         else:
             self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
