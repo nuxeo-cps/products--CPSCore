@@ -41,9 +41,6 @@ from CPSWorkflowConfiguration import CPSWorkflowConfiguration
 from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
 
 import ProxyBase
-import CPSFolder
-import CPSDummyDocument
-
 
 # register CPSWorkflow
 import CPSWorkflow
@@ -60,26 +57,18 @@ tools = (
     TreesTool.TreesTool,
 )
 
-contentClasses = (CPSFolder.CPSFolder,
-                  CPSDummyDocument.CPSDummyDocument,
-                  ProxyBase.ProxyFolder,
+contentClasses = (ProxyBase.ProxyFolder,
                   ProxyBase.ProxyDocument,
                   ProxyBase.ProxyFolderishDocument,
                   )
 
-contentConstructors = (CPSFolder.addCPSFolder,
-                       CPSDummyDocument.addCPSDummyDocument,
-                       ProxyBase.addProxyFolder,
+contentConstructors = (ProxyBase.addProxyFolder,
                        ProxyBase.addProxyDocument,
                        ProxyBase.addProxyFolderishDocument,
                        )
 
-fti = (CPSFolder.factory_type_information +
-       CPSDummyDocument.factory_type_information +
-       ProxyBase.factory_type_information +
+fti = (ProxyBase.factory_type_information +
        ())
-
-registerDirectory('skins', globals())
 
 def initialize(registrar):
     utils.ToolInit(
