@@ -1,0 +1,357 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US"
+lang="en-US">
+  <head>
+    <meta name="generator"
+    content="HTML Tidy for Linux/x86 (vers 1st June 2002), see www.w3.org" />
+    <meta http-equiv="Content-Type"
+    content="text/html;charset=iso-8859-1" />
+  </head>
+
+  <body bgcolor="#ffffff">
+    <h3>Documentation sur le travail avec les éléments dans
+    CP3.</h3>
+
+    <h4>Présentation</h4>
+
+    <p>Si CPS 2 utilisait les macros pour représenter les pages, CPS 3 marque
+    l'arrivée d'une nouvelle approche: les éléments.</p>
+
+    <p>A l'usage, l'outil s'utilise comme un dictionnaire. Chaque clé est le
+    nom de l'élement (par convention en majuscule) et la valeur de cette clé
+    est la méthode à appeler dans un contexte précis. Ce contexte étant
+    lui-même un élement.</p>
+
+    <h4>Objectifs</h4>
+
+    <p>L'utilisation des éléments se caractérise d'une part par la présence
+    d'un outil nommé <code>portal_elements</code>, et d'autre part par
+    l'utilisation d'un format spécifique pour les méthodes de rendu.</p>
+
+    <p>L'utilisation de l'outil <code>portal_elements</code> en tant que
+    dictionnaire permet aussi de passer des variables d'une page à l'autre.</p>
+
+    <p>Enfin, chaque élément peut se voir attribuer un niveau de cache, de
+    façon à minimiser la quantité de calcul nécessaire au rendu d'une page et
+    l'actualisation du contenu.</p>
+
+    <h4>Premier contact</h4>
+
+    <h5>L'outil <code>portal_elements</code> dispose de quatre
+    éléments de base:</h5>
+
+    <dl>
+      <dt>CONTEXT</dt>
+
+      <dd>L'objet en cours d'utilisation ou par défaut équivalent à
+      PORTAL.</dd>
+
+      <dt>CONTAINER</dt>
+
+      <dd>L'objet conteneur du contexte ou par défaut équivalent à
+      PORTAL.</dd>
+
+      <dt>PORTAL</dt>
+
+      <dd>L'objet qui représente la racine du site CPS.</dd>
+
+      <dt>REQUEST</dt>
+
+      <dd>Le même objet REQUEST que celui en attribut de
+      <code>context</code>.</dd>
+    </dl>
+
+    <p>Il existe aussi deux élements importants mais qu'il faut implémenter,
+    car ce sont justement ceux qui vont nous permettre de personnaliser les
+    pages:</p>
+
+    <dl>
+      <dt>MAIN</dt>
+
+      <dd>C'est dans cet élément que s'insère l'appel à la méthode
+      de rendu de l'objet en cours. Autrement dit, c'est la partie
+      principale de la page (à rapprocher de la balise
+      metal:fill-slot="main" dans CPS 2). Tout ce qui est autour
+      (boîtes, logos, ...) est calculé ailleurs.</dd>
+
+      <dt>DISPLAY</dt>
+
+      <dd>C'est le dernier élément à être appelé car il déclenche
+      l'appel à la méthode de rendu final (l'équivalent du
+      main_template.pt dans CPS 2).</dd>
+    </dl>
+
+    <p>Fort de ces connaissances, nous allons écrire un nouvel
+    élement: PORTAL_URL.</p>
+
+    <p>Allez pour cela, avec la ZMI, à la racine d'un site CPS 3
+    puis dans <code>portal_elements</code>. En bas se trouve un
+    formulaire titré <strong>Add a new default element</strong>.
+    Remplissons le formulaire:</p>
+
+    <ul>
+      <li>Element name: PORTAL_URL</li>
+
+      <li>From element: PORTAL</li>
+
+      <li>Method name: absolute_url</li>
+
+      <li>CMF action: ne pas cocher</li>
+    </ul>
+
+    <p>Nous avons ainsi créé un élément qui est équivalent à:</p>
+<pre>
+      PORTAL_URL = PORTAL.absolute_url()
+</pre>
+
+    <p>À titre d'exercice, créez un element TITLE qui retourne le
+    titre (ou l'id) du contexte. Nous l'utiliserons par la
+    suite.</p>
+
+    <h4>En pratique: l'écriture de templates</h4>
+
+    <p>L'utilisation des éléments met en avant les scripts plutôt
+    que les templates. Créons donc pour commencer une méthode
+    'index_html.py':</p>
+<pre>
+      elements = here.portal_elements.getElements(object=context)
+
+      elements['MAIN'] = "&lt;h2&gt;Bienvenue dans CPS 3&lt;/h2&gt;
+
+      return elements['DISPLAY']
+</pre>
+
+    <h5>Quelques remarques:</h5>
+
+    <ul>
+      <li>Il faut d'abord importer le dictionnaire des éléments.
+      C'est le cas pour chaque page où ils sont nécessaires.</li>
+
+      <li>Il est bien entendu que elements['MAIN']<a
+      href="http://satori.ath.cx:8080/herve/wiki/DocumentationElementsCPS3/editform?page=%27MAIN%27"
+       title="create this page">?</a> devra contenir le résultat de
+      l'appel à une vrai méthode de rendu :)</li>
+
+      <li>La dernière ligne déclenche l'appel à la méthode de rendu
+      de la page entière. Tout script de calcul de page devra se
+      terminer par cette ligne. C'est donc entre cette ligne et la
+      première que se feront les calculs de personnalisation.</li>
+    </ul>
+
+    <p>Créons maintenant ce fameux élément <code>DISPLAY</code>.
+    Toujours dans <code>portal_elements</code>, Ajouter
+    celui-ci:</p>
+
+    <ul>
+      <li>Element name: DISPLAY</li>
+
+      <li>From element: PORTAL</li>
+
+      <li>Method name: element_display</li>
+
+      <li>CMF action: non</li>
+    </ul>
+
+    <p>L'appel à DISPLAY va donc déclencher l'appel à la méthode
+    <code>element_display</code> dont voici un exemple de code:</p>
+<pre>
+      ##parameters=
+
+      elements = context.portal_elements.getElements(object=context)
+
+      pp = elements['REQUEST'].form.get('pp', 0)
+
+      if pp:
+          return context.main_printable_display()
+      else:
+          return context.main_browser_display()
+</pre>
+
+    <p>Intéressons-nous maintenant à cette méthode
+    'main_browser_display':</p>
+<pre>
+      &lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"&gt;
+      &lt;html tal:define="
+        elements here/portal_elements/getElements;
+        portal_url elements/PORTAL_URL;
+        title elements/TITLE;
+        "&gt;
+        &lt;head&gt;
+          &lt;title tal:content="title"&gt;Titre&lt;/title&gt;
+        &lt;/head&gt;
+        &lt;body&gt;
+          &lt;h2 tal:content="title"&gt;Titre&lt;/h2&gt;
+
+          &lt;div tal:content="structure elements/MAIN"&gt;
+            Contenu de la page
+          &lt;/div&gt;
+        &lt;/body&gt;
+      &lt;/html&gt;
+</pre>
+
+    <p>Bien entendu, cette page pourra être plus complexe en
+    faisant appel à des éléments qui calculent des boites ou les
+    balises pour insérer un logo en fonction du contexte (par
+    exemple, un logo par site).</p>
+
+    <p>Le code de <code>main_printable_display</code> est laissé en
+    exercice.</p>
+
+    <p>Il est temps de voir ce que donne cette page en accédant
+    à:</p>
+<pre>
+      http://serveurzope:port/cps/
+</pre>
+
+    <p>Ou son équivalent chez vous :) Bien sûr vous aviez écrit
+    l'élement <code>TITLE</code> donné en exercice... ?</p>
+
+    <p>Ajoutons une ligne dans <code>index_html.py</code> pour
+    avoir un petit aperçu de la puissance des éléments:</p>
+<pre>
+      elements['TITLE'] = "Bienvenue"
+</pre>
+
+    <p>Placez cette ligne juste avant ou après celle qui appelle la
+    méthode de rendu pour l'élément <code>MAIN</code>, en tout cas
+    avant de déclencher le calcul de <code>DISPLAY</code>.</p>
+
+    <p>Rafraîchissez la page de votre navigateur pour voir que le
+    titre est maintenant celui que vous avez placé.</p>
+
+    <h4>Exemples d'éléments</h4>
+
+    <h5>Dans la ZMI:</h5>
+
+    <ul>
+      <li>Element name: PATH</li>
+
+      <li>From element: CONTEXT</li>
+
+      <li>Method name: element_path</li>
+
+      <li>CMF Action: non</li>
+    </ul>
+
+    <p>'element_path.py':</p>
+<pre>
+      ##parameters=
+      """
+      Calcule le chemin d'accès jusqu'au contexte.
+      """
+
+      elements = context.portal_elements.getElements()
+      portal = elements['PORTAL']
+      ppath = portal.getPhysicalPath()
+
+      l = []
+      obj = context.this()
+      while obj is not None:
+          try:
+              pp = obj.getPhysicalPath()
+              l.insert(0, obj)
+              if pp == ppath:
+                  break
+              obj = obj.getParentNode()
+          except: # XXX Unauthorized
+              continue
+
+      bc = []
+      for obj in l:
+          if obj.getProperty('breadcrumb_skip') != 1:
+              if obj is portal:
+                  title = 'Accueil'
+              else:
+                  title = obj.title_or_id()
+              if title.startswith('L_'):
+                  # XXX revisit this when content types are internationalized
+                  title = portal.portal_messages(title)
+              url = obj.absolute_url()
+              bc.append({
+                  'title': title,
+                  'url': url,
+                  'object': obj,
+              })
+
+      return bc
+</pre>
+
+    <h5>Dans la ZMI:</h5>
+
+    <ul>
+      <li>Element name: BREADCRUMB</li>
+
+      <li>From element: PORTAL</li>
+
+      <li>Method name: element_breadcrumb</li>
+
+      <li>CMF action: non</li>
+    </ul>
+
+    <p>'element_breadcrumb.pt':</p>
+<pre>
+      &lt;div id="breadcrumb"
+        &lt;tal:block define="
+            elements here/portal_elements/getElements;
+            path elements/PATH"
+          repeat="bc path"
+          &lt;a href="" title=""
+            tal:define="
+              title bc/title;
+              len_title len(title)"
+            tal:attributes="href string:${bc/url}/; title title"
+            tal:content="python:len_title &gt; 20 and title[:19]+'...' or title"&gt;
+            Lien
+          &lt;/a&gt;
+        &lt;/tal:block&gt;
+      &lt;/div&gt;
+</pre>
+
+    <p>Amusez-vous à ajouter ce breadcrumb à
+    <code>main_browser_display</code>...</p>
+
+    <p>Regardons maintenant la méthode de vue d'un objet
+    MailingList<a
+    href="http://satori.ath.cx:8080/herve/wiki/DocumentationElementsCPS3/editform?page=MailingList"
+     title="create this page">?</a>. L'action view du portal type a
+    été mis à <code>mailinglist_view</code>. Voici son code:</p>
+<pre>
+      ##parameters=
+
+      elements = context.portal_elements.getElements(object=context)
+
+      elements['CURRENT_ACTION'] = 'view'
+      elements['MAIN'] = context.mailinglist_view_template()
+
+      return elements['DISPLAY']
+</pre>
+
+    <p>L'ancienne méthode de vue a été renommée
+    <code>mailinglist_view_template.pt</code> et doit donc être
+    appelée par ce script. Voici un apercu de son code:</p>
+<pre>
+      &lt;tal:block define="
+        elements here/portal_elements/getElements;
+        current_action elements/CURRENT_ACTION;
+        yes string:L_mailinglist oui;
+        no string:L_mailinglist non;
+        doc here/getContent;
+        "&gt;
+        [...]
+
+        Ici le code fonctionne comme avant... sauf l'appel aux macros bien sûr.
+
+        [...]
+      &lt;/tal:block&gt;
+</pre>
+
+    <h4>Passer une template de CPS 2 à CPS 3</h4>
+
+    <p>To be continued...</p>
+
+    <p>*Hervé Cauwelier*</p>
+  </body>
+</html>
+
