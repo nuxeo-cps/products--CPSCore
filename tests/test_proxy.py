@@ -41,38 +41,42 @@ class PlacefulProxy(ProxyBase, Folder):
 
 class ProxyBaseTest(unittest.TestCase):
 
-    def test1(self):
+    def test_basic_api(self):
         proxy = ProxyBase()
 
         self.assertEquals(proxy.getDocid(), None)
-
         proxy.setDocid('bar')
         self.assertEquals(proxy.getDocid(), 'bar')
 
         self.assertEquals(proxy.getDefaultLanguage(), None)
-
         proxy.setDefaultLanguage('fr')
         self.assertEquals(proxy.getDefaultLanguage(), 'fr')
 
-        self.assertEquals(proxy.getLanguageRevisions(), {})
-        self.assertEquals(proxy._getLanguageRevisions(), {})
-        self.assert_(
-            proxy.getLanguageRevisions() is not proxy._getLanguageRevisions())
+        lr = proxy._getLanguageRevisions()
+        glr = proxy.getLanguageRevisions()
+        self.assertEquals(lr, {})
+        self.assertEquals(glr, {})
+        # Check that dict was copied by getLanguageRevisions
+        self.assert_(glr is not lr)
 
         proxy.setLanguageRevision('de', 3)
-        self.assertEquals(proxy.getLanguageRevisions(), 
-            {'de': 3})
+        self.assertEquals(proxy.getLanguageRevisions(), {'de': 3})
         proxy.setLanguageRevision('fr', 4)
-        self.assertEquals(proxy.getLanguageRevisions(), 
-            {'fr': 4, 'de': 3})
+        self.assertEquals(proxy.getLanguageRevisions(), {'fr': 4, 'de': 3})
 
         self.assertEquals(proxy.getFromLanguageRevisions(), {})
-        # XXX what are FromLanguageRevisions anyway ?
+        flr = {'en': 55}
+        proxy.setFromLanguageRevisions(flr)
+        gflr = proxy.getFromLanguageRevisions()
+        self.assertEquals(gflr, flr)
+        # Check that dict was copied by getFromLanguageRevisions
+        self.assert_(gflr is not flr)
 
         self.assertEquals(proxy.getTag(), None)
         proxy.setTag('tag')
         self.assertEquals(proxy.getTag(), 'tag')
 
+        # Most other APIs just indirect to the proxy tool:
         # Can't test getLanguage, getRevision, getContent, getEditableContent,
         # proxyChanged, __getitem__, freezeProxy, _setSecurity,
         # _setSecurityRecursive, reindexObject, reindexObjectSecurity, Title,
