@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Security synthesis could give too much permissions to some revisions
+  in complex multilingual settings.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Move files related to permissions around.
