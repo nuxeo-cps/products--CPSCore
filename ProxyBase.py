@@ -70,6 +70,7 @@ class ProxyBase(Base):
         """Return the repoid for this proxy."""
         return self._repoid
 
+    # XXX permission ?
     security.declareProtected(AccessContentsInformation, 'getContent')
     def getContent(self, lang=None):
         """Return the content object referred to by this proxy.
