@@ -33,8 +33,8 @@ from AccessControl.User import UnrestrictedUser
 from Acquisition import aq_base, aq_parent, aq_inner
 from ZODB.POSException import ConflictError
 
-from Products.CMFCore.CMFCorePermissions import View, ManagePortal
-from Products.CMFCore.CMFCorePermissions import ListPortalMembers
+from Products.CMFCore.permissions import View, ManagePortal
+from Products.CMFCore.permissions import ListPortalMembers
 from AccessControl.Permissions import manage_users as ManageUsers
 from Products.CMFCore.ActionsTool import ActionInformation as AI
 from Products.CMFCore.Expression import Expression

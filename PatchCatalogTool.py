@@ -27,7 +27,7 @@ from Products.CMFCore.interfaces.portal_catalog import \
 from Products.CMFCore.CatalogTool import CatalogTool
 from Products.CMFCore.utils import getToolByName, _getAuthenticatedUser, \
      _checkPermission
-from Products.CMFCore.CMFCorePermissions import AccessInactivePortalContent
+from Products.CMFCore.permissions import AccessInactivePortalContent
 
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject, \
      getAllowedRolesAndUsersOfUser, _isinstance

@@ -32,7 +32,7 @@ except ImportError: # Zope >= 2.8
 
 from OFS.Folder import Folder
 
-from Products.CMFCore.CMFCorePermissions \
+from Products.CMFCore.permissions \
     import View, ManagePortal, ViewManagementScreens
 from Products.CMFCore.utils \
     import SimpleItemWithProperties, UniqueObject, getToolByName

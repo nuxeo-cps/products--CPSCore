@@ -43,7 +43,7 @@ LOG("CPSCore", TRACE, "Patching CMFCore UndoTool : removing undo action")
 
 
 from Products.CMFCore import utils as cmfutils
-from Products.CMFCore.CMFCorePermissions import AddPortalContent, ManagePortal
+from Products.CMFCore.permissions import AddPortalContent, ManagePortal
 
 # Don't remove.
 import AllowModules

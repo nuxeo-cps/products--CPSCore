@@ -38,9 +38,9 @@ from OFS.Image import File
 from webdav.WriteLockInterface import WriteLockInterface
 
 from Products.CMFCore.utils import getToolByName
-from Products.CMFCore.CMFCorePermissions import View
-from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
-from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
+from Products.CMFCore.permissions import View
+from Products.CMFCore.permissions import ModifyPortalContent
+from Products.CMFCore.permissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSCore.utils import _isinstance

@@ -32,8 +32,8 @@ from AccessControl.Permission import Permission, name_trans
 
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import getToolByName
-from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
-from Products.CMFCore.CMFCorePermissions import ManagePortal
+from Products.CMFCore.permissions import ModifyPortalContent
+from Products.CMFCore.permissions import ManagePortal
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.DCWorkflow.utils import modifyRolesForPermission
 from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2

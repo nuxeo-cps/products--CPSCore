@@ -23,7 +23,7 @@ from AccessControl.PermissionRole import PermissionRole
 from OFS.PropertyManager import PropertyManager
 from Products.CMFCore.TypesTool import TypeInformation
 from Products.CMFCore.TypesTool import FactoryTypeInformation as FTI
-from Products.CMFCore.CMFCorePermissions import ManageProperties, View
+from Products.CMFCore.permissions import ManageProperties, View
 
 TypeInformation.manage_propertiesForm = PropertyManager.manage_propertiesForm
 TypeInformation.manage_addProperty__roles__ = PermissionRole(ManageProperties)

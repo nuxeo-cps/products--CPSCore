@@ -28,8 +28,8 @@ from AccessControl import ClassSecurityInfo
 from AccessControl.PermissionRole import rolesForPermissionOn
 from BTrees.OOBTree import OOBTree
 
-from Products.CMFCore.CMFCorePermissions import View
-from Products.CMFCore.CMFCorePermissions import ManagePortal
+from Products.CMFCore.permissions import View
+from Products.CMFCore.permissions import ManagePortal
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName

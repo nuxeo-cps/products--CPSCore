@@ -24,7 +24,7 @@
 
 """
 
-from Products.CMFCore.CMFCorePermissions import setDefaultRoles
+from Products.CMFCore.permissions import setDefaultRoles
 
 ViewArchivedRevisions = 'View archived revisions'
 setDefaultRoles(ViewArchivedRevisions, ('Manager',))

@@ -36,7 +36,7 @@ from OFS.Folder import Folder
 
 from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
-from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
+from Products.CMFCore.permissions import ViewManagementScreens
 
 
 CPSSubscriberDefinition_type = 'CPS Subscriber Definition'

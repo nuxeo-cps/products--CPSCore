@@ -27,7 +27,7 @@ from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass, DTMLFile
 from OFS.PropertyManager import PropertyManager
 
-from Products.CMFCore.CMFCorePermissions import AddPortalMember
+from Products.CMFCore.permissions import AddPortalMember
 from Products.CMFCore.ActionInformation import ActionInformation
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import getToolByName
