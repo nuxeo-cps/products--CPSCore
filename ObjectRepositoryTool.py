@@ -239,10 +239,8 @@ class ObjectRepositoryTool(UniqueObject,
     def listRevisions(self, docid):
         """List all the revisions available for a given docid."""
         revs = []
-        for id in self.objectIds():
+        for id in self.keyRange(docid+'__0001', docid+'__9999'):
             did, rev = self._splitId(id)
-            if did != docid:
-                continue
             revs.append(rev)
         return revs
 
