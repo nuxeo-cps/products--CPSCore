@@ -29,7 +29,9 @@ ModuleSecurityInfo('re').declarePublic('compile', 'findall',
   'I', 'L', 'M', 'S', 'X')
 import re
 allow_type(type(re.compile('')))
-allow_type(type(re.match('x','x')))
+allow_type(type(re.compile('x')))
+allow_type(type(re.match('x', 'x')))
+allow_type(type(re.sub('x', 'x', 'x')))
 
 ModuleSecurityInfo('urllib').declarePublic('urlencode')
 ModuleSecurityInfo('cgi').declarePublic('escape')
