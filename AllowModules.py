@@ -33,3 +33,6 @@ allow_type(type(re.match('x','x')))
 
 
 ModuleSecurityInfo('urllib').declarePublic('urlencode')
+
+
+ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG')
