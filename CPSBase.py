@@ -28,6 +28,7 @@ from AccessControl import ClassSecurityInfo
 from OFS.ObjectManager import ObjectManager
 from OFS.PropertyManager import PropertyManager
 from OFS.FindSupport import FindSupport
+from zLOG import LOG, ERROR
 
 from Products.CMFCore.CMFCorePermissions import View
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
