@@ -24,7 +24,7 @@
 
 import sys
 from types import StringType
-from Globals import InitializeClass
+from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
 from AccessControl.SecurityManagement import newSecurityManager
@@ -526,6 +526,33 @@ class CPSMembershipTool(MembershipTool):
                                   reindex=1, recursive=1)
 
         return tuple(member_ids)
+
+    #
+    #   ZMI interface methods
+    #
+
+    # Override configuration screen for adding local roles cleaning.
+    security.declareProtected(ManagePortal, 'manage_mapRoles')
+    manage_mapRoles = DTMLFile('zmi/membershipRolemapping', globals())
+
+    security.declareProtected(ManagePortal, 'manage_deleteLocalRoles')
+    def manage_deleteLocalRoles(self, member_ids, REQUEST=None):
+        """Basically call 'deleteLocalRoles' the way 'deleteMembers' used to do
+           by default.
+        """
+        if member_ids:
+            utool = getToolByName(self, 'portal_url')
+            self.deleteLocalRoles(utool.getPortalObject(), member_ids,
+                                  reindex=1, recursive=1)
+            message = 'Ids %s cleaned.' % member_ids
+        else:
+            message = 'No id given.'
+
+        if REQUEST is not None:
+            REQUEST.RESPONSE.redirect(self.absolute_url() +
+                                      '/manage_mapRoles' +
+                                      '?manage_tabs_message=%s' % message)
+
 
 InitializeClass(CPSMembershipTool)
 
