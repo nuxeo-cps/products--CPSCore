@@ -57,6 +57,7 @@ class TreesTool(UniqueObject, Folder):
         if event_type not in ('sys_add_cmf_object',
                               'sys_order_object',
                               'sys_del_object',
+                              'sys_modify_security',
                               'modify_object'):
             return
         if not object.isPrincipiaFolderish:
@@ -225,7 +226,7 @@ class TreeCache(SimpleItemWithProperties):
             children = self._get_children(container, depth+1, plen, hubtool)
             tree['children'] = children
             rebuild = 1
-        else: # event_type == 'modify_object'
+        else: # event_type in ('sys_modify_security', 'modify_object')
             tree = self._find_tree(object)
             if tree is None:
                 return
