@@ -11,3 +11,5 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Cleanups in section_content_wf.
+- In WebDAV PUT, try to use the edit() method if the document recognizes
+  _has_generic_edit_method.
