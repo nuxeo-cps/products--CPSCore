@@ -21,7 +21,7 @@
 
 import sys
 from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2
-from zLOG import LOG, DEBUG
+from zLOG import LOG, DEBUG, ERROR
 from ZODB.POSException import ConflictError
 from OFS.ObjectManager import BeforeDeleteException
 
