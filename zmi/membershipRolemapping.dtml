@@ -23,8 +23,8 @@ existing role names to roles understood by the CMF.</p>
   <dtml-if name="sequence-start">
     <table border="1" cellpadding="3">
       <tr>
-        <td class="form-label"><b>Portal Role</b></td>
-        <td class="form-label"><b>User Folder-defined Role</b></td>
+        <td class="form-label"><strong>Portal Role</strong></td>
+        <td class="form-label"><strong>User Folder-defined Role</strong></td>
         <td>&nbsp;</td>
       </tr>
   </dtml-if>
@@ -53,10 +53,10 @@ user folder) will have their own folder created upon first login or not</p>
 <form method="post" action="setMemberareaCreationFlag">
 
 <dtml-if expr="getMemberareaCreationFlag() == 1">
-  <p><b>Folders are created upon first login.</b> 
+  <p><strong>Folders are created upon first login.</strong> 
   <input type="submit" value=" Turn folder creation off ">
 <dtml-else>
-  <p><b>No Folders are created.</b> 
+  <p><strong>No Folders are created.</strong> 
   <input type="submit" value=" Turn folder creation on ">
 </dtml-if>
 

@@ -6,9 +6,9 @@
 <p>
   You will find below an XML export for this Workflow.
 </p>
-<b>
+<strong>
   XXX Unfinished code!
-</b>
+</strong>
 
 <pre>
 <dtml-var toXML html_quote>
