@@ -19,6 +19,25 @@
 
 from zLOG import LOG, DEBUG, INFO, DEBUG
 
+
+#############################################################
+# Patching UndoTool to remove undo action
+#
+from Products.CMFCore.UndoTool import UndoTool
+
+LOG('PatchCMFCore.UndoTool', INFO,
+    'CPSCore Patch _actions to remove undo action')
+_actions = []
+UndoTool._actions = _actions
+
+
+
+#############################################################
+# Patching CatalogTool to handle proxies search
+#
+import PatchCatalogTool               # XXX rename into PatchCMFCoreCatalogTool
+
+
 #############################################################
 # This is a patch for CMFCore.Skinnable submitted by efge
 # to fix the bug http://www.zope.org/Collectors/CMF/198/
