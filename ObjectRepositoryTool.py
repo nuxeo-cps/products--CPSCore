@@ -250,9 +250,7 @@ class ObjectRepositoryTool(UniqueObject,
     security.declarePublic('isObjectInRepository')
     def isObjectInRepository(self, ob):
         """Test if an object is in the repository."""
-        repopath = self.getPhysicalPath()
-        obpath = ob.getPhysicalPath()
-        return obpath[:len(repopath)] == repopath
+        return ob.getPhysicalPath()[:-1] == self.getPhysicalPath()
 
     security.declarePrivate('freezeRevision')
     def freezeRevision(self, docid, rev):
