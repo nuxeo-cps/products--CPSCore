@@ -68,7 +68,7 @@
   <dtml-let info=rebuildRepositorySecurity>
 
   <p class="form-text">
-    Repository objects have now up-to-date security information (<dtml-var "info[0]"> scanned, <dtml-var "info[1]"> changed).
+    Repository objects have now up-to-date security information (<dtml-var "info[0]"> docids scanned, <dtml-var "info[1]"> revisions changed).
   </p>
 
   </dtml-let>

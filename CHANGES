@@ -3,7 +3,10 @@ ZODB Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- getContent now has an optional revision parameter to access another
+  revision than the default.
+- Archived revisions are viewable by anyone that has permission
+  "View archived revisions" on a proxy.
 Bug fixes:
 ~~~~~~~~~~
 - Security synthesis could give too much permissions to some revisions
@@ -18,4 +21,3 @@ New internal features:
 - Move files related to permissions around.
 - Cleanup the API for role-related utility functions in utils.
 - Removed unused variable.
-- Added an optional revision parameter to getContent.
