@@ -335,7 +335,7 @@ class CPSMembershipTool(MembershipTool):
         # memberdata tool.
         portal_cpscalendar = getToolByName(self, 'portal_cpscalendar', None)
         create_calendar = getattr(portal_cpscalendar, 'create_member_calendar', 1)
-        if create_calendar:
+        if portal_cpscalendar and create_calendar:
             portal_cpscalendar.createMemberCalendar(member_id)
 
     # Can be overloaded by subclasses.
