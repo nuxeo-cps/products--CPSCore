@@ -28,65 +28,17 @@ Installation notes
 
     - CPSCore
 
+    - CPSDefault
+
     The following product is highly recommended for debugging:
 
     - VerboseSecurity
 
-  ZODB configuration
+    The following product is required to run unit tests
 
-    Inside a CMF site, the following must be done:
+    - ZopeTestCase
 
-    - replace the acl_users with a 'User Folder With Groups',
 
-    - add tools (CPS Tools): CPS Event Service, CPS Proxies Tool, CPS
-      Object Repository.
-
-    - configure event service to hook the proxies, by adding a
-      subscriber:
-
-      - subscriber = 'portal_proxies'
-
-      - action = 'proxy'
-
-      - keep the default values for the rest
-
-    - replace portal_workflow with a (CPS Tools) CPW Workflow Tool.
-
-    - import the 4 standard workflow if they are suitable
-
-    - add the following portal types, using factories default:
-
-      - CPS Proxy Document
-
-      - CPS Proxy Folder
-
-    - the following portal types can also be useful:
-
-      - CPS Dummy Document
-
-      - folderish types based on CPS Folder, for example Workspace and
-        Section.
-
-  Site configuration
-
-    To create the first proxy (for the root of the workspaces or
-    sections) one must call for instance the url::
-
-      .../cps_create_initial_workspace?id=someid&type_name=Section
-
-    The same thing can be done with Workspace instead of Section for the
-    type_name.
-
-    This will create a proxy and of course a revision of the correct
-    portal type in the document repository.
-
-    The default workflows for workspaces use the "Worker" role, so it's
-    useful to add that role to the users that need to have it.
-
-  Workflow association
-
-    To associate the different workflows to different places in the
-    ZODB, first go to the root of the sections for instance. There we
-    create a 'CPS Workflow Configuration'. Inside it, we define the
-    workflows for each type. Workflow have to be defined for the section
-    itself, and for the document types it has to contain.
+  Start your server and using the ZMI
+    
+    - Add a CPSDefault Site
