@@ -227,7 +227,7 @@ class CPSWorkflowTool(WorkflowTool):
             reindex = 1
         if reindex:
             self._reindexWorkflowVariables(ob)
-        return ob.getId()
+        return ob
 
 
     security.declarePublic('getCloneAllowedTransitions')
