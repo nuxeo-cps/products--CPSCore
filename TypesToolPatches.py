@@ -22,8 +22,16 @@
 from AccessControl.PermissionRole import PermissionRole
 from OFS.PropertyManager import PropertyManager
 from Products.CMFCore.TypesTool import TypeInformation
+from Products.CMFCore.TypesTool import FactoryTypeInformation as FTI
 from Products.CMFCore.CMFCorePermissions import ManageProperties
 
 TypeInformation.manage_propertiesForm = PropertyManager.manage_propertiesForm
 TypeInformation.manage_addProperty__roles__ = PermissionRole(ManageProperties)
 TypeInformation.manage_delProperties__roles__ = PermissionRole(ManageProperties)
+ftiprops_ids = [p['id'] for p in FTI._properties]
+if 'cps_is_searchable' not in ftiprops_ids:
+    FTI._properties = FTI._properties + (
+        {'id':'cps_is_searchable', 'type': 'boolean', 'mode':'w',
+         'label':'CPS Searchable'},
+        )
+    FTI.cps_is_searchable = 0
