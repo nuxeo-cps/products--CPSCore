@@ -25,6 +25,7 @@ The Event Service receives events and dispatches them to interested parties.
 from zLOG import LOG, ERROR, DEBUG
 from DateTime import DateTime
 import random
+from types import StringType
 
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner, aq_base
@@ -283,10 +284,15 @@ class EventServiceTool(UniqueObject, Folder):
                              event_type, notification_type, compressed=0,
                              REQUEST=None):
         """Add a subscriber definition."""
-        if type(event_type) is type(''):
+        if isinstance(event_type, StringType):
             event_type = [event_type]
-        id = 'subscriber_%s%s' % (int(DateTime()),
-                                  random.randrange(100, 1000))
+
+        # Create a new, unused, id
+        while 1:
+            id = 'subscriber_%s%s' % (int(DateTime()),
+                                      random.randrange(100, 1000))
+            if not id in self.objectIds():
+                break
         subscriber_obj = SubscriberDef(id, subscriber, action, meta_type,
                                        event_type, notification_type,
                                        compressed)
