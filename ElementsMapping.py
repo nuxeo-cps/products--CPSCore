@@ -22,9 +22,15 @@ from zLOG import LOG, DEBUG
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 
-from Acquisition import aq_base, aq_chain
+from Acquisition import aq_base, aq_parent, aq_chain
 
 _marker = []
+
+def call_meth(meth, elements):
+    if getattr(aq_base(meth), 'isDocTemp', 0):
+        return meth(aq_parent(meth), elements['REQUEST'])
+    else:
+        return meth()
 
 class ElementPlaceHolder:
     """\
@@ -241,7 +247,7 @@ class CallElement:
         object = _normalizeObject(self._object)
         LOG('CallElement', DEBUG, 'Calling %s.%s()' % (object, self._method_name))
         meth = object.restrictedTraverse(self._method_name)
-        return meth()
+        return call_meth(meth, self._elements)
 
     def __call__(self):
         return self._callIt()
@@ -250,13 +256,10 @@ class ActionCallElement(CallElement):
 
     def _callIt(self):
         object = _normalizeObject(self._object)
-        LOG('ActionCallElement', DEBUG, 'Calling action %s of %s' % (self._method_name, object))
         ti = object.getTypeInfo()
         action = ti.getActionById(self._method_name)
-        LOG('ActionCallElement', DEBUG, 'Effective %s.%s()' % (object, action))
         if action:
             meth = object.restrictedTraverse(action)
         else:
             meth = object
-        LOG('ActionCallElement', DEBUG, 'Method = %s' % (meth, ))
-        return meth()
+        return call_meth(meth, self._elements)
