@@ -29,6 +29,8 @@ function toggleSelect() {
 <dtml-unless skey><dtml-call expr="REQUEST.set('skey', 'subscriber')"></dtml-unless>
 <dtml-unless rkey><dtml-call expr="REQUEST.set('rkey', '')"></dtml-unless>
 
+<h3>Subscribers</h3>
+
 <form action="&dtml-URL1;/" name="objectItems" method="post">
 <dtml-if objectItems>
 <table width="100%" cellspacing="0" cellpadding="2" border="0">
@@ -36,11 +38,11 @@ function toggleSelect() {
   <td>
   </td>
   <td width="30%" align="left"><div class="list-item"><a 
-   href="./manage_main?skey=subcriber<dtml-if 
-   "rkey == ''">&rkey=subcriber</dtml-if>"
+   href="./manage_main?skey=subscriber<dtml-if 
+   "rkey == ''">&rkey=subscriber</dtml-if>"
    onMouseOver="window.status='Sort objects by subscriber'; return true"
    onMouseOut="window.status=''; return true"><dtml-if 
-   "skey == 'subcriber' or rkey == 'subcriber'"
+   "skey == 'subscriber' or rkey == 'subscriber'"
    ><strong>Subscriber</strong><dtml-else>Subscriber</dtml-if></a></div>
   </td>
   <td width="15%" align="left"><div class="list-item"><a 
@@ -180,7 +182,7 @@ if (document.forms[0]) {
 <tr>
 <td>
 <div class="std-text">
-There are currently no items in <em>&dtml-title_or_id;</em>
+There are currently no subscribers in <em>&dtml-title_or_id;</em>
 <br /><br />
 </div>
 </td>
@@ -189,7 +191,7 @@ There are currently no items in <em>&dtml-title_or_id;</em>
 </dtml-if>
 </form>
 
-<h3>Add a new default element</h3>
+<h3>Add a new subscriber</h3>
 <form action="manage_addSubscriber" method="POST">
   <table width="100%" cellspacing="2" cellpadding="0">
     <tr>
