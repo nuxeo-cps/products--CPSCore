@@ -1,6 +1,6 @@
 Requires:
 ~~~~~~~~~
--
+- TranslationService > 0.7.0
 New features:
 ~~~~~~~~~~~~~
 - added (optional) l10n support to TreesTool getList() method
@@ -14,3 +14,4 @@ New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Made the product rely on CPSUtil factorized methods
 - CPS < 3.3 backward compatibility for TreesTool.
+- ProxyBase and ProxyTool use translation_service instead of Localizer

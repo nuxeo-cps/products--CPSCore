@@ -1,7 +1,7 @@
 # $Id$
 
 # misc -------------------
-TranslationService > 0.6
+TranslationService > 0.7.0
 Localizer
 BTreeFolder2
 DCWorkflow
