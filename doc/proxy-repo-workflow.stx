@@ -19,9 +19,11 @@ Proxies, document repository and workflows
     Site languages are managed through a Localizer -- and later
     TranslationService -- instance at the root of the portal, which
     must be named 'Localizer'. If several languages are available when
-    displaying a document, the chosen one is first the active language
-    in Localizer is the chosen language for the documents if
-    available, or the default language in Localizer.
+    displaying a document, ProxyTool first tries to use the active
+    language in Localizer (as in the l10n box of CPSDefault), then the
+    default language in Localizer (if the related property in
+    ProxyTool is true), then the proxy's default language itself -- or
+    call it the original language.
 
   Proxies
 
