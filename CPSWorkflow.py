@@ -400,14 +400,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         #
         ###
 
-        ### CPS: Event notification.
-        #
-        evtool = getEventService(self)
-        # XXX pass a whole sci ?
-        evtool.notify('workflow_%s' % tdef.getId(), ob, {'kwargs': kwargs})
-        #
-        ###
-
         # Execute the "before" script.
         if tdef is not None and tdef.script_name:
             script = self.scripts[tdef.script_name]
@@ -535,6 +527,15 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             sci = StateChangeInfo(
                 ob, self, status, tdef, old_sdef, new_sdef, kwargs)
             script(sci)  # May throw an exception.
+
+        ### CPS: Event notification. This has to be done after all the
+        # potential transition scripts.
+        #
+        evtool = getEventService(self)
+        # XXX pass a whole sci ?
+        evtool.notify('workflow_%s' % tdef.getId(), ob, {'kwargs': kwargs})
+        #
+        ###
 
         # Return the new state object.
         if moved_exc is not None:

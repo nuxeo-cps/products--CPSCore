@@ -8,7 +8,7 @@ New features:
   language in its revisions; commented and redesigned around.
 Bug fixes:
 ~~~~~~~~~~
--
+- Event notification is now done after all the transition scripts are executed
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
