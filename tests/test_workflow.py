@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # (C) Copyright 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
@@ -19,6 +21,13 @@
 """Tests for the CPS Workflow Tool.
 """
 
+import os, sys
+if __name__ == '__main__':
+    execfile(os.path.join(sys.path[0], 'framework.py'))
+
+from Testing import ZopeTestCase
+ZopeTestCase.installProduct('CPSCore')
+
 import Zope
 import unittest
 
@@ -28,7 +37,7 @@ from OFS.Folder import Folder
 from OFS.SimpleItem import SimpleItem
 
 from Products.CPSCore.CPSWorkflow import CPSWorkflowDefinition
-from Products.CPSCore.CPSWorkflow import TRIGGER_CREATION
+from Products.CPSCore.CPSWorkflow import TRIGGER_USER_ACTION
 from Products.CPSCore.CPSWorkflowConfiguration \
     import addCPSWorkflowConfiguration
 from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
@@ -102,7 +111,7 @@ class WorkflowToolTests(SecurityRequestTest):
         # create transition
         wf.transitions.addTransition('t1')
         t1 = wf.transitions.get('t1')
-        t1.setProperties('title', 's1', trigger_type=TRIGGER_CREATION)
+        t1.setProperties('title', 's1', trigger_type=TRIGGER_USER_ACTION)
         transitions = wf.transitions.objectIds()
         self.assertEqual(tuple(transitions), ('t1',))
         # another empty workflow
@@ -208,5 +217,9 @@ def test_suite():
     loader = unittest.TestLoader()
     return loader.loadTestsFromTestCase(WorkflowToolTests)
 
+#if __name__ == '__main__':
+#    unittest.TextTestRunner().run(test_suite())
+
 if __name__ == '__main__':
-    unittest.TextTestRunner().run(test_suite())
+    framework()
+

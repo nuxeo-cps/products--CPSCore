@@ -46,7 +46,7 @@ class Class2:
     def getPhysicalPath(self, *args, **kw):
       return ('', 'testsite', 'instance2')
 
-class SynchonousNotificationsTest(unittest.TestCase):
+class SynchronousNotificationsTest(unittest.TestCase):
     """\
     Test portal_elements
     """
@@ -187,7 +187,7 @@ class SynchonousNotificationsTest(unittest.TestCase):
 
 def test_suite():
     loader = unittest.TestLoader()
-    return loader.loadTestsFromTestCase(SynchonousNotificationsTest)
+    return loader.loadTestsFromTestCase(SynchronousNotificationsTest)
 
 if __name__ == '__main__':
     unittest.TextTestRunner().run(test_suite())
