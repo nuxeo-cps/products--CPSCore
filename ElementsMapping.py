@@ -222,6 +222,8 @@ class ElementsMapping:
         self.extendElement(name, ActionCallElement(self, object, method_name))
 
     def __repr__(self):
+        # TODO: dict() is python 2.2 specific
+        # Find another implementation
         return repr(dict(self))
 
 InitializeClass(ElementsMapping)
