@@ -236,7 +236,7 @@ class CPSMembershipTool(MembershipTool):
     def setMembersFolderById(self, id=''):
         """Set the members folder object by its relative path."""
         rpath = id.strip()
-        if rpath.startwith('/') or rpath.startswith('.'):
+        if rpath.startswith('/') or rpath.startswith('.'):
             raise ValueError("Illegal relative path '%s'" % rpath)
         self.membersfolder_id = rpath
 
