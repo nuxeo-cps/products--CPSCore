@@ -227,11 +227,7 @@ class CPSMembershipTool(MembershipTool):
                 portal_cpscalendar.createMemberCalendar(member_id)
 
             # Grant ownership to Member
-            try:
-                f.changeOwnership(user)
-                # XXX this method is define in a testcase and just does a pass
-            except AttributeError:
-                pass  # Zope 2.1.x compatibility
+            f.changeOwnership(user)
 
             f.manage_setLocalRoles(member_id, ['Owner', 'WorkspaceManager'])
 
