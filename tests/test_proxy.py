@@ -132,6 +132,9 @@ class ProxyToolTest(SecurityRequestTest):
     def testBestRevision(self):
         ptool = self.root.portal_proxies
         proxy = ProxyBase(language_revs={'fr': 33, '*': 78})
+        def absolute_url():
+            return "fake path"
+        proxy.absolute_url = absolute_url
         ptool._addProxy(proxy, '456')
         self.assertEquals(ptool.getBestRevision(proxy), ('*', 78))
         self.assertEquals(ptool.getBestRevision(proxy, 'en'), ('*', 78))

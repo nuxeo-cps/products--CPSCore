@@ -318,7 +318,7 @@ class TreeCache(SimpleItemWithProperties):
         if self.info_method:
             method = getattr(ob, self.info_method, None)
             if method is not None:
-                doc = ob.getContent()
+                doc = ob.getContent(lang='default')
                 r = method(doc=doc)
                 if isinstance(r, DictType):
                     info = self._new_tree(r)

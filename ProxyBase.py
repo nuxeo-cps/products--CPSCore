@@ -19,6 +19,7 @@
 
 import os.path
 from zLOG import LOG, ERROR, DEBUG, TRACE
+from types import DictType
 from ExtensionClass import Base
 from cPickle import Pickler, Unpickler
 from cStringIO import StringIO
@@ -52,6 +53,11 @@ from Products.CPSCore.CPSBase import CPSBaseDocument
 
 KEYWORD_DOWNLOAD_FILE = 'downloadFile'
 KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
+KEYWORD_SWITCH_LANGUAGE = 'switchLanguage'
+KEYWORD_VIEW_LANGUAGE = 'viewLanguage'
+SESSION_LANGUAGE_KEY = 'CPS_SWITCH_LANGUAGE'
+REQUEST_LANGUAGE_KEY = 'CPS_VIEW_LANGUAGE'
+DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
 KEYWORD_ARCHIVED_LANGUAGE = 'switchLanguage'
 PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
 
@@ -71,6 +77,7 @@ class ProxyBase(Base):
       lineage between proxies. """
 
     security = ClassSecurityInfo()
+    use_mcat = 0
 
     def __init__(self, docid=None, default_language=None, language_revs=None,
                  from_language_revs=None, tag=None):
@@ -231,11 +238,16 @@ class ProxyBase(Base):
                 raise KeyError(name)
             switcher = RevisionSwitcher(self)
             return switcher.__of__(self)
-        elif name == KEYWORD_ARCHIVED_LANGUAGE:
+        elif name == KEYWORD_SWITCH_LANGUAGE:
             if self.isProxyArchived():
                 raise KeyError(name)
             switcher = LanguageSwitcher(self)
             return switcher.__of__(self)
+        elif name == KEYWORD_VIEW_LANGUAGE:
+            if self.isProxyArchived():
+                raise KeyError(name)
+            viewer = LanguageViewer(self)
+            return viewer.__of__(self)
         ob = self._getContent()
         if ob is None:
             raise KeyError(name)
@@ -423,11 +435,12 @@ class ProxyBase(Base):
     security.declarePublic('Title')
     def Title(self):
         """The object's title."""
+        title = ''
         ob = self.getContent()
-        if ob is not None:
-            return ob.Title()
-        else:
-            return ''
+        title = ob.Title()
+        if self.use_mcat and title:
+            title = self.translation_service(msgid=title, default=title)
+        return title
 
     security.declarePublic('title_or_id')
     def title_or_id(self):
@@ -439,7 +452,6 @@ class ProxyBase(Base):
         """No searchable text."""
         return ''
 
-    security.declarePublic('Type')
     def Type(self):
         """Dublin core Type."""
         # Used by main_template.
@@ -452,12 +464,59 @@ class ProxyBase(Base):
     security.declarePublic('Languages')
     def Languages(self):
         """return all available languages."""
-        return self.getLanguageRevisions().keys()
+        return self._getLanguageRevisions().keys()
+
+
+    #
+    # Helper for I18n catalog
+    #
+    security.declarePrivate('_getAllMCatalogTranslation')
+    def _getAllMCatalogTranslation(self, msgid):
+        """Return a dict of message catalog translation."""
+        translation_service = getToolByName(self, 'translation_service', None)
+        Localizer = getToolByName(self, 'Localizer', None)
+        if translation_service is None or Localizer is None:
+            return {'en': msgid}
+        ret = {}
+        for locale in Localizer.get_supported_languages():
+            ret[locale] = translation_service(msgid=msgid,
+                                              target_language=locale,
+                                              default=msgid)
+        return ret
+
+    security.declareProtected(View, 'getL10nTitles')
+    def getL10nTitles(self):
+        """return a dict of title in all available languages,
+        This is used for catalog metadata.
+
+        See the indexableWrapperObject to understand how it
+        is used as metadata."""
+        ret = {}
+        if self.use_mcat:
+            title = self.getContent().Title()
+            ret = self._getAllMCatalogTranslation(title)
+        else:
+            for locale in self.Languages():
+                ob = self.getContent(lang=locale)
+                ret[locale] = ob.Title()
+        return ret
+
+    security.declareProtected(View, 'getL10nDescriptions')
+    def getL10nDescriptions(self):
+        """return a dict of description in all available languages,
+        This is used for catalog metadata."""
+        ret = {}
+        if self.use_mcat:
+            desc = self.getContent().Description()
+            ret = self._getAllMCatalogTranslation(desc)
+        for locale in self.Languages():
+            ob = self.getContent(lang=locale)
+            ret[locale] = ob.Description()
+        return ret
 
     #
     # Helper for proxy folderish documents
     #
-
     security.declareProtected(View, 'isOutsideProxyFolderishDocument')
     def isOutsideProxyFolderishDocument(self):
         """Returns true if outside any proxy folderish document."""
@@ -767,7 +826,9 @@ InitializeClass(FileDownloader)
 
 
 class LanguageSwitcher(Acquisition.Explicit):
-    """Language Switcher."""
+    """Language Switcher.
+
+    Use a session flag to keep a proxy into a selected locale."""
 
     security = ClassSecurityInfo()
     security.declareObjectPublic()
@@ -777,7 +838,7 @@ class LanguageSwitcher(Acquisition.Explicit):
 
     def __init__(self, proxy):
         self.proxy = proxy
-        self.id = KEYWORD_ARCHIVED_LANGUAGE
+        self.id = KEYWORD_SWITCH_LANGUAGE
 
     def __repr__(self):
         return '<LanguageSwitcher for %s>' % repr(self.proxy)
@@ -788,15 +849,58 @@ class LanguageSwitcher(Acquisition.Explicit):
         rpath = utool.getRelativeUrl(proxy)
         # store information by the time of the request to change the
         # language used for viewing the current document, bypassing Localizer.
-        # XXX Use rpath in the key not to propagate the change to other
-        # documents viewed. Append the keyword to it not to make a too generic
-        # key.
-        REQUEST._cps_switch_language = (rpath, lang)
-        #  Return the proxy, and so have the same context than without language
-        #  switcher.
-        return proxy
+        if REQUEST:
+            if not REQUEST.has_key('SESSION'):
+                # unrestricted traverse pass a fake REQUEST without SESSION
+                REQUEST = getattr(self.proxy, 'REQUEST')
+            if REQUEST.has_key('SESSION'):
+                langswitch = REQUEST.SESSION.get(SESSION_LANGUAGE_KEY, {})
+                langswitch[rpath] = lang
+                REQUEST.SESSION[SESSION_LANGUAGE_KEY] = langswitch
+        #  Return the proxy in the context of the container
+        container = aq_parent(aq_inner(proxy))
+        return proxy.__of__(container)
 
 InitializeClass(LanguageSwitcher)
+
+
+class LanguageViewer(Acquisition.Explicit):
+    """Language Viewer.
+
+    Use a REQUEST variable to keep a temporary selected locale."""
+
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+
+    # Never viewable, so skipped by breadcrumbs.
+    _View_Permission = ()
+
+    def __init__(self, proxy):
+        self.proxy = proxy
+        self.id = KEYWORD_SWITCH_LANGUAGE
+
+    def __repr__(self):
+        return '<LanguageViewer for %s>' % repr(self.proxy)
+
+    def __bobo_traverse__(self, REQUEST, lang):
+        proxy = self.proxy
+        utool = getToolByName(self, 'portal_url')
+        rpath = utool.getRelativeUrl(proxy)
+        # store information by the time of the request to change the
+        # language used for viewing the current document, bypassing Localizer.
+        if REQUEST is not None:
+            langswitch = REQUEST.get(REQUEST_LANGUAGE_KEY, {})
+            langswitch[rpath] = lang
+            if isinstance(REQUEST, DictType):
+                # unrestrictedtraverse use a fake REQUEST
+                REQUEST = getattr(self.proxy, 'REQUEST')
+            REQUEST.set(REQUEST_LANGUAGE_KEY, langswitch)
+        # Return the proxy in the context of the container
+        container = aq_parent(aq_inner(proxy))
+        return proxy.__of__(container)
+
+InitializeClass(LanguageViewer)
+
 
 
 class RevisionSwitcher(Acquisition.Explicit):

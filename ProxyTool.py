@@ -21,6 +21,7 @@
 
 from zLOG import LOG, ERROR, DEBUG, TRACE
 from Globals import InitializeClass, DTMLFile
+from types import DictType
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import Unauthorized
 from AccessControl import ClassSecurityInfo
@@ -39,7 +40,8 @@ from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
 from Products.CPSCore.utils import _isinstance
 from Products.CPSCore.CPSCorePermissions import ViewArchivedRevisions
-from Products.CPSCore.ProxyBase import ProxyBase
+from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
+     REQUEST_LANGUAGE_KEY
 
 
 class ProxyTool(UniqueObject, SimpleItemWithProperties):
@@ -221,51 +223,74 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """Get the best language and revision for a proxy.
 
         Returns lang, rev. A priority is made for the language :
-
-          - Use the 'lang' parameter;
-          - Use an override set on that proxy;
-          - Use the portal default language (Asking Localizer for now);
-          - Use the proxy default language;
+          - Use the 'lang' parameter (can be 'default')
+          - Use a REQUEST or SESSION override set on that proxy
+          - Use the Localizer selected language
+          - Use the portal default language
+          - Use the proxy default language
           - Use the first language found in tricky situations (fallback).
         """
-        utool = getToolByName(self, 'portal_url')
-        # TODO Translation Service should be used in the near future
-        Localizer = getToolByName(self, 'Localizer', None)
-        if lang is None:
-            REQUEST = getattr(proxy, 'REQUEST', None)
-            if REQUEST is not None and hasattr(REQUEST, '_cps_switch_language'):
-                    rpath, l = REQUEST._cps_switch_language
-                    if rpath == utool.getRelativeUrl(proxy):
-                        lang = l
-            elif Localizer is not None:
-                # Find the user-preferred language.
-                lang = Localizer.get_selected_language()
-            else:
-                lang = 'en'
-        if self.isUsePortalDefaultLang() and Localizer is not None:
-            # Find the portal-preferred language.
-            default_lang = Localizer.get_default_language()
-        else:
-            default_lang = None
-        default_language = proxy.getDefaultLanguage()
         language_revs = proxy._getLanguageRevisions()
-        if not language_revs.has_key(lang):
-            if default_lang and language_revs.has_key(default_lang):
-                # First portal-preferred language
-                lang = default_lang
-            elif language_revs.has_key(default_language):
-                # Otherwise proxy original language
-                lang = default_language
+        languages = language_revs.keys()
+        languages_count = len(languages)
+
+        if languages_count == 0:
+            # Proxy construction not finished.
+            return None, None
+        # XXX fix absolute_url is not unit test friendly
+        LOG('ProxyTool.getBestRevision', DEBUG,
+            'proxy:%s lang:%s languages: %s' % (proxy.absolute_url(),
+                                                lang, languages))
+        if lang == 'default':
+            lang = proxy.getDefaultLanguage()
+        last_check = 'NOCHOICE'
+        for check in ('ANYCHOICE?',
+                      'REQUEST', 'LOCALIZER', 'PROXY', 'DEFAULT'):
+            if lang in languages:
+                break # found a valid one
+            if check == 'ANYCHOICE?':
+                if languages_count == 1:
+                    lang = languages[0]  # 0/ no choice
+            elif check == 'REQUEST':
+                REQUEST = getattr(proxy, 'REQUEST', None)
+                if REQUEST is not None:
+                    # 1.1/ check REQUEST
+                    if isinstance(REQUEST, DictType):
+                        switcher = REQUEST.get(REQUEST_LANGUAGE_KEY)
+                    else:
+                        switcher = getattr(REQUEST, REQUEST_LANGUAGE_KEY, None)
+                    # 1.2/ check SESSION
+                    if switcher is None:
+                        check += ' SESSION'
+                        switcher = REQUEST.SESSION.get(SESSION_LANGUAGE_KEY)
+                    if switcher is not None:
+                        utool = getToolByName(self, 'portal_url')
+                        rpath = utool.getRelativeUrl(proxy)
+                        lang = switcher.get(rpath)
+            elif check == 'LOCALIZER': # TODO use translation service
+                Localizer = getToolByName(self, 'Localizer', None)
+                if Localizer is not None:
+                    # 2.1/ try user-preferred language
+                    lang = Localizer.get_selected_language()
+                    if lang not in languages:
+                        # 2.2/ try portal-preferred language
+                        if self.isUsePortalDefaultLang():
+                            lang = Localizer.get_default_language()
+            elif check == 'PROXY':
+                # 3/ try default proxy lang
+                lang = proxy.getDefaultLanguage()
             else:
-                if not language_revs:
-                    # Proxy construction not finished.
-                    return None, None
-                # Find the first available language.
-                # This is a fallback as it should not happen using the API.
-                langs = language_revs.keys()
-                langs.sort()
-                lang = langs[0]
+                # 4/ fallback take the first available
+                # this should not happen using the API
+                languages.sort()
+                lang = languages[0]
+            last_check = check
+
+        LOG('ProxyTool.getBestRevision', DEBUG,
+            'return lang: %s, rev: %s choice: %s' %
+            (lang, language_revs[lang], last_check))
         return lang, language_revs[lang]
+
 
     security.declarePrivate('getContent')
     def getContent(self, proxy, lang=None, rev=None, editable=0):
