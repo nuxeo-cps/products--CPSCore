@@ -354,6 +354,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     def getProxyInfosFromDocid(self, docid, workflow_vars=()):
         """Get the proxy infos from a docid.
 
+        Returns a list of info, of raises KeyError if there is no proxy
+        corresponding to docid.
+
         Info is a dict with:
 
         - object: the proxy
