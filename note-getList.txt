@@ -1,0 +1,58 @@
+Usage of the the TreeCache.getList method in CPS:
+
+CPSDefault/skins/cps_default/boxes_nuxeo.pt
+
+  sections.getList(stop_depth=1)
+  workspaces.getList(stop_depth=2)[:1]
+  # To display the tabs of sections/workspaces at the top
+  # => filter=1, order=1, count_children=0
+
+CPSWebMail/skins/cpswebmail_default/addressBook_search_wsmembers_form.pt
+
+  workspaces.getList(filter=1)
+  # To get a list of visible workspaces for ??? XXX
+
+CPSDefault/TreeBox.py
+
+  portal_trees[root_tree].getList(filter=..., stop_depth=...)
+  # Gets the tree and parses by hand
+  # - prefix
+  # - relative depths to roots
+  # - contextuality (keep path to current and brothers of path's nodes)
+  # - folders 'hidden_folder' not in path to current
+  # - l10n title and description
+  # => filter=1, order=1, count_children=1
+  #   needs nb_children during rendering
+  # => needs better API from TreeCache
+
+CPSDefault/skins/cps_default/getContentInfo.py
+
+  tree.getList(filter=0)
+  # To check proxies accessible to show other published states,
+  # To check dest containers for history: accessibility and title
+  # => filter=1, order=0, count_children=0
+
+CPSDefault/skins/cps_default/getSectionsTree.py
+
+  sections.getList()
+  # To check in which sections publishing is possible
+  # => filter=1, order=1, count_children=0
+
+CPSNavigation/CPSNavigation.py
+
+  ptrees[kw['root_uid']].getList(prefix=prefix, filter=1)
+  # To get to a given rpath info (inefficient)
+  # To get the children of a node (inefficient)
+  # => filter=1, order=1, count_children=1 ?
+  # => refactor!
+
+CPSSkins/skins/cpsskins_cps3/cpsskins_getNavigationInfo.py
+
+  base_obj.getList(start_depth=rel_level-1, stop_depth=rel_level-1)
+  # => filter=1, order=1, count_children=0
+
+CPSSkins/skins/cpsskins_cps3/cpsskins_listPaths.py
+
+  portal_trees[root].getList(start_depth=0, stop_depth=1)
+  # ?
+
