@@ -615,7 +615,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         return perms
 
     #
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    # XXX
     # This does object construction like TypesTool but without security
     # checks (which are already done by WorkflowTool).
     #

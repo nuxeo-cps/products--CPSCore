@@ -47,7 +47,7 @@ from Products.CPSCore.CPSBase import CPSBaseDocument
 
 KEYWORD_DOWNLOAD_FILE = 'downloadFile'
 KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
-KEYWORD_ARCHIVED_LANGUAGE = 'archivedLanguage'
+KEYWORD_ARCHIVED_LANGUAGE = 'switchLanguage'
 
 
 class ProxyBase(Base):
@@ -215,7 +215,7 @@ class ProxyBase(Base):
           mydoc/archivedRevision/n/...
 
         Parses URL translation switch of the form:
-          mydoc/archivedLanguage/<lang>/...
+          mydoc/switchLanguage/<lang>/...
 
         Parses URLs for download of the form:
           mydoc/downloadFile/attrname/mydocname.pdf
@@ -728,6 +728,8 @@ class LanguageSwitcher(Acquisition.Explicit):
             raise KeyError(lang)
         revproxy = VirtualProxy(ob, proxy.getDocid(), proxy.getRevision(), lang)
         revproxy._setId('%s/%s' % (KEYWORD_ARCHIVED_LANGUAGE, lang))
+        # simulate complete language/revision match for LanguageSelectWidget
+        revproxy._language_revs = proxy.getLanguageRevisions()
         return revproxy.__of__(proxy)
 
 InitializeClass(LanguageSwitcher)
