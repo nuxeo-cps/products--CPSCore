@@ -1,7 +1,9 @@
-# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
-# Authors: Florent Guillaume <fg@nuxeo.com>
-#          Alexandre Fernandez <alex@nuxeo.com>
-#          Julien Anguenot <ja@nuxeo.com>
+# (C) Copyright 2002-2005 Nuxeo SARL <http://nuxeo.com>
+# Authors:
+# Florent Guillaume <fg@nuxeo.com>
+# Alexandre Fernandez <alex@nuxeo.com>
+# Julien Anguenot <ja@nuxeo.com>
+# M.-A. Darche <madarche@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -23,7 +25,12 @@
 # $Id$
 
 import sys
+import socket
+import random
+import sha
 from types import StringType
+from time import time
+from smtplib import SMTPException
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
@@ -33,6 +40,7 @@ from AccessControl.User import UnrestrictedUser
 from Acquisition import aq_base, aq_parent, aq_inner
 from ZODB.POSException import ConflictError
 
+from Products.MailHost.MailHost import MailHostError
 from Products.CMFCore.permissions import View, ManagePortal
 from Products.CMFCore.permissions import ListPortalMembers
 from AccessControl.Permissions import manage_users as ManageUsers
@@ -46,7 +54,7 @@ from Products.CMFCore.MemberDataTool import MemberDataTool
 
 from utils import mergedLocalRoles, mergedLocalRolesWithPath, makeId
 
-from zLOG import LOG, DEBUG, ERROR
+from zLOG import LOG, DEBUG, PROBLEM, ERROR
 
 
 class CPSUnrestrictedUser(UnrestrictedUser):
@@ -104,7 +112,25 @@ class CPSMembershipTool(MembershipTool):
     # local roles (with proper permissions on methods of this API)
     roles_managing_local_roles = ('WorkspaceManager', 'SectionManager')
 
+    # The number of seconds that a reset password request is considered valid
+    reset_password_request_validity = 3600 * 12
+
     security = ClassSecurityInfo()
+
+    security.declarePrivate('getNonce')
+    def getNonce(self):
+        """The nonce is a random string different for each instance of
+        CPSMembershipTool that is used to generate unique hash values.
+
+        If ZEO is used, each server will have the same nonce.
+        """
+        try:
+            nonce = self._nonce
+        except AttributeError:
+            self._nonce = ''.join(random.sample('_-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                                                  random.randint(10, 15)))
+            nonce = self._nonce
+        return nonce
 
     security.declareProtected(View, 'getMergedLocalRoles')
     def getMergedLocalRoles(self, object, withgroups=1):
@@ -564,6 +590,127 @@ class CPSMembershipTool(MembershipTool):
                                   reindex=1, recursive=1)
 
         return tuple(member_ids)
+
+    security.declarePublic('requestPasswordReset')
+    def requestPasswordReset(self, username):
+        """Generate a reset token for a password reset and send an email with
+        the reset token for confirmation.
+        """
+        member = self.getMemberById(username)
+        if member is None:
+            raise ValueError("The username cannot be found.")
+        email_address = member.getProperty('email')
+        request_emission_time = str(int(time()))
+        hash_object = sha.new()
+        hash_object.update(username)
+        hash_object.update(request_emission_time)
+        hash_object.update(self.getNonce())
+        reset_token = hash_object.hexdigest()
+        try:
+            mail_from_address = getattr(self.portal_properties,
+                                        'email_from_address')
+        except (AttributeError):
+            LOG('CPSCore.CPSMembershipTool', PROBLEM,
+                "Your portal has no \"email_from_address\" defined. \
+                Reseting password will not be performed because the users have \
+                to trust who send them this reset password email.")
+        mail_to_address = email_address
+        subject = "Password reset confirmation"
+        # d:  the date of the request emission
+        # t:  the token
+        visit_url = ("%s/account_reset_password_form?username=%s&d=%s&t=%s"
+                     % (self.portal_url(),
+                        username, request_emission_time, reset_token))
+        content = """\
+From: %s
+To: %s
+Subject: %s
+Content-Type: text/plain; charset=iso-8859-15
+Mime-Version: 1.0
+
+%s
+"""
+        content = content % (
+            mail_from_address, email_address, subject,
+            "You can reset your password at the page %s"
+            % visit_url)
+
+        try:
+            self.MailHost.send(content,
+                               mto=mail_to_address, mfrom=mail_from_address,
+                               subject=subject, encode='8bit')
+        except (socket.error, SMTPException, MailHostError):
+            LOG('CPSCore.CPSMembershipTool', PROBLEM,
+                "Error while sending reset token email")
+
+    security.declarePublic('isPasswordResetRequestValid')
+    def isPasswordResetRequestValid(self, username, emission_time, reset_token):
+        """Return wether a request for a password reset is valid or not."""
+        member = self.getMemberById(username)
+        hash_object = sha.new()
+        hash_object.update(username)
+        hash_object.update(emission_time)
+        hash_object.update(self.getNonce())
+        result = hash_object.hexdigest()
+        if (reset_token == result
+            and int(emission_time) + self.reset_password_request_validity >=
+            int(time())):
+            return True
+        return False
+
+    security.declarePublic('resetPassword')
+    def resetPassword(self, username, emission_time, reset_token):
+        """Reset the password of a user and return whether it has been successful
+        or not.
+        """
+        if not self.isPasswordResetRequestValid(username,
+                                                emission_time, reset_token):
+            LOG('CPSCore.CPSMembershipTool', INFO,
+                "An invalid password reset request has been received.")
+            return False
+        member = self.getMemberById(username)
+        email_address = member.getProperty('email')
+        random.seed()
+        password_length = 10
+        new_password = ''.join(random.sample('_-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                                             password_length))
+        member.setSecurityProfile(password=new_password, domains=None)
+        try:
+            mail_from_address = getattr(self.portal_properties,
+                                        'email_from_address')
+        except (AttributeError):
+            LOG('CPSCore.CPSMembershipTool', PROBLEM,
+                "Your portal has no \"email_from_address\" defined. \
+                Reseting password will not be performed because the users have \
+                to trust who send them this reset password email.")
+            return False
+        mail_to_address = email_address
+        subject = "Password reset: new password"
+        visit_url = ("%s/login_form" % self.portal_url())
+        content = """\
+From: %s
+To: %s
+Subject: %s
+Content-Type: text/plain; charset=iso-8859-15
+Mime-Version: 1.0
+
+%s
+"""
+        content = content % (
+            mail_from_address, email_address, subject,
+            "Your new password is: %s\n\nWith it, you can now login into the portal: %s"
+            % (new_password, visit_url))
+
+        try:
+            self.MailHost.send(content,
+                               mto=mail_to_address, mfrom=mail_from_address,
+                               subject=subject, encode='8bit')
+        except (socket.error, SMTPException, MailHostError):
+            LOG('CPSCore.CPSMembershipTool', PROBLEM,
+                "Error while sending reset token email")
+            return False
+
+        return True
 
     #
     #   ZMI interface methods

@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Added support for user password reseting.
 Bug fixes:
 ~~~~~~~~~~
 -
