@@ -136,8 +136,7 @@ class IndexationManagerTCSubscriber(BaseTCSubscriber):
             # if no former reindexation requested
             if not struct['reindex']:
                 # Flag for reindexation if idxs
-                struct['reindex'] = idxs is not None and True or False
-
+                struct['reindex'] = idxs is not None
 
             # Here, we reindex everything
             if idxs == []:
