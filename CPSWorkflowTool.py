@@ -90,6 +90,7 @@ class CPSWorkflowTool(WorkflowTool):
 
         Returns a dict of {wf_id: [sequence of transitions]}.
         """
+        LOG('CPSWFT', DEBUG, 'get creation transitions for pt=%s' % type_name)
         wf_ids = self.getChainFor(type_name, container=container)
         creation_transitions = {}
         for wf_id in wf_ids:
@@ -99,6 +100,7 @@ class CPSWorkflowTool(WorkflowTool):
                 continue
             transitions = wf.getCreationTransitions(container)
             creation_transitions[wf_id] = transitions
+        LOG('CPSWFT', DEBUG, 'cr_transitions are %s' % `creation_transitions`)
         return creation_transitions
 
     def _getAllCreationTransitions(self, container, type_name,

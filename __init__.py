@@ -25,6 +25,8 @@ from Products.CMFCore import utils
 from Products.CMFCore.DirectoryView import registerDirectory
 from Products.CMFCore.CMFCorePermissions import AddPortalContent
 
+import AllowModules
+
 import ElementsTool
 import EventServiceTool
 import EventServicePatches

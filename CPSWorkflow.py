@@ -360,14 +360,20 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
         The container is the context in which the guard is evaluated.
         """
+        LOG('WF', DEBUG, 'wf=%s get crtr' % self.getId())
         res = []
         for tdef in self.transitions.values():
+            LOG('WF', DEBUG, '  trans %s' % tdef.getId())
             if tdef.trigger_type != TRIGGER_CREATION:
+                LOG('WF', DEBUG, '    no, not creation')
                 continue
             if not self._checkTransitionGuard(tdef, container):
+                LOG('WF', DEBUG, '    no, not guard')
                 continue
+            LOG('WF', DEBUG, '    ok')
             res.append(tdef.getId())
         res.sort()
+        LOG('WF', DEBUG, '  returning %s' % `res`)
         return res
 
     security.declarePrivate('getCloneAllowedTransitions')
