@@ -39,7 +39,7 @@ from Products.DCWorkflow.utils import modifyRolesForPermission
 from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2
 from BTrees.OOBTree import OOBTree
 
-from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
+from Products.CPSWorkflow.CPSWorkflowTool import CPSWorkflowConfig_id
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
 from Products.CPSCore.EventServiceTool import getEventService
 

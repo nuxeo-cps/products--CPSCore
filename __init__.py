@@ -55,26 +55,18 @@ import PatchBTreeFolder2
 import PatchCatalogTool
 import ProxyTool
 import ObjectRepositoryTool
-import CPSWorkflowTool
 import TreesTool
 import CPSMembershipTool
 import CPSRegistrationTool
 import OrderedFolderSupportPatch
 import CopyrightPatch
 
-from CPSWorkflowConfiguration import CPSWorkflowConfiguration
-from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
-
 import ProxyBase
-
-# register CPSWorkflow
-import CPSWorkflow
 
 tools = (
     EventServiceTool.EventServiceTool,
     ProxyTool.ProxyTool,
     ObjectRepositoryTool.ObjectRepositoryTool,
-    CPSWorkflowTool.CPSWorkflowTool,
     TreesTool.TreesTool,
     CPSMembershipTool.CPSMembershipTool,
     CPSRegistrationTool.CPSRegistrationTool,
@@ -112,13 +104,6 @@ def initialize(registrar):
         )
     )
 
-    # Workflow Configuration Object
-    registrar.registerClass(
-        CPSWorkflowConfiguration,
-        permission=ManagePortal,
-        constructors=(addCPSWorkflowConfiguration,)
-    )
-
     # Tree Cache
     registrar.registerClass(
         TreesTool.TreeCache,
@@ -126,7 +111,7 @@ def initialize(registrar):
         constructors=(TreesTool.TreesTool.manage_addCPSTreeCache,)
     )
     cmfutils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.png', globals())
-    
+
     # CPS Content and Folder objects
     cmfutils.ContentInit(
         'CPS Default Documents',

@@ -1,6 +1,7 @@
 Requires:
 ~~~~~~~~~
 - WARNING: renaming API proxy.Languages -> proxy.getProxyLanguages
+- CPSWorkflow
 New features:
 ~~~~~~~~~~~~~
 -
@@ -11,3 +12,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - More unit tests.
+- Workflows moved to CPSWorkflow. Still keeping the compatiblity for a while
