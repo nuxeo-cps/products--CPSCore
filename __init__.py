@@ -47,6 +47,7 @@ import AllowModules
 import EventServiceTool
 import EventServicePatches
 import TypesToolPatches
+import PatchBTreeFolder2
 #import LoggerTool
 #import MirrorTool
 import ProxyTool
