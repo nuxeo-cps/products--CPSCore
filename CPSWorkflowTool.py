@@ -179,7 +179,11 @@ class CPSWorkflowTool(WorkflowTool):
                 # Not a CPS workflow.
                 continue
             for t in wf.getInitialTransitions(container, behavior):
-                d[t] = None
+                if getattr(getattr(wf.transitions, t),
+                           'new_state_id') == self.getInfoFor(container,
+                                                              'review_state',
+                                                              ''):
+                    d[t] = None
         transitions = d.keys()
         transitions.sort()
         LOG('CPSWFT', DEBUG, "  Transitions are %s" % `transitions`)
@@ -230,6 +234,9 @@ class CPSWorkflowTool(WorkflowTool):
                                                  TRANSITION_INITIAL_CREATE)
             if len(crtrans) == 1:
                 initial_transition = crtrans[0]
+            elif len(crtrans) > 1:
+                raise WorkflowException(
+                    "More than one initial transition available "+str(crtrans))
             else:
                 raise WorkflowException(
                     "No initial_transition to create %s (type_name=%s) in %s"
