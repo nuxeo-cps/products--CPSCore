@@ -36,9 +36,15 @@ class Class1:
 
     meta_type = 'type1'
 
+    def getPhysicalPath(self, *args, **kw):
+      return ('', 'testsite', 'instance1')
+
 class Class2:
 
     meta_type = 'type2'
+
+    def getPhysicalPath(self, *args, **kw):
+      return ('', 'testsite', 'instance2')
 
 class SynchonousNotificationsTest(unittest.TestCase):
     """\
@@ -89,16 +95,16 @@ class SynchonousNotificationsTest(unittest.TestCase):
         object = Class1()
         object2 = Class2()
         
-        tool.notify('an_other_event', object, 1234)
+        tool.notify('an_other_event', object, {})
         self.assertEqual(subscriber.notified, 0)
-        tool.notify('an_event', object2, 1234)
+        tool.notify('an_event', object2, {})
         self.assertEqual(subscriber.notified, 0)
-        tool.notify('an_other_event', object2, 1234)
+        tool.notify('an_other_event', object2, {})
         self.assertEqual(subscriber.notified, 0)
-        tool.notify('an_event', object, 1234)
+        tool.notify('an_event', object, {'a': 1})
         self.assertEqual(subscriber.event_type, 'an_event')
         self.failUnless(subscriber.object is object)
-        self.assertEqual(subscriber.infos, 1234)
+        self.assertEqual(subscriber.infos['a'], 1)
         self.assertEqual(subscriber.notified, 1)
 
     def test_1_notification_by_type(self):
@@ -118,13 +124,13 @@ class SynchonousNotificationsTest(unittest.TestCase):
         object = Class1()
         object2 = Class2()
         
-        tool.notify('an_other_event', object2, 1234)
+        tool.notify('an_other_event', object2, {})
         self.assertEqual(subscriber.notified, 0)
-        tool.notify('an_event', object2, 1234)
+        tool.notify('an_event', object2, {})
         self.assertEqual(subscriber.notified, 0)
-        tool.notify('an_event', object, 1234)
+        tool.notify('an_event', object, {})
         self.assertEqual(subscriber.notified, 1)
-        tool.notify('an_other_event', object, 1234)
+        tool.notify('an_other_event', object, {})
         self.assertEqual(subscriber.notified, 2)
 
     def test_2_notification_by_event_type(self):
@@ -144,13 +150,13 @@ class SynchonousNotificationsTest(unittest.TestCase):
         object = Class1()
         object2 = Class2()
         
-        tool.notify('an_other_event', object, 1234)
+        tool.notify('an_other_event', object, {})
         self.assertEqual(subscriber.notified, 0)
-        tool.notify('an_other_event', object2, 1234)
+        tool.notify('an_other_event', object2, {})
         self.assertEqual(subscriber.notified, 0)
-        tool.notify('an_event', object, 1234)
+        tool.notify('an_event', object, {})
         self.assertEqual(subscriber.notified, 1)
-        tool.notify('an_event', object2, 1234)
+        tool.notify('an_event', object2, {})
         self.assertEqual(subscriber.notified, 2)
 
     def test_3_notification_no_filter(self):
@@ -170,13 +176,13 @@ class SynchonousNotificationsTest(unittest.TestCase):
         object = Class1()
         object2 = Class2()
         
-        tool.notify('an_other_event', object, 1234)
+        tool.notify('an_other_event', object, {})
         self.assertEqual(subscriber.notified, 1)
-        tool.notify('an_other_event', object2, 1234)
+        tool.notify('an_other_event', object2, {})
         self.assertEqual(subscriber.notified, 2)
-        tool.notify('an_event', object, 1234)
+        tool.notify('an_event', object, {})
         self.assertEqual(subscriber.notified, 3)
-        tool.notify('an_event', object2, 1234)
+        tool.notify('an_event', object2, {})
         self.assertEqual(subscriber.notified, 4)
 
 def test_suite():
