@@ -138,17 +138,18 @@ class IndexationManagerTCSubscriber(BaseTCSubscriber):
                 # Flag for reindexation if idxs
                 struct['reindex'] = idxs is not None and True or False
 
+
+            # Here, we reindex everything
+            if idxs == []:
+                struct['idxs'] = []
+
             # if idxs formerly given and some more added
             # if struct['idxs'] == [] then we are reindexing
             # everything thus it won't enter this loop
-            if struct['idxs'] and idxs is not None:
+            elif struct['idxs'] and idxs is not None:
                 for idx in idxs:
                     if idx not in struct['idxs']:
                         struct['idxs'].append(idx)
-
-            # Here, we reindex everything
-            elif idxs == []:
-                struct['idxs'] = []
 
             # Flag security reindexation
             if with_security:
