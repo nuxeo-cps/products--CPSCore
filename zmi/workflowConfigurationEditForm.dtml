@@ -67,7 +67,7 @@
   <td align="left" class="form-label">
     <select name="portal_type">
       <dtml-in addable_info mapping sort=id>
-        <option name="&dtml-id;">&dtml-title;</option>
+        <option value="&dtml-id;">&dtml-title;</option>
       </dtml-in>
     </select>
   </td>
