@@ -34,6 +34,7 @@ from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
 from Products.CPSCore.utils import _isinstance
+from Products.CPSCore.EventServiceTool import getEventService
 
 from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolderishDocument
 from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOWSUB_CREATE
@@ -340,6 +341,8 @@ class CPSWorkflowTool(WorkflowTool):
                 proxy.setDefaultLanguage(language)
                 ob = proxy
             ob.manage_afterCMFAdd(ob, container)
+            # XXX at this point we still don't have a workflow state...
+            # XXX so tree caches are wrong!
             self._insertWorkflow(ob, initial_transition, initial_behavior,
                                  kwargs)
         elif initial_behavior == TRANSITION_INITIAL_CHECKOUT:
@@ -377,6 +380,8 @@ class CPSWorkflowTool(WorkflowTool):
             reindex = 1
         if reindex:
             self._reindexWorkflowVariables(ob)
+            evtool = getEventService(self)
+            evtool.notify('sys_modify_object', ob, {})
 
     def _insertWorkflowRecursive(self, ob, initial_transition,
                                  initial_behavior, kwargs):
