@@ -104,45 +104,45 @@ class ProxyToolTest(SecurityRequestTest):
         ptool = self.root.portal_proxies
         self.assertEqual(ptool.listProxies(), [])
 
-        proxy1 = ProxyBase(language_revs={'*': 78})
-        proxy2 = ProxyBase(language_revs={'*': 90})
+        proxy1 = ProxyBase(language_revs={'en': 78})
+        proxy2 = ProxyBase(language_revs={'fr': 90})
 
         ptool._addProxy(proxy1, '123')
         self.assertEquals(ptool.listProxies(),
-            [('123', (None, {'*': 78}))])
+            [('123', (None, {'en': 78}))])
 
         # Check that we can't add two proxies with same id
         self.assertRaises(ValueError, ptool._addProxy, proxy2, '123')
         # No side effects
         self.assertEquals(ptool.listProxies(),
-            [('123', (None, {'*': 78}))])
+            [('123', (None, {'en': 78}))])
 
         ptool._addProxy(proxy2, '456')
         items = ptool.listProxies()
         items.sort()
         self.assertEquals(items,
-            [('123', (None, {'*': 78})), ('456', (None, {'*': 90})),]
+            [('123', (None, {'en': 78})), ('456', (None, {'fr': 90})),]
         )
 
         ptool._delProxy('456')
         self.assertEquals(ptool.listProxies(),
-            [('123', (None, {'*': 78}))])
+            [('123', (None, {'en': 78}))])
 
         ptool._modifyProxy(proxy2, '123')
         self.assertEquals(ptool.listProxies(),
-            [('123', (None, {'*': 90}))])
+            [('123', (None, {'fr': 90}))])
         ptool._delProxy('123')
         self.assertEquals(len(ptool.listProxies()), 0)
 
     def testBestRevision(self):
         ptool = self.root.portal_proxies
-        proxy = ProxyBase(language_revs={'fr': 33, '*': 78})
+        proxy = ProxyBase(language_revs={'fr': 33, 'en': 78})
         def absolute_url():
             return "fake path"
         proxy.absolute_url = absolute_url
         ptool._addProxy(proxy, '456')
-        self.assertEquals(ptool.getBestRevision(proxy), ('*', 78))
-        self.assertEquals(ptool.getBestRevision(proxy, 'en'), ('*', 78))
+        self.assertEquals(ptool.getBestRevision(proxy), ('en', 78))
+        self.assertEquals(ptool.getBestRevision(proxy, 'en'), ('en', 78))
         self.assertEquals(ptool.getBestRevision(proxy, 'fr'), ('fr', 33))
 
     # XXX what about this?
