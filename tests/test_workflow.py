@@ -29,7 +29,8 @@ from OFS.SimpleItem import SimpleItem
 
 from Products.CPSCore.CPSWorkflow import CPSWorkflowDefinition
 from Products.CPSCore.CPSWorkflow import TRIGGER_CREATION
-from Products.CPSCore.CPSWorkflowConfiguration import addCPSWorkflowConfiguration
+from Products.CPSCore.CPSWorkflowConfiguration \
+    import addCPSWorkflowConfiguration
 from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
 
 
@@ -51,7 +52,7 @@ class DummyContent(Dummy):
         return 'Dummy Content'
 
 class DummyTypesTool(SimpleItem):
-    def listTypeInfo( self ):
+    def listTypeInfo(self):
         return [DummyTypeInfo('Dummy Content')]
 
     def getTypeInfo(self, ob):
@@ -78,7 +79,7 @@ class WorkflowToolTests(SecurityRequestTest):
         from Products.CPSCore.CPSWorkflowTool import addCPSWorkflowTool
         addCPSWorkflowTool(root)
 
-    def tearDown( self ):
+    def tearDown(self):
         from Products.CMFCore.WorkflowTool import _removeWorkflowFactory
         _removeWorkflowFactory(CPSWorkflowDefinition, id='cps wfdef')
 
