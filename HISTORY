@@ -1,4 +1,27 @@
 *******************************************
+** CPSCore V3.11.0 [R1 build 2004/05/14-16:10 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- new patch to make IndexableObjectWrapper works this way:
+  proxy try to get the repository document attributes,
+  document in the repository hide some attributes to save some space.
+  this enable a normal usage of the catalog to find proxy
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Raise an error when creating a revision if the given language is already used.
+- When creating a revision, a source language can be given to copy content from
+  it.
+- patching DublinCore expires time to enable use of DateIndex
+- patching TopicIndex clear method to keep filterset
+
+*******************************************
 ** CPSCore V3.10.1 [R1 build 2004/05/05-15:37 by madarche]
 
 Requires:
