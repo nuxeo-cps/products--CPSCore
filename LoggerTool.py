@@ -17,24 +17,24 @@
 #
 # $Id$
 
-from pprint import pformat
 from zLOG import LOG, INFO
+from pprint import pformat
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
-from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties, \
-                                   getToolByName
+
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
+from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties
+from Products.CMFCore.utils import getToolByName
+
 
 class LoggerTool(UniqueObject, SimpleItemWithProperties):
     """Logger Tool just logs events.
 
-    You have to register portal_logger in portal_eventservice
-    so portal_logger is notifyied on any event (or just filter
-    some)
+    You have to register portal_logger in portal_eventservice (action log)
+    so portal_logger is notified on any event (or just filter some).
     """
 
     id = 'portal_logger'
-
     meta_type = 'CPS Logger Tool'
 
     manage_options = (
