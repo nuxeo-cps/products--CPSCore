@@ -234,7 +234,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             REQUEST = getattr(proxy, 'REQUEST', None)
             if REQUEST is not None and hasattr(REQUEST, '_cps_switch_language'):
                     rpath, l = REQUEST._cps_switch_language
-                    if rpath == proxy.getRelativeUrl():
+                    if rpath == proxy.getRelativePath():
                         lang = l
             elif Localizer is not None:
                 # Find the user-preferred language.

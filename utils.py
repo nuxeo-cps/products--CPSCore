@@ -205,8 +205,8 @@ def __cps_wrapper_getattr__(self, name):
     # XXX TODO: use _isinstance(ProxyBase) need to fix import mess
     if hasattr(ob, '_docid') and name not in (
         'getId', 'id', 'path', 'getPhysicalPath', 'splitPath',
-        'modified', 'uid', 'container_path', 'getRelativeUrl',
-        'getRelativeUrlDepth'):
+        'modified', 'uid', 'container_path', 'getRelativePath',
+        'getRelativePathDepth'):
         proxy = ob
         ob = ob.getContent()
         ## The following seems problematic with Zope 2.7.1 and higher

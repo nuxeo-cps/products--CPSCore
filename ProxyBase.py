@@ -199,7 +199,7 @@ class ProxyBase(Base):
     def proxyChanged(self):
         """Do necessary notifications after a proxy was changed."""
         pxtool = getToolByName(self, 'portal_proxies')
-        rpath = self.getRelativeUrl()
+        rpath = self.getRelativePath()
         pxtool._modifyProxy(self, rpath) # XXX or directly event ?
         pxtool.setSecurity(self)
         evtool = getEventService(self)
@@ -448,8 +448,8 @@ class ProxyBase(Base):
         # return all available
         return self.getLanguageRevisions().keys()
 
-    security.declarePublic('getRelativeUrl')
-    def getRelativeUrl(self, utool=None):
+    security.declarePublic('getRelativePath')
+    def getRelativePath(self, utool=None):
         """Return computed path relative to the portal.
 
         Mostly useful when indexing proxies and displaying brains.
@@ -768,7 +768,7 @@ class LanguageSwitcher(Acquisition.Explicit):
 
     def __bobo_traverse__(self, REQUEST, lang):
         proxy = self.proxy
-        rpath = proxy.getRelativeUrl()
+        rpath = proxy.getRelativePath()
         # store information by the time of the request to change the
         # language used for viewing the current document, bypassing Localizer.
         # XXX Use rpath in the key not to propagate the change to other
