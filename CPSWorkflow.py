@@ -36,14 +36,14 @@ from Products.CMFCore.WorkflowTool import addWorkflowFactory
 from Products.DCWorkflow.DCWorkflow import DCWorkflowDefinition
 
 
-CREATION_STATE = 'creation_'
+UNCREATED_STATE = 'uncreated_'
 
 
 class CPSWorkflowDefinition(DCWorkflowDefinition):
     """A Workflow implementation with proxy support.
 
     Features:
-    - Creation transitions (those from the creation_ state)
+    - Creation transitions (those from the uncreated_ state)
     - Extended transition description
     """
 
@@ -53,12 +53,12 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     security = ClassSecurityInfo()
 
     def manage_afterAdd(self, item, container):
-        """Add special creation_ state after add."""
+        """Add special uncreated_ state after add."""
         if aq_base(self) is aq_base(item):
-            if self.states.get(CREATION_STATE) is None:
-                self.states.addState(CREATION_STATE)
-                self.states.get(CREATION_STATE).title = 'Creation'
-                self.states.setInitialState(CREATION_STATE)
+            if self.states.get(UNCREATED_STATE) is None:
+                self.states.addState(UNCREATED_STATE)
+                self.states.get(UNCREATED_STATE).title = 'Uncreated'
+                #self.states.setInitialState(UNCREATED_STATE)
         DCWorkflowDefinition.inheritedAttribute('manage_afterAdd')(
             self, item, container)
 
@@ -70,9 +70,9 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     def getCreationTransitions(self):
         """Get the possible creation transitions.
 
-        A creation transition is a transition from the creation_ state.
+        A creation transition is a transition from the uncreated_ state.
         """
-        creation_state = self.states.get(CREATION_STATE)
+        creation_state = self.states.get(UNCREATED_STATE)
         if creation_state is None:
             return ()
         return tuple(creation_state.getTransitions())

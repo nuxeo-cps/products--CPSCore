@@ -28,7 +28,7 @@ from OFS.Folder import Folder
 from OFS.SimpleItem import SimpleItem
 
 from Products.NuxCPS3.CPSWorkflow import CPSWorkflowDefinition
-from Products.NuxCPS3.CPSWorkflow import CREATION_STATE
+from Products.NuxCPS3.CPSWorkflow import UNCREATED_STATE
 from Products.NuxCPS3.WorkflowConfiguration import addWorkflowConfiguration
 from Products.NuxCPS3.WorkflowConfiguration import WorkflowConfiguration_id
 
@@ -97,7 +97,7 @@ class WorkflowToolTests(SecurityRequestTest):
         wf.states.addState('s1')
         states = list(wf.states.objectIds())
         states.sort()
-        okstates = [CREATION_STATE, 's1']
+        okstates = [UNCREATED_STATE, 's1']
         okstates.sort()
         self.assertEqual(tuple(states), tuple(okstates))
         # create transitions
@@ -107,7 +107,7 @@ class WorkflowToolTests(SecurityRequestTest):
         transitions = wf.transitions.objectIds()
         self.assertEqual(tuple(transitions), ('t1',))
         # add creation transition
-        s1 = wf.states.get(CREATION_STATE)
+        s1 = wf.states.get(UNCREATED_STATE)
         s1.setProperties(transitions=('t1',))
         # another empty workflow
         id2 = 'wf2'
