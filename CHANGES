@@ -3,7 +3,9 @@ ZODB Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Adding within CPSMembershipTool the method getCPSCandidateLocalRoles
+  returning the local roles you're able to assign according to the context 
+  and your rights.  
 Bug fixes:
 ~~~~~~~~~~
 - #75 remove undo in portal undo (Patch on UndoTool)
