@@ -128,7 +128,7 @@ def manage_pasteObjects(self, cb_copy_data=None, REQUEST=None):
     for idchange in result:
         new_id = idchange['new_id']
         ob = self._getOb(new_id)
-        if hasattr(aq_base(self), 'manage_afterCMFAdd'):
+        if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
             ob.manage_afterCMFAdd(ob, self)
     # --- cleanup
     if op==0:
