@@ -1,5 +1,4 @@
 # (C) Copyright 2004 Nuxeo SARL <http://nuxeo.com>
-# Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -16,34 +15,193 @@
 # 02111-1307, USA.
 #
 # $Id$
-
-from zLOG import LOG, TRACE
+"""Patch CMF CatalogTool
+"""
+from zLOG import LOG, DEBUG, INFO
 from Acquisition import aq_base
 from DateTime.DateTime import DateTime
-from Products.CMFCore.utils import _getAuthenticatedUser
-from Products.CMFCore.utils import _checkPermission
-
-from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 from Products.ZCatalog.ZCatalog import ZCatalog
+from Products.CMFCore.interfaces.portal_catalog import \
+     IndexableObjectWrapper as IIndexableObjectWrapper
 from Products.CMFCore.CatalogTool import CatalogTool
-from Products.CMFCore.CatalogTool import IndexableObjectWrapper
+from Products.CMFCore.utils import getToolByName, _getAuthenticatedUser, \
+     _checkPermission
 from Products.CMFCore.CMFCorePermissions import AccessInactivePortalContent
 
-from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject
-from Products.CPSCore.utils import getAllowedRolesAndUsersOfUser
+from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject, \
+     getAllowedRolesAndUsersOfUser, _isinstance
+from Products.CPSCore.ProxyBase import ProxyBase, KEYWORD_SWITCH_LANGUAGE, \
+     KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY
+from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 
-#
-# Patch CatalogTool for generic allowedRolesAndUsers,
-# and others catalog-related patches.
-#
 
-LOG('CPSCore', TRACE, 'Patching CatalogTool')
+class IndexableObjectWrapper:
+    """This is a CPS adaptation of
+    CMFCore.CatalogTool.IndexableObjectWrapper"""
+    __implements__ = IIndexableObjectWrapper
+
+    def __init__(self, vars, ob, lang=None, is_default_proxy=0):
+        self.__vars = vars
+        self.__ob = ob
+        self.__lang = lang
+        self.__is_default_proxy = is_default_proxy
+
+    def __getattr__(self, name):
+        """This is the indexable wrapper getter for CPS,
+        proxy try to get the repository document attributes,
+        document in the repository hide some attributes to save some space."""
+        vars = self.__vars
+        if vars.has_key(name):
+            return vars[name]
+        ob = self.__ob
+        proxy = None
+        if _isinstance(ob, ProxyBase):
+            proxy = ob
+            if (self.__is_default_proxy and
+                name in ('getL10nTitles', 'getL10nDescriptions')) or (
+                name in ('getId', 'id', 'path', 'uid', 'modified',
+                         'getPhysicalPath', 'splitPath', 'Languages')):
+                # we use the proxy
+                pass
+            else:
+                # use the repository document instead of the proxy
+                ob = ob.getContent(lang=self.__lang)
+        elif 'portal_repository' in ob.getPhysicalPath():
+            if name in ('SearchableText', 'Title'):
+                # skip useless indexes for repository document
+                raise AttributeError
+
+        try:
+            ret = getattr(ob, name)
+        except AttributeError:
+            if name == 'meta_type':
+                # this is a fix for TextIndexNG2
+                return None
+            raise
+
+        if proxy is not None and name == 'SearchableText':
+            # we add proxy id to searchableText
+            ret = ret() + ' ' + proxy.getId()
+
+        return ret
+
+    def allowedRolesAndUsers(self):
+        """
+        Return a list of roles, users and groups with View permission.
+        Used by PortalCatalog to filter out items you're not allowed to see.
+        """
+        return getAllowedRolesAndUsersOfObject(self.__ob)
+
+    def localUsersWithRoles(self):
+        """
+        Return a list of users and groups having local roles.
+        Used by PortalCatalog to find which objects have roles for given
+        users and groups.
+        Only return proxies: see above __getattr__ raises
+        AttributeError when accessing this attribute.
+        """
+        ob = self.__ob
+        local_roles = ['user:%s' % r[0] for r in ob.get_local_roles()]
+        local_roles.extend(
+            ['group:%s' % r[0] for r in ob.get_local_group_roles()])
+        return local_roles
+
+    def container_path(self):
+        """This is used to produce an index
+        return the parent full path."""
+        return '/'.join(self.__ob.getPhysicalPath()[:-1])
+
+    def relative_path(self):
+        """This is used to produce a metadata
+        return a path relative to the portal."""
+        utool = getToolByName(self, 'portal_url', None)
+        ret = ''
+        if utool:
+            # broken object can't aquire portal_url
+            ret = utool.getRelativeContentURL(self.__ob)
+        return ret
+
+    def relative_path_depth(self):
+        """This is used to produce an index
+        return the path depth relative to the portal."""
+        rpath = self.relative_path()
+        ret = -1
+        if rpath:
+            ret = rpath.count('/')+1
+        return ret
+
+
+### Patching CatalogTool methods
+def cat_catalog_object(self, object, uid, idxs=[]):
+    """Wraps the object with workflow and accessibility
+    information just before cataloging."""
+    LOG('CatalogToolPatch.catalog_object', DEBUG, 'index uid %s  obj %s' % (
+        uid, object))
+    wf = getattr(self, 'portal_workflow', None)
+    if wf is not None:
+        vars = wf.getCatalogVariablesFor(object)
+    else:
+        vars = {}
+    path = uid.split('/')
+    proxy = None
+    if _isinstance(object, ProxyBase):
+        proxy = object
+        languages = proxy.Languages()
+    if proxy is None or len(languages) == 1 or \
+           KEYWORD_VIEW_LANGUAGE in path:
+        w = IndexableObjectWrapper(vars, object)
+        ZCatalog.catalog_object(self, w, uid, idxs)
+    else:
+        if len(languages) == 2:
+            # remove previous entry with uid path
+            self.uncatalog_object(uid)
+        # we index all available translation of the proxy
+        # with uid/viewLanguage/language for path
+        default_language = proxy.getDefaultLanguage()
+        default_uid = uid
+        for language in languages:
+            is_default_proxy = 0
+            if language == default_language:
+                is_default_proxy = 1
+            uid = default_uid + '/%s/%s' % (KEYWORD_VIEW_LANGUAGE,
+                                            language)
+            w = IndexableObjectWrapper(vars, proxy, language,
+                                       is_default_proxy=is_default_proxy)
+            LOG('CatalogToolPatch.catalog_object', DEBUG,
+                'index uid locale %s' % uid)
+            ZCatalog.catalog_object(self, w, uid, idxs)
+
+CatalogTool.catalog_object = cat_catalog_object
+LOG('CatalogToolPatch', INFO, 'Patching CMF CatalogTool.catalog_object')
+
+
+def cat_unindexObject(self, object):
+    """Remove from catalog."""
+    default_uid = self.__url(object)
+    proxy = None
+    if _isinstance(object, ProxyBase):
+        proxy = object
+        languages = proxy.Languages()
+    if proxy is None or len(languages) == 1:
+        self.uncatalog_object(default_uid)
+    else:
+        for language in languages:
+            # remove all translation of the proxy
+            uid = default_uid + '/%s/%s' % (KEYWORD_VIEW_LANGUAGE,
+                                            language)
+            self.uncatalog_object(uid)
+
+CatalogTool.unindexObject = cat_unindexObject
+LOG('CatalogToolPatch', INFO, 'Patching CMF CatalogTool.unindexObject')
 
 
 def cat_listAllowedRolesAndUsers(self, user):
+    """Returns a list with all roles this user has + the username"""
     return getAllowedRolesAndUsersOfUser(user)
 
 CatalogTool._listAllowedRolesAndUsers = cat_listAllowedRolesAndUsers
+LOG('CatalogToolPatch', INFO,
+    'Patching CMF CatalogTool._listAllowedRolesAndUsers')
 
 
 def cat_searchResults(self, REQUEST=None, **kw):
@@ -89,130 +247,17 @@ def cat_searchResults(self, REQUEST=None, **kw):
 
 CatalogTool.searchResults = cat_searchResults
 CatalogTool.__call__ = cat_searchResults
+LOG('CatalogToolPatch', INFO,
+    'Patching CMF CatalogTool.searchResults and __call__')
 
 
-def iow_allowedRolesAndUsers(self):
-    """Return a list of roles, users and groups with View permission.
-
-    Used by PortalCatalog to filter out items you're not allowed to see.
-    """
-    ob = self._IndexableObjectWrapper__ob
-    return getAllowedRolesAndUsersOfObject(ob)
-
-IndexableObjectWrapper.allowedRolesAndUsers = iow_allowedRolesAndUsers
-
-
-def iow_localUsersWithRoles(self):
-    """Return a list of users and groups having local roles.
-
-    Used by PortalCatalog to find which objects have roles for given users
-    and groups. Only return proxies: see how iow__getattr__ raises
-    AttributeError when accessing this attribute.
-
-    CPS-specific.
-    """
-    ob = self._IndexableObjectWrapper__ob
-    local_roles = ['user:'+r[0] for r in ob.get_local_roles()]
-    local_roles.extend(['group:'+r[0] for r in ob.get_local_group_roles()])
-    return local_roles
-
-IndexableObjectWrapper.localUsersWithRoles = iow_localUsersWithRoles
-
-
-def iow__getattr__(self, name):
-    """This is the indexable wrapper getter for CPS,
-    proxy try to get the repository document attributes,
-    document in the repository hide some attributes to save some space."""
-    vars = self._IndexableObjectWrapper__vars
-    if vars.has_key(name):
-        return vars[name]
-    ob = self._IndexableObjectWrapper__ob
-    proxy = None
-    # XXX TODO: use _isinstance(ProxyBase) need to fix import mess
-    if hasattr(ob, '_docid') and name not in (
-            'getId', 'id', 'path', 'getPhysicalPath', 'splitPath', 'modified',
-            'uid', 'container_path', 'Languages'):
-        proxy = ob
-        ob = ob.getContent()
-        ## The following seems problematic with Zope 2.7.1 and higher
-        ## I haven't been able to know if it was related to TextIndexNG2
-        ## or not (see comments below). I think it is not, and might be related
-        ## to recent Zope's more tight security checks resulting in None objects
-        ## being returned sometimes. A post on zope-dev has explained this a bit,
-        ## but no definitive explanation has yet been given.
-        ## This seems harmless in most cases, as it has not been changed in 2.7.2.
-        ## Main problems have been reported by CNCC : leaving these two lines
-        ## make their main installer unusable : it fails installing a site
-        ## by crashing on an AttributeError. Commenting the lines have been
-        ## a temporary workaround which seems to work.
-        #if ob is None:
-        #    raise AttributeError
-    elif 'portal_repository' in ob.getPhysicalPath():
-        if name in ('SearchableText', 'Title'):
-            raise AttributeError
-    try:
-        ## This try/except have been added to make Unilog's projects work
-        ## fine with TextIndexNG2
-        ## This index tries to acces directly to meta_type attribute at
-        ## object creation, and in CPSDocuments, a first indexation takes
-        ## place before the real object is created
-        ## returning None in this specific case is ok because the object
-        ## will always be reindexed correctly later on (according to fg).
-        ret = getattr(ob, name)
-    except AttributeError:
-        if name == 'meta_type':
-            return None
-        ## In all other cases, we reraise the exception to let the potential
-        ## problems be visible outside of this code.
-        raise
-    if proxy is not None:
-        if name == 'SearchableText':
-            ret = ret() + ' ' + proxy.getId()  # so we can search on id
-    return ret
-
-IndexableObjectWrapper.__getattr__ = iow__getattr__
-
-
-def container_path(self):
-    """This is used to produce an index
-    return the parent full path."""
-    ob = self._IndexableObjectWrapper__ob
-    return '/'.join(ob.getPhysicalPath()[:-1])
-
-IndexableObjectWrapper.container_path = container_path
-
-
-def relative_path(self):
-    """This is used to produce a metadata
-    return a path relative to the portal."""
-    ob = self._IndexableObjectWrapper__ob
-    try:
-        return ob.portal_url.getRelativeContentURL(ob)
-    except AttributeError:
-        # broken object can't aquire portal_url
-        return ''
-
-IndexableObjectWrapper.relative_path = relative_path
-
-
-def relative_path_depth(self):
-    """This is used to produce an index
-    return the path depth relative to the portal."""
-    ob = self._IndexableObjectWrapper__ob
-    try:
-        return len(ob.portal_url.getRelativeContentPath(ob))
-    except AttributeError:
-        # broken object can't aquire portal_url
-        return -1
-
-IndexableObjectWrapper.relative_path_depth = relative_path_depth
-
-
-LOG('CPSCore', TRACE, 'Patching TopicIndex')
-
+### TopicIndex.clear patch
 def topicindex_clear(self):
-    """Fixing CMF method that remove all filter."""
+    """Fixing cmf method that remove all filter."""
     for fid, filteredSet in self.filteredSets.items():
         filteredSet.clear()
-
 TopicIndex.clear = topicindex_clear
+LOG('CatalogToolPatch', INFO, 'Patching Zope TopicIndex.clear method')
+
+
+
