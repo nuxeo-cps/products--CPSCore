@@ -30,6 +30,8 @@ from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.TypesTool import FactoryTypeInformation
+from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
 from Products.NuxCPS3.ProxyBase import ProxyBase
