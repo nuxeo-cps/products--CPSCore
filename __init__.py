@@ -43,11 +43,7 @@ registerDirectory('skins', globals())
 # XXX this patches should be in the same place
 # Some patches so classical zope actions send notifications
 
-class FakeEventService:
-    def notify(self, *args, **kw):
-        pass
-
-fake_event_service = FakeEventService()
+from EventServiceTool import getEventService
 
 def patch_action(class_, action):
     old_action = 'old_' + action
@@ -63,7 +59,7 @@ def patch_action(class_, action):
         (class_.__name__, action, ok))
 
 def notify(self, event_type, object, *args, **kw):
-    evtool = utils.getToolByName(self, 'portal_eventservice', fake_event_service)
+    evtool = getEventService(self)
     infos = {
         'args': args,
         'kw': kw,

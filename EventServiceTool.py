@@ -23,8 +23,21 @@ import OFS
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner, aq_base
 from AccessControl import ClassSecurityInfo
-from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties
+from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties,\
+                                   getToolByName
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
+
+# FakeEventService is for places where no event service is found
+class FakeEventService:
+    def notify(self, *args, **kw):
+        pass
+
+fake_event_service = FakeEventService()
+
+def getEventService(context):
+    """Return the event service relative to context
+    """
+    return getToolByName(context, 'portal_eventservice', fake_event_service)
 
 class SubscriberDef(SimpleItemWithProperties):
     """Subsriber definition is used by Event Service tool.

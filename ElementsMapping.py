@@ -21,6 +21,7 @@ from zLOG import LOG, DEBUG
 
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
+from EventServiceTool import getEventService
 
 from Acquisition import aq_base, aq_parent, aq_chain
 
@@ -245,7 +246,6 @@ class CallElement:
 
     def _callIt(self):
         object = _normalizeObject(self._object)
-        LOG('CallElement', DEBUG, 'Calling %s.%s()' % (object, self._method_name))
         meth = object.restrictedTraverse(self._method_name)
         return call_meth(meth, self._elements)
 
@@ -262,4 +262,7 @@ class ActionCallElement(CallElement):
             meth = object.restrictedTraverse(action)
         else:
             meth = object
-        return call_meth(meth, self._elements)
+        result = call_meth(meth, self._elements)
+        evtool = getEventService(object)
+        evtool.notify(self._method_name, object, None)
+        return result
