@@ -19,11 +19,16 @@
 """Mixin that does TypesTool-like operation on types.
 """
 
+from types import StringType
+import sys
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
-from Acquisition import aq_base
+from AccessControl.Permissions import copy_or_move
+from Acquisition import aq_base, aq_parent, aq_inner
 
 from ExtensionClass import Base
+from OFS import Moniker
+from OFS.CopySupport import CopyError, _cb_decode, sanity_check
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.TypesTool import FactoryTypeInformation
@@ -130,5 +135,109 @@ class TypeContainer(Base):
         if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
             ob.manage_afterCMFAdd(ob, self)
         return ob
+
+    #
+    # Cut/Copy/Paste
+    #
+
+    security.declareProtected(copy_or_move, 'manage_CPScopyObjects')
+    def manage_CPScopyObjects(self, ids, REQUEST=None):
+        """Copy objects (for later paste)."""
+        wftool = getToolByName(self, 'portal_workflow')
+        ok, why = wftool.isBehaviorAllowedIn(self, 'copy', get_details=1)
+        if not ok:
+            raise CopyError, 'Copy not allowed, %s' % why
+        return self.manage_copyObjects(ids, REQUEST=REQUEST)
+
+    security.declareProtected(copy_or_move, 'manage_CPScutObjects')
+    def manage_CPScutObjects(self, ids, REQUEST=None):
+        """Cut objects (for later paste)."""
+        wftool = getToolByName(self, 'portal_workflow')
+        ok, why = wftool.isBehaviorAllowedIn(self, 'cut', get_details=1)
+        if not ok:
+            raise CopyError, 'Cut not allowed, %s' % why
+        return self.manage_cutObjects(ids, REQUEST=REQUEST)
+
+    security.declareProtected(copy_or_move, 'manage_CPSpasteObjects')
+    def manage_CPSpasteObjects(self, cp):
+        """Paste objects (from an earlier copy)."""
+        wftool = getToolByName(self, 'portal_workflow')
+        try:
+            cp = _cb_decode(cp)
+        except: # XXX
+            raise CopyError, 'Invalid copy data.'
+
+        # Verify pastable into self.
+        ok, why = wftool.isBehaviorAllowedIn(self, 'paste', get_details=1)
+        if not ok:
+            raise CopyError, 'Paste not allowed, %s' % why
+
+        op = cp[0]
+        root = self.getPhysicalRoot()
+
+        oblist = []
+        containers = []
+        behavior = (op == 0) and 'copy' or 'cut'
+        for mdata in cp[1]:
+            m = Moniker.loadMoniker(mdata)
+            try:
+                ob = m.bind(root)
+            except: # XXX
+                raise CopyError, 'Object not found'
+            # Verify copy/cutable from source container.
+            container = aq_parent(aq_inner(ob))
+            if container not in containers:
+                ok, why = wftool.isBehaviorAllowedIn(container, behavior,
+                                                     get_details=1)
+                if not ok:
+                    raise CopyError, '%s not allowed, %s' % (behavior, why)
+                containers.append(container)
+            oblist.append(ob)
+
+        result = []
+        containers = []
+        if op == 0:
+            # Copy operation
+            for ob in oblist:
+                orig_id = ob.getId()
+                if not ob.cb_isCopyable():
+                    raise CopyError, 'Copy not supported for %s' % orig_id
+                ob._notifyOfCopyTo(self, op=0)
+                ob = ob._getCopy(self)
+                id = self._get_id(orig_id)
+                result.append({'id':orig_id, 'new_id':id})
+                ob._setId(id)
+                self._setObject(id, ob)
+                ob = self._getOb(id)
+                ob.manage_afterClone(ob)
+                if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
+                    ob.manage_afterCMFAdd(ob, self)
+        elif op == 1:
+            # Move operation
+            for ob in oblist:
+                orig_id = ob.getId()
+                if not ob.cb_isMoveable():
+                    raise CopyError, 'Move not supported for %s' % orig_id
+                ob._notifyOfCopyTo(self, op=1)
+                if not sanity_check(self, ob):
+                    raise CopyError, 'This object cannot be pasted into itself'
+
+                # try to make ownership explicit so that it gets carried
+                # along to the new location if needed.
+                ob.manage_changeOwnershipType(explicit=1)
+
+                aq_parent(aq_inner(ob))._delObject(orig_id)
+                ob = aq_base(ob)
+                id = self._get_id(orig_id)
+                result.append({'id':orig_id, 'new_id':id })
+                ob._setId(id)
+                self._setObject(id, ob, set_owner=0)
+                # try to make ownership implicit if possible
+                ob = self._getOb(id)
+                ob.manage_changeOwnershipType(explicit=0)
+                if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
+                    ob.manage_afterCMFAdd(ob, self)
+
+        return result
 
 InitializeClass(TypeContainer)
