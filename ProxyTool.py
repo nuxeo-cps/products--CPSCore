@@ -247,7 +247,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         for check in ('ANYCHOICE?',
                       'REQUEST', 'LOCALIZER', 'PROXY', 'DEFAULT'):
             if lang in languages:
-                break # found a valid one
+                break # found a language, exit loop
+
             if check == 'ANYCHOICE?':
                 if languages_count == 1:
                     lang = languages[0]  # 0/ no choice
@@ -260,7 +261,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                     else:
                         switcher = getattr(REQUEST, REQUEST_LANGUAGE_KEY, None)
                     # 1.2/ check SESSION
-                    if switcher is None:
+                    if switcher is None and REQUEST.has_key('SESSION'):
                         check += ' SESSION'
                         switcher = REQUEST.SESSION.get(SESSION_LANGUAGE_KEY)
                     if switcher is not None:
