@@ -32,6 +32,7 @@ from Products.CMFCore.WorkflowTool import WorkflowTool
 from Products.NuxCPS3.WorkflowConfiguration import WorkflowConfiguration_id
 
 
+
 class CPSWorkflowTool(WorkflowTool):
     """A Workflow Tool extending the CMFCore one with CPS features.
 
@@ -45,6 +46,7 @@ class CPSWorkflowTool(WorkflowTool):
 
     id = 'portal_workflow'
     meta_type = 'CPS Workflow Tool'
+    title = 'CPS Workflow Tool'
 
     security = ClassSecurityInfo()
 
@@ -141,7 +143,7 @@ class CPSWorkflowTool(WorkflowTool):
         # Find placeful workflow configuration object.
         wfconf = getattr(container, WorkflowConfiguration_id, None)
         if wfconf is not None:
-            return wfconf._getPlacefulChainFor(pt)
+            return wfconf.getPlacefulChainFor(pt)
         # Nothing placeful found.
         return self.getGlobalChainFor(pt)
 
