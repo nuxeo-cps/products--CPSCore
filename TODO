@@ -2,13 +2,19 @@
 # CPSCore TODO 
 
 - Packaging
-   o move all skins into CPSDefault/skins
-   o remove CPSDummyDocument
-   o move CPSFolder.py into CPSDefault/Folder.py
-   o remove zexp workflow
+   x [] move all skins into CPSDefault/skins
+     removed still available in NuxCPS3 repository
+   x [] remove CPSDummyDocument
+     removed still available in NuxCPS3 repository
+   x [] move CPSFolder.py into CPSDefault/Folder.py
+     Changing 'CPS Folder' portal type into 'Folder'
+   x [] remove zexp workflow
    o update INSTALL.txt
-   o make _ut work on CPSCore
-   o test screnarii use ZTC ? 
+   o tests CPSCore
+      o fix _ut
+      o remove test with dummy doc or CPS Folder
+      o user ZTC ?
+      o find scenarii
 
 # still up to date ???
 - Elements
@@ -16,3 +22,4 @@
    o patches for ZPT and Python Scripts
 - Events
   o use the new API (see notes.txt)
+
