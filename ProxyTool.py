@@ -21,7 +21,6 @@
 
 from zLOG import LOG, ERROR, DEBUG
 from Globals import InitializeClass, DTMLFile
-from Globals import PersistentMapping
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
 from AccessControl.PermissionRole import rolesForPermissionOn
@@ -660,10 +659,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # that they have implicitly been modified. (Would be used so
         # that Title is reindexed for instance.)
 
-        if event_type in ('sys_add_object',
-                          'sys_del_object',
-                          'sys_modify_object',
-                          'modify_object'):
+        if event_type in ('sys_add_object', 'sys_del_object',
+                          'sys_modify_object', 'modify_object'):
             if _isinstance(object, ProxyBase):
                 LOG('ProxyTool', DEBUG, 'Got %s for proxy %s'
                     % (event_type, '/'.join(object.getPhysicalPath())))
