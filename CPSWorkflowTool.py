@@ -89,7 +89,6 @@ class CPSWorkflowTool(WorkflowTool):
         """Get the possible creation transitions in a container.
 
         Returns a dict of {wf_id: [sequence of transitions]}.
-        Raises WorkflowException if a non-CPS workflow is encountered.
         """
         wf_ids = self.getChainFor(type_name, container=container)
         creation_transitions = {}
