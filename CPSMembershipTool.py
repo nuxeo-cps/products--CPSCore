@@ -276,6 +276,8 @@ class CPSMembershipTool(MembershipTool):
         portal_eventservice = getToolByName(self, 'portal_eventservice')
         portal_eventservice.notify('sys_modify_security', f, {})
 
+        self._createMemberContentAsManager(member, member_id, f)
+
         # Revert to original user.
         newSecurityManager(None, user)
 
@@ -285,14 +287,22 @@ class CPSMembershipTool(MembershipTool):
     createMemberarea = createMemberArea
 
     # Can be overloaded by subclasses.
-    def _createMemberContent(self, member, member_id, member_folder):
-        """Create the content of the member area."""
+    def _createMemberContentAsManager(self, member, member_id, member_folder):
+        """Create the content of the member area.
+
+        Executed with Manager privileges.
+        """
         # Member is in fact a user object, it's not wrapped in the
         # memberdata tool.
         portal_cpscalendar = getToolByName(self, 'portal_cpscalendar', None)
         if portal_cpscalendar:
             portal_cpscalendar.createMemberCalendar(member_id)
 
+    # Can be overloaded by subclasses.
+    def _createMemberContent(self, member, member_id, member_folder):
+        """Create the content of the member area."""
+        # Member is in fact a user object, it's not wrapped in the
+        # memberdata tool.
         # Create Member's initial content, skinnable.
         if hasattr(self, 'createMemberContent'):
             self.createMemberContent(member=member,
