@@ -38,8 +38,8 @@ ModuleSecurityInfo('cgi').declarePublic('escape')
 ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG', 'INFO')
 ModuleSecurityInfo('AccessControl').declarePublic('Unauthorized')
 
-ModuleSecurityInfo('Products.CMFCore.WorkflowCore').declarePublic(
-    'WorkflowException')
+ModuleSecurityInfo(
+    'Products.CMFCore.WorkflowCore').declarePublic('WorkflowException')
 
 try:
     from mx import Tidy
