@@ -13,5 +13,5 @@ CMFTopic
 CMFCalendar
 
 # CPS ---------------------
-CPSUtil >= 0.3.0
+CPSUtil >= 0.5.0
 CPSWorkflow
