@@ -298,6 +298,12 @@ class EventServiceTool(UniqueObject, Folder):
     #
 
     def _get_rlocation(self, location):
+        """Get a rlocation from a location.
+
+        A rlocation is a location relative to the portal root.
+        Returns '' for the portal itself.
+        Returns None if the passed location is not under the portal.
+        """
         if not location.startswith('/'):
             return location
         # make relative to portal
@@ -310,17 +316,22 @@ class EventServiceTool(UniqueObject, Folder):
         return location
 
     def _generate_hubid(self, rlocation):
+        """Generate and register a new hubid for a rlocation.
+
+        Returns then new hubid.
+        """
         index = getattr(self, '_v_nextid', 0)
         if index % 4000 == 0:
             index = randid()
         hubid_to_rlocation = self._hubid_to_rlocation
         while not hubid_to_rlocation.insert(index, rlocation):
             index = randid()
+        self._rlocation_to_hubid[rlocation] = index
         self._v_nextid = index + 1
         return index
 
     def _objecthub_notify(self, event_type, object, infos):
-        """Treat event from the object hub's point of view."""
+        """Treat an event from the object hub's point of view."""
         location = '/'.join(object.getPhysicalPath())
         rlocation = self._get_rlocation(location)
         if rlocation is None:
@@ -335,19 +346,19 @@ class EventServiceTool(UniqueObject, Folder):
             return self._rlocation_to_hubid.get(rlocation)
 
     def _register(self, rlocation):
+        """Register a location and return its hubid."""
         if self._rlocation_to_hubid.has_key(rlocation):
             LOG('EventServiceTool', ERROR,
                 'Hub: attempted to re-register location %s' % rlocation)
             return self._rlocation_to_hubid[rlocation]
-        hubid = self._generate_hubid(rlocation)
-        self._rlocation_to_hubid[rlocation] = hubid
-        return hubid
+        return self._generate_hubid(rlocation)
 
     def _unregister(self, rlocation):
+        """Unregister a location and return the hubid it had."""
         hubid = self._rlocation_to_hubid.get(rlocation)
         if hubid is None:
             LOG('EventServiceTool', ERROR,
-                'Hub: attempted to unregister location %s' % rlocation)
+                'Hub: attempted to unregister unknown location %s' % rlocation)
             return None
         del self._rlocation_to_hubid[rlocation]
         del self._hubid_to_rlocation[hubid]
