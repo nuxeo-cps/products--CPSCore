@@ -32,4 +32,5 @@ allow_type(type(re.compile('')))
 allow_type(type(re.match('x','x')))
 
 ModuleSecurityInfo('urllib').declarePublic('urlencode')
+ModuleSecurityInfo('cgi').declarePublic('escape')
 ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG')
