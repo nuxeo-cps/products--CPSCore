@@ -20,7 +20,7 @@
 """Patch Zope so that it sends standard notifications.
 """
 
-from zLOG import LOG, DEBUG
+from zLOG import LOG, DEBUG, ERROR, TRACE
 from Acquisition import aq_base
 from Products.CPSCore.EventServiceTool import getEventService
 
@@ -40,15 +40,61 @@ def patch_action(class_, func):
         setattr(class_, old_action, old)
         ok = 'Done.'
     setattr(class_, action, func)
-    LOG('EventService', DEBUG, ('patching %s.%s... %s' %
+    LOG('EventService', TRACE, ('patching %s.%s... %s' %
                                (class_.__name__, action, ok)))
 
 #
 # OFS
 #
+
+import sys
+from ZODB.POSException import ConflictError
+from OFS.ObjectManager import BeforeDeleteException
 from OFS.ObjectManager import ObjectManager
 from OFS.SimpleItem import Item
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
+
+# Fix a Zope problem, where ConflictErrors are swallowed.
+
+def OFS_manage_beforeDelete(self, item, container):
+    for object in self.objectValues():
+        try: s=object._p_changed
+        except: s=0
+        try:
+            if hasattr(aq_base(object), 'manage_beforeDelete'):
+                object.manage_beforeDelete(item, container)
+        except BeforeDeleteException, ob:
+            raise
+        except ConflictError: # Added for CPS
+            raise
+        except:
+            LOG('Zope',ERROR,'manage_beforeDelete() threw',
+                error=sys.exc_info())
+            pass
+        if s is None: object._p_deactivate()
+
+ObjectManager.manage_beforeDelete = OFS_manage_beforeDelete
+
+def OFS_delObject(self, id, dp=1):
+    object=self._getOb(id)
+    try:
+        object.manage_beforeDelete(object, self)
+    except BeforeDeleteException, ob:
+        raise
+    except ConflictError: # Added for CPS
+        raise
+    except:
+        LOG('Zope',ERROR,'manage_beforeDelete() threw',
+            error=sys.exc_info())
+        pass
+    self._objects=tuple(filter(lambda i,n=id: i['id']!=n, self._objects))
+    self._delOb(id)
+    try:    object._v__object_deleted__ = 1
+    except: pass
+
+ObjectManager._delObject = OFS_delObject
+
+# Patch all before/after methods.
 
 def manage_afterAdd(self, *args, **kw):
     """manage_afterAdd patched for event service notification."""
