@@ -141,13 +141,6 @@ class TreeCache(SimpleItemWithProperties):
     def _clear(self):
         self._infos = OOBTree() # rpath -> info dict
 
-    def _getInfos(self):
-        # XXX backward compatibility for CPS < 3.3
-        # Can be removed on 3.4
-        if not hasattr(self, '_infos'):
-            self._infos = OOBTree()
-        return self._infos
-
     def _maybeUpgrade(self):
         """Upgrade from the old format if needed."""
         if self.__dict__.has_key('_tree'):
@@ -170,7 +163,7 @@ class TreeCache(SimpleItemWithProperties):
                 del info['url']
             if info.has_key('path'):
                 del info['path']
-            self._getInfos()[rpath] = info
+            self._infos[rpath] = info
             self.updateChildrenInfo(ob)
 
         delattr(self, '_tree')
@@ -319,7 +312,7 @@ class TreeCache(SimpleItemWithProperties):
         info['children'] = children
         info['nb_children'] = len(children)
         rpath = info['rpath']
-        self._getInfos()[rpath] = info
+        self._infos[rpath] = info
         return rpath
 
     def updateNode(self, ob):
@@ -330,20 +323,20 @@ class TreeCache(SimpleItemWithProperties):
         urltool = getToolByName(self, 'portal_url')
         plen = len(urltool.getPortalObject().getPhysicalPath())
         rpath = urltool.getRelativeUrl(ob)
-        old_info = self._getInfos().get(rpath)
+        old_info = self._infos.get(rpath)
         info = self.getNodeInfo(ob, plen)
         if old_info is not None:
             info['depth'] = old_info['depth']
             children = old_info['children']
             info['children'] = children
             info['nb_children'] = len(children)
-            self._getInfos()[rpath] = info
+            self._infos[rpath] = info
         else:
             # Compute depth
             root = self.getRoot()
             depth = rpath.count('/') - root.count('/')
             info['depth'] = depth
-            self._getInfos()[rpath] = info
+            self._infos[rpath] = info
             self.updateChildrenInfo(ob)
 
     def updateChildrenInfo(self, ob):
@@ -351,7 +344,7 @@ class TreeCache(SimpleItemWithProperties):
         urltool = getToolByName(self, 'portal_url')
         plen = len(urltool.getPortalObject().getPhysicalPath())
         rpath = urltool.getRelativeUrl(ob)
-        info = self._getInfos().get(rpath)
+        info = self._infos.get(rpath)
         if info is None:
             # Parent is outside of the tree
             return
@@ -362,7 +355,7 @@ class TreeCache(SimpleItemWithProperties):
                 children.append(subrpath)
         info['children'] = children
         info['nb_children'] = len(children)
-        self._getInfos()[rpath] = info
+        self._infos[rpath] = info
 
     def deleteNode(self, ob):
         """Delete a node from the tree."""
@@ -372,7 +365,7 @@ class TreeCache(SimpleItemWithProperties):
         # Update parent's children list
         parent = aq_parent(aq_inner(ob))
         prpath = urltool.getRelativeUrl(parent)
-        parent_info = self._getInfos().get(prpath)
+        parent_info = self._infos.get(prpath)
         if parent_info is not None:
             try:
                 parent_info['children'].remove(rpath)
@@ -380,11 +373,11 @@ class TreeCache(SimpleItemWithProperties):
                 pass
             else:
                 parent_info['nb_children'] -= 1
-                self._getInfos()[prpath] = parent_info
+                self._infos[prpath] = parent_info
 
         # Remove object info
         try:
-            del self._getInfos()[rpath]
+            del self._infos[rpath]
         except KeyError:
             pass
 
@@ -479,7 +472,7 @@ class TreeCache(SimpleItemWithProperties):
         user = getSecurityManager().getUser()
         whoami = getAllowedRolesAndUsersOfUser(user)
 
-        infos = self._getInfos()
+        infos = self._infos
         if prefix is None:
             rpaths = infos.keys()
         else:
