@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-15 -*-
 # (C) Copyright 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
@@ -246,18 +247,30 @@ def _isinstance(ob, cls):
         return 0
 
 _translation_table = string.maketrans(
-    r"'\;/ &:ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜİàáâãäåçèéêëìíîïñòóôõöøùúûüıÿ",
-    r"_______AAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy")
+    # XXX candidates: @°+=`|
+    r""""'/\:; &ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜİàáâãäåçèéêëìíîïñòóôõöøùúûüıÿ""",
+    r"""________AAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy""")
+
+_ok_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_.'
 
 # XXX: this assumes we're using latin-1
 def makeId(s, lower=0):
     "Make id from string"
-    s = s.replace('Æ', 'AE')
-    s = s.replace('æ', 'ae')
-    s = s.replace('¼', 'OE')
-    s = s.replace('½', 'oe')
-    s = s.replace('ß', 'ss')
     id = s.translate(_translation_table)
+    id = id.replace('Æ', 'AE')
+    id = id.replace('æ', 'ae')
+    id = id.replace('¼', 'OE')
+    id = id.replace('½', 'oe')
+    id = id.replace('ß', 'ss')
+    id = ''.join([c for c in id if c in _ok_chars])
+    while id.startswith('_') or id.startswith('.'):
+        id = id[1:]
+    while id.endswith('_'):
+        id = id[:-1]
+    if not id:
+        # Fallback if empty or incorrect
+        newid = str(int(DateTime())) + str(randrange(1000, 10000))
+        return newid
     if lower:
         id = id.lower()
     return id
