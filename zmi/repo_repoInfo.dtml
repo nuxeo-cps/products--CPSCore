@@ -15,8 +15,8 @@
 
   <p class="form-text">
     There are &dtml-nb_live_docids; live docids
-   (&dtml-nb_live_revs; live revisions),
-    with &dtml-nb_archived_revs; archived revisions.
+   (&dtml-nb_live_revs; live revisions
+    and &dtml-nb_archived_revs; archived revisions).
   </p>
 
   <p class="form-text">
