@@ -376,7 +376,7 @@ class CPSMembershipTool(MembershipTool):
         return None
 
     security.declarePublic('getHomeFolderId')
-    def getHomeFolderId(self, id, max_chars_for_id=20):
+    def getHomeFolderId(self, id, max_chars_for_id=128):
         newid = id[:max_chars_for_id]
 
         # Normalize
