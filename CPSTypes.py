@@ -128,7 +128,7 @@ class TypeContainer(Base):
         ob = self._getOb(id)
         ob.manage_afterClone(ob)
         if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
-            on.manage_afterCMFAdd(ob, self)
+            ob.manage_afterCMFAdd(ob, self)
         return ob
 
 InitializeClass(TypeContainer)
