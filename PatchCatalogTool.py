@@ -17,7 +17,7 @@
 # $Id$
 """Patch CMF CatalogTool
 """
-from zLOG import LOG, DEBUG, INFO
+from zLOG import LOG, DEBUG, INFO, TRACE
 from types import TupleType, ListType
 from Acquisition import aq_base
 from DateTime.DateTime import DateTime
@@ -173,7 +173,7 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
             ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
 
 CatalogTool.catalog_object = cat_catalog_object
-LOG('CatalogToolPatch', INFO, 'Patching CMF CatalogTool.catalog_object')
+LOG('CatalogToolPatch', TRACE, "Patching CMF CatalogTool.catalog_object")
 
 
 def cat_unindexObject(self, object):
@@ -193,7 +193,7 @@ def cat_unindexObject(self, object):
             self.uncatalog_object(uid)
 
 CatalogTool.unindexObject = cat_unindexObject
-LOG('CatalogToolPatch', INFO, 'Patching CMF CatalogTool.unindexObject')
+LOG('CatalogToolPatch', TRACE, "Patching CMF CatalogTool.unindexObject")
 
 
 def cat_listAllowedRolesAndUsers(self, user):
@@ -201,8 +201,8 @@ def cat_listAllowedRolesAndUsers(self, user):
     return getAllowedRolesAndUsersOfUser(user)
 
 CatalogTool._listAllowedRolesAndUsers = cat_listAllowedRolesAndUsers
-LOG('CatalogToolPatch', INFO,
-    'Patching CMF CatalogTool._listAllowedRolesAndUsers')
+LOG('CatalogToolPatch', TRACE,
+    "Patching CMF CatalogTool._listAllowedRolesAndUsers")
 
 
 def cat_convertQuery(self, kw):
@@ -280,8 +280,8 @@ def cat_searchResults(self, REQUEST=None, **kw):
 
 CatalogTool.searchResults = cat_searchResults
 CatalogTool.__call__ = cat_searchResults
-LOG('CatalogToolPatch', INFO,
-    'Patching CMF CatalogTool.searchResults and __call__')
+LOG('CatalogToolPatch', TRACE,
+    "Patching CMF CatalogTool.searchResults and __call__")
 
 
 ### TopicIndex.clear patch
@@ -290,7 +290,7 @@ def topicindex_clear(self):
     for fid, filteredSet in self.filteredSets.items():
         filteredSet.clear()
 TopicIndex.clear = topicindex_clear
-LOG('CatalogToolPatch', INFO, 'Patching Zope TopicIndex.clear method')
+LOG('CatalogToolPatch', TRACE, "Patching Zope TopicIndex.clear method")
 
 
 
