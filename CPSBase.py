@@ -74,6 +74,9 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
                 dckw[p] = kw[p]
         DefaultDublinCoreImpl.__init__(self, **dckw)
 
+    security.declareProtected(ModifyPortalContent, 'setTitle')
+    # def setTitle() needs a better permission than PortalFolder's
+
     security.declareProtected(ModifyPortalContent, 'edit')
     def edit(self, **kw):
         """Edit the document."""

@@ -12,4 +12,5 @@ Bug fixes:
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Protect CPSBaseDocument's setTitle by "Modify portal content" and not
+  PortalFolder's "Manage properties".
