@@ -88,14 +88,13 @@ class CPSMembershipTool(MembershipTool):
 
     security.declareProtected(View, 'getCandidateLocalRoles')
     def getCPSCandidateLocalRoles(self, obj):
-        """ What local roles according to the context ? """
+        """What local roles according to the context ?"""
         member = self.getAuthenticatedMember()
-
-        if 'WorkspacesManager' or 'SectionManager' \
-               in member.getRolesInContext(obj):
+        roles = member.getRolesInContext(obj)
+        if 'WorkspacesManager' in roles or 'SectionManager' in roles:
             return self.getPortalRoles()
         else:
-            member_roles = list(member.getRolesInContext(obj))
+            member_roles = list(roles)
             del member_roles[member_roles.index('Member')]
             return tuple(member_roles)
 
