@@ -1,4 +1,19 @@
 *******************************************
+** CPSCore V3.1.0 [R1 build 2003-10/03-15:17 by ben]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Workflow unknown stuff like checkout/checkin cf fg
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+*******************************************
 ** CPSCore V3.0.4 [R1 build 2003-09/22-16:05 by anguenot]
 
 ZODB Requires:
