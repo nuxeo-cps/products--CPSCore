@@ -273,6 +273,11 @@ class CPSMembershipTool(MembershipTool):
         user_id = user.getId()
         if not member_id:
             member_id = user_id
+
+        if member_id == user_id and self.isHomeless():
+            # Check if authenticated user is homeless.
+            return None
+
         member_area_id = self.getHomeFolderId(member_id)
         if hasattr(aq_base(members), member_area_id):
             return None
@@ -287,10 +292,6 @@ class CPSMembershipTool(MembershipTool):
                     raise ValueError("Member %s does not exist" % member_id)
             else:
                 return None
-
-        homeless = member.getProperty('homeless', '0')
-        if homeless and homeless != '0':
-            return None
 
         # Setup a temporary security manager so that creation is not
         # hampered by insufficient roles.
@@ -347,19 +348,34 @@ class CPSMembershipTool(MembershipTool):
                                      member_id=member_id,
                                      member_folder=member_folder)
 
+
+    security.declarePublic('isHomeless')
+    def isHomeless(self, member=None):
+        """Return 1 if member have no home using homeless attribute."""
+        ret = 0
+        if member is None:
+            member = self.getAuthenticatedMember()
+        if hasattr(member, 'getProperty'):
+            ret = member.getProperty('homeless', '0')
+            if ret and ret != '0':
+                ret = 1
+        return ret
+
+
     # Overloaded to do folder access through _getOb.
     security.declarePublic('getHomeFolder')
     def getHomeFolder(self, id=None, verifyPermission=0):
         """Return a member's home folder object, or None."""
         member = self.getAuthenticatedMember()
+        if not hasattr(member, 'getMemberId'):
+            return None
 
+        member_id = member.getMemberId()
         if id is None:
-            if not hasattr(member, 'getMemberId'):
-                return None
-            id = member.getMemberId()
+            id = member_id
 
-        homeless = member.getProperty('homeless', '0')
-        if homeless and homeless != '0':
+        if id == member_id and self.isHomeless(member=member):
+            # Check if authenticated user is homeless.
             return None
 
         members = self.getMembersFolder()
