@@ -4,6 +4,9 @@ Requires:
 New features:
 ~~~~~~~~~~~~~
 - added (optional) l10n support to TreesTool getList() method
+- adding intermediate object viewZip to proxybase to access zipped content
+  stored in a file object has document attribute, path is
+  http://.../proxy/viewZip/attachedFile/file.zip/path/to/file/in/zip
 Bug fixes:
 ~~~~~~~~~~
 -
