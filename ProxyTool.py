@@ -553,6 +553,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         proxy.setDocid(new_docid)
         proxy.setFromLanguageRevisions({})
         proxy.setTag(None)
+        history = repotool.getHistory(docid) or ()
+        repotool.setHistory(new_docid, history)
         proxy.proxyChanged()
 
     def _unshareContentDoRecursion(self, proxy, repotool):
