@@ -1,0 +1,108 @@
+allowedRolesAndUsers and roles blocking
+=======================================
+
+$Id$
+
+Miscellaneous notes.
+
+Standard behavior
+-----------------
+
+'user:me' belongs to 'group:secretary'
+
+allowedRolesAndUsers: (stored in catalog index)
+ ['Reviewer', 'Manager',    # (roles having permission View in security map)
+  'user:toto', 'user:riri', # (users having those roles as local roles)
+  'group:secretary',        # (groups having those roles as local roles)
+ ]
+(describes who has View permission on the object.)
+
+The catalog query is done with our identities:
+ allowedRolesAndUsers=['Reviewer',        # current *global* user roles
+                       'Anonymous',       # always present
+                       'user:me',         # current user
+                       'group:secretary', # current user's groups
+                      ]
+
+Will match because of group:secretary and also Reviewer.
+
+Why do we keep user roles ? In what case could we have a Reviewer role
+allowed but not our 'user:me' (or one of our groups) ? Only if the
+allowedRolesAndUsers index has 'Reviewer' and not 'user:me'. Which means
+that during indexing, 'user:me' didn't have the Reviewer roles, but now
+has it. That's not possible with local roles (because when local roles
+change, we reindex allowedRolesAndUsers) so it must come from a global
+role.
+
+Catalog matching
+----------------
+
+The goal of the index is to return only documents matching the current
+user's capabilities. For standard Zope roles management, a list is
+enough because permissions are always added.
+
+For local role blocking, we need a richer datastructure. If we have the trees:
+
+tree1:
+ folder ('group:secretaries': '-Reviewer', 'group:other': 'Reviewer')
+  \__ob ('user:toto': 'Reviewer')
+      \__subob
+
+tree2:
+ folder ('user:toto': 'Reviewer')
+  \__ob ('group:secretaries': '-Reviewer', 'group:other': 'Reviewer')
+      \__subob
+
+Two cases, supposing only Reviewer has View permission and 'user:toto'
+is not in 'group:other':
+
+- if 'user:toto' is not in 'group:secretaries', it has access to subob
+  in tree1 and tree2.
+
+- if 'user:toto' is in 'group:secretaries', it has access to subob in
+  tree1 but not in tree2
+
+We need some better datastructure for allowedRolesAndUsers:
+
+- all global roles that have View (Reviewer)
+- an ordered list of users with blocking:
+  tree1: +'user:toto', (+'group:other', -'group:secretaries')
+  tree2: (+'group:other', -'group:secretaries'), +'user:toto'
+- to check access
+  - first check roles
+  - then if no match check from left to right comparing to list of our identities.
+    Remember that in local role checking, positive assertions are always first
+    - if there's a '+' for one of our identities, then access granted
+    - if there's a '-' then access denied
+
+So allowedRolesAndUsers is a list where order matters, and where
+users/groups can be prefixed by '-'. Standard KeywordIndex matching is
+not enough.
+
+Formalization
+-------------
+
+A set of roles/users (with blocking) having a give permission on an
+object is formalized for instance as:
+
+  ob: +ABC -DE +FG
+
+Which means, reading from left to right, that A, B, C are allowed on the
+object. Then, further up in the object tree, D, E are denied. Then,
+still further up, F, G are allowed.
+
+When querying the indexes, we are given the set of roles/users the
+current users have, and we have to lookup what objects they correspond
+to.
+
+The algorithm must work with this example in a way such that:
+
+  AD returns ob1
+  EF does not return ob1 (because E is first blocked, F does not matter)
+
+With our example, we need to have in particular:
+
+  anything with A, B, C returns ob1
+  anything with D, E but none of A, B, C doesn't return ob1
+  anything with no A, B, C, D, E returns ob1
+
