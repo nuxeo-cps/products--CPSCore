@@ -59,8 +59,6 @@ class TreesTool(UniqueObject, Folder):
             return
         LOG('TreesTool', DEBUG, 'Got %s for %s'
             % (event_type, '/'.join(object.getPhysicalPath())))
-        if not object.isPrincipiaFolderish:
-            return
         for tree in self.objectValues():
             tree.notify_tree(event_type, object, infos)
 
@@ -334,6 +332,7 @@ class TreeCache(SimpleItemWithProperties):
                      'url': ob.absolute_url(),
                      'path': '/'.join(ppath),
                      'rpath': '/'.join(ppath[plen:]),
+                     'portal_type': ob.portal_type,
                      'allowed_roles_and_users': allowed_roles_and_users,
                      'local_roles': local_roles,
                      })
@@ -447,9 +446,10 @@ class TreeCache(SimpleItemWithProperties):
 
         Each node is a dictionnary containing the following information:
           id
-          url (do not use)
+          url (do not use! XXX will be removed soon)
           path
           rpath
+          portal_type
           depth
           allowed_roles_and_users
           local_roles (local, no merging)
