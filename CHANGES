@@ -6,7 +6,10 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+-patched CMF's CatalogTool.searchResults to fix the bug 
+that prevents a user without ViewInactivePortalContent
+permission from being able to search by effective date
+(http://collector.zope.org/CMF/120)
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Cleanup of details.
