@@ -176,19 +176,25 @@ def __cps_wrapper_getattr__(self, name):
     if vars.has_key(name):
         return vars[name]
     ob = self._IndexableObjectWrapper__ob
-    # XXX TODO: use isinstance ProxyBase fix import mess
+    proxy = None
+    # XXX TODO: use _isinstance(ProxyBase) need to fix import mess
     if hasattr(ob, '_docid') and name not in (
         'getId', 'id', 'path', 'getPhysicalPath', 'splitPath',
         'modified', 'uid'):
+        proxy = ob
         ob = ob.getContent()
     elif 'portal_repository' in ob.getPhysicalPath():
-        if name in ('SearchableText', ):
+        if name in ('SearchableText', 'Title'):
             raise AttributeError
-    return getattr(ob, name)
+    ret = getattr(ob, name)
+    if proxy is not None:
+        if name == 'SearchableText':
+            ret = ret() + ' ' + proxy.getId()  # so we can search on id
+    return ret
 IndexableObjectWrapper.__getattr__ = __cps_wrapper_getattr__
 
 
-LOG('CPSCore.utils', INFO, 'Patching CMF TopicIndex.clear method')
+LOG('CPSCore.utils', INFO, 'Patching Zope TopicIndex.clear method')
 def topicindex_clear(self):
     """Fixing cmf method that remove all filter."""
     for fid, filteredSet in self.filteredSets.items():
