@@ -399,6 +399,7 @@ class TreeCache(SimpleItemWithProperties):
     security.declarePublic('getRoot')
     def getRoot(self):
         """Get the root of this tree, as an rpath."""
+        # XXX this should be done at changeProperties time.
         root = self.root
         if root.endswith('/'):
             root = root[:-1]
