@@ -123,7 +123,7 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
 InitializeClass(CPSBaseDocument)
 
 
-class CPSBaseFolder(CPSBaseDocument, TypeConstructor, TypeContainer):
+class CPSBaseFolder(TypeConstructor, TypeContainer, CPSBaseDocument):
     """The base from which all CPS folder objects derive."""
 
     meta_type = 'CPS Base Folder'
