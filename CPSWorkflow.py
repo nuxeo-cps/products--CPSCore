@@ -404,7 +404,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         #
         evtool = getEventService(self)
         # XXX pass a whole sci ?
-        evtool.notify('workflow_%s' % tdef.getId(), ob, {'kw': kwargs})
+        evtool.notify('workflow_%s' % tdef.getId(), ob, {'kwargs': kwargs})
         #
         ###
 

@@ -10,4 +10,4 @@ Bug fixes:
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Better variable names for event notification : 'kw' -> 'kwargs'
