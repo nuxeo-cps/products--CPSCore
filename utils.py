@@ -87,7 +87,7 @@ def mergedLocalRoles(object, withgroups=0):
                     k = 'user:'+k
                 if merged.has_key(k):
                     merged[k] = merged[k] + v
-                else:
+                elif v:
                     merged[k] = v
         if hasattr(object, 'aq_parent'):
             object=object.aq_parent
