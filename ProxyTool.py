@@ -488,6 +488,41 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repotool = getToolByName(self, 'portal_repository')
         self._unshareContentDoRecursion(proxy, repotool)
 
+    security.declarePrivate('_setSecurityOnRevision')
+    def _setSecurityOnRevision(self, docid, rev, skip_rpath=None,
+                               allperms=None, repotool=None):
+        """Set security on a revision.
+
+        Returns true if the security was changed.
+
+        If skip_rpath, don't take that rpath into account (used when a
+        deletion is processed).
+        """
+        portal = aq_parent(aq_inner(self))
+
+        # XXX NOTE, the object may not be in the indexes yet...
+        # XXX _createObject -> _insertWorkflow -> _reindexWorkflowVariables
+        # XXX -> reindex() -> setSecurity
+        # XXX The CMF Add event is only sent after that...
+
+        rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
+        userperms = {}
+        for rpath in rpaths:
+            if rpath == skip_rpath:
+                continue
+            ob = portal.unrestrictedTraverse(rpath)
+            merged = mergedLocalRoles(ob, withgroups=1).items()
+            for perm in allperms:
+                proles = rolesForPermissionOn(perm, ob)
+                for user, lroles in merged:
+                    for lr in lroles:
+                        if lr in proles:
+                            perms = userperms.setdefault(user, [])
+                            if perm not in perms:
+                                perms.append(perm)
+
+        return repotool.setRevisionSecurity(docid, rev, userperms)
+
     security.declarePrivate('setSecurity')
     def setSecurity(self, proxy, skip_rpath=None):
         """Reapply correct security info to the revisions of a proxy.
@@ -503,66 +538,25 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if not _isinstance(proxy, ProxyBase):
             return
 
+        repotool = getToolByName(self, 'portal_repository')
+        allperms = self._getRelevantPermissions()
+
         #import traceback
         #from StringIO import StringIO
         #s = StringIO()
         #traceback.print_stack(file=s)
         #LOG('setSecurity', DEBUG, 'called from tb:\n%s' % s.getvalue())
 
-        # Gather revisions.
         docid = proxy.getDocid()
-        revs = {}
+
+        revsd = {}
         for lang, rev in proxy._getLanguageRevisions().items():
-            revs[rev] = None
-        revs = revs.keys()
-        LOG('setSecurity', TRACE, "gathered revisions %s" % `revs`)
+            revsd[rev] = None
+        revs = revsd.keys()
 
-        # Gather the rpaths of proxies pointing to any revision.
-        rpaths = {}
         for rev in revs:
-            # For each revision, get all the proxies pointing to it.
-            # XXX
-            # XXX NOTE, the object may not be in the indexes yet...
-            # XXX _createObject -> _insertWorkflow -> _reindexWorkflowVariables
-            # XXX -> reindex() -> setSecurity
-            # XXX
-            # XXX The CMF Add event is only sent after that...
-            # XXX
-            rev_rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
-            for rpath in rev_rpaths:
-                if rpath != skip_rpath:
-                    rpaths[rpath] = None
-        rpaths = rpaths.keys()
-        #LOG('setSecurity', DEBUG, 'rpaths=%s' % (rpaths,))
-
-        # Get user permissions for users that have a (merged) local role.
-        allperms = self._getRelevantPermissions()
-        #LOG('setSecurity', DEBUG, 'relevant perms %s' % (allperms,))
-        userperms = {}
-        portal = aq_parent(aq_inner(self))
-        for rpath in rpaths:
-            ob = portal.unrestrictedTraverse(rpath)
-            merged = mergedLocalRoles(ob, withgroups=1).items()
-            #LOG('setSecurity', DEBUG, 'merged %s' % (merged,))
-            # Collect permissions of users
-            for perm in allperms:
-                proles = rolesForPermissionOn(perm, ob)
-                #LOG('setSecurity', DEBUG, '  perm %s proles %s'
-                #    % (perm, proles))
-                for user, lroles in merged:
-                    #LOG('setSecurity', DEBUG, '    user %s' % (user,))
-                    for lr in lroles:
-                        if lr in proles:
-                            perms = userperms.setdefault(user, [])
-                            if perm not in perms:
-                                #LOG('setSecurity', DEBUG, '      addperm')
-                                perms.append(perm)
-        #LOG('setSecurity', DEBUG, 'userperms=%s' % (userperms,))
-
-        # Now set security on revisions.
-        repotool = getToolByName(self, 'portal_repository')
-        for rev in revs:
-            repotool.setRevisionSecurity(docid, rev, userperms)
+            self._setSecurityOnRevision(docid, rev, skip_rpath,
+                                        allperms=allperms, repotool=repotool)
 
         # XXX should be sent also by the one sending an event instead of
         #     calling this directly
@@ -786,7 +780,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         Return a list of (rpath, infos).
         """
-        portal = aq_parent(aq_inner(self))
         repotool = getToolByName(self, 'portal_repository')
         broken = []
         for rpath, infos in self._rpath_to_infos.items():
@@ -841,9 +834,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         Return the number of objects scanned and the number that changed.
         """
         LOG('rebuildRepositorySecurity', DEBUG, 'Starting')
+
         repotool = getToolByName(self, 'portal_repository')
         allperms = self._getRelevantPermissions()
-        portal = aq_parent(aq_inner(self))
 
         # Find all objects in repo pointed by relevant proxies.
         if base_rpath:
@@ -867,20 +860,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # Iterate on all repo objects and compute and apply perms.
         change_count = 0
         for docid, rev in docidrevs:
-            userperms = {}
-            rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
-            for rpath in rpaths:
-                ob = portal.unrestrictedTraverse(rpath)
-                merged = mergedLocalRoles(ob, withgroups=1).items()
-                for perm in allperms:
-                    proles = rolesForPermissionOn(perm, ob)
-                    for user, lroles in merged:
-                        for lr in lroles:
-                            if lr in proles:
-                                perms = userperms.setdefault(user, [])
-                                if perm not in perms:
-                                    perms.append(perm)
-            changed = repotool.setRevisionSecurity(docid, rev, userperms)
+            changed = self._setSecurityOnRevision(docid, rev,
+                                                  allperms=allperms,
+                                                  repotool=repotool)
             if changed:
                 change_count += 1
 
