@@ -177,7 +177,7 @@ LOG('CatalogToolPatch', INFO, 'Patching CMF CatalogTool.catalog_object')
 
 def cat_unindexObject(self, object):
     """Remove from catalog."""
-    default_uid = self.__url(object)
+    default_uid = self._CatalogTool__url(object)
     proxy = None
     if _isinstance(object, ProxyBase):
         proxy = object
