@@ -31,6 +31,9 @@ from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
 from Products.NuxCPS3.EventServiceTool import getEventService
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBCREATE
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBDELETE
+from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBCOPY
 
 
 CPSWorkflowConfig_id = '.cps_workflow_configuration'
@@ -65,15 +68,35 @@ class CPSWorkflowTool(WorkflowTool):
 
     security.declarePublic('isCreationAllowedIn')
     def isCreationAllowedIn(self, container, get_details=0):
-        """Is the creation of a subobject allowed in the container? """
+        """Is the creation of a subobject allowed in the container ?"""
+        return self.isBehaviorAllowedIn(container, 'create',
+                                        get_details=get_details)
+
+    security.declarePublic('isBehaviorAllowedIn')
+    def isBehaviorAllowedIn(self, container, behavior, get_details=0):
+        """Is some behavior allowed in the container ?"""
+        if behavior == 'create':
+            behaviors = [TRANSITION_BEHAVIOR_SUBCREATE]
+        elif behavior == 'delete':
+            behaviors = [TRANSITION_BEHAVIOR_SUBDELETE]
+        elif behavior == 'cut':
+            behaviors = [TRANSITION_BEHAVIOR_SUBDELETE,
+                         TRANSITION_BEHAVIOR_SUBCOPY]
+        elif behavior == 'copy':
+            behaviors = [TRANSITION_BEHAVIOR_SUBCOPY]
+        elif behavior == 'paste':
+            behaviors = [TRANSITION_BEHAVIOR_SUBCREATE]
+        else:
+            raise ValueError(behavior)
+
         wf_ids = self.getChainFor(container)
         for wf_id in wf_ids:
             wf = self.getWorkflowById(wf_id)
-            if not hasattr(aq_base(wf), 'isCreationAllowedIn'):
-                # Not a CPS workflow.
-                continue
-            ok, why = wf.isCreationAllowedIn(container, get_details=1)
+            ok, why = wf.areBehaviorsAllowedIn(container, behaviors,
+                                               get_details=1)
             if not ok:
+                LOG('isBehaviorAllowedIn', DEBUG, 'not ok for %s: %s' %
+                    (behavior, why))
                 if get_details:
                     return 0, '%s, %s' % (wf_id, why)
                 else:
