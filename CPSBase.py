@@ -24,6 +24,7 @@ from types import StringType, UnicodeType
 
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
+from Acquisition import aq_parent, aq_inner, aq_base
 
 from OFS.ObjectManager import ObjectManager
 from OFS.PropertyManager import PropertyManager
@@ -35,6 +36,7 @@ from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.PortalContent import PortalContent
+from Products.CMFCore.utils import _checkPermission
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 
 from Products.CPSCore.EventServiceTool import getEventService
@@ -77,6 +79,27 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
 
     security.declareProtected(ModifyPortalContent, 'setTitle')
     # def setTitle() needs a better permission than PortalFolder's
+
+    def _checkId(self, id, allow_dup=0):
+        PortalFolder.inheritedAttribute('_checkId')(self, id, allow_dup)
+
+        # This method prevents people other than the portal manager
+        # from overriding skinned names.
+        if not allow_dup:
+            if not _checkPermission( 'Manage portal', self):
+                ob = self
+                while ob is not None and not getattr(ob, '_isPortalRoot', 0):
+                    ob = aq_parent(aq_inner(ob))
+                if ob is not None:
+                    # If the portal root has an object by this name,
+                    # don't allow an override.
+                    # FIXME: needed to allow index_html for join code
+                    if (hasattr(ob, id) and
+                        id != 'index_html' and
+                        not id.startswith('.')):
+                        raise 'Bad Request', (
+                            'The id "%s" is reserved.' % id)
+                    # Otherwise we're ok.
 
     security.declareProtected(ModifyPortalContent, 'edit')
     def edit(self, **kw):
