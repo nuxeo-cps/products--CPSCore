@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.21.1 [R1 build 2005/02/09-16:10 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Added support for user password resetting.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.21.0 [R1 build 2005/01/28-14:59 by madarche]
 
 Requires:
