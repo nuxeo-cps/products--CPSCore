@@ -91,10 +91,9 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
         values = self.propertyValues()
         strings = []
         for val in values:
-            t = type(val)
-            if isinstance(t, StringType) or isinstance(t, UnicodeType):
+            if isinstance(val, StringType) or isinstance(val, UnicodeType):
                 strings.append(val)
-                continue
+
         try:
             res = ' '.join(strings)
         except UnicodeError:
