@@ -1,6 +1,7 @@
 ZODB Requires:
 ~~~~~~~~~~~~~~
-- you need to remove the OrderedFolderSupportPatch product
+- You need to remove the OrderedFolderSupportPatch Product as its
+  functionnality is now done inside CPSCore.
 New features:
 ~~~~~~~~~~~~~
 - getContent now has an optional revision parameter to access another
@@ -21,4 +22,7 @@ New internal features:
 - Move files related to permissions around.
 - Cleanup the API for role-related utility functions in utils.
 - Removed unused variable.
-- CPSCore implement the OrderedFolderSupportPatch
+- CPSCore now implements OrderedFolderSupportPatch by itself.
+- Added addLanguageToProxy and delLanguageFromProxy method to proxies to
+  be able to add/remove languages to existing proxies.
+
