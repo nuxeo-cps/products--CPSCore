@@ -334,9 +334,10 @@ class CPSMembershipTool(MembershipTool):
         # Member is in fact a user object, it's not wrapped in the
         # memberdata tool.
         portal_cpscalendar = getToolByName(self, 'portal_cpscalendar', None)
-        create_calendar = getattr(portal_cpscalendar, 'create_member_calendar', 1)
-        if portal_cpscalendar and create_calendar:
-            portal_cpscalendar.createMemberCalendar(member_id)
+        if portal_cpscalendar:
+            create_calendar = getattr(portal_cpscalendar, 'create_member_calendar', 1)
+            if create_calendar:
+                portal_cpscalendar.createMemberCalendar(member_id)
 
     # Can be overloaded by subclasses.
     def _createMemberContent(self, member, member_id, member_folder):
