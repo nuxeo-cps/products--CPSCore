@@ -1053,7 +1053,7 @@ class NotAProxy:
     security.declareProtected(View, 'getDefaultLanguage')
     def getDefaultLanguage(self):
         """Get the default language."""
-        return 'en'
+        return self.getLanguage()
 
     security.declareProtected(View, 'getLanguageRevisions')
     def getLanguageRevisions(self):
@@ -1075,6 +1075,11 @@ class NotAProxy:
             # use the portal default language
             lang = Localizer.get_default_language()
         return lang
+
+    security.declareProtected(View, 'Languages')
+    def Languages(self):
+        """return all available languages."""
+        return [self.getLanguage()]
 
     security.declareProtected(View, 'getRevision')
     def getRevision(self, lang=None):
