@@ -1,4 +1,24 @@
 *******************************************
+** CPSCore V3.10.0 [R1 build 2004/04/29-11:09 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Patching the RegistrationTool to help not creating user accounts which would
+  have the same homeFolders as already existing user accounts, which is a
+  security concern.
+- RegistrationTool is now a CPS subclass where allowed id pattern is a property
+  you can easily change.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- optimizing search by adding a prefix for proxy in getProxiesFromObjectId
+
+*******************************************
 ** CPSCore V3.9.0 [R1 build 2004/04/22-15:46 by madarche]
 
 Requires:
