@@ -183,7 +183,7 @@ def makeId(s, lower=0):
     id = id.replace('½', 'oe')
     id = id.replace('ß', 'ss')
     id = ''.join([c for c in id if c in _ok_chars])
-    id = re.sub("_+", "_", id)
+    id = re.sub('_+', '_', id)
     while id.startswith('_') or id.startswith('.'):
         id = id[1:]
     while id.endswith('_'):
