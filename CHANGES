@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- fix portal_tree refresh on security changes
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
