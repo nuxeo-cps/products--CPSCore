@@ -406,17 +406,15 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 res.append(info)
         return res
 
-    security.declarePublic('getArchivedInfosForDocid')
-    def getArchivedInfosForDocid(self, docid, REQUEST=None):
+    security.declarePrivate('getArchivedInfosForDocid')
+    def getArchivedInfosForDocid(self, docid):
         """Get info about the archived revisions for a docid.
 
         Returns a list of dicts with info:
           rev, lang, modified, rpaths, is_frozen
 
-        (Called by user code to display a history.)
+        (Called by ProxyBase.)
         """
-        if REQUEST is not None:
-            raise Unauthorized("Not accessible TTW.")
         if not docid:
             return []
         repotool = getToolByName(self, 'portal_repository')

@@ -469,6 +469,19 @@ class ProxyBase(Base):
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool.revertProxyToRevisions(self, language_revs, freeze)
 
+    security.declareProtected(View, 'getArchivedInfos')
+    def getArchivedInfos(self):
+        """Get info about the archived revisions for this proxy.
+
+        Returns a list of dicts with info:
+          rev, lang, modified, rpaths, is_frozen
+
+        (Called by user code to display a history.)
+        """
+        docid = self.getDocid()
+        pxtool = getToolByName(self, 'portal_proxies')
+        return pxtool.getArchivedInfosForDocid(docid)
+
     #
     # Translation helpers.
     #

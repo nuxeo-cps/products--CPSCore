@@ -10,4 +10,5 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- pxtool.getArchivedInfosForDocid() cannot be called directly by user code
+  anymore, instead call proxy.getArchivedInfos()
