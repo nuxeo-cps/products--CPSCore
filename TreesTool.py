@@ -397,10 +397,41 @@ class TreeCache(SimpleItemWithProperties):
         else:
             return ''
 
+    def _copy_tree_from(self, tree, rpath=None):
+        treerpath = tree['rpath']
+        if rpath is not None and treerpath != rpath:
+            # still searching
+            for info in tree['children']:
+                if rpath.startswith(info['rpath']):
+                    return self._copy_tree_from(info, rpath)
+            # not found in children
+            return {}
+        info = {}
+        for k, v in tree.items():
+            if k != 'children':
+                info[k] = v
+        children = []
+        for child in tree['children']:
+            children.append(self._copy_tree_from(child))
+        info['children'] = children
+        return info
+
     security.declareProtected(View, 'getTree')
-    def getTree(self):
-        """Return the cached tree."""
-        return deepcopy(self._tree) # XXX untested, probably fails
+    def getTree(self, path=None):
+        """Return the cached tree, starting from path.
+
+        Path may be None, a path or an rpath.
+        """
+        if path is None:
+            rpath = self.getRoot()
+        else:
+            if not path.startswith('/'):
+                rpath = path
+            else:
+                portal = getToolByName(self, 'portal_url').getPortalObject()
+                portalpath = '/'.join(portal.getPhysicalPath())
+                rpath = path[len(portalpath):]
+        return self._copy_tree_from(self._tree, rpath=rpath)
 
     security.declareProtected(View, 'getList')
     def getList(self, prefix=None, start_depth=0, stop_depth=999, filter=1):
