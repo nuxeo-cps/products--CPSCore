@@ -10,4 +10,4 @@ Bug fixes:
 - fix P2 #288: Incorrect signature for CPSMembershipTool.searchMembers.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Cleanups in section_content_wf.
