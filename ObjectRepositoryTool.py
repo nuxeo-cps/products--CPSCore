@@ -60,7 +60,7 @@ class NoWorkflowConfiguration:
 InitializeClass(NoWorkflowConfiguration)
 
 
-def set_local_roles_with_groups(ob, lroles):
+def setLocalRolesWithGroups(ob, lroles):
     """Set all the local roles and group local roles.
 
     Returns True if something was changed.
@@ -129,7 +129,7 @@ class ObjectRepositoryTool(UniqueObject,
         # XXX a bit inefficient
         docidsd = {}
         for id in self.objectIds():
-            docid, rev = self._split_id(id)
+            docid, rev = self._splitId(id)
             docidsd[docid] = None
         while 1:
             docid = str(random.randrange(1, 2147483600))
@@ -143,7 +143,7 @@ class ObjectRepositoryTool(UniqueObject,
         # XXX a bit inefficient
         maxrev = 0
         for id in self.objectIds():
-            did, rev = self._split_id(id)
+            did, rev = self._splitId(id)
             if did == docid and rev > maxrev:
                 maxrev = rev
         return maxrev + 1
@@ -157,7 +157,7 @@ class ObjectRepositoryTool(UniqueObject,
         (Called by ProxyTool.)
         """
         rev = self.getFreeRevision(docid_)
-        id = self._get_id(docid_, rev)
+        id = self._getId(docid_, rev)
         ob = self.constructContent(type_name_, id, *args, **kw)
         evtool = getEventService(self)
         evtool.notify('sys_add_cmf_object', ob, {})
@@ -167,13 +167,13 @@ class ObjectRepositoryTool(UniqueObject,
     security.declarePrivate('delObjectRevision')
     def delObjectRevision(self, docid, rev):
         """Delete a revision of an object."""
-        id = self._get_id(docid, rev)
+        id = self._getId(docid, rev)
         self._delObject(id)
 
     security.declarePrivate('hasObjectRevision')
     def hasObjectRevision(self, docid, rev):
         """Test whether the repository has a given revision of an object."""
-        id = self._get_id(docid, rev)
+        id = self._getId(docid, rev)
         return self.hasObject(id)
 
     # XXX was def getObjectVersion(self, repoid, version_info):
@@ -183,7 +183,7 @@ class ObjectRepositoryTool(UniqueObject,
 
         (Called by ProxyTool.)
         """
-        id = self._get_id(docid, rev)
+        id = self._getId(docid, rev)
         try:
             return self._getOb(id)
         except KeyError:
@@ -194,7 +194,7 @@ class ObjectRepositoryTool(UniqueObject,
     security.declarePrivate('delObjectRevisions')
     def delObjectRevisions(self, docid):
         """Delete all the revisions of an object."""
-        prefix = self._get_id_prefix(docid)
+        prefix = self._getIdPrefix(docid)
         # XXX costly
         ids_to_delete = [ id for id in self.objectIds() 
                              if id.startswith(prefix) ]
@@ -211,7 +211,7 @@ class ObjectRepositoryTool(UniqueObject,
         """List all (docid, rev) in the repository."""
         items = []
         for id in self.objectIds():
-            docid, rev = self._split_id(id)
+            docid, rev = self._splitId(id)
             if docid is None:
                 continue
             items.append((docid, rev))
@@ -223,7 +223,7 @@ class ObjectRepositoryTool(UniqueObject,
         idd = {}
         has = idd.has_key
         for id in self.objectIds():
-            docid, rev = self._split_id(id)
+            docid, rev = self._splitId(id)
             if docid is None:
                 continue
             if has(docid):
@@ -236,7 +236,7 @@ class ObjectRepositoryTool(UniqueObject,
         """List all the revisions available for a given docid."""
         revs = []
         for id in self.objectIds():
-            did, rev = self._split_id(id)
+            did, rev = self._splitId(id)
             if did != docid:
                 continue
             revs.append(rev)
@@ -249,7 +249,7 @@ class ObjectRepositoryTool(UniqueObject,
         (Called by ProxyTool.)
         """
         if self.hasObject(id):
-            return self._split_id(id)
+            return self._splitId(id)
         else:
             return (None, None)
 
@@ -297,7 +297,7 @@ class ObjectRepositoryTool(UniqueObject,
             new_docid = docid
         ob = self.getObjectRevision(docid, rev)
         newrev = self.getFreeRevision(new_docid)
-        newid = self._get_id(new_docid, newrev)
+        newid = self._getId(new_docid, newrev)
         newob = self.copyContent(ob, newid)
         if hasattr(newob, '_cps_frozen'):
             delattr(newob, '_cps_frozen')
@@ -389,7 +389,7 @@ class ObjectRepositoryTool(UniqueObject,
         for user, perms in userperms.items():
             roles = [self.getPermissionRole(perm) for perm in perms]
             lroles[user] = roles
-        changed = set_local_roles_with_groups(ob, lroles)
+        changed = setLocalRolesWithGroups(ob, lroles)
         if changed:
             ob.reindexObjectSecurity()
         return changed
@@ -444,7 +444,7 @@ class ObjectRepositoryTool(UniqueObject,
         used = []
         unused = []
         for id in self.objectIds():
-            docid, rev = self._split_id(id)
+            docid, rev = self._splitId(id)
             if docid is None:
                 LOG('ObjectRepositoryTool', DEBUG, 'bad id %s' % id)
                 continue
@@ -463,13 +463,15 @@ class ObjectRepositoryTool(UniqueObject,
     # Id generation
     #
 
-    def _get_id_prefix(self, docid):
+    def _getIdPrefix(self, docid):
         return '%s__' % docid
 
-    def _get_id(self, docid, rev):
+    # XXX: maybe rename this to _makeId since there is a possible confusion
+    # with standard method getId().
+    def _getId(self, docid, rev):
         return '%s__%04d' % (docid, rev)
 
-    def _split_id(self, id):
+    def _splitId(self, id):
         try:
             docid, rev = id.split('__')
             rev = int(rev)
@@ -483,7 +485,8 @@ class ObjectRepositoryTool(UniqueObject,
     # Workflow history management
     #
 
-    def _check_history_present(self):
+    # XXX: do we still need this ?
+    def _checkHistoryPresent(self):
         """Upgrades: check that _histories is present.
         """
         if not hasattr(aq_base(self), '_histories'):
@@ -492,13 +495,13 @@ class ObjectRepositoryTool(UniqueObject,
     security.declarePrivate('getHistory')
     def getHistory(self, docid):
         """Get the workflow history for a docid, or None."""
-        self._check_history_present()
+        self._checkHistoryPresent()
         return self._histories.get(docid)
 
     security.declarePrivate('setHistory')
     def setHistory(self, docid, history):
         """Set the workflow history for a docid."""
-        self._check_history_present()
+        self._checkHistoryPresent()
         self._histories[docid] = history
 
     #

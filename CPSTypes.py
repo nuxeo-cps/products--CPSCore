@@ -246,7 +246,7 @@ class TypeContainer(Base):
                 ob._notifyOfCopyTo(self, op=0)
                 ob = ob._getCopy(self)
                 id = self._get_id(orig_id)
-                result.append({'id':orig_id, 'new_id':id})
+                result.append({'id': orig_id, 'new_id':id})
                 ob._setId(id)
                 self._setObject(id, ob)
                 ob = self._getOb(id)
