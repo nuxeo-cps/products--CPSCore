@@ -119,7 +119,10 @@ class TreeCache(SimpleItemWithProperties):
     title = ''
     root = ''
     type_names = []
-    meta_types = ('CPS Proxy Folder', 'CPS Proxy Folderish Document',)
+    meta_types = ('CPS Proxy Folder',
+                  # 'CPS Proxy Document', XXX why present in a CPS but not by
+                  # default?
+                  'CPS Proxy Folderish Document')
     info_method = ''
 
     def __init__(self, id, **kw):
