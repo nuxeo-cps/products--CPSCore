@@ -20,6 +20,19 @@
 
 from zLOG import LOG, INFO
 
+#
+# Monkey patch starts here on UndoTool
+# Removing undo action
+#
+
+from Products.CMFCore.UndoTool import UndoTool
+
+_actions = []
+UndoTool._actions = _actions
+LOG("CPSCore", INFO, "Patching CMFCore UndoTool : removing undo action")
+
+## Patch ends here
+
 from Products.CMFCore import utils as cmfutils
 from Products.CMFCore.CMFCorePermissions import AddPortalContent, ManagePortal
 
