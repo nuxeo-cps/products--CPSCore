@@ -34,7 +34,6 @@ import unittest
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
 from OFS.Folder import Folder
-from OFS.SimpleItem import SimpleItem
 
 from Products.CPSCore.CPSWorkflow import CPSWorkflowDefinition
 from Products.CPSCore.CPSWorkflow import TRIGGER_USER_ACTION
@@ -42,33 +41,8 @@ from Products.CPSCore.CPSWorkflowConfiguration \
     import addCPSWorkflowConfiguration
 from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
 
+from dummy import Dummy, DummyTypeInfo, DummyContent, DummyTypesTool
 
-class Dummy(SimpleItem):
-    def __init__(self, id):
-        self._id = id
-
-    def getId(self):
-        return self._id
-
-class DummyTypeInfo(Dummy):
-    pass
-
-class DummyContent(Dummy):
-    meta_type = 'Dummy'
-    _isPortalContent = 1
-
-    def _getPortalTypeName(self):
-        return 'Dummy Content'
-
-class DummyTypesTool(SimpleItem):
-    def listTypeInfo(self):
-        return [DummyTypeInfo('Dummy Content')]
-
-    def getTypeInfo(self, ob):
-        if (ob == 'Dummy Content' or
-            getattr(ob, 'meta_type', None) == 'Dummy'):
-            return DummyTypeInfo('Dummy Content')
-        return None
 
 class WorkflowToolTests(SecurityRequestTest):
     """Test CPS Workflow Tool."""

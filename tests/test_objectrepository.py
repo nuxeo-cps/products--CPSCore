@@ -29,16 +29,7 @@ from OFS.SimpleItem import SimpleItem
 
 from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
 
-class DummyContent(SimpleItem):
-    def __init__(self, id, data=None):
-        self._id = id
-        self._data = data
-
-    def getId(self):
-        return self._id
-
-    def getData(self):
-        return self._data
+from dummy import DummyContent
 
 def constructContent(self, type_name, id, *args, **kw):
     assert type_name == 'DummyContent'

@@ -14,22 +14,7 @@ from security import PermissiveSecurityPolicy, AnonymousUser
 
 from Products.CPSCore.EventServiceTool import EventServiceTool
 
-class DummySubscriber(SimpleItem):
-
-    id = 'portal_subscriber'
-
-    meta_type = 'Dummy Subscriber'
-
-    notified = 0
-    object = None
-    event_type = None
-    infos = None
-    
-    def notify_action(self, event_type, object, infos):
-        self.notified += 1
-        self.object = object
-        self.event_type = event_type
-        self.infos = infos
+from dummy import DummySubscriber
 
 class Class1:
 

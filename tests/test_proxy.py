@@ -25,17 +25,58 @@ import unittest
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
 from OFS.Folder import Folder
-from OFS.SimpleItem import SimpleItem
 
 from Products.CPSCore.ProxyTool import ProxyTool
 from Products.CPSCore.ProxyBase import ProxyBase
+from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
 
-class DummyRepo(SimpleItem):
-    def getObjectVersion(self, repoid, version_info):
-        return 'ob_%s_%s' % (repoid, version_info)
+from dummy import DummyRepo, DummyPortalUrl
 
 
-class ProxyToolTests(SecurityRequestTest):
+class ProxyBaseTest(unittest.TestCase):
+
+    def test1(self):
+        proxy = ProxyBase()
+
+        self.assertEquals(proxy.getDocid(), None)
+
+        proxy.setDocid('bar')
+        self.assertEquals(proxy.getDocid(), 'bar')
+
+        self.assertEquals(proxy.getDefaultLanguage(), None)
+
+        proxy.setDefaultLanguage('fr')
+        self.assertEquals(proxy.getDefaultLanguage(), 'fr')
+
+        self.assertEquals(proxy.getLanguageRevisions(), {})
+        self.assertEquals(proxy._getLanguageRevisions(), {})
+        self.assert_(
+            proxy.getLanguageRevisions() is not proxy._getLanguageRevisions())
+
+        proxy.setLanguageRevision('de', 3)
+        self.assertEquals(proxy.getLanguageRevisions(), 
+            {'de': 3})
+        proxy.setLanguageRevision('fr', 4)
+        self.assertEquals(proxy.getLanguageRevisions(), 
+            {'fr': 4, 'de': 3})
+
+        self.assertEquals(proxy.getFromLanguageRevisions(), {})
+        # XXX what are FromLanguageRevisions anyway ?
+
+        self.assertEquals(proxy.getTag(), None)
+        proxy.setTag('tag')
+        self.assertEquals(proxy.getTag(), 'tag')
+
+        # Can't test getLanguage, getRevision, getContent, getEditableContent,
+        # proxyChanged, __getitem__, freezeProxy, _setSecurity,
+        # _setSecurityRecursive, reindexObject, reindexObjectSecurity, Title,
+        # title_or_id, SearchableText, Type, revertToRevisions without a
+        # portal_proxies.
+
+        # Can't test serializeProxy
+
+
+class ProxyToolTest(SecurityRequestTest):
     """Test CPS Proxy Tool."""
 
     def setUp(self):
@@ -45,14 +86,9 @@ class ProxyToolTests(SecurityRequestTest):
         self.root.id = 'root'
         root = self.root
 
-        ptool = ProxyTool()
-        root._setObject('portal_proxies', ptool)
-
-
-    #def tearDown( self ):
-    #    SecurityRequestTest.tearDown(self)
-
-    ##########
+        root._setObject('portal_proxies', ProxyTool())
+        root._setObject('portal_repository', DummyRepo())
+        root._setObject('portal_url', DummyPortalUrl())
 
     def test_add_del_modify(self):
         ptool = self.root.portal_proxies
@@ -74,14 +110,13 @@ class ProxyToolTests(SecurityRequestTest):
         ptool._addProxy(proxy2, '456')
         items = ptool.listProxies()
         items.sort()
-        self.assertEquals(tuple(items),
-            (('123', (None, {'*': 78})),
-             ('456', (None, {'*': 90})),)
+        self.assertEquals(items,
+            [('123', (None, {'*': 78})), ('456', (None, {'*': 90})),]
         )
 
         ptool._delProxy('456')
-        self.assertEquals(tuple(ptool.listProxies()),
-            (('123', (None, {'*': 78})),))
+        self.assertEquals(ptool.listProxies(),
+            [('123', (None, {'*': 78}))])
 
         ptool._modifyProxy(proxy2, '123')
         self.assertEquals(tuple(ptool.listProxies()),
@@ -89,22 +124,22 @@ class ProxyToolTests(SecurityRequestTest):
         ptool._delProxy('123')
         self.assertEquals(len(ptool.listProxies()), 0)
 
-
-    # XXX: This tests a now defunct method (getMatchedObject). 
-    # What should we test instead ?
-    def _test_getMatchedObject(self):
-        self.root._setObject('portal_repository', DummyRepo())
+    def testBestRevision(self):
         ptool = self.root.portal_proxies
         proxy = ProxyBase(language_revs={'fr': 33, '*': 78})
         ptool._addProxy(proxy, '456')
-        self.assertEqual(ptool.getMatchedObject(123), 'ob_456_78')
-        self.assertEqual(ptool.getMatchedObject(123, 'en'), 'ob_456_78')
-        self.assertEqual(ptool.getMatchedObject(123, 'fr'), 'ob_456_33')
+        self.assertEquals(ptool.getBestRevision(proxy), ('*', 78))
+        self.assertEquals(ptool.getBestRevision(proxy, 'en'), ('*', 78))
+        self.assertEquals(ptool.getBestRevision(proxy, 'fr'), ('fr', 33))
+
+    # XXX what about this?
+        #self.assertEqual(ptool.getMatchedObject(123), 'ob_456_78')
+        #self.assertEqual(ptool.getMatchedObject(123, 'en'), 'ob_456_78')
+        #self.assertEqual(ptool.getMatchedObject(123, 'fr'), 'ob_456_33')
 
     # XXX: This tests a now defunct method (getMatchingProxies). 
     # What should we test instead ?
     def _test_getMatchingProxies(self):
-        self.root._setObject('portal_repository', DummyRepo())
         ptool = self.root.portal_proxies
         proxy1 = ProxyBase(language_revs={'fr': 33, '*': 78})
         proxy2 = ProxyBase(language_revs={'fr': 33, 'en': 0})
@@ -125,8 +160,11 @@ class ProxyToolTests(SecurityRequestTest):
 
 
 def test_suite():
+    suite = unittest.TestSuite()
     loader = unittest.TestLoader()
-    return loader.loadTestsFromTestCase(ProxyToolTests)
+    suite.addTest(loader.loadTestsFromTestCase(ProxyBaseTest))
+    suite.addTest(loader.loadTestsFromTestCase(ProxyToolTest))
+    return suite
 
 if __name__ == '__main__':
     unittest.TextTestRunner().run(test_suite())
