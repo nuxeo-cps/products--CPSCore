@@ -10,6 +10,7 @@ Bug fixes:
   in complex multilingual settings.
 - Correctly deal with user folder's special features (groups) when computing
   access rights in portal_trees.
+- Fixed CMF bug by not swallowing ConflictError in wrapUser.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Move files related to permissions around.
