@@ -23,60 +23,110 @@ The only role-related functions that should be imported by external code
 are:
   - mergedLocalRoles(object, withgroups=0)
   - mergedLocalRolesWithPath(object, withgroups=0)
-  - getAllowedRolesAndUsersOfUser(user)
   - getAllowedRolesAndUsersOfObject(object)
+  - getAllowedRolesAndUsersOfUser(user)
 
 Other utility functions:
   - _isinstance(ob, class)
   - makeId(s, lower=0)
 
+This code uses if possible the following methods on the user folder:
+  - mergedLocalRoles
+  - mergedLocalRolesWithPath
+  - getAllowedRolesAndUsersOfObject
+  - getAllowedRolesAndUsersOfUser
 """
 
-from zLOG import LOG, DEBUG, TRACE
 import string
-
-# Local role (group) support monkey patches start here
-
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl.PermissionRole import rolesForPermissionOn
-from Products.CMFCore import utils
-from Products.CMFCore.CMFCorePermissions import AccessInactivePortalContent
-from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
-     CatalogTool
-from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
+from Products import CMFCore
 from DateTime.DateTime import DateTime
-from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 from random import randrange
-from Products.ZCatalog.ZCatalog import ZCatalog
 
-LOG('CPSCore.utils', TRACE, 'Patching CMF local role support')
+
+# Safe hasattr that doesn't catch unwanted exceptions and checks on base.
+_marker = []
+def bhasattr(ob, attr):
+    return getattr(aq_base(ob), attr, _marker) is not _marker
+
+
+#
+# Main functions
+#
 
 def mergedLocalRoles(object, withgroups=0):
-    #LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
+    """Return a merging of object and its ancestors' local roles
+
+    When called with withgroups=1, the keys are
+    of the form user:foo and group:bar.
+    """
     aclu = getattr(object, 'acl_users', None)
-    if aclu is not None and hasattr(aclu, 'mergedLocalRoles'):
+    if aclu is not None and bhasattr(aclu, 'mergedLocalRoles'):
         return aclu.mergedLocalRoles(object, withgroups)
-    # XXX should code old implementation directly here
-    return utils.old_mergedLocalRoles(object)
+    # Default implementation:
+    merged = {}
+    object = getattr(object, 'aq_inner', object)
+    while 1:
+        if hasattr(object, '__ac_local_roles__'):
+            dict = object.__ac_local_roles__ or {}
+            if callable(dict): dict = dict()
+            for k, v in dict.items():
+                if withgroups:
+                    k = 'user:'+k
+                if merged.has_key(k):
+                    merged[k] = merged[k] + v
+                else:
+                    merged[k] = v
+        if hasattr(object, 'aq_parent'):
+            object=object.aq_parent
+            object=getattr(object, 'aq_inner', object)
+            continue
+        if hasattr(object, 'im_self'):
+            object=object.im_self
+            object=getattr(object, 'aq_inner', object)
+            continue
+        break
+    return merged
 
 def mergedLocalRolesWithPath(object, withgroups=0):
-    #LOG('CPSCore utils', DEBUG, 'mergedLocalRolesWithPath()')
     aclu = getattr(object, 'acl_users', None)
-    if aclu is not None and hasattr(aclu, 'mergedLocalRolesWithPath'):
+    if aclu is not None and bhasattr(aclu, 'mergedLocalRolesWithPath'):
         return aclu.mergedLocalRolesWithPath(object, withgroups)
     # Default implementation:
     return {}
 
-if not hasattr(utils, 'old_mergedLocalRoles'):
-    utils.old_mergedLocalRoles = utils._mergedLocalRoles
-utils.mergedLocalRoles = mergedLocalRoles
-utils._mergedLocalRoles = mergedLocalRoles
-utils.mergedLocalRolesWithPath = mergedLocalRolesWithPath
+def getAllowedRolesAndUsersOfUser(user):
+    """Return the roles and groups a user has."""
+    aclu = aq_parent(aq_inner(user))
+    # XXX Should really call a method on the user itself
+    if hasattr(aclu, 'getAllowedRolesAndUsersOfUser'):
+        return aclu.getAllowedRolesAndUsersOfUser(user)
+    if hasattr(aclu, '_getAllowedRolesAndUsers'): # old spelling
+        return aclu._getAllowedRolesAndUsers(user)
+    # Default implementation:
+    result = list(user.getRoles())
+    if 'Anonymous' not in result:
+        result.append('Anonymous')
+    result.append('user:' + user.getUserName())
+    if hasattr(aq_base(user), 'getComputedGroups'):
+        groups = user.getComputedGroups()
+    elif hasattr(aq_base(user), 'getGroups'):
+        groups = user.getGroups() + ('role:Anonymous',)
+        if 'Authenticated' in result:
+            groups = groups + ('role:Authenticated',)
+    else:
+        groups = ('role:Anonymous',)
+    for group in groups:
+        result.append('group:' + group)
+    return result
 
 def getAllowedRolesAndUsersOfObject(ob):
     """Get the roles and users that can View this object."""
     aclu = getattr(ob, 'acl_users', None)
-    if hasattr(aclu, '_allowedRolesAndUsers'):
+    if bhasattr(aclu, 'getAllowedRolesAndUsersOfObject'):
+        return aclu.getAllowedRolesAndUsersOfObject(ob)
+    if bhasattr(aclu, '_allowedRolesAndUsers'): # old spelling
         return aclu._allowedRolesAndUsers(ob)
     # Default implementation:
     allowed = {}
@@ -91,247 +141,12 @@ def getAllowedRolesAndUsersOfObject(ob):
         del allowed['Owner']
     return allowed.keys()
 
-# XXX should be calling above function.
-def _allowedRolesAndUsers(ob):
-    #LOG('CPSCore utils', DEBUG, '_allowedRolesAndUsers()')
+#
+# Patch CMFCore.utils for generic mergedLocalRoles
+#
 
-    aclu = getattr(ob, 'acl_users', None)
-    if aclu is not None and hasattr(aclu, '_allowedRolesAndUsers'):
-        return aclu._allowedRolesAndUsers(ob)
-    # The userfolder does not have CPS group support
-    allowed = {}
-    for r in rolesForPermissionOn('View', ob):
-        allowed[r] = 1
-    localroles = utils.mergedLocalRoles(ob) # groups
-    for user_or_group, roles in localroles.items():
-        for role in roles:
-            if allowed.has_key(role):
-                allowed[user_or_group] = 1
-    if allowed.has_key('Owner'):
-        del allowed['Owner']
-    return list(allowed.keys())
-
-# XXX should be renamed to avoid confusion
-def allowedRolesAndUsers(self):
-    """
-    Return a list of roles, users and groups with View permission.
-    Used by PortalCatalog to filter out items you're not allowed to see.
-    """
-    #LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
-    ob = self._IndexableObjectWrapper__ob # Eeek, manual name mangling
-    return _allowedRolesAndUsers(ob)
-
-IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
-
-
-LOG('CPSCore.utils', DEBUG,
-    'Adding localUsersWithRoles to IndexableObjectWrapper')
-def localUsersWithRoles(self):
-    """
-    Return a list of users and groups having local roles.
-
-    Used by PortalCatalog to find which objects have roles for given users and
-    groups. Only return proxies: see how __cps_wrapper_getattr__ raises
-    AttributeError when accessing this attribute.
-    """
-    ob = self._IndexableObjectWrapper__ob
-    # XXX herve: correct me if I'm wrong but repository documents' roles already
-    # are some "merge" of proxies' roles; so this index doesn't seem relevant
-    # since it's like a copy of the allowedRolesAndUsers index.
-    local_roles = ['user:%s' % r[0] for r in ob.get_local_roles()]
-    local_roles.extend(['group:%s' % r[0] for r in ob.get_local_group_roles()])
-    return local_roles
-
-IndexableObjectWrapper.localUsersWithRoles = localUsersWithRoles
-
-
-def getAllowedRolesAndUsersOfUser(user):
-    """Return the roles and groups this user has."""
-    aclu = aq_parent(aq_inner(user))
-    if hasattr(aclu, '_getAllowedRolesAndUsers'):
-        return aclu._getAllowedRolesAndUsers(user)
-    # Default implementation:
-    result = list(user.getRoles())
-    if 'Anonymous' not in result:
-        result.append('Anonymous')
-    result.append('user:%s' % user.getUserName())
-    if hasattr(aq_base(user), 'getComputedGroups'):
-        groups = user.getComputedGroups()
-    elif hasattr(aq_base(user), 'getGroups'):
-        groups = user.getGroups() + ('role:Anonymous',)
-        if 'Authenticated' in result:
-            groups = groups + ('role:Authenticated',)
-    else:
-        groups = ('role:Anonymous',)
-    for group in groups:
-        result.append('group:%s' % group)
-    return result
-
-# XXX should be calling getAllowedRolesAndUsersOfUser
-# XXX should be removed from API, instead use above function
-def _getAllowedRolesAndUsers(user):
-    """Returns a list with all roles this user has + the username"""
-    #LOG('CPSCore utils', DEBUG, '_getAllowedRolesAndUsers()')
-
-    result = list(user.getRoles())
-    result.append('Anonymous')
-    result.append('user:%s' % user.getUserName())
-    # deal with groups
-    getGroups = getattr(user, 'getGroups', None)
-    if getGroups is not None:
-        groups = tuple(user.getGroups()) + ('role:Anonymous',)
-        if 'Authenticated' in result:
-            groups = groups + ('role:Authenticated',)
-        for group in groups:
-            result.append('group:%s' % group)
-    # end groups
-    return result
-
-# XXX should be calling getAllowedRolesAndUsersOfUser
-# XXX should be renamed to avoid confusion
-def _listAllowedRolesAndUsers(self, user):
-    return _getAllowedRolesAndUsers(user)
-CatalogTool._listAllowedRolesAndUsers = _listAllowedRolesAndUsers
-
-LOG('CPSCore.utils', TRACE, 'Patching CMF CatalogTool.searchResults')
-def searchResults(self, REQUEST=None, **kw):
-    """
-    Calls ZCatalog.searchResults with extra arguments that
-    limit the results to what the user is allowed to see.
-    """
-    user = utils._getAuthenticatedUser(self)
-    kw[ 'allowedRolesAndUsers' ] = self._listAllowedRolesAndUsers( user )
-    
-    if not utils._checkPermission( AccessInactivePortalContent, self ):
-        base = aq_base( self )
-        now = DateTime()
-        usage = kw.get('effective_usage', 'range:min')
-        eff = kw.get('effective', '')
-        if hasattr( base, 'addIndex' ):   # Zope 2.4 and above
-            if eff:
-                eff = DateTime(eff)
-                if usage == 'range:max':
-                    kw[ 'effective' ] = { 'query' : min(eff, now), 'range' : 'max' }
-                else:
-                    kw[ 'effective' ] = { 'query' : (eff, now), 'range' : 'min:max' }
-            else:
-                kw[ 'effective' ] = { 'query' : now, 'range' : 'max' }
-            kw[ 'expires' ] = { 'query' : now, 'range' : 'min' }
-        else:                          # Zope 2.3
-            if eff:
-                if usage == 'range:max':
-                    kw[ 'effective' ] = min(eff, now)
-                    kw[ 'effective_usage'] = 'range:max'
-                else:
-                    kw[ 'effective' ] = (eff, now)
-                    kw[ 'effective_usage' ] = 'range:min:max'
-            else:
-                kw[ 'effective' ] = now
-                kw[ 'effective_usage'] = 'range:max'
-            kw[ 'expires' ] = now
-            kw[ 'expires_usage'  ] = 'range:min'
-    return apply(ZCatalog.searchResults, (self, REQUEST), kw)
-CatalogTool.searchResults = searchResults
-CatalogTool.__call__ = searchResults
-
-LOG('CPSCore.utils', TRACE, 'Patching CMF Catalog IndexableObjectWrapper')
-def __cps_wrapper_getattr__(self, name):
-    """This is the indexable wrapper getter for CPS,
-    proxy try to get the repository document attributes,
-    document in the repository hide some attributes to save some space."""
-    vars = self._IndexableObjectWrapper__vars
-    if vars.has_key(name):
-        return vars[name]
-    ob = self._IndexableObjectWrapper__ob
-    proxy = None
-    # XXX TODO: use _isinstance(ProxyBase) need to fix import mess
-    if hasattr(ob, '_docid') and name not in (
-            'getId', 'id', 'path', 'getPhysicalPath', 'splitPath', 'modified',
-            'uid', 'container_path', 'Languages'):
-        proxy = ob
-        ob = ob.getContent()
-        ## The following seems problematic with Zope 2.7.1 and higher
-        ## I haven't been able to know if it was related to TextIndexNG2
-        ## or not (see comments below). I think it is not, and might be related
-        ## to recent Zope's more tight security checks resulting in None objects
-        ## being returned sometimes. A post on zope-dev has explained this a bit,
-        ## but no definitive explanation has yet been given.
-        ## This seems harmless in most cases, as it has not been changed in 2.7.2.
-        ## Main problems have been reported by CNCC : leaving these two lines
-        ## make their main installer unusable : it fails installing a site
-        ## by crashing on an AttributeError. Commenting the lines have been
-        ## a temporary workaround which seems to work.
-        #if ob is None:
-        #    raise AttributeError
-    elif 'portal_repository' in ob.getPhysicalPath():
-        if name in ('SearchableText', 'Title'):
-            raise AttributeError
-    try:
-        ## This try/except have been added to make Unilog's projects work
-        ## fine with TextIndexNG2
-        ## This index tries to acces directly to meta_type attribute at
-        ## object creation, and in CPSDocuments, a first indexation takes
-        ## place before the real object is created
-        ## returning None in this specific case is ok because the object
-        ## will always be reindexed correctly later on (according to fg).
-        ret = getattr(ob, name)
-    except AttributeError:
-        if name == 'meta_type':
-            return None
-        ## In all other cases, we reraise the exception to let the potential
-        ## problems be visible outside of this code.
-        raise
-    if proxy is not None:
-        if name == 'SearchableText':
-            ret = ret() + ' ' + proxy.getId()  # so we can search on id
-    return ret
-IndexableObjectWrapper.__getattr__ = __cps_wrapper_getattr__
-
-def container_path(self):
-    """This is used to produce an index
-    return the parent full path."""
-    ob = self._IndexableObjectWrapper__ob
-    return '/'.join(ob.getPhysicalPath()[:-1])
-
-IndexableObjectWrapper.container_path = container_path
-
-def relative_path(self):
-    """This is used to produce a metadata
-    return a path relative to the portal."""
-    ob = self._IndexableObjectWrapper__ob
-    try:
-        return ob.portal_url.getRelativeContentURL(ob)
-    except AttributeError:
-        # broken object can't aquire portal_url
-        return ''
-IndexableObjectWrapper.relative_path = relative_path
-
-def relative_path_depth(self):
-    """This is used to produce an index
-    return the path depth relative to the portal."""
-    ob = self._IndexableObjectWrapper__ob
-    try:
-        return len(ob.portal_url.getRelativeContentPath(ob))
-    except AttributeError:
-        # broken object can't aquire portal_url
-        return -1
-IndexableObjectWrapper.relative_path_depth = relative_path_depth
-
-
-LOG('CPSCore.utils', TRACE, 'Patching Zope TopicIndex.clear method')
-def topicindex_clear(self):
-    """Fixing cmf method that remove all filter."""
-    for fid, filteredSet in self.filteredSets.items():
-        filteredSet.clear()
-TopicIndex.clear = topicindex_clear
-
-
-LOG('CPSCore.utils', TRACE, 'Patching CMF DublinCore never expires date')
-# this remove the overflow pb when using a DateIndex for expires
-DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
-
-# Local role monkey patching ends here
-
+CMFCore.utils.mergedLocalRoles = mergedLocalRoles
+CMFCore.utils._mergedLocalRoles = mergedLocalRoles
 
 #
 # Utility functions

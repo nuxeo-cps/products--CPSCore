@@ -3,10 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Local role blocking works for 'group:role:Anonymous': '-'.
 Bug fixes:
 ~~~~~~~~~~
 - Fixed local group roles deletion by MembershipTool.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Refactored utils and moved stuff to PatchCatalogTool.py.

@@ -23,6 +23,14 @@ from zLOG import LOG, DEBUG, TRACE
 #
 # Monkey patching starts here
 #
+
+# Remove the overflow pb when using a DateIndex for expires
+from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
+from DateTime.DateTime import DateTime
+DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
+
+
+#
 # Patching UndoTool: Removing undo action
 #
 
@@ -33,9 +41,6 @@ _actions = []
 UndoTool._actions = _actions
 LOG("CPSCore", TRACE, "Patching CMFCore UndoTool : removing undo action")
 
-#
-# UndoToolPatch  monkey patching ends here
-#
 
 from Products.CMFCore import utils as cmfutils
 from Products.CMFCore.CMFCorePermissions import AddPortalContent, ManagePortal
@@ -47,6 +52,7 @@ import EventServiceTool
 import EventServicePatches
 import TypesToolPatches
 import PatchBTreeFolder2
+import PatchCatalogTool
 import ProxyTool
 import ObjectRepositoryTool
 import CPSWorkflowTool
