@@ -224,7 +224,6 @@ def isUserAgentMsie(request):
     if user_agent.find('MSIE') != -1:
         return 1
     else:
-        
         return 0
 
 def resetSessionLanguageSelection(request):
@@ -234,12 +233,9 @@ def resetSessionLanguageSelection(request):
     except KeyError:
         pass
 
-def manageCPSLanguage(context, **kw):
-    """@summary: Manage available a languages in a CPS portal with Localizer"""
+def manageCPSLanguage(context, action, default_language, languages):
+    """Manage available a languages in a CPS portal with Localizer"""
 
-    action = kw.get('action')
-    languages = kw.get('languages')
-    lang = kw.get('language')
     catalogs = context.Localizer.objectValues()
     catalogs.append(context.Localizer)
     portal = context.portal_url.getPortalObject()
@@ -270,7 +266,7 @@ def manageCPSLanguage(context, **kw):
 
     elif action == 'chooseDefault':
         for catalog in catalogs:
-            catalog.manage_changeDefaultLang(lang)
+            catalog.manage_changeDefaultLang(default_language)
         psm = 'psm_default_language_set'
 
     else:
