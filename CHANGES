@@ -8,8 +8,9 @@ New features:
 Bug fixes:
 ~~~~~~~~~~
 - Creating calendar during member area creation needs Manager privileges.
-New internal features:
-~~~~~~~~~~~~~~~~~~~~~~
+- Make getCPSCandidateLocalRoles always return a list.
 - MemberArea creation is now CMF 1.5 compatible, and not done automatically
   during wrapUser.
-- Make getCPSCandidateLocalRoles always return a list.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
