@@ -224,7 +224,7 @@ class CPSMembershipTool(MembershipTool):
             # TODO set workspace properties ? title ..
             portal_cpscalendar = getToolByName(self, 'portal_cpscalendar', None)
             if portal_cpscalendar:
-                portal_cpscalendar.createUserCalendar(f, id)
+                portal_cpscalendar.createMemberCalendar(member_id)
 
             # Grant ownership to Member
             try:
