@@ -1,0 +1,29 @@
+CPS 3 - Use cases
+
+  <link rel="stylesheet" href="style.css" type="text/css">
+
+  Staging
+
+    Dicod
+
+      À un moment donné, basculer l'ensemble des documents publiés vers
+      un autre serveur (et évidemment supprimer les documents qui ont
+      été supprimés). Attention, certaines choses comme les commentaires
+      des internautes, ou les messages dans les forums, ne doivent pas
+      être écrasés.
+
+      Il faut également basculer toute l'ossature (répertoires).
+
+  Documents composites
+
+    Dossier
+
+      Un dossier regroupe plusieurs autres documents. Lorsqu'il est
+      affiché, il propose des liens vers les sous-documents,
+      éventuellement leur résumé, etc.
+
+    Document structuré
+
+      Un document composé d'un paragraphe de description, d'une image,
+      d'un chapeau, d'un corps. L'image et le corps sont en fait des
+      sous-documents.

@@ -1,0 +1,658 @@
+CPS 3 - Architecture
+
+  <link rel="stylesheet" href="style.css" type="text/css">
+
+  Version
+
+    $Id$
+
+    Document en cours de rédaction
+
+  Base documentaire
+
+    Version Repository
+
+      C'est là que seront stockés "physiquement" les documents sujet à
+      versionning.
+
+      On doit pouvoir gérer les documents présents suivant certains
+      paramètres comme la version ou la langue de façon souple et
+      indépendante.
+
+      Chaque document doit avoir un identifiant unique.
+
+      Il n'est peut-être pas souhaitable que tous les documents/objets
+      utilisent le mécanisme de "publication virtuelle" (ou plutôt de
+      "présence virtuelle"). En particulier, les forums ou les objets
+      fonctionnels ne sont pas des documents à stocker dans la base
+      documentaire centrale (ils peuvent cependant utiliser un mécanisme
+      de base documentaire, cela est sûrement souhaitable).
+
+    Versionned Document
+
+      Ces documents ne sont jamais accédés directement par une URL, mais
+      c'est un proxy qui détermine le versionned document et appelle une
+      vue de celui-ci en fonction de la vue du proxy demandée.
+
+      En ce qui concerne les discussions associées, il est sûrement
+      préférable de les sortir du document et les placer dans un forum
+      associé à l'espace dans lequel le proxy se trouve. On peut donc
+      avoir des fils de discussion différents selon les endroits (ou pas
+      de discussion possible). Par exemple, une discussion portant sur
+      le document pour les personnes le modifiant et un fil de
+      discussion privé ou public dans le ou les espaces où le document
+      se trouve publié.
+
+    Proxy
+
+      C'est à travers un proxy (qui référence quel est le Versionned
+      Document physique, et éventuellement des spécifications sur quelle
+      version ou quelle langue est souhaitée) qu'on accède à un
+      document. C'est le proxy qui suit un workflow.
+
+      Les proxies ont des attributs (titre, description, métadonnées...)
+      qu'on doit considérer comme des vues sur le document versionné et
+      donc être traités de manière similaire à une vue normale.
+
+  Object Hub
+
+    ...
+
+  Event Service
+
+    Zope 3 a un Event Service complet où les événements synchrones
+    peuvent se voir apposer un veto par certains aures services. Ici on
+    utilise une version simplifiée, qui est plutôt apparentée à un
+    centre de notification.
+
+    Description
+
+      Point central pour enregistrer tous les événements. Ce centre de
+      notifications dispatche ensuite ces notifications d'événements à
+      d'autres objets/services. Toute appel à une méthode doit
+      enregistrer l'événement dans le centre de notification, que ce
+      soit la visualisation, l'édition, la publication d'un document.
+
+      Le centre de notification doit pouvoir regrouper plusieurs
+      occurrences d'une même notification dans la même requête et doit
+      pouvoir déclencher les événements hors de la requête (ce qui peut
+      améliorer les performances du site ou permettre d'envoyer un
+      *digest* des modifications de la journée).
+
+    Cas d'utilisation
+
+    - Modification d'un objet/document. La modification d'un
+      objet/document enverra une notification au centre de notifications
+      qui effectuera alors un mailing aux personnes concernées. On
+      retrouve ce genre d'exemple pour la
+      soumission/publication/dépublication d'un document.
+
+    - On doit, de même, pouvoir utiliser ce genre de notifications lors
+      de la visualisation d'un document. On peut imaginer ensuite que
+      cette information permettra de déterminer quels documents un
+      utilisateur doit encore lire, ou prévenir une personne de la
+      lecture d'un document par une autre personne.
+
+  Relationship Manager
+
+    Stocke les relations entre objets. C'est peut-être simplement le
+    Catalog, à voir. Types de relations stockées:
+
+    - est un proxy pour
+
+    - est un sous-document de
+
+  Staging
+
+    Voir le use case Dicod.
+
+  Workflow Tool
+
+    Gère tous les workflows possibles, de manière unifiée. Notamment:
+
+    - publication (le processus peut dépendre de l'endroit)
+
+    - étapes de travail
+
+    - traduction
+
+    - ...
+
+    Besoins divers
+
+      Interactions entre deux workflows. Ex:
+
+      - Un ordre de mission ne doit pouvoir se déplacer dans le workflow
+        "publication" que s'il est dans l'état "fini" du workflow de
+        création.
+
+      - Un document dans le workflow "édition" ne doit pas pouvoir se
+        déplacer dans le workflow "publication".
+
+      Gestion au niveau du workflow de la plupart des actions dans le site
+
+      - Commenter un document
+
+      - Modifier un document
+
+      - Créer/détruire un document
+
+      - ...
+
+  Documents composites
+
+    Dossier
+
+      Comme un répertoire sauf qu'il a une unité particulière vis à vis
+      du workflow: lorsque le dossier est soumis/publié, tous les
+      documents à l'intérieur sont soumis/publiés. (Bien définir la
+      politique de création/suppression de sous-documents lorsque le
+      dossier est publié.)
+
+      Ceci a un impact direct au niveau du workflow, le workflow doit
+      définir ce qui se passe quand on fait une action donnée à
+      l'intérieur d'un dossier: création, publication, destruction,
+      versionning, etc.
+
+    Document structuré
+
+      Document dont l'affichage fait référence à des sous-documents.
+
+  Versionning
+
+    ...
+
+  Traduction
+
+    ...
+
+  Event Service
+
+    Reçoit et traite les notifications envoyées par divers
+    sous-systèmes, par exemple des changements d'état dans le workflow,
+    des créations, suppressions, déplacements.
+
+    Abonnements d'autres sous-systèmes
+
+    - Workflow (s'abonne aux événements temporels, pour expiration)
+
+    Notifications externes
+
+    - Envoi de mail
+
+    - Queue de mails pour envoi groupé régulier
+
+  Elements
+
+    Généralités
+
+      Ce produit est à considérer essentiellement d'un point de vue
+      "développeur".
+
+      Ce produit permet essentiellement de pouvoir régler finement le
+      comportement des différents éléments (graphiques ou non)
+      permettant de construire la réponse d'une requête. Il fournit, de
+      plus, un espace de nom global à toute la requête plus facilement
+      éditable (et "surchageable") et accessible que celui défini par
+      exemple avec CPS 2.0 dans *main_template.pt*.
+
+      Les différents éléments utilisés pour construire cette réponse
+      utilisent d'autres éléments qui, eux-mêmes, peuvent utiliser
+      d'autres éléments.
+
+      Avec ce système, on peut espérer pouvoir traiter finement le cache
+      de certains "morceaux" de la page, d'avoir une totale souplesse de
+      la disposition des éléments graphiques sur la page, de pouvoir
+      déléguer la liste, position de tout ou partie des éléments à un
+      autre objet, etc. On peut ajouter des éléments ou surcharger
+      certains éléments.
+
+      Afin de bien distinguer les éléments dans le code, le nom des
+      éléments sera en capitales.
+
+    Exemples d'utilisation :
+
+      L'API utilisée n'est pas obligatoirement l'API définitive mais une
+      idée de ce qui sera présenté au développeur et d'éventuellement en
+      dégager l'intérêt.
+
+      On trouvera un certain nombre d'éléments par défaut disponibles.
+      Par exemple :
+
+      HERE -- désigne l'endroit courant accédé ;
+
+      PORTAL -- la racine du portail ;
+
+      DISPLAY -- l'élément principal construisant une page complète ;
+
+      WIDGETS -- les widgets disponibles dans CPS ;
+
+      ... -- (XXX sûrement d'autres à prévoir... typiquement toutes les
+        variables définies actuellement dans *main_template* de CPS 2).
+
+      On peut imaginer le code classique de certains éléments :
+
+      DISPLAY est un script python ::
+
+        ##parameters=elements_container=None
+
+        if elements_container is None:
+            REQUEST = context.REQUEST
+            elements_container = REQUEST['elements_container']
+        else:
+            REQUEST = elements_container['REQUEST']
+
+        if REQUEST.get('pp', 0):
+            # on demande la page en version imprimable
+            return context.main_printable(elements_container=elements_container)
+        else:
+            # version classique
+            return context.main_display(elements_container=elements_container)
+
+      avec le code pour *main_display.pt* ::
+
+        <html tal:define="ec options/elements_container">
+        <head>
+          <title tal:content="ec/PAGE_TITLE">Page Title</title>
+          <base tal:attributes="href ec/BASE_HREF" />
+          <tal:block repeat="style ec/all/STYLES" replace="style" />
+          <tal:block repeat="script ec/all/SCRIPTS" replace="script" />
+        </head>
+        <body>
+          <tal:block replace="ec/BANNER" />
+
+          <br>
+
+          Action courante : <tal:block replace="ec/CURRENT_ACTION" />
+
+          <br>
+
+          <tal:block repeat="content ec/all/CONTENTS">
+            <tal:block replace="content" />
+            <hr tal:content="not:repeat/content/end" />
+          </tal:block>
+        </body>
+        </html>
+
+      et enfin le *document_view* d'un document quelconque ::
+
+        ##parameters=REQUEST
+
+        portal_elements = context.portal_elements
+
+        # on initialise et on récupère le conteneur d'éléments
+        ec = portal_elements.getElementsContainer(here=context, request=REQUEST)
+
+        # on ajoute le résultat de l'action "content_view" à la liste
+        # d'éléments "CONTENTS"
+        ec.addActionCallElement('CONTENTS', context, 'content_view')
+
+        # on calcule l'élément DISPLAY
+        return ec['DISPLAY'](elements_container=ec)
+
+      On peut aussi imaginer le "workgroup_view" permettant l'affichage d'un
+      espace de travail ::
+
+        ##parameters=REQUEST
+
+        portal_elements = context.portal_elements
+
+        ec = portal_elements.getElementsContainer(here=context, request=REQUEST)
+
+        ec.addElements('DOCUMENTS', context.contentValues())
+
+        isAnon = ec['ISANON']
+
+        if not isAnon:
+            # l'utilisateur n'est pas anonyme, le type d'affichage
+            # est retrouvé par défaut dans l'espace (ou
+            # par acquisition)
+            work_type = REQUEST.SESSION.get('work_type')
+            if work_type = None:
+                work_type = getattr(context, 'work_type', None)
+                if work_type is None:
+                    work_type = 'manage'
+        else:
+            # L'utilisateur est anonyme, l'élément "CONTENTS" ne sera
+            # que l'affichage de l'espace en mode 'visit'
+            work_type = 'visit'
+
+        if work_type == 'visit':
+            # On accède à l'espace en tant que visiteur
+            # On affiche alors juste la liste des documents
+            # "list_documents" récupère les objets à lister dans l'élément
+            # "DOCUMENTS"
+            ec.addCallElement('CONTENTS', context, 'list_documents')
+
+        elif work_type == 'manage':
+            # On est en mode "administration", on obtient alors la vue de l'espace
+            # qui permet de manier les objets.
+            ec.addCallElements('CONTENTS', context, 'manage_documents')
+
+        return ec['DISPLAY'](elements_container=ec)
+
+  Espaces de travail
+
+    Généralités
+
+      Dans CPS 3.0, il n'y a plus de distinction nette entre espaces de
+      travail et espaces de publication. Un espace contient physiquement
+      les documents, ou plutôt généralement un proxy vers des documents
+      placés dans un Document Repository.
+
+      En premier lieu, il convient de déterminer le nom que l'on donnerait
+      à ces "espaces" en Anglais afin de pouvoir déterminer le nom du
+      produit et des classes.
+
+    Rôles
+
+      Il faut définir les rôles régissant les différents droits sur
+      l'espace. Une première idée est :
+
+      Manager -- gère les droits et publie les documents ;
+
+      ActiveMember -- crée des documents dans l'état privé ;
+
+      PassiveMember -- crée un proxy d'un document dont il a la gestion
+      dans l'état privé (= soumission d'un document) ;
+
+      Visitor -- peut lire les documents dans l'état "public".
+
+    Autre
+
+      Un espace peut restreindre localement les types de documents
+      autorisés.
+
+      Un espace peut avoir un/des délégués pour certaines actions de
+      visualisation (à préciser, voir ElementsTool).
+
+      Il est sûrement souhaitable d'avoir un système de "template"
+      d'espace qui permet d'ajouter des espaces-types avec objets
+      associés (un forum, un canevas, des portlets, liste des types de
+      documents autorisés, etc.).
+
+  Portlets
+
+    Description
+
+      Ce produit permet de gérer les boîtes qui apparaissent dans la
+      page. Il s'appuye en partie sur les éléments disponibles.
+
+      Il doit être possible de définir des portlets globaux et des
+      portlets locaux. Un utilisateur référencé doit pouvoir ajouter des
+      portlets "globaux", éventuellement disponibles selon son
+      environnement (consultation/édition) ou changer certaines
+      propriétés des portlets déjà définies (visibilité, minimisation,
+      etc.).
+
+      On doit pouvoir modifier le style d'une portlet.
+
+    Cas d'utilisation
+
+      Un administrateur de rubrique/sous-site (ou le site entier) change
+      le canevas de la rubrique/sous-site (ou le site entier).
+
+      Cet administrateur modifie les portlets affichées dans le canevas.
+
+      Il ajoute un portlet à afficher dans le canevas :
+
+      - il doit pouvoir choisir l'emplacement du portlet
+
+      - il doit pouvoir choisir le décor du portlet
+
+      - il doit pouvoir choisir l'affichage dans le portlet (exemple :
+        boite de listes de documents affichée en mode étendu, en mode
+        compact, en mode minimal, etc.)
+
+      - il ne doit pas pouvoir "casser" l'affichage de la page. Le HTML
+        doit rester non seulement correct mais "lisible". Le but est
+        d'assurer au maximum la robustesse de l'interface. Il se peut donc
+        que certains décors soient interdits à certains emplacement du canevas.
+        Mieux, il se peut que certains types d'affichage soient interdits
+        (impossible d'afficher une liste de documents en mode étendu
+        dans des boites prévues pour être peu larges...)
+
+    Idées
+
+      NuxCPSPortlets doit gérer :
+
+      - les canevas de page
+
+        Le canevas définit les emplacements où peuvent se trouver les
+        portlets et pour chaque emplacement les décors possibles. Il
+        donne aussi le HTML à utiliser pour afficher effectivement le
+        canevas ainsi qu'une vue synthétique du canevas (pour
+        l'interface d'administration des portlets).
+
+      - les décors des portlets
+
+        Le décor d'un portlet définit le HTML qui va afficher
+        effectivement le portlet. À la différence de NuxPortal dans CPS
+        2.0, les portlets ne doivent pas fournir le rendu du HTML du
+        contenu des portlets sauf cas spécial (du genre "Text Box"... et
+        encore).
+
+        Un décor doit donc définir quelles sont les "fonctionnalités"
+        attendues de la boite (la boite fournit une liste de liens, un
+        arbre d'objet, tout simplement du HTML, etc.) et pourra alors au
+        moment de l'affichage mettre en forme les données fournies par
+        le portlet.
+
+        Plus précisémment un même décor doit avoir lui-même plusieurs
+        styles, chaque style précisant les fonctionnalités requises par
+        la boite pour que ce style puisse s'appliquer.
+
+        Exemple: décor "Boite Gauche"
+
+        - Style "Contenu brut"
+
+          fonctionnalités requises : ("Title" ou "HTMLTitle") et
+          "HTMLBody"
+
+        - Style "Liste compacte"
+
+          fonctionnalités requises : ("Title" ou "HTMLTitle") et
+          "DocInfos"
+
+        - Style "Liste étendue"
+
+          fonctionnalités requises : ("Title" ou "HTMLTitle") et
+          "DocInfos"
+
+        - Style "Liste d'actions en block"
+
+          fonctionnalités requises : ("Title" ou "HTMLTitle") et
+          "ActionsBlocks"
+
+        - Style "Liste d'actions"
+
+          fonctionnalités requises : ("Title" ou "HTMLTitle") et
+          "ActionsList"
+
+      - les portlets
+
+        Les portlets fournissent les données passées au décor dans le
+        format que le décor sait mettre en forme. Une portlet doit
+        donc contenir tout le code pour calculer ces données et aussi
+        fournir les différents "formats" qu'il est succeptible de
+        renvoyer. Cette liste de format est ordonnée et le décor doit
+        choisir le format le plus adapté au portlet.
+
+        On peut donc ajouter un portlet à un emplacement du canevas
+        s'il existe au moins un décor possible pour l'emplacement
+        donné et que pour ce décor il existe au moins un style pour
+        lequel le portlet fournit toutes les fonctionnalités requises.
+
+        Exemple :
+
+        - Portlet "Text Portlet" :
+
+          fonctionnalités fournies : ("Title", "HTMLBody")
+
+        - Portlet "Document Portlet" :
+
+          fonctionnalités fournies : ("Title", "DocInfos")
+
+        - Portlet "Navigation Portlet" :
+
+          fonctionnalités fournies : ("HTMLTitle", "Title",
+           "Hierarchical Navigation List")
+
+        - Portlet "Quick Links Portlet" :
+
+          fonctionnalités fournies : ("Title", "ActionsList", "HTMLBody")
+
+          (pour l'exemple, un portlet "Quick Link Portlet" peut donner
+          sous forme de liste HTML ses liens)
+
+        - Portlet "Ad Portlet" :
+
+          fonctionnalités fournies : ("ImageAndLink")
+
+        Supposons que dans l'emplacement "Colonne Gauche" du canevas,
+        seul le décor "Boite Gauche" soit autorisé, on ne pourra y
+        ajouter que les portlets "Text Portlet", "Document Portlet",
+        et "Quick Links Portlet".
+
+        Si on y ajoute un "Document Portlet", on pourra alors choisir
+        le style "Liste compacte" et "Liste étendue".
+
+        Si on y ajoute un "Quick Links Portlet", on pourra choisir le
+        style "Contenu brut" ou "Liste d'actions". Dans le premier
+        cas, il utilisera la fonctionnalité "ActionsList" pour
+        afficher les liens dans le body de la boite, dans le deuxième
+        il utilisera la fonctionnalité "HTMLBody" (avec un rendu alors
+        bien-sûr moins adapté au décor).
+
+      Stockage
+
+        Dans les faits, comment stocker tout cela ? Le principe veut que :
+
+        - On puisse ajouter des instances de canevas / portlets dans un
+          conteneur A et si l'on est dans le conteneur A/B, on utilise
+          par défaut les canevas/portlets de A. On peut aussi ajouter un
+          canevas dans A/B, remplaçant celui de A. Ce canevas peut
+          automatiquement utiliser des portlets de A (portlets déclarés
+          comme héritable), retirer des portlets hérités de A, ajouter
+          des portlets (éventuellement héritable dans la sous-hierarchie
+          de A/B).
+
+        - Un utilisateur peut ajouter ses propres portlets globaux qui
+          se retrouveront dans tout le site.
+
+        - Un utilisateur peut créer des "pages" dans son espaces privé
+          avec ses propres canevas afin d'avoir ses pages dynamiques
+          affichant des informations sélectionnées (dans la veine de
+          my.yahoo.com).
+
+    Développeur
+
+      Il faut que définir tout cela soit le plus simple possible pour le
+      développeur. Le moteur des portlets doit s'occuper de tout le reste :
+
+      - interface d'administration des canevas et portlets
+
+      - rendu effectif des canevas et des portlets
+
+      Le développeur ne devra définir plusiseurs choses :
+
+      - le type de canevas :
+
+        - une ZPT qui assure le rendu effectif du canevas
+
+        - un (ou deux) fichier annexe qui définit la liste logique des
+          emplacements disponibles dans le canevas, pour chaque
+          emplacement la liste des décors possibles et finalement une
+          "vue schématique" du canevas (pour l'interface
+          d'administration)
+
+      - les décors :
+
+        - une ZPT qui assure le rendu effectif du portlet utilisant au
+          mieux les fonctionnalités du portlet
+
+        - un fichier annexe qui définit pour le décor la liste des
+          styles déclarant alors les fonctionnalités attendues des
+          portlets. Ce fichier peut aussi donner des "propriétés" de
+          décor supplémentaires (couleur, image, etc. à préciser)
+
+      - les portlets :
+
+        une classe CMF complète (classe + fti) + la liste des
+        fonctionnalités fournies par ce type (cette liste devrait
+        logiquement se trouver dans la déclaration de la classe comme
+        _properties pour PropertyManager) + les propriétés réglables du
+        portlet et bien-sûr les méthodes spécifiques pour le
+        fonctionnement du portlet.
+
+  Flexible Metadata
+
+    Possibilité de rajouter globalement (ou à certains types seulement)
+    des métadonnées à des objets.
+
+    Exemples
+
+      - On décide que tous les documents doivent en plus avoir une
+        indication de "source".
+
+  Génération de formulaire
+
+    Use cases
+
+      Création de types par un développeur
+
+        On veut pouvoir créer un nouveau type de document contenant
+        certains champs choisir leur layout, avec stockage dans des
+        propriétés.
+
+        Exemples
+
+          - FAQ (simple)
+
+          - Fiche de renseignement avec layout complexe
+
+          - Ordre de mission, dont les champs affichés ou modifiables
+            dépendent de l'état dans le workflow, du contenu d'autres
+            champs, de l'identité de l'utilisateur...
+
+      Création de types par un administrateur
+
+        Un administrateur décide de créer un nouveau type de fiche dans
+        son site (ex: fiche de renseignement). Choix du layout,
+        stockage.
+
+        C'est un cas simplifié (champs fixes) de la création par un
+        développeur.
+
+        Sondages: le formulaire n'a qu'une seule instance, est en mode
+        "édition" (en fait création) pour tout utilisateur, et stocke
+        ses résultats en interne ou dans une base SQL. Voir comment on
+        gère ça.
+
+  Documents standards
+
+    - NuxDocument
+
+      Gère tous les fichiers "opaques" mais avec indexation plein texte
+      et prévisualisation HTML pour certains.
+
+      La fonction "download" doit être implémentée de manière à être
+      accessible depuis un miroir statique du site.
+
+    - Texte simple
+
+      - News
+
+    - Image
+
+      Pourrait simplement être géré par NuxDocument.
+
+    - Forum
+
+    - Mailing-list ?
+
+    - Habillages rubriques
+
+    - Dossier (document composite)
+
+    - Wiki

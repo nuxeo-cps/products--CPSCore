@@ -1,0 +1,174 @@
+CPS 3 - Organisation générale
+
+  <link rel="stylesheet" href="style.css" type="text/css">
+
+  Version
+
+    $Id$
+
+  Fichiers standards
+
+    - COPYING.txt -- la GPL in extenso.
+
+    - LICENSE.txt -- texte court rappelant la GPL et incitant à
+      consulter COPYING.txt.
+
+    - COPYRIGHT.txt -- la liste des copyrights. En premier Nuxeo,
+      suivent les sponsors.
+
+    - README.txt -- un bref descriptif du produit en Anglais.
+
+    - LISEZMOI.txt -- un bref descriptif du produit en Français.
+
+    - INSTALL.txt
+
+    - VERSION.txt -- généré automatiquement par les outils de packaging,
+      donc à ne pas mettre dans CVS.
+
+  Répertoires standards
+
+    tests -- les tests unitaires.
+
+    skins -- les skins CMF. Ce répertoire doit contenir au moins un
+      répertoire correspondant à la skin principale du produit. Donc ne
+      pas mettre directement de fichier dans "skins".
+
+    zmi -- le DTML ou icônes nécessaires à la ZMI.
+
+    doc -- la documentation, dont une partie est générée automatiquement
+      par happydoc.
+
+  Conventions de nommage
+
+    Produits
+
+      Rappel: un produit est un .tar.gz encapsulant un ou plusieurs
+      Packages python.
+
+    Packages
+
+      Les packages génériques de Nuxeo ont un nom qui commence par
+      "NuxCPS" et le nom est, a priori, calculé sur le nom du module
+      principal présent dans le produit.
+
+      Pour les packages encapsulant les customizations ou spécifications
+      d'un client particulier, on utilisera un préfixe particulier à ce
+      client (ex: Dicod).
+
+    Modules
+
+      Les modules (fichiers) ont un nom générique CapWord sans
+      préfixe particulier au client ou à Nuxeo.
+
+    Classes
+
+      Les classes ont un nom simple CapWord représentant leur fonction.
+
+    Meta_type, portal_type
+
+     - Tools -- les "tools" CMF doivent posséder un meta_type de la forme
+       "CPS *XXX* Tool"
+
+     - Documents -- le meta_type est de la forme "CPS *XXX* Document"
+
+     - Objets fonctionnels : le meta_type est de la forme "CPS *XXX* Object"
+
+  Code python
+
+    Règles générales
+
+      À appliquer par défaut.
+
+      - Syntaxe: "PEP 8":http://www.python.org/peps/pep-0008.html
+
+        Sauf qu'on n'utilise pas '__version__' dans Zope.
+
+      - Docstrings: "PEP 257":http://www.python.org/peps/pep-0257.html
+
+        Sauf qu'on utilise l'indicatif et pas l'impératif.
+
+      - Zope 3: "Coding Style":http://dev.zope.org/Wikis/DevSite/Projects/ComponentArchitecture/CodingStyle
+
+        À utiliser quand ça a un sens.
+
+    Securité
+
+      Toutes les méthodes ne commençant pas par un underscore doivent
+      avoir une déclaration security.declarePublic/Private/Protected.
+      Elle doit être écrite sur une seule ligne, juste avant la
+      définition de fonction correspondante, ceci afin de pouvoir
+      automatiser la vérification du fait que le security et le def qui
+      le suivent parlent bien de la même fonction.
+
+    Interfaces
+
+      Pas obligatoires pour l'instant.
+
+    Docstrings
+
+      Il est **essentiel** de pouvoir produire une documentation
+      complète d'un module en passant pydoc dessus. Ceci implique de
+      suivre les règles suivantes.
+
+      Tous les modules doivent avoir une docstring décrivant le but et
+      les cas d'utilisation du module. De même pour toutes les classes.
+
+      Toutes les méthodes python faisant partie d'un API (privée ou
+      publique) doivent avoir une docstring.
+
+      Le format d'une docstring est un résumé sur la première ligne, et
+      si nécessaire, après une ligne blanche, une description détaillée.
+      Exemple ::
+
+        def foo(bar, baz, default=None):
+            """Fait un foo avec double salto.
+
+            Si bar ou baz ne sait pas faire de salto,
+            retourne la valeur default.
+            """
+
+      Toutes les méthodes internes "utilitaires" doivent avoir un nom
+      commençant par un underscore, afin de pouvoir être écartées lors
+      de la génération automatique de doc ('happydoc --no-private-names').
+
+      Contrairement à ce que dit le PEP 257, on utilise l'indicatif dans
+      les docstrings et pas l'impératif, car le but est de produire de
+      la doc et la doc ne donne pas d'ordre au code (en Français c'est
+      souvent pareil mais en Anglais il y a un "s" à la fin d'un
+      indicatif).
+
+  Tests unitaires
+
+    À utiliser absolument. C'est la *première* infrastructure de code
+    à mettre en place pour chacun des modules du projet. Si on part de
+    code existant, la première chose à faire est d'écrire des tests
+    unitaires pour l'existant.
+
+    ...
+
+  Support Unicode
+
+    Les caractères non-ASCII doivent être absents des page templates,
+    sinon ils impliqueraient un encodage spécifique qu'on n'a pas les
+    moyens de spécifier.
+
+  Patches
+
+    Il est presque irrémédiable de patcher CMF d'une manière ou d'une
+    autre. Il faut dans la mesure du possible isoler chacun des patches
+    dans un module spécifique importé par *__init__.py*.
+
+    On fera tout notre possible pour intégrer ces patches à la version
+    CVS de CMF.
+
+    Quelques patches envisagés :
+
+    - Comme dans CPS 2.0, un patch pour la création d'espace privé
+      (qu'il soit d'un type défini par nous, éventuellement pre-loaded).
+
+    - Un patch semble nécessaire pour le TypesTool afin de pouvoir
+      ajouter des propriétés à un portal_type ("allow discussion" en est
+      un exemple et il est d'ailleurs anormal que ce soit une propriété
+      codée en dur) mais aussi ajouter des propriétés aux actions (une
+      image associée, d'éventuelle propriétés "onclick" pour le rendu
+      HTML, etc.).
