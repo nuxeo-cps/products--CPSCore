@@ -59,6 +59,16 @@ class DummyUrlTool(Folder):
         path = ob.getPhysicalPath()
         return '/'.join(path[pplen:])
 
+class DummyMembershipTool(SimpleItem):
+    def getAuthenticatedMember(self):
+        return DummyMember().__of__(self)
+    def getAllowedRolesAndUsersOfUser(self, user):
+        return ['Anonymous', 'group:role:Anonymous', 'user:dummy']
+
+class DummyMember(SimpleItem):
+    def getUser(self):
+        return self
+
 
 def flatkeys(tree, key='rpath'):
     rpath = tree[key]
@@ -162,6 +172,7 @@ class TreeCacheTest(SecurityRequestTest):
         cmf = app.cmf # Wrap
 
         cmf.portal_url = DummyUrlTool()
+        cmf.portal_membership = DummyMembershipTool()
 
         cache = self.makeOne()
         cmf.cache = cache
@@ -180,51 +191,57 @@ class TreeCacheTest(SecurityRequestTest):
 
         # Add root first
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
-        tree = cache.getTree()
-        self.assertEquals(tree, {
-            'url': 'cmf/root/foo',
-            'portal_type': 'ThePortalType',
+        l = cache.getList(filter=0)
+        self.assertEquals(l, [{
             'allowed_roles_and_users': ['Manager'],
-            'id': 'foo',
             'depth': 0,
-            'path': '/cmf/root/foo',
+            'id': 'foo',
             'local_roles': {},
-            'children': [],
+            'nb_children': 0,
+            'path': '/cmf/root/foo',
+            'portal_type': 'ThePortalType',
             'rpath': 'root/foo',
             'title': 'Foo',
-            })
-        self.assertEquals(flatkeys(tree), 'root/foo')
+            'url': 'cmf/root/foo',
+            'visible': 0,
+            }])
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo'])
 
         # Add first child
         cmf.root.foo.bar = DummyObject('/cmf/root/foo/bar', title='Bar')
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
-        tree = cache.getTree()
-        self.assertEquals(flatkeys(tree), ('root/foo', ('root/foo/bar',)))
-        self.assertEquals(flatkeys(tree, key='title'),
-                          ('Foo', ('Bar',)))
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar'])
+        self.assertEquals([d['depth'] for d in l],
+                          [0, 1])
+        self.assertEquals([d['title'] for d in l],
+                          ['Foo', 'Bar'])
 
         # Add another
         cmf.root.foo.baz = DummyObject('/cmf/root/foo/baz', title='Baz')
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
-        tree = cache.getTree()
-        self.assertEquals(flatkeys(tree),
-                          ('root/foo', ('root/foo/bar', 'root/foo/baz')))
-        self.assertEquals(flatkeys(tree, key='title'),
-                          ('Foo', ('Bar', 'Baz')))
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar', 'root/foo/baz'])
+        self.assertEquals([d['depth'] for d in l],
+                          [0, 1, 1])
+        self.assertEquals([d['title'] for d in l],
+                          ['Foo', 'Bar', 'Baz'])
 
         # Check re-add existing one
         cmf.root.foo.bar = DummyObject('/cmf/root/foo/bar', title='NewBar')
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
-        tree = cache.getTree()
-        self.assertEquals(flatkeys(tree),
-                          ('root/foo', ('root/foo/bar', 'root/foo/baz')))
-        #self.assertEquals(flatkeys(tree, key='title'), XXX
-        #                  ('Foo', ('NewBar', 'Baz')))  XXX
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar', 'root/foo/baz'])
+        self.assertEquals([d['depth'] for d in l],
+                          [0, 1, 1])
+        #self.assertEquals([d['title'] for d in l],  # XXX
+        #                  ['Foo', 'NewBar', 'Baz']) # XXX
 
     def _test_rebuild(self):
-        pass
-
-    def _test_getTree(self):
         pass
 
     def _test_getList(self):
