@@ -40,12 +40,14 @@ import string
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl.PermissionRole import rolesForPermissionOn
 from Products.CMFCore import utils
+from Products.CMFCore.CMFCorePermissions import AccessInactivePortalContent
 from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
      CatalogTool
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 from DateTime.DateTime import DateTime
 from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 from random import randrange
+from Products.ZCatalog.ZCatalog import ZCatalog
 
 LOG('CPSCore.utils', TRACE, 'Patching CMF local role support')
 
@@ -191,8 +193,47 @@ def _listAllowedRolesAndUsers(self, user):
     return _getAllowedRolesAndUsers(user)
 CatalogTool._listAllowedRolesAndUsers = _listAllowedRolesAndUsers
 
+LOG('CPSCore.utils', TRACE, 'Patching CMF CatalogTool.searchResults')
+def searchResults(self, REQUEST=None, **kw):
+    """
+    Calls ZCatalog.searchResults with extra arguments that
+    limit the results to what the user is allowed to see.
+    """
+    user = utils._getAuthenticatedUser(self)
+    kw[ 'allowedRolesAndUsers' ] = self._listAllowedRolesAndUsers( user )
+    
+    if not utils._checkPermission( AccessInactivePortalContent, self ):
+        base = aq_base( self )
+        now = DateTime()
+        usage = kw.get('effective_usage', 'range:min')
+        eff = kw.get('effective', '')
+        if hasattr( base, 'addIndex' ):   # Zope 2.4 and above
+            if eff:
+                eff = DateTime(eff)
+                if usage == 'range:max':
+                    kw[ 'effective' ] = { 'query' : min(eff, now), 'range' : 'max' }
+                else:
+                    kw[ 'effective' ] = { 'query' : (eff, now), 'range' : 'min:max' }
+            else:
+                kw[ 'effective' ] = { 'query' : now, 'range' : 'max' }
+            kw[ 'expires' ] = { 'query' : now, 'range' : 'min' }
+        else:                          # Zope 2.3
+            if eff:
+                if usage == 'range:max':
+                    kw[ 'effective' ] = min(eff, now)
+                    kw[ 'effective_usage'] = 'range:max'
+                else:
+                    kw[ 'effective' ] = (eff, now)
+                    kw[ 'effective_usage' ] = 'range:min:max'
+            else:
+                kw[ 'effective' ] = now
+                kw[ 'effective_usage'] = 'range:max'
+            kw[ 'expires' ] = now
+            kw[ 'expires_usage'  ] = 'range:min'
+    return apply(ZCatalog.searchResults, (self, REQUEST), kw)
+CatalogTool.searchResults = searchResults
+CatalogTool.__call__ = searchResults
 
-LOG('CPSCore.utils', TRACE, 'Patching CMF Catalog IndexableObjectWrapper')
 def __cps_wrapper_getattr__(self, name):
     """This is the indexable wrapper getter for CPS,
     proxy try to get the repository document attributes,
