@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Make sure the home folder is never acquired.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
