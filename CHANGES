@@ -3,11 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
-- Improved TreesTool with much better speed and memory behavior.
+-
 Bug fixes:
 ~~~~~~~~~~
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Use CMFCore.permissions instead of CMFCore.CMFCorePermissions
-- LOG patches at a lower level.
+-
