@@ -499,7 +499,7 @@ class CPSMembershipTool(MembershipTool):
                       delete_localroles=0, check_permission=1):
         """Delete members specified by member_ids.
 
-        XXX does not implement local roles deletion.
+        XXX does not call local roles deletion by default.
         """
 
         # Delete members in acl_users.
