@@ -3,7 +3,12 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- merging ben-i18n-branch:
+  - new PatchCatalogTool: IndexableObjectWrapper and catalog_object rewrite
+  - refactoring ProxyTool.getBestRevision()
+  - new ProxyBase intermediate objects: LanguageViewer and LanguageSwitcher
+  - new ProxyBase methodes: getL10nTitles, getL10nDescriptions
+  - see doc/i18n-changes-from-CPSCore-3_18_0.txt for more info
 Bug fixes:
 ~~~~~~~~~~
 -
