@@ -30,7 +30,7 @@ import EventServicePatches
 import LoggerTool
 import MirrorTool
 import ProxyTool
-import ObjectRepository
+import ObjectRepositoryTool
 import CPSWorkflowTool
 from CPSWorkflowConfiguration import CPSWorkflowConfiguration
 from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
@@ -50,7 +50,7 @@ tools = (
     MirrorTool.MirrorTool,
     ElementsTool.ElementsTool,
     ProxyTool.ProxyTool,
-    ObjectRepository.ObjectRepository,
+    ObjectRepositoryTool.ObjectRepositoryTool,
     CPSWorkflowTool.CPSWorkflowTool,
 )
 

@@ -40,7 +40,7 @@ class Dummy(SimpleItem):
         return self._data
 
 
-class ObjectRepositoryTests(SecurityRequestTest):
+class ObjectRepositoryToolTests(SecurityRequestTest):
     """Test object repository ."""
 
     def setUp(self):
@@ -50,8 +50,8 @@ class ObjectRepositoryTests(SecurityRequestTest):
         self.root.id = 'root'
         root = self.root
 
-        from Products.NuxCPS3.ObjectRepository import ObjectRepository
-        ortool = ObjectRepository()
+        from Products.NuxCPS3.ObjectRepositoryTool import ObjectRepositoryTool
+        ortool = ObjectRepositoryTool()
         root._setObject('portal_repository', ortool)
 
 
@@ -147,7 +147,7 @@ class ObjectRepositoryTests(SecurityRequestTest):
 
 def test_suite():
     loader = unittest.TestLoader()
-    return loader.loadTestsFromTestCase(ObjectRepositoryTests)
+    return loader.loadTestsFromTestCase(ObjectRepositoryToolTests)
 
 if __name__ == '__main__':
     unittest.TextTestRunner().run(test_suite())

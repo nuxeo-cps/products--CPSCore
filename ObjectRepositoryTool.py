@@ -87,7 +87,7 @@ def set_local_roles_with_groups(ob, lroles):
 
 
 # XXX we'll want a btreefolder2 here, not a folder
-class ObjectRepository(UniqueObject, PortalFolder):
+class ObjectRepositoryTool(UniqueObject, PortalFolder):
     """An object repository stores objects that can be
     available in several versions.
 
@@ -329,7 +329,7 @@ class ObjectRepository(UniqueObject, PortalFolder):
             repoid, version_info = id.split('__')
             version_info = int(version_info)
         except ValueError:
-            LOG('ObjectRepository', ERROR, 'Cannot split id %s' % id)
+            LOG('ObjectRepositoryTool', ERROR, 'Cannot split id %s' % id)
             return (None, None)
         return (repoid, version_info)
 
@@ -426,12 +426,12 @@ class ObjectRepository(UniqueObject, PortalFolder):
         RESPONSE.redirect(ob.absolute_url()+'/manage_workspace')
 
 
-InitializeClass(ObjectRepository)
+InitializeClass(ObjectRepositoryTool)
 
 
 # Create a workflow configuration object that denies any workflow
-setattr(ObjectRepository, CPSWorkflowConfig_id,
+setattr(ObjectRepositoryTool, CPSWorkflowConfig_id,
         NoWorkflowConfiguration())
 # security.declarePrivate(...)
-setattr(ObjectRepository, CPSWorkflowConfig_id+'__roles__', ())
+setattr(ObjectRepositoryTool, CPSWorkflowConfig_id+'__roles__', ())
 
