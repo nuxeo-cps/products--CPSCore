@@ -70,6 +70,13 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
                 dckw[p] = kw[p]
         DefaultDublinCoreImpl.__init__(self, **dckw)
 
+    security.declareProtected(ModifyPortalContent, 'edit')
+    def edit(self, **kw):
+        """Edit the document."""
+        self.manage_changeProperties(**kw)
+        self.reindexObject()
+        # XXX notify event of modify
+
     security.declareProtected(View, 'SearchableText')
     def SearchableText(self):
         """The searchable text for this object.
