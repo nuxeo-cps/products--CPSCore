@@ -430,7 +430,7 @@ class TreeCache(SimpleItemWithProperties):
             else:
                 portal = getToolByName(self, 'portal_url').getPortalObject()
                 portalpath = '/'.join(portal.getPhysicalPath())
-                rpath = path[len(portalpath):]
+                rpath = path[len(portalpath)+1:]
         return self._copy_tree_from(self._tree, rpath=rpath)
 
     security.declareProtected(View, 'getList')
