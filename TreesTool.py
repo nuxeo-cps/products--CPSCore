@@ -126,8 +126,8 @@ class TreeCache(SimpleItemWithProperties):
         self._setId(id)
         self._clear()
 
-    def _new_tree(self, d={}):
-        return PersistentMapping(d)
+    def _new_tree(self, d=None):
+        return PersistentMapping(d or {})
 
     def _clear(self):
         self._tree = self._new_tree() # The full tree.
