@@ -12,4 +12,4 @@ Bug fixes:
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Refactoring : split mergedLocalRoles / mergedLocalRolesWithPath
