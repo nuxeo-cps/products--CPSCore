@@ -22,6 +22,7 @@ from zLOG import LOG, INFO
 from Acquisition import aq_base
 from Products.CMFCore import utils
 from Products.CMFCore.DirectoryView import registerDirectory
+from Products.CMFCore.CMFCorePermissions import AddPortalContent
 
 import ElementsTool
 import EventServiceTool
@@ -31,7 +32,12 @@ import MirrorTool
 import ProxyTool
 import ObjectRepository
 import CPSWorkflowTool
-from WorkflowConfiguration import WorkflowConfiguration, addWorkflowConfiguration
+from WorkflowConfiguration import WorkflowConfiguration
+from WorkflowConfiguration import addWorkflowConfiguration
+
+import CPSFolder
+import CPSDummyDocument
+
 
 # register CPSWorkflow
 import CPSWorkflow
@@ -47,11 +53,23 @@ tools = (
     CPSWorkflowTool.CPSWorkflowTool,
 )
 
+contentClasses = (CPSFolder.CPSFolder,
+                  CPSDummyDocument.CPSDummyDocument,
+                  )
+
+contentConstructors = (CPSFolder.addCPSFolder,
+                       CPSDummyDocument.addCPSDummyDocument,
+                       )
+
+fti = (CPSFolder.factory_type_information +
+       CPSDummyDocument.factory_type_information +
+       ())
+
 registerDirectory('skins', globals())
 
 def initialize(registrar):
     utils.ToolInit(
-        'CPS 3 Tools',
+        'CPS Tools',
         tools = tools,
         product_name = 'NuxCPS3',
         icon = 'tool.gif',
@@ -84,3 +102,11 @@ def initialize(registrar):
         constructors=(addWorkflowConfiguration,)
     )
 
+    # CPS Content and Folder objects
+    utils.ContentInit(
+        'CPS Default Documents',
+        content_types = contentClasses,
+        permission = AddPortalContent,
+        extra_constructors = contentConstructors,
+        fti = fti,
+        ).initialize(registrar)
