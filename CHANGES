@@ -28,3 +28,5 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - WorkflowException from CMFCore.WorkflowCore is available from restricted code
+- moving constants like switchLanguage or downloadFile into utils and make
+  them available from restricted code
