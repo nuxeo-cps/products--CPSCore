@@ -56,6 +56,12 @@ class Dummy(SimpleItem):
     def reindexObjectSecurity(self):
         pass
 
+    def _reindexObject(self, idxs=[]):
+        pass
+
+    def _reindexObjectSecurity(self):
+        pass
+
 class DummyTypeInfo(Dummy):
     pass
 
