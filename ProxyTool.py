@@ -197,13 +197,22 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         dest_proxy.proxyChanged()
 
     security.declarePrivate('listProxies')
-    def listProxies(self):
+    def listProxies(self, docid=None):
         """List all proxies.
 
-        Returns a sequence of (rpath, language_revs).
-        NOTE that the version_infos mapping should not be mutated!
+        If docid is not None, keep only those docids.
+
+        Returns a sequence of (rpath, (docid, language_revs)).
+        NOTE that the language_revs mapping should not be mutated!
         """
-        all = list(self._rpath_to_infos.items())
+        if docid is None:
+            all = list(self._rpath_to_infos.items())
+        else:
+            all = []
+            for item in self._rpath_to_infos.items():
+                rpath, (did, language_revs) = item
+                if did == docid:
+                    all.append(item)
         all.sort() # Sort by rpath.
         return all
 

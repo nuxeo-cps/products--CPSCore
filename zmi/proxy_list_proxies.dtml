@@ -1,23 +1,40 @@
 <dtml-var manage_page_header>
 <dtml-var manage_tabs>
 
-<dtml-let allitems=listProxies
+<dtml-let docid="REQUEST.get('docid') or None"
+          qdocid="docid or ''"
+          allitems="listProxies(docid=docid)"
           ppath="portal_url.getPortalPath()">
 
+<dtml-if docid>
+<p class="form-text">
+  There are <dtml-var allitems fmt=collection-length thousands_commas> proxies pointing to docid &dtml-docid;.
+</p>
+<dtml-else>
 <p class="form-text">
   The ProxyTool contains <dtml-var allitems fmt=collection-length thousands_commas> proxies.
 </p>
+</dtml-if>
+
+<form action="&dtml-URL0;">
+<p class="form-text">
+  Show only the docid
+  <input class="form-element" type="text" name="docid" value=""
+    size="10" />
+  <input class="form-element" type="submit" value="Show" />
+</p>
+</form>
 
 <div class="form-text">
   <dtml-in allitems previous size=20 start=query_start>
-    <a href="&dtml-URL;?query_start=&dtml-previous-sequence-start-number;">
+    <a href="&dtml-URL;?docid=&dtml-qdocid;&amp;query_start=&dtml-previous-sequence-start-number;">
       [Previous &dtml-previous-sequence-size; entries]
     </a>
   </dtml-in>
   &nbsp;
   &nbsp;
   <dtml-in allitems next size=20 start=query_start>
-    <a href="&dtml-URL;?query_start=&dtml-next-sequence-start-number;">
+    <a href="&dtml-URL;?docid=&dtml-qdocid;&amp;query_start=&dtml-next-sequence-start-number;">
       [Next &dtml-next-sequence-size; entries]
     </a>
   </dtml-in>
