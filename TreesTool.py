@@ -225,11 +225,15 @@ class TreeCache(SimpleItemWithProperties):
             children = self._get_children(container, depth+1, plen)
             tree['children'] = children
             rebuild = 1
-        else: # event_type in ('sys_modify_security', 'modify_object')
-            # XXX If modifying security, we want to recompute the whole
-            #     subtree because of allowed_roles_and_users and because
-            #     user info may depend on merged roles.
-            #     See DICOD.
+        elif event_type == 'sys_modify_security':
+            # This event has to do recursion
+            tree = self._find_tree(object)
+            if tree is None:
+                return
+            new_tree = self._get_tree(object, tree['depth'])
+            tree.update(new_tree) # Will update all fields.
+            rebuild = 1
+        else: # event_type == 'modify_object'
             tree = self._find_tree(object)
             if tree is None:
                 return
