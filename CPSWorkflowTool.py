@@ -280,12 +280,15 @@ class CPSWorkflowTool(WorkflowTool):
                       initial_transition, initial_behavior,
                       language=None, type_name=None, old_ob=None,
                       language_map=None,
-                      kwargs={}):
+                      kwargs=None):
         """Create an object in a container, according to initial behavior."""
         LOG('_createObject', DEBUG, 'Called with container=%s id=%s '
             'initial_transition=%s' % (container.getId(), id,
                                        initial_transition))
         pxtool = getToolByName(self, 'portal_proxies')
+
+        if kwargs is None:
+            kwargs = {}
 
         # Check that the workflow of the container allows sub behavior.
         subbehavior = {
