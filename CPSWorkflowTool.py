@@ -380,6 +380,7 @@ class CPSWorkflowTool(WorkflowTool):
             reindex = 1
         if reindex:
             self._reindexWorkflowVariables(ob)
+            # XXX this should be done in reindexObject really...
             evtool = getEventService(self)
             evtool.notify('sys_modify_object', ob, {})
 
