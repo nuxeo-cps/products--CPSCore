@@ -6,7 +6,7 @@ New features:
 - Initial packaging of CPSCore 3.x
 Bug fixes:
 ~~~~~~~~~~
--
+- Correct copy+paste code, proxies are now correctly unshared after paste.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - 
