@@ -208,12 +208,37 @@ def __cps_wrapper_getattr__(self, name):
         'modified', 'uid', 'container_path'):
         proxy = ob
         ob = ob.getContent()
-        if ob is None:
-            raise AttributeError
+        ## The following seems problematic with Zope 2.7.1 and higher
+        ## I haven't been able to know if it was related to TextIndexNG2
+        ## or not (see comments below). I think it is not, and might be related
+        ## to recent Zope's more tight security checks resulting in None objects
+        ## being returned sometimes. A post on zope-dev has explained this a bit,
+        ## but no definitive explanation has yet been given.
+        ## This seems harmless in most cases, as it has not been changed in 2.7.2.
+        ## Main problems have been reported by CNCC : leaving these two lines
+        ## make their main installer unusable : it fails installing a site
+        ## by crashing on an AttributeError. Commenting the lines have been
+        ## a temporary workaround which seems to work.
+        #if ob is None:
+        #    raise AttributeError
     elif 'portal_repository' in ob.getPhysicalPath():
         if name in ('SearchableText', 'Title'):
             raise AttributeError
-    ret = getattr(ob, name)
+    try:
+        ## This try/except have been added to make Unilog's projects work
+        ## fine with TextIndexNG2
+        ## This index tries to acces directly to meta_type attribute at
+        ## object creation, and in CPSDocuments, a first indexation takes
+        ## place before the real object is created
+        ## returning None in this specific case is ok because the object
+        ## will always be reindexed correctly later on (according to fg).
+        ret = getattr(ob, name)
+    except AttributeError:
+        if name == 'meta_type':
+            return None
+        ## In all other cases, we reraise the exception to let the potential
+        ## problems be visible outside of this code.
+        raise
     if proxy is not None:
         if name == 'SearchableText':
             ret = ret() + ' ' + proxy.getId()  # so we can search on id
