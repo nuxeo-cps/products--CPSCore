@@ -3,7 +3,9 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Added a property in ProxyTool so that the portal default language is used
+  prior to the proxy default language if the latter doesn't have the current
+  language in its revisions; commented and redesigned around.
 Bug fixes:
 ~~~~~~~~~~
 -

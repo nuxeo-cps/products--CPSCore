@@ -64,6 +64,12 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     id = 'portal_proxies'
     meta_type = 'CPS Proxies Tool'
+    use_portal_default_lang = 0
+
+    _properties = SimpleItemWithProperties._properties + (
+        {'id': 'use_portal_default_lang', 'type': 'boolean', 'mode': 'w',
+         'label': "Use Localizer default prior to proxies default "\
+                  "when current lang not found"},)
 
     security = ClassSecurityInfo()
 
@@ -205,31 +211,43 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     def getBestRevision(self, proxy, lang=None):
         """Get the best language and revision for a proxy.
 
-        Returns lang, rev.
+        Returns lang, rev. A priority is made for the language :
+
+          - Use the 'lang' parameter;
+          - Use the portal default language (Asking Localizer for now);
+          - Use the proxy default language;
+          - Use the first language found in tricky situations (fallback).
         """
-        if lang is None:
+        # TODO Translation Service should be used instead
+        Localizer = getToolByName(self, 'Localizer')
+        if lang is None and Localizer is not None:
             # Find the user-preferred language.
-            portal = getToolByName(self, 'portal_url').getPortalObject()
-            if hasattr(portal, 'Localizer'):
-                lang = portal.Localizer.get_selected_language()
-            else:
-                lang = 'en'
+            lang = Localizer.get_selected_language()
+        else:
+            lang = 'en'
+        if self.isUsePortalDefaultLang() and Localizer is not None:
+            # Find the portal-preferred language.
+            default_lang = Localizer.get_default_language()
+        else:
+            default_lang = None
         default_language = proxy.getDefaultLanguage()
         language_revs = proxy._getLanguageRevisions()
-        if language_revs.has_key(lang):
-            # Ok.
-            pass
-        elif language_revs.has_key(default_language):
-            # Default language is available.
-            lang = default_language
-        else:
-            if not language_revs:
-                # Proxy construction not finished.
-                return None, None
-            # Find the first available language.
-            langs = language_revs.keys()
-            langs.sort()
-            lang = langs[0]
+        if not language_revs.has_key(lang):
+            if default_lang and language_revs.has_key(default_lang):
+                # First portal-preferred language
+                lang = default_lang
+            elif language_revs.has_key(default_language):
+                # Otherwise proxy original language
+                lang = default_language
+            else:
+                if not language_revs:
+                    # Proxy construction not finished.
+                    return None, None
+                # Find the first available language.
+                # This is a fallback as it should not happen using the API.
+                langs = language_revs.keys()
+                langs.sort()
+                lang = langs[0]
         return lang, language_revs[lang]
 
     security.declarePrivate('getContent')
@@ -800,6 +818,13 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     #
     # Management
     #
+
+    security.declareProtected(ManagePortal, 'isUsePortalDefaultLang')
+    def isUsePortalDefaultLang(self):
+        """Returns a boolean (0 to python < 2.3 or True) wether the property
+           'use_portal_default_lang' is checked.
+        """
+        return not not self.use_portal_default_lang
 
     security.declareProtected(ManagePortal, 'getRevisionsUsed')
     def getRevisionsUsed(self):
