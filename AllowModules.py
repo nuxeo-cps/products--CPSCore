@@ -37,6 +37,9 @@ ModuleSecurityInfo('urllib').declarePublic('urlencode')
 ModuleSecurityInfo('cgi').declarePublic('escape')
 ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG', 'INFO')
 ModuleSecurityInfo('AccessControl').declarePublic('Unauthorized')
+ModuleSecurityInfo('types').declarePublic('IntType', 'StringType',
+                                          'ListType', 'DictType',
+                                          'TupleType')
 
 ModuleSecurityInfo(
     'Products.CMFCore.WorkflowCore').declarePublic('WorkflowException')
