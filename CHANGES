@@ -3,7 +3,9 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Now the member area id can possibly be different than the member id and can be
+obtained through the function getHomeFolderId.
+
 Bug fixes:
 ~~~~~~~~~~
 -

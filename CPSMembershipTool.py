@@ -275,7 +275,7 @@ class CPSMembershipTool(MembershipTool):
         user_id = user.getId()
         if not member_id:
             member_id = user_id
-        member_area_id = self.computeId(member_id)
+        member_area_id = self.getHomeFolderId(member_id)
         if hasattr(aq_base(members), member_area_id):
             return None
         if member_id == user_id:
@@ -357,7 +357,7 @@ class CPSMembershipTool(MembershipTool):
         members = self.getMembersFolder()
         if members:
             try:
-                member_area_id = self.computeId(id)
+                member_area_id = self.getHomeFolderId(id)
                 folder = members._getOb(member_area_id)
                 if verifyPermission and not _checkPermission('View', folder):
                     # Don't return the folder if the user can't get to it.
@@ -367,8 +367,8 @@ class CPSMembershipTool(MembershipTool):
                 pass
         return None
 
-    security.declarePublic('computeId')
-    def computeId(self, id, max_chars_for_id=20):
+    security.declarePublic('getHomeFolderId')
+    def getHomeFolderId(self, id, max_chars_for_id=20):
         newid = id[:max_chars_for_id]
 
         # Normalize
