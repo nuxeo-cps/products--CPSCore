@@ -29,15 +29,17 @@ from AccessControl.SecurityManagement import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.User import nobody
 from AccessControl.User import UnrestrictedUser
-from Acquisition import aq_parent, aq_inner
+from Acquisition import aq_base, aq_parent, aq_inner
 from ZODB.POSException import ConflictError
 
 from Products.CMFCore.CMFCorePermissions import View, ManagePortal
 from Products.CMFCore.CMFCorePermissions import ListPortalMembers
+from AccessControl.Permissions import manage_users as ManageUsers
 from Products.CMFCore.ActionsTool import ActionInformation as AI
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.utils import _getAuthenticatedUser
 from Products.CMFDefault.MembershipTool import MembershipTool
 
 from Products.CPSCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
@@ -92,6 +94,10 @@ class CPSMembershipTool(MembershipTool):
     ]
 
     meta_type = 'CPS Membership Tool'
+
+    membersfolder_id = 'workspaces/members'
+    memberfolder_portal_type = 'Workspace'
+    memberfolder_roles = ('Owner', 'WorkspaceManager')
 
     security = ClassSecurityInfo()
 
@@ -197,49 +203,105 @@ class CPSMembershipTool(MembershipTool):
         if reindex:
             obj.reindexObjectSecurity()
 
-    security.declareProtected(ManagePortal, 'createMemberarea')
-    def createMemberarea(self, member_id):
-        """Create a member area."""
+    security.declareProtected(ManagePortal, 'setMembersFolderById')
+    def setMembersFolderById(self, id=''):
+        """Set the members folder object by its relative path."""
+        rpath = id.strip()
+        if rpath.startwith('/') or rpath.startswith('.'):
+            raise ValueError("Illegal relative path '%s'" % rpath)
+        self.membersfolder_id = rpath
 
-        aclu = self.acl_users
+    security.declarePublic('getMembersFolder')
+    def getMembersFolder(self):
+        """Get the members folder object.
+
+        Its location (portal-relative path) is stored in the variable
+        membersfolder_id.
+        """
         parent = aq_parent(aq_inner(self))
-        ws_root =  getattr(parent, WORKSPACES, None)
-        members =  getattr(ws_root, MEMBERS, None)
+        members = parent.unrestrictedTraverse(self.membersfolder_id,
+                                              default=None)
+        return members
 
-        user = aclu.getUser(member_id)
-        if user is not None:
-            user = user.__of__(aclu)
+    # Based on CVS 1.5 (HEAD) method.
+    security.declarePublic(ManagePortal, 'createMemberArea')
+    def createMemberArea(self, member_id=''):
+        """Create a member area for member_id or authenticated user.
 
-        if members is not None and user is not None:
-            # Setup a temporary security manager so that creation is not
-            # hampered by insufficient roles.
-            old_user = getSecurityManager().getUser()
-            # Use member_id so that the Owner role is set for it
-            tmp_user = CPSUnrestrictedUser(member_id, '',
-                                           ['Manager', 'Member'], '')
-            tmp_user = tmp_user.__of__(aclu)
-            newSecurityManager(None, tmp_user)
+        Called during login phase to create missing member areas.
+        """
 
-            members.invokeFactory('Workspace', member_id)
+        if not self.getMemberareaCreationFlag():
+            return None
+        members = self.getMembersFolder()
+        if not members:
+            return None
+        if self.isAnonymousUser():
+            return None
+        # Note: We can't use getAuthenticatedMember() and getMemberById()
+        # because they might be wrapped by MemberDataTool.
+        user = _getAuthenticatedUser(self)
+        user_id = user.getId()
+        if not member_id:
+            member_id = user_id
+        if hasattr(aq_base(members), member_id):
+            return None
+        if member_id == user_id:
+            member = user
+        else:
+            if _checkPermission(ManageUsers, self):
+                member = self.acl_users.getUserById(member_id, None)
+                if member:
+                    member = member.__of__(self.acl_users)
+                else:
+                    raise ValueError("Member %s does not exist" % member_id)
+            else:
+                return None
 
-            f = getattr(members, member_id)
-            # TODO set workspace properties ? title ..
-            portal_cpscalendar = getToolByName(self, 'portal_cpscalendar', None)
-            if portal_cpscalendar:
-                portal_cpscalendar.createMemberCalendar(member_id)
+        # Setup a temporary security manager so that creation is not
+        # hampered by insufficient roles.
 
-            # Grant ownership to Member
-            f.changeOwnership(user)
+        # Use member_id so that the Owner role is set for it.
+        tmp_user = CPSUnrestrictedUser(member_id, '',
+                                       ['Manager', 'Member'], '')
+        tmp_user = tmp_user.__of__(self.acl_users)
+        newSecurityManager(None, tmp_user)
 
-            f.manage_setLocalRoles(member_id, ['Owner', 'WorkspaceManager'])
-            f.reindexObjectSecurity()
+        # Create member area.
+        members.invokeFactory(self.memberfolder_portal_type, member_id)
+        f = getattr(members, member_id)
+        # TODO set workspace properties ? title ..
+        f.changeOwnership(member)
+        f.manage_setLocalRoles(member_id, list(self.memberfolder_roles))
+        f.reindexObjectSecurity()
 
-            # Rebuild the tree with corrected local roles.
-            # This needs a user that can View the object.
-            portal_eventservice = getToolByName(self, 'portal_eventservice')
-            portal_eventservice.notify('sys_modify_security', f, {})
+        # Rebuild the tree with corrected local roles.
+        # This needs a user that can View the object.
+        portal_eventservice = getToolByName(self, 'portal_eventservice')
+        portal_eventservice.notify('sys_modify_security', f, {})
 
-            newSecurityManager(None, old_user)
+        # Revert to original user.
+        newSecurityManager(None, user)
+
+        self._createMemberContent(member, member_id, f)
+
+    security.declarePublic('createMemberarea')
+    createMemberarea = createMemberArea
+
+    # Can be overloaded by subclasses.
+    def _createMemberContent(self, member, member_id, member_folder):
+        """Create the content of the member area."""
+        # Member is in fact a user object, it's not wrapped in the
+        # memberdata tool.
+        portal_cpscalendar = getToolByName(self, 'portal_cpscalendar', None)
+        if portal_cpscalendar:
+            portal_cpscalendar.createMemberCalendar(member_id)
+
+        # Create Member's initial content, skinnable.
+        if hasattr(self, 'createMemberContent'):
+            self.createMemberContent(member=member,
+                                     member_id=member_id,
+                                     member_folder=member_folder)
 
 
     security.declarePublic('getHomeFolder')
@@ -307,17 +369,6 @@ class CPSMembershipTool(MembershipTool):
         if mdtool:
             try:
                 u = mdtool.wrapUser(u)
-
-                if not hasattr(self, 'deleteMemberArea'):
-                    # CMF 1.4. Do member area creation here.
-                    # In CMF 1.5 it's done elsewhere.
-
-                    # Check for the member area creation flag and
-                    # take appropriate (non-) action
-                    if getattr(self, 'memberareaCreationFlag', 0) != 0:
-                        if self.getHomeUrl(u.getId()) is None:
-                            self.createMemberarea(u.getId())
-
             except ConflictError: # Bugfix
                 raise
             except:
