@@ -33,28 +33,28 @@ ftiprops_ids = [p['id'] for p in FTI._properties]
 
 if 'cps_is_searchable' not in ftiprops_ids:
     FTI._properties = FTI._properties + (
-        {'id':'cps_is_searchable', 'type': 'boolean', 'mode':'w',
-         'label':'CPS Searchable'},
+        {'id': 'cps_is_searchable', 'type': 'boolean', 'mode': 'w',
+         'label': 'CPS Searchable'},
         )
     FTI.cps_is_searchable = 0
 
 if 'cps_proxy_type' not in ftiprops_ids:
     FTI._properties = FTI._properties + (
-        {'id':'cps_proxy_type', 'type': 'selection', 'mode':'w',
-         'select_variable':'getProxyTypesAllowed', 'label':'CPS Proxytype'},
+        {'id': 'cps_proxy_type', 'type': 'selection', 'mode': 'w',
+         'select_variable': 'getProxyTypesAllowed', 'label': 'CPS Proxytype'},
         )
     FTI.cps_proxy_type = ''
 
 if 'cps_display_as_document_in_listing' not in ftiprops_ids:
     FTI._properties = FTI._properties + (
-        {'id':'cps_display_as_document_in_listing', 'type': 'boolean', 'mode':'w',
-         'label':'CPS Display as document in listing'},
+        {'id': 'cps_display_as_document_in_listing', 'type': 'boolean', 
+         'mode':'w', 'label': 'CPS Display as document in listing'},
         )
     FTI.cps_display_as_document_in_listing = 0
 
 
 def getProxyTypesAllowed(self):
-    """ return the list of allowed portal types strings """
+    """Return the list of allowed portal types strings"""
     return ['','document','folder','folderishdocument']
 
 FTI.getProxyTypesAllowed = getProxyTypesAllowed
