@@ -30,8 +30,8 @@ from Products.CMFCore.ActionsTool import ActionInformation as AI
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.utils import mergedLocalRoles
 from Products.CMFDefault.MembershipTool import MembershipTool
-from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
 from Products.NuxUserGroups.LocalRolesWithGroups import \
      manage_setLocalGroupRoles, manage_delLocalGroupRoles
 

@@ -20,6 +20,9 @@
 """
 
 import string
+# Reimport these to make the available from utils
+from Products.CPSCore import _getAllowedRolesAndUsers
+from Products.CPSCore import _allowedRolesAndUsers
 
 def _isinstance(ob, cls):
     try:

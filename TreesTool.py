@@ -31,10 +31,10 @@ from OFS.Folder import Folder
 
 from Products.CMFCore.CMFCorePermissions \
     import View, ManagePortal, ViewManagementScreens
-from Products.CMFCore.utils import SimpleItemWithProperties
-from Products.CMFCore.utils import UniqueObject, getToolByName
+from Products.CMFCore.utils \
+    import SimpleItemWithProperties, UniqueObject, getToolByName
 
-from Products.NuxUserGroups.CatalogToolWithGroups \
+from Products.CPSCore.utils \
     import _allowedRolesAndUsers, _getAllowedRolesAndUsers
 
 
@@ -454,6 +454,7 @@ class TreeCache(SimpleItemWithProperties):
             allowed_roles_and_users = _getAllowedRolesAndUsers(user)
         except TypeError: # XXXXX?? getUser() takes exactly 2 arguments (1 given)
             allowed_roles_and_users = ['Anonymous', 'group:role:Anonymous']
+        LOG('XXX', -199, str(allowed_roles_and_users))
         res = []
         for info in self._flat:
             # check filter

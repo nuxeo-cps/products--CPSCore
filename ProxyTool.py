@@ -36,8 +36,7 @@ from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
 from Products.CPSCore.utils import _isinstance
-
-from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
+from Products.CPSCore.utils import mergedLocalRoles
 from Products.CPSCore.ProxyBase import ProxyBase
 from Products.CPSCore.EventServiceTool import getEventService
 

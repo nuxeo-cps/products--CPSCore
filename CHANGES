@@ -3,7 +3,10 @@ ZODB Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- The group support API has been generalized to accomodate multiple group
+  support implementations. mergedLocalRoles() should now be imported from
+  Products.CMFCore.utils and _getAllowedRolesAndUsers() and
+  _allowedRolesAndUsers() should now be imported from Products.CPSCore.utils.
 Bug fixes:
 ~~~~~~~~~~
 - Correctly reindex the language after setting it on a newly created object.
