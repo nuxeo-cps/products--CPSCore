@@ -1,4 +1,22 @@
 *******************************************
+** CPSCore V3.12.1 [R1 build 2004/05/26-15:05 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Use traversal to access lastest revision in a given language. This uses a
+  virtual proxy; you still need to change the language using Localizer if you
+  want to edit/checkout/submit the document in a given language.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.12.0 [R1 build 2004/05/18-16:00 by ben]
 
 Requires:

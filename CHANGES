@@ -3,9 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
-- Use traversal to access lastest revision in a given language. This uses a
-  virtual proxy; you still need to change the language using Localizer if you
-  want to edit/checkout/submit the document in a given language.
+-
 Bug fixes:
 ~~~~~~~~~~
 -
