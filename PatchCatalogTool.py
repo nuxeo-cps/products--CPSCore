@@ -61,7 +61,7 @@ class IndexableObjectWrapper:
             if (self.__is_default_proxy and
                 name in ('getL10nTitles', 'getL10nDescriptions')) or (
                 name in ('getId', 'id', 'path', 'uid', 'modified',
-                         'getPhysicalPath', 'splitPath', 'Languages')):
+                         'getPhysicalPath', 'splitPath', 'getProxyLanguages')):
                 # we use the proxy
                 pass
             else:
@@ -147,7 +147,7 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
     proxy = None
     if _isinstance(object, ProxyBase):
         proxy = object
-        languages = proxy.Languages()
+        languages = proxy.getProxyLanguages()
     if proxy is None or len(languages) == 1 or \
            KEYWORD_VIEW_LANGUAGE in path:
         w = IndexableObjectWrapper(vars, object)
@@ -182,7 +182,7 @@ def cat_unindexObject(self, object):
     proxy = None
     if _isinstance(object, ProxyBase):
         proxy = object
-        languages = proxy.Languages()
+        languages = proxy.getProxyLanguages()
     if proxy is None or len(languages) == 1:
         self.uncatalog_object(default_uid)
     else:

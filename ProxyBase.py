@@ -456,11 +456,10 @@ class ProxyBase(Base):
         else:
             return ''
 
-    security.declarePublic('Languages')
-    def Languages(self):
+    security.declarePublic('getProxyLanguages')
+    def getProxyLanguages(self):
         """return all available languages."""
         return self._getLanguageRevisions().keys()
-
 
     #
     # Helper for I18n catalog
@@ -491,7 +490,7 @@ class ProxyBase(Base):
             title = self.getContent().Title()
             ret = self._getAllMCatalogTranslation(title)
         else:
-            for locale in self.Languages():
+            for locale in self.getProxyLanguages():
                 ob = self.getContent(lang=locale)
                 ret[locale] = ob.Title()
         return ret
@@ -504,7 +503,7 @@ class ProxyBase(Base):
         if self.use_mcat:
             desc = self.getContent().Description()
             ret = self._getAllMCatalogTranslation(desc)
-        for locale in self.Languages():
+        for locale in self.getProxyLanguages():
             ob = self.getContent(lang=locale)
             ret[locale] = ob.Description()
         return ret
@@ -1076,8 +1075,8 @@ class NotAProxy:
             lang = Localizer.get_default_language()
         return lang
 
-    security.declareProtected(View, 'Languages')
-    def Languages(self):
+    security.declareProtected(View, 'getProxyLanguages')
+    def getProxyLanguages(self):
         """return all available languages."""
         return [self.getLanguage()]
 
