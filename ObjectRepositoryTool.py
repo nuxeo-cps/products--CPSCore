@@ -39,7 +39,7 @@ from Products.DCWorkflow.utils import modifyRolesForPermission
 from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2
 from BTrees.OOBTree import OOBTree
 
-from Products.CPSWorkflow.CPSWorkflowTool import CPSWorkflowConfig_id
+from Products.CPSWorkflow.workflowtool import Config_id
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
 from Products.CPSCore.EventServiceTool import getEventService
 
@@ -627,8 +627,8 @@ InitializeClass(ObjectRepositoryTool)
 
 
 # Create a workflow configuration object that denies any workflow
-setattr(ObjectRepositoryTool, CPSWorkflowConfig_id,
+setattr(ObjectRepositoryTool, Config_id,
         NoWorkflowConfiguration())
 # security.declarePrivate(...)
-setattr(ObjectRepositoryTool, CPSWorkflowConfig_id+'__roles__', ())
+setattr(ObjectRepositoryTool, Config_id+'__roles__', ())
 

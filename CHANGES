@@ -14,3 +14,4 @@ New internal features:
 - More unit tests.
 - Workflows moved to CPSWorkflow. Still keeping the compatiblity for a while
 - Added BTreeFolder2 based proxy types for folder and folderish document
+- Use new CPSWorkflow naming

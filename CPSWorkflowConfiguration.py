@@ -17,16 +17,20 @@
 #
 # $Id$
 
-"""Backward compatibility;  see Products.CPSWorkflow.CPSWorkflowConfiguration
+"""Backward compatibility;  see Products.CPSWorkflow.configuration
 """
 
-from Products.CPSWorkflow.CPSWorkflowConfiguration import *
+from Products.CPSWorkflow.configuration import \
+     Configuration as CPSWorkflowConfiguration
+
+from Products.CPSWorkflow.configuration import \
+     addConfiguration as addCPSWorkflowConfiguration
 
 from warnings import warn
 
 warn( "The module, 'Products.CPSCore.CPSWorkflowConfiguration' "
       "is a deprecated "
-      "compatiblity alias for 'Products.CPSWorkflow.CPSWorkflowConfiguration';"
+      "compatiblity alias for 'Products.CPSWorkflow.configuration';"
       "please use "
       "the new module instead.", DeprecationWarning)
 

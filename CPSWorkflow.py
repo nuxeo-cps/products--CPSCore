@@ -18,15 +18,28 @@
 #
 # $Id$
 
-"""Backward compatibility;  see Products.CPSWorkflow.CPSWorkflow
+"""Backward compatibility;  see Products.CPSWorkflow.workflow
 """
 
-from Products.CPSWorkflow.CPSWorkflow import *
+from Products.CPSWorkflow.workflow import WorkflowDefinition as \
+     CPSWorkflowDefinition
+
+# Transition flags and state flags
+from Products.CPSWorkflow.states import *
+from Products.CPSWorkflow.transitions import *
+
+from Products.CPSWorkflow.transitions import TransitionDefinition as \
+     CPSTransitionDefinition
+from Products.CPSWorkflow.transitions import Transitions as \
+     CPSTransitions
+
+from Products.CPSWorkflow.states import States as CPSStates
+from Products.CPSWorkflow.states import StateDefinition as CPSStateDefinition
 
 from warnings import warn
 
 warn( "The module, 'Products.CPSCore.CPSWorkflow' "
       "is a deprecated "
-      "compatiblity alias for 'Products.CPSWorkflow.CPSWorkflow';"
+      "compatiblity alias for 'Products.CPSWorkflow.workflow';"
       "please use "
       "the new module instead.", DeprecationWarning)

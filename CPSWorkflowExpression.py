@@ -18,15 +18,15 @@
 #
 # $Id$
 
-"""Backward compatibility;  see Products.CPSWorkflow.CPSWorkflowExpression
+"""Backward compatibility;  see Products.CPSWorkflow.expression
 """
 
-from Products.CPSWorkflow.CPSWorkflowExpression import *
+from Products.CPSWorkflow.expression import *
 
 from warnings import warn
 
 warn( "The module, 'Products.CPSCore.CPSWorkflowExpression' "
       "is a deprecated "
-      "compatiblity alias for 'Products.CPSWorkflow.CPSWorkflowExpression';"
+      "compatiblity alias for 'Products.CPSWorkflow.expression';"
       "please use "
       "the new module instead.", DeprecationWarning)

@@ -18,10 +18,14 @@
 #
 # $Id$
 
-"""Backward compatibility;  see Products.CPSWorkflow.CPSWorkflowTransitions
+"""Backward compatibility;  see Products.CPSWorkflow.transitions
 """
 
-from Products.CPSWorkflow.CPSWorkflowTransitions import *
+from Products.CPSWorkflow.transitions import TransitionDefinition as \
+     CPSTransitionDefinition
+from Products.CPSWorkflow.transitions import Transitions as \
+     CPSTransitions
+
 
 from warnings import warn
 

@@ -18,15 +18,16 @@
 #
 # $Id$
 
-"""Backward compatibility;  see Products.CPSWorkflow.CPSWorkflowStacks
+"""Backward compatibility;  see Products.CPSWorkflow.basicstacks
 """
 
-from Products.CPSWorkflow.CPSWorkflowStacks import *
+from Products.CPSWorkflow.stack import *
+from Products.CPSWorkflow.basicstacks import *
 
 from warnings import warn
 
 warn( "The module, 'Products.CPSCore.CPSWorkflowStacks' "
       "is a deprecated "
-      "compatiblity alias for 'Products.CPSWorkflow.CPSWorkflowStacks';"
+      "compatiblity alias for 'Products.CPSWorkflow.basicstacks';"
       "please use "
       "the new module instead.", DeprecationWarning)

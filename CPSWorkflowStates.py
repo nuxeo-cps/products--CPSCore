@@ -18,15 +18,16 @@
 #
 # $Id$
 
-"""Backward compatibility;  see Products.CPSWorkflow.CPSWorkflowStates
+"""Backward compatibility;  see Products.CPSWorkflow.states
 """
 
-from Products.CPSWorkflow.CPSWorkflowStates import *
+from Products.CPSWorkflow.states import States as CPSStates
+from Products.CPSWorkflow.states import StateDefinition as CPSStateDefinition
 
 from warnings import warn
 
 warn( "The module, 'Products.CPSCore.CPSWorkflowStates' "
       "is a deprecated "
-      "compatiblity alias for 'Products.CPSWorkflow.CPSWorkflowStates';"
+      "compatiblity alias for 'Products.CPSWorkflow.states';"
       "please use "
       "the new module instead.", DeprecationWarning)
