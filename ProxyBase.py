@@ -22,6 +22,9 @@ from zLOG import LOG, ERROR, DEBUG, TRACE
 from ExtensionClass import Base
 from cPickle import Pickler, Unpickler
 from cStringIO import StringIO
+import os
+import tempfile
+from zipfile import ZipFile
 from struct import pack, unpack
 from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass, DTMLFile
@@ -50,7 +53,7 @@ from Products.CPSCore.CPSBase import CPSBaseDocument
 KEYWORD_DOWNLOAD_FILE = 'downloadFile'
 KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
 KEYWORD_ARCHIVED_LANGUAGE = 'switchLanguage'
-DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
+PROBLEMATIC_FILES_SUFFIXES = ('.sxw', '.sxc')
 
 
 class ProxyBase(Base):
@@ -652,12 +655,24 @@ class FileDownloader(Acquisition.Explicit):
         if file is not None:
             file_basename, file_suffix = os.path.splitext(self.filename)
             # This code is here to allow MSIE, and potentially other browsers,
-            # to retrieve some files as attachements, eg. without using its
+            # to retrieve some files as ZIP archives, eg. without using its
             # plugins since those plugins may fail in some circumstances.
             if (isUserAgentMsie(REQUEST) and
-                file_suffix in DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES):
+                file_suffix in PROBLEMATIC_FILES_SUFFIXES):
+                RESPONSE.setHeader('Content-Type', 'application/zip')
                 RESPONSE.setHeader('Content-disposition',
-                                   'attachment; filename=%s' % self.filename)
+                                   'attachment; filename=%s%s'
+                                   % (file_basename, '.zip'))
+                fd, archive_filepath = tempfile.mkstemp(suffix='.zip')
+                archive_file = ZipFile(archive_filepath, 'w')
+                archive_file.writestr(self.filename, str(file))
+                os.close(fd)
+                archive_file = open(archive_filepath, 'r')
+                out = archive_file.read()
+                archive_file.close()
+                os.unlink(archive_filepath)
+                return out
+
             return file.index_html(REQUEST, RESPONSE)
         else:
             RESPONSE.setHeader('Content-Type', 'text/plain')

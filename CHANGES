@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Return files with problematic file suffix as ZIP files (this is only triggered
+  for MSIE browsers and ".sxw", ".sxc" suffixes).
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
