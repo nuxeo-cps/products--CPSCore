@@ -91,16 +91,15 @@ class CPSWorkflowTool(WorkflowTool):
         """
         if not _checkPermission(AddPortalContent, container):
             raise Unauthorized
-        possible_transitions = self.getCreationTransitions(container,
-                                                           type_name)
+        allowed = self.getCreationTransitions(container, type_name)
         # Check that all requested transitions are available.
         for wf_id, transition in creation_transitions.items():
-            possible = possible_transitions.get(wf_id)
-            if possible is None:
+            transitions = allowed.get(wf_id)
+            if transitions is None:
                 # Non-CPS workflow.
                 raise WorkflowException(
                     "Workflow %s cannot have creation transitions" % (wf_id,))
-            if transition not in possible:
+            if transition not in transitions:
                 raise WorkflowException(
                     "Workflow %s cannot create %s using transition '%s'" %
                     (wf_id, type_name, transition))
@@ -109,7 +108,7 @@ class CPSWorkflowTool(WorkflowTool):
         # XXX should get new id effectively used! CMFCore bug!
         ob = container[id]
         # Do transitions for all workflows.
-        for wf_id, transitions in possible_transitions.items():
+        for wf_id, transitions in allowed.items():
             transition = creation_transitions.get(wf_id)
             if transition is None:
                 # use first default # XXX parametrize default ?
