@@ -170,7 +170,7 @@ class CPSWorkflowTool(WorkflowTool):
             "getInitialTransitions container=%s type_name=%s behavior=%s "
             % ('/'.join(container.getPhysicalPath()), type_name, behavior))
         d = {}
-        container_state = self.getInfoFor(container, 'state')
+        container_state = self.getInfoFor(container, 'state', '')
         for wf_id in self.getChainFor(type_name, container=container):
             wf = self.getWorkflowById(wf_id)
             if wf is None:
@@ -180,9 +180,10 @@ class CPSWorkflowTool(WorkflowTool):
                 # Not a CPS workflow.
                 continue
             for t in wf.getInitialTransitions(container, behavior):
-                if container_state == getattr(getattr(wf.transitions,
+                if container_state in (getattr(getattr(wf.transitions,
                                                       t),
-                                              'new_state_id'):
+                                              'new_state_id'),
+                                       ''):
                     d[t] = None
         transitions = d.keys()
         transitions.sort()
