@@ -45,6 +45,7 @@ from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 from DateTime.DateTime import DateTime
 from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
+from random import randrange
 
 LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
 
