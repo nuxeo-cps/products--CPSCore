@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.0.3 [R1 build 2003-09/15-15:05 by ben]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- P1 #131 Local roles management wasn't working for non manager roles.
+- P1 #156 Anonymous can view private document via portal_repository.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- add CPS Proxy Folderish Document by default in TreeTool
+*******************************************
 ** CPSCore V3.0.2 [R1 build 2003-09/09-16:01 by anguenot]
 
 ZODB Requires:

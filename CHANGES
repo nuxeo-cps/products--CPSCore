@@ -6,8 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- P1 #131 Local roles management wasn't working for non manager roles.
-- P1 #156 Anonymous can view private document via portal_repository.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- add CPS Proxy Folderish Document by default in TreeTool
+-
