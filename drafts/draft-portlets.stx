@@ -1,0 +1,141 @@
+Decor: dict
+
+    - id
+
+    - title
+
+    - slots: ('title', 'body')
+
+    - styles
+
+        - id
+
+        - title
+
+        - slots_features
+        
+            - 'title': ('HTMLTitle', 'Title')
+
+            - 'body': ('HTMLBody', )
+
+SlotRenderer
+
+    - getStyle()
+
+    - getFeatureForSlot(slot_id)
+
+    - getOrderIndex()
+
+    - __getitem__()
+
+CanvasDescription: dict
+
+    - id
+
+    - title
+
+    - template
+    
+    - templatesForDecors = dict <decor id> -> template
+
+    - configTemplate
+
+Boxes
+
+    - getStyle()
+
+    - getDecor()
+
+    - canHideInSubLevels()
+
+    - presentInSubLevels()
+
+    - isVisibleInBaseLevel()
+
+    - getFeatures()
+
+    - getBoxFeatureProvider()
+
+    - getProfile()
+
+BoxFeatureProvider
+
+    - getFeatureForId(feature_id)
+
+Example of a decor template::
+
+ <table cellspacing="0" cellpadding="0" width="100%" border="1"
+   tal:define="slotRenderer options/slotRenderer">
+   <tr tal:define="titleFeature python:slotRenderer.getFeatureForSlot('title')">
+     <td tal:condition="python:titleFeature == 'Title'"
+       tal:content="slotRenderer/Title">
+       Title
+     </td>
+     <td tal:condition="python:titleFeature == 'HTMLTitle'"
+       tal:content="structure slotRenderer/HTMLTitle">
+       HTMLTitle
+     </td>
+   </tr>
+   <tr tal:define="bodyFeature python:slotRenderer.getFeatureForSlot('body')">
+     <td tal:condition="python:bodyFeature == 'HTMLBody'"
+       tal:content="structure slotRenderer/HTMLBody">
+       HTMLBody
+     </td>
+     <td tal:condition="python:bodyFeature == 'ActionsList'">
+       <ul tal:define="actions slotRenderer/ActionsList">
+         <li tal:repeat="action actions">
+           <a tal:attributes="href action/url"
+             tal:content="action/title">
+             Action
+           </a>
+         </li>
+       </ul>
+     </td>
+   </tr>
+ </table>
+
+PortletsTool
+
+  - getCanvasStructure(container=None)
+
+  - __getitem__()
+
+  - notify_siteStructureChanged()
+
+    - AddObjectEvent
+
+    - RemoveObjectEvent
+
+  - notify_portletsChanged()
+
+    - PortletPropertiesChangedEvent
+
+  - synchronizeWithSiteStructure()
+
+  - setBoxVisibility(box_id, visibility, container=None)
+
+  - moveBoxInCanvas(box_id, before_box, container=None)
+
+Profiles: list of dicts
+
+  - id
+
+  - title
+
+  - allowedCanvases: ('canvas1', 'canvas2', ...)
+
+CanvasObject
+
+  - profile
+
+  - canvas_id
+
+Elements involved:
+
+  - PROFILE
+
+  - CANVAS_STRUCTURE
+
+  - CANVAS_ID
+
+  - CANVAS
