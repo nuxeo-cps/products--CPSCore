@@ -11,8 +11,11 @@ that prevents a user without ViewInactivePortalContent
 permission from being able to search by effective date
 (http://collector.zope.org/CMF/120)
 - deleteLocalGroupRoles(). Fix bug. role argument wasn't taken into consideration.
+- fix: NotAProxy.getRevision() return 'en' instead of 0
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Cleanup of details.
 - In FileDownloader added ".exe" as a problematic file suffix too.
 - deleteLocalRoles() supports a new argument : member_role. If specified *only* member_role will be removed from the member_id local roles. 
+- getLanguage for non proxy return the portal default language (if Localizer present)
+  instead of hard coded 'en' locale
