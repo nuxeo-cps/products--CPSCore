@@ -24,8 +24,6 @@ from Globals import InitializeClass
 from Globals import PersistentMapping
 from AccessControl import ClassSecurityInfo
 
-from OFS.Folder import Folder
-
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
@@ -33,7 +31,7 @@ from Products.CMFCore.utils import getToolByName
 from Products.NuxCPS3.ProxyBase import ProxyBase
 
 
-class ProxyTool(UniqueObject, Folder):
+class ProxyTool(UniqueObject, SimpleItemWithProperties):
     """A proxy tool manages relationships between proxy objects
     and the documents they point to.
 
@@ -52,6 +50,35 @@ class ProxyTool(UniqueObject, Folder):
     #
     # External API
     #
+
+    security.declarePrivate('createProxy')
+    def createProxy(self, proxy_type, container, type_name, id, *args, **kw):
+        """Create a new proxy to a new document.
+
+        Returns the created proxy object.
+        Does not insert the proxy into any workflow.
+        """
+        if proxy_type == 'folder':
+            proxy_type_name = 'CPS Proxy Folder'
+        else:
+            proxy_type_name = 'CPS Proxy Document'
+        # Create the document in the repository
+        repotool = getToolByName(self, 'portal_repository')
+        repoid, version_info = repotool.invokeFactory(type_name, repoid=None,
+                                                      version_info=None,
+                                                      *args, **kw)
+        # Create the proxy to that document
+        # The proxy is a normal CMF object except that we change its
+        # portal_type after construction.
+        version_infos = {'*': version_info}
+        container.invokeFactoryCMF(proxy_type_name, id,
+                                   repoid=repoid, version_infos=version_infos)
+        # XXX should get new id effectively used! CMFCore bug!
+        ob = container[id]
+        # Set the correct portal_type for the proxy
+        ob._setPortalTypeName(type_name)
+        ob.reindexObject(idxs=['portal_type', 'Type'])
+        return ob
 
     security.declarePrivate('listProxies')
     def listProxies(self):

@@ -16,7 +16,7 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Workflow extending DCWorklfow with proxy support and creation states.
+"""Workflow extending DCWorklfow with enhanced transitions.
 """
 
 from zLOG import LOG, ERROR, DEBUG
@@ -40,7 +40,7 @@ from Products.DCWorkflow.Transitions import TransitionDefinition as DCWFTransiti
 from Products.DCWorkflow.Transitions import Transitions as DCWFTransitions
 
 
-TRIGGER_CREATION = 50
+TRIGGER_CREATION = 10
 
 TRANSITION_BEHAVIOR_NORMAL = 0
 
@@ -83,6 +83,8 @@ class CPSTransitionDefinition(DCWFTransitionDefinition):
         if checkout_original_transition_id is not None:
             self.checkout_original_transition_id = checkout_original_transition_id
         # Now call original method.
+        if REQUEST is not None:
+            kw.update(REQUEST.form)
         prkw = {}
         for n in ('trigger_type', 'script_name', 'after_script_name',
                   'actbox_name', 'actbox_url', 'actbox_category',
@@ -108,16 +110,18 @@ class CPSTransitions(DCWFTransitions):
         if REQUEST is not None:
             return self.manage_main(REQUEST, 'Transition added.')
 
+    _manage_transitions = DTMLFile('zmi/workflow_transitions', globals())
+
 
 class CPSWorkflowDefinition(DCWorkflowDefinition):
-    """A Workflow implementation with proxy support.
+    """A Workflow implementation with enhanced transitions.
 
     Features:
-    - Creation transitions
-    - Extended transition description
+    - Extended transition description,
+    - Knowledge of proxies.
     """
 
-    meta_type = 'CPS Workflow'
+    meta_type = 'Workflow' # Otherwise rename & paste don't work...
     title = 'CPS Workflow Definition'
 
     security = ClassSecurityInfo()
@@ -145,6 +149,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
         Only does workflow insertion if called with a
         creation_transition.
+        The guard on the creation transition is evaluated in the
+        context of the container.
         """
         if creation_transition is None:
             return
@@ -162,8 +168,63 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             raise Unauthorized
         self._changeStateOf(ob, tdef)
 
+    security.declarePrivate('listObjectActions')
+    def listObjectActions(self, info):
+        """List the actions made available to the user through a UI.
+
+        Lists all transitions TRIGGER_USER_ACTION and ... XXX
+        """
+        ob = info.content
+        sdef = self._getWorkflowStateOf(ob)
+        if sdef is None:
+            return None
+        res = []
+        for tid in sdef.transitions:
+            tdef = self.transitions.get(tid, None)
+            if tdef is None:
+                continue
+            if tdef.trigger_type != TRIGGER_USER_ACTION:
+                continue
+            if not tdef.actbox_name:
+                continue
+            if self._checkTransitionGuard(tdef, ob):
+                res.append((tid, {
+                    'id': tid,
+                    'name': tdef.actbox_name % info,
+                    'url': tdef.actbox_url % info,
+                    'permissions': (),  # Predetermined.
+                    'category': tdef.actbox_category}))
+        res.sort()
+        return [val for id, val in res]
+
+
+    # XXX update this
+    from Products.DCWorkflow.utils import modifyRolesForPermission
+    security.declarePrivate('updateRoleMappingsFor')
+    def updateRoleMappingsFor(self, ob):
+        """Change the object permissions according to the current state.
+
+        Returns True if some change on an object was done.
+        """
+        changed = 0
+        sdef = self._getWorkflowStateOf(ob)
+        if sdef is not None and self.permissions:
+            for p in self.permissions:
+                roles = []
+                if sdef.permission_roles is not None:
+                    roles = sdef.permission_roles.get(p, roles)
+                if modifyRolesForPermission(ob, p, roles):
+                    changed = 1
+        return changed
+
+
+
     def _executeTransition(self, ob, tdef=None, kwargs=None):
-        """Put the object in a new state, following transition tdef."""
+        """Put the object in a new state, following transition tdef.
+
+        Can be called at creation, when there is no current workflow
+        state.
+        """
         sci = None
         econtext = None
         moved_exc = None
@@ -278,7 +339,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 continue
             res.append(tdef.getId())
         res.sort()
-        return tuple(res)
+        return res
 
 
 InitializeClass(CPSWorkflowDefinition)

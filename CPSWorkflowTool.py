@@ -27,6 +27,7 @@ from AccessControl import ClassSecurityInfo, Unauthorized
 
 from Products.CMFCore.utils import getToolByName, _checkPermission
 from Products.CMFCore.CMFCorePermissions import AddPortalContent
+from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
 
@@ -64,20 +65,18 @@ class CPSWorkflowTool(WorkflowTool):
     def getCreationTransitions(self, container, type_name):
         """Get the possible creation transitions in a container.
 
-        Returns a dict of {wf_id: sequence_of_transitions}.
-        The sequence is None for non-CPS workflows (meaning that
-        a default state will be used).
+        Returns a dict of {wf_id: [sequence of transitions]}.
+        Raises WorkflowException if a non-CPS workflow is encountered.
         """
         wf_ids = self.getChainFor(type_name, container=container)
         creation_transitions = {}
         for wf_id in wf_ids:
             wf = self.getWorkflowById(wf_id)
-            if hasattr(aq_base(wf), 'getCreationTransitions'):
-                transitions = wf.getCreationTransitions(container)
-            else:
-                # Not a CPS Workflow.
-                transitions = None
-            creation_transitions[wf.getId()] = transitions
+            if not hasattr(aq_base(wf), 'getCreationTransitions'):
+                raise WorkflowException('Workflow %s for %s is not '
+                                        'a CPS workflow.' % (type_name, wf_id))
+            transitions = wf.getCreationTransitions(container)
+            creation_transitions[wf_id] = transitions
         return creation_transitions
 
     security.declarePublic('invokeFactoryFor')
@@ -94,20 +93,30 @@ class CPSWorkflowTool(WorkflowTool):
         type_name has an action of id 'isproxytype' and whose value may
         be 'document' or 'folder'.
         """
-        if not _checkPermission(AddPortalContent, container):
+        if not _checkPermission(AddPortalContent, container): # XXX ?
             raise Unauthorized
+        # XXX Check that the wf of the container allows subobject creation
+        # Find the transitions to use.
         allowed = self.getCreationTransitions(container, type_name)
-        # Check that all requested transitions are available.
-        for wf_id, transition in creation_transitions.items():
-            transitions = allowed.get(wf_id)
-            if transitions is None:
-                # Non-CPS workflow.
-                raise WorkflowException(
-                    "Workflow %s cannot have creation transitions" % (wf_id,))
-            if transition not in transitions:
-                raise WorkflowException(
-                    "Workflow %s cannot create %s using transition '%s'" %
-                    (wf_id, type_name, transition))
+        LOG('invokeFactoryFor', DEBUG, 'allowed=%s' % (allowed,))
+        use_transitions = {}
+        for wf_id, transitions in allowed.items():
+            if not creation_transitions.has_key(wf_id):
+                if not transitions:
+                    raise WorkflowException(
+                        "Workflow %s does not allow creation of %s"
+                        % (wf_id, type_name))
+                # Use first default if nothing specified
+                # XXX parametrize this default ?
+                transition = transitions[0]
+            else:
+                transition = creation_transitions.get(wf_id)
+                if transition not in transitions:
+                    raise WorkflowException(
+                        "Workflow %s cannot create %s using transition %s"
+                        % (wf_id, type_name, transition))
+            use_transitions[wf_id] = transition
+        LOG('invokeFactoryFor', DEBUG, 'use_transitions=%s' % (use_transitions,))
         # Find out if we must create a normal document or a proxy.
         # XXX determine what's the best to parametrize this
         proxy_type = None
@@ -119,44 +128,20 @@ class CPSWorkflowTool(WorkflowTool):
             if proxy_type is not None:
                 break
         if proxy_type is not None:
-            # Use a proxy.
-            # Create the real document in the object repository
-            if proxy_type == 'folder':
-                proxy_type = 'CPS Proxy Folder'
-            else:
-                proxy_type = 'CPS Proxy Document'
-            repo = getToolByName(self, 'portal_repository')
-            repoid, version_info = repo.invokeFactory(type_name, repoid=None,
-                                                      version_info=None,
-                                                      *args, **kw)
-            # Create the proxy to that document
-            version_infos = {'*': version_info}
-            container.invokeFactoryCMF(proxy_type, id, repoid=repoid,
-                                       version_infos=version_infos)
-            ob = container[id]
-            # Set the correct portal_type for the proxy
-            ob._setPortalTypeName(type_name)
-            ob.reindexObject(idxs=['portal_type', 'Type'])
+            # Create a proxy and a document in the repository.
+            pxtool = getToolByName(self, 'portal_proxies')
+            ob = pxtool.createProxy(proxy_type, container, type_name, id,
+                                    *args, **kw)
         else:
-            # Use a normal document.
+            # Create a normal CMF document.
             # Note: this calls wf.notifyCreated()!
             container.invokeFactoryCMF(type_name, id, *args, **kw)
             # XXX should get new id effectively used! CMFCore bug!
             ob = container[id]
         # Do creation transitions for all workflows.
         reindex = 0
-        for wf_id, transitions in allowed.items():
-            transition = creation_transitions.get(wf_id)
-            if transition is None:
-                # Use first default.
-                # XXX parametrize default ?
-                if not transitions:
-                    raise WorkflowException(
-                        "Workflow %s does not allow creation" % (wf_id,))
-                transition = transitions[0]
+        for wf_id, transition in use_transitions.items():
             wf = self.getWorkflowById(wf_id)
-            if wf is None:
-                raise WorkflowException("%s is not a workflow id" % (wf_id,))
             wf.notifyCreated(ob, creation_transition=transition)
             reindex = 1
         if reindex:

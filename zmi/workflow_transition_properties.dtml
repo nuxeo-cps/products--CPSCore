@@ -50,8 +50,8 @@ Automatic
 <tr>
 <th></th>
 <td>
-<dtml-let checked="trigger_type==50 and 'checked' or ' '">
-<input type="radio" name="trigger_type" value="50" &dtml-checked; />
+<dtml-let checked="trigger_type==10 and 'checked' or ' '">
+<input type="radio" name="trigger_type" value="10" &dtml-checked; />
 Creation transition
 </dtml-let>
 </tr>
@@ -80,7 +80,7 @@ Initiated by WorkflowMethod
 <tr>
 <th align="left" valign="top">Transition behavior</th>
 <td>
-  <input type="radio" name="transition_behavior" value="0"
+  <input type="radio" name="transition_behavior:int" value="0"
       <dtml-if "transition_behavior == 0">checked</dtml-if> />
     Normal
 </td>
@@ -89,7 +89,7 @@ Initiated by WorkflowMethod
 <tr>
 <th></th>
 <td>
-  <input type="radio" name="transition_behavior" value="1"
+  <input type="radio" name="transition_behavior:int" value="1"
       <dtml-if "transition_behavior == 1">checked</dtml-if> />
     Clone,
     with allowed creation transitions

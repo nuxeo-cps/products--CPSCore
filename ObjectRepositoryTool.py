@@ -20,12 +20,15 @@
 from zLOG import LOG, ERROR, DEBUG
 import random
 from Globals import InitializeClass
+from Acquisition import aq_base
 from AccessControl import ClassSecurityInfo
 
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.PortalFolder import PortalFolder
+from Products.CMFCore.TypesTool import FactoryTypeInformation
+from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
 from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
 
@@ -71,16 +74,15 @@ class ObjectRepository(UniqueObject, PortalFolder):
     #
 
     security.declarePrivate('invokeFactory')
-    def invokeFactory(self, type_name, id=None,
+    def invokeFactory(self, type_name,
                       repoid=None, version_info=None,
                       *args, **kw):
         """Create an object with repoid and version in the repository.
 
         If repoid is None, a new one is generated
-        if version_info is None, 1 is used.
+        If version_info is None, 1 is used.
         Returns the used repoid and version.
         """
-        # Argument id is ignored, it's for compatibility with CMF.
         if version_info is None:
             version_info = 1
         if repoid is None:
@@ -94,9 +96,7 @@ class ObjectRepository(UniqueObject, PortalFolder):
             if hasattr(self, id):
                 raise ValueError('A document with repoid=%s and version=%s '
                                  'already exists' % (repoid, version_info))
-        ttool = getToolByName(self, 'portal_types')
-        ttool.constructContent(type_name, self, id, *args, **kw)
-        # XXX constructContent may in the future return a new id!
+        self.constructContent(type_name, id, *args, **kw)
         return (repoid, version_info)
 
     # XXX used for what?
@@ -174,13 +174,6 @@ class ObjectRepository(UniqueObject, PortalFolder):
         return version_infos
 
     #
-    # Forbid any workflow
-    #
-
-    # This done later by using setattr because the id is variable
-    #.cps_workflow_configuration = NoWorkflowConfiguration()
-
-    #
     # Misc
     #
 
@@ -199,6 +192,64 @@ class ObjectRepository(UniqueObject, PortalFolder):
             LOG('ObjectRepository', ERROR, 'Cannot split id %s' % id)
             return (None, None)
         return (repoid, version_info)
+
+    #
+    # Forbid any workflow
+    #
+
+    # This done later by using setattr because the id is variable
+    #.cps_workflow_configuration = NoWorkflowConfiguration()
+
+    #
+    # Misc: object creation without CMF security checks
+    #
+
+    def _constructInstance_fti(self, ti, id, *args, **kw):
+        if not ti.product or not ti.factory:
+            raise ValueError('Product factory for %s was undefined: %s.%s'
+                             % (ti.getId(), ti.product, ti.factory))
+        p = self.manage_addProduct[ti.product]
+        meth = getattr(p, ti.factory, None)
+        if meth is None:
+            raise ValueError('Product factory for %s was invalid: %s.%s'
+                             % (ti.getId(), ti.product, ti.factory))
+        if getattr(aq_base(meth), 'isDocTemp', 0):
+            newid = meth(meth.aq_parent, self.REQUEST, id=id, *args, **kw)
+        else:
+            newid = meth(id, *args, **kw)
+        newid = newid or id
+        return self._getOb(newid)
+
+    def _constructInstance_sti(self, ti, id, *args, **kw):
+        constr = self.restrictedTraverse(ti.constructor_path)
+        constr = aq_base(constr).__of__(self)
+        return constr(self, id, *args, **kw)
+
+    security.declarePrivate('constructContent')
+    def constructContent(self, type_name, id, *args, **kw):
+        """Construct an CMFish object without all the security checks.
+
+        Returns the object's id.
+        The object is constructed in the repository.
+        """
+        ttool = getToolByName(self, 'portal_types')
+        ti = ttool.getTypeInfo(type_name)
+        if ti is None:
+            raise ValueError('No type information for %s' % type_name)
+        if isinstance(ti, FactoryTypeInformation):
+            ob = self._constructInstance_fti(ti, id, *args, **kw)
+        elif isinstance(ti, ScriptableTypeInformation):
+            ob = self._constructInstance_sti(ti, id, *args, **kw)
+        else:
+            raise ValueError('Unknown type information class for %s' %
+                             type_name)
+        if ob.getId() != id:
+            # Sanity check
+            raise ValueError('Constructing %s, id changed from %s to %s' %
+                             (type_name, id, ob.getId()))
+        ob._setPortalTypeName(type_name)
+        ob.reindexObject(idxs=['portal_type', 'Type'])
+        return id
 
     #
     # ZMI
