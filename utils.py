@@ -31,21 +31,30 @@ from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
 
 LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
 
-def mergedLocalRoles(object, withgroups=0, withpath=0):
+def mergedLocalRoles(object, withgroups=0):
     #LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
     aclu = getattr(object, 'acl_users', None)
     if aclu is not None and hasattr(aclu, 'mergedLocalRoles'):
-        return aclu.mergedLocalRoles(object, withgroups, withpath)
+        return aclu.mergedLocalRoles(object, withgroups)
     return utils.old_mergedLocalRoles(object)
+
+def mergedLocalRolesWithPath(object, withgroups=0):
+    #LOG('CPSCore utils', DEBUG, 'mergedLocalRolesWithPath()')
+    aclu = getattr(object, 'acl_users', None)
+    if aclu is not None and hasattr(aclu, 'mergedLocalRolesWithPath'):
+        return aclu.mergedLocalRolesWithPath(object, withgroups)
+    else:
+        return {}
 
 if not hasattr(utils, 'old_mergedLocalRoles'):
     utils.old_mergedLocalRoles = utils._mergedLocalRoles
 utils.mergedLocalRoles = mergedLocalRoles
 utils._mergedLocalRoles = mergedLocalRoles
+utils.mergedLocalRolesWithPath = mergedLocalRolesWithPath
 
 def _allowedRolesAndUsers(ob):
     #LOG('CPSCore utils', DEBUG, '_allowedRolesAndUsers()')
-    
+
     aclu = getattr(ob, 'acl_users', None)
     if aclu is not None and hasattr(aclu, '_allowedRolesAndUsers'):
         return aclu._allowedRolesAndUsers(ob)
@@ -67,7 +76,7 @@ def allowedRolesAndUsers(self):
     Return a list of roles, users and groups with View permission.
     Used by PortalCatalog to filter out items you're not allowed to see.
     """
-    #LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
+    LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
     ob = self._IndexableObjectWrapper__ob # Eeek, manual name mangling
     return _allowedRolesAndUsers(ob)
 IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
@@ -126,4 +135,3 @@ def makeId(s, lower=0):
     if lower:
         id = id.lower()
     return id
-

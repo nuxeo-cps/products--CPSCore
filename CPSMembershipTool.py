@@ -34,7 +34,7 @@ from Products.CMFCore.ActionsTool import ActionInformation as AI
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
-from Products.CMFCore.utils import mergedLocalRoles
+from Products.CMFCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
 from Products.CMFDefault.MembershipTool import MembershipTool
 
 from zLOG import LOG, DEBUG
@@ -91,9 +91,14 @@ class CPSMembershipTool(MembershipTool):
     security = ClassSecurityInfo()
 
     security.declareProtected(View, 'getMergedLocalRoles')
-    def getMergedLocalRoles(self, object, withgroups=1, withpath=0):
+    def getMergedLocalRoles(self, object, withgroups=1):
         """Return aquisition roles"""
-        return mergedLocalRoles(object, withgroups, withpath)
+        return mergedLocalRoles(object, withgroups)
+
+    security.declareProtected(View, 'getMergedLocalRolesWithPath')
+    def getMergedLocalRolesWithPath(self, object, withgroups=1):
+        """Return aquisition roles with path"""
+        return mergedLocalRolesWithPath(object, withgroups)
 
     security.declareProtected(View, 'getCandidateLocalRoles')
     def getCPSCandidateLocalRoles(self, obj):
@@ -116,7 +121,6 @@ class CPSMembershipTool(MembershipTool):
         """ Set local roles on an item """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
-
         # XXX This code must change, it has knowledge of CPSDefault.
         if 'Manager' in my_roles or \
                'WorkspaceManager' in my_roles or \
