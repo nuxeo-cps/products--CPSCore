@@ -157,14 +157,14 @@ class CPSMembershipTool(MembershipTool):
             obj.reindexObjectSecurity()
 
     security.declareProtected(View, 'deleteLocalGroupRoles')
-    def deleteLocalGroupRoles(self, obj, ids, reindex=1):
+    def deleteLocalGroupRoles(self, obj, ids, role, reindex=1):
         """Delete local group roles for members member_ids."""
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
         if 'Manager' in my_roles or \
            'WorkspaceManager' in my_roles or \
            'SectionManager' in my_roles or \
-           role in my_roles:  # FIXME: role is not defined
+           role in my_roles:
             obj.manage_delLocalGroupRoles(ids)
         else:
             # Only remove the roles we have.
