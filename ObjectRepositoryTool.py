@@ -226,13 +226,10 @@ class ObjectRepositoryTool(UniqueObject,
 
     security.declarePrivate('listRevisions')
     def listRevisions(self, docid):
-        """List all the versions available for a given docid."""
-        did = docid
+        """List all the revisions available for a given docid."""
         revs = []
         for id in self.objectIds():
-            docid, rev = self._split_id(id)
-            if docid is None:
-                continue
+            did, rev = self._split_id(id)
             if did != docid:
                 continue
             revs.append(rev)
