@@ -20,7 +20,7 @@
 """
 
 from zLOG import LOG, ERROR, DEBUG
-from types import TupleType
+from types import TupleType, IntType
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass, PersistentMapping, DTMLFile
 from AccessControl import ClassSecurityInfo
@@ -47,6 +47,8 @@ TRANSITION_BEHAVIOR_NORMAL = 0
 TRANSITION_BEHAVIOR_SUBCREATE = 1
 TRANSITION_BEHAVIOR_CLONE = 2
 TRANSITION_BEHAVIOR_FREEZE = 3
+TRANSITION_BEHAVIOR_SUBDELETE = 4
+TRANSITION_BEHAVIOR_SUBCOPY = 5
 
 
 class CPSStateDefinition(DCWFStateDefinition):
@@ -85,8 +87,7 @@ class CPSTransitionDefinition(DCWFTransitionDefinition):
                       REQUEST=None, **kw):
         """Set the properties."""
         if transition_behavior is not None:
-            # XXX set as tuple
-            self.transition_behavior = transition_behavior
+            self.transition_behavior = tuple(transition_behavior)
         if clone_allowed_transitions is not None:
             self.clone_allowed_transitions = clone_allowed_transitions
         if checkout_original_transition_id is not None:
@@ -327,28 +328,39 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     # API
     #
 
-    security.declarePrivate('isCreationAllowedIn')
-    def isCreationAllowedIn(self, ob, get_details=0):
-        """Is the creation of subobjects allowed?"""
-        LOG('WF', DEBUG, 'isCreationAllowedIn wf=%s' % (self.getId(),))
+    def _hasTransitionBehaviors(self, ob, behaviors, get_details=0):
+        """Is some behaviors allowed ?
+
+        Tests that all the specified behaviors are allowed in a single
+        transition.
+        """
+        LOG('WF', DEBUG, '_hasTransitionBehavior ob=%s wf=%s beh=%s'
+            % (ob.getId(), self.getId(), behaviors))
         sdef = self._getWorkflowStateOf(ob)
         if sdef is None:
             if get_details:
                 return 0, 'no state'
             else:
                 return 0
+        if isinstance(behaviors, IntType):
+            behaviors = [behaviors]
         res = []
         for tid in sdef.transitions:
-            LOG('WF', DEBUG, 'Test transition %s' % tid)
+            LOG('WF', DEBUG, ' Test transition %s' % tid)
             tdef = self.transitions.get(tid, None)
             if tdef is None:
                 continue
+            transition_behavior = tdef.transition_behavior
             # XXX forward-compatibility
-            behavior = tdef.transition_behavior
-            if not isinstance(behavior, TupleType):
-                behavior = (behavior,)
-            if TRANSITION_BEHAVIOR_SUBCREATE not in behavior:
-                LOG('WF', DEBUG, '  Note a subcreate')
+            if not isinstance(transition_behavior, TupleType):
+                transition_behavior = (transition_behavior,)
+            ok = 1
+            for behavior in behaviors:
+                if behavior not in transition_behavior:
+                    LOG('WF', DEBUG, '  Not a %s' % (behavior,))
+                    ok = 0
+                    break
+            if not ok:
                 continue
             if not self._checkTransitionGuard(tdef, ob):
                 LOG('WF', DEBUG, '  Guard failed')
@@ -359,9 +371,15 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             else:
                 return 1
         if get_details:
-            return 0, 'state %s has no subcreate transition' % sdef.getId()
+            return 0, 'state %s has no %s behavior' % (sdef.getId(), behavior)
         else:
             return 0
+
+    security.declarePrivate('areBehaviorsAllowedIn')
+    def areBehaviorsAllowedIn(self, ob, behaviors, get_details=0):
+        """Are all these behaviors allowed ?"""
+        return self._hasTransitionBehaviors(ob, behaviors,
+                                            get_details=get_details)
 
     security.declarePrivate('getCreationTransitions')
     def getCreationTransitions(self, container):
