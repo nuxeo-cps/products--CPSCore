@@ -86,7 +86,7 @@ class TypeConstructor(Base):
             # Sanity check
             raise ValueError('Constructing %s, id changed from %s to %s' %
                              (type_name, id, ob.getId()))
-        if final_type_name is not None:
+        if final_type_name is None:
             final_type_name = type_name
         ob._setPortalTypeName(final_type_name)
         ob.reindexObject(idxs=['portal_type', 'Type'])
