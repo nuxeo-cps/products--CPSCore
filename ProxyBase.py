@@ -153,19 +153,30 @@ class ProxyBase(Base):
         if hubid is not None:
             pxtool.freezeProxy(hubid)
 
-    def __getitem__(self, name):
+    def __getattr__(self, name):
         """Transparent traversal of the proxy to the real subobjects."""
-        if hasattr(self, name):
-            raise KeyError, name
         ob = self._getContent()
         if ob is None:
-            raise KeyError, name
-        if hasattr(ob, name):
-            return getattr(ob, name)
-        try:
-            return ob[name]
-        except (KeyError, IndexError, TypeError, AttributeError):
-            raise KeyError, name
+            raise AttributeError, name
+        res = getattr(ob, name) # may raise AttributeError
+        if hasattr(res, '__of__'):
+            # XXX Maybe incorrect if complex wrapping.
+            res = aq_base(res).__of__(self)
+        return res
+
+##     def __getitem__(self, name):
+##         """Transparent traversal of the proxy to the real subobjects."""
+##         if hasattr(self, name):
+##             raise KeyError, name
+##         ob = self._getContent()
+##         if ob is None:
+##             raise KeyError, name
+##         if hasattr(ob, name):
+##             return getattr(ob, name)
+##         try:
+##             return ob[name]
+##         except (KeyError, IndexError, TypeError, AttributeError):
+##             raise KeyError, name
 
     #
     # Staging
