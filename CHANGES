@@ -8,6 +8,8 @@ Bug fixes:
 ~~~~~~~~~~
 - Security synthesis could give too much permissions to some revisions
   in complex multilingual settings.
+- Correctly deal with user folder's special features (groups) when computing
+  access rights in portal_trees.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Move files related to permissions around.
