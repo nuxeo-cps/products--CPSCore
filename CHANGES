@@ -4,13 +4,11 @@ ZODB Requires:
 
 New features:
 ~~~~~~~~~~~~~
-- Allow 'from cgi import escape' from restricted code.
+-
 
 Bug fixes:
 ~~~~~~~~~~
-- Fix portal_trees refresh on security changes.
-- Fix a Zope problem, where ConflictErrors are swallowed by
-  manage_beforeDelete.
+-
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~

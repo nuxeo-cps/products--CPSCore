@@ -1,4 +1,25 @@
 *******************************************
+** CPSCore V3.2.1 [R1 build 2003/11/06-11:52 by guillaum]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+
+New features:
+~~~~~~~~~~~~~
+- Allow 'from cgi import escape' from restricted code.
+
+Bug fixes:
+~~~~~~~~~~
+- Fix portal_trees refresh on security changes.
+- Fix a Zope problem, where ConflictErrors are swallowed by
+  manage_beforeDelete.
+
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.2.0 [R1 build 2003-10/31-17:35 by anguenot]
 
 ZODB Requires:
