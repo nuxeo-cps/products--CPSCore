@@ -18,7 +18,7 @@
 #
 # $Id$
 
-from zLOG import LOG, INFO, DEBUG
+from zLOG import LOG, DEBUG, TRACE
 
 #
 # Monkey patching starts here
@@ -31,7 +31,7 @@ import utils # To quickly force the patching of localroles.
 
 _actions = []
 UndoTool._actions = _actions
-LOG("CPSCore", INFO, "Patching CMFCore UndoTool : removing undo action")
+LOG("CPSCore", TRACE, "Patching CMFCore UndoTool : removing undo action")
 
 #
 # UndoToolPatch  monkey patching ends here
