@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Fix memberarea creation so that join is again possible.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
