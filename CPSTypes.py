@@ -33,6 +33,12 @@ from OFS.CopySupport import CopyError, _cb_decode, sanity_check
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
+from Products.CPSCore.cpsutils import _isinstance
+try:
+    from Products.CPSDocument.FlexibleTypeInformation import FlexibleTypeInformation
+except ImportError:
+    class FlexibleTypeInformation:
+        pass
 
 
 class TypeConstructor(Base):
@@ -92,6 +98,10 @@ class TypeConstructor(Base):
         constr = aq_base(constr).__of__(self)
         return constr(self, id, *args, **kw)
 
+    def _constructInstance_flexti(self, ti, id, *args, **kw):
+        container = self
+        return ti._constructInstance(container, id, *args, **kw)
+
     security.declarePrivate('constructContent')
     def constructContent(self, type_name, id, final_type_name=None,
                          *args, **kw):
@@ -105,20 +115,12 @@ class TypeConstructor(Base):
         ti = ttool.getTypeInfo(type_name)
         if ti is None:
             raise ValueError('No type information for %s' % type_name)
-        try:
-            isfti = isinstance(ti, FactoryTypeInformation)
-        except TypeError:
-            # In python 2.1 isinstance() raises TypeError
-            # instead of returning 0 for ExtensionClasses.
-            isfti = 0
-        try:
-            issti = isinstance(ti, ScriptableTypeInformation)
-        except TypeError:
-            issti = 0
-        if isfti:
+        if _isinstance(ti, FactoryTypeInformation):
             ob = self._constructInstance_fti(ti, id, *args, **kw)
-        elif issti:
+        elif _isinstance(ti, ScriptableTypeInformation):
             ob = self._constructInstance_sti(ti, id, *args, **kw)
+        elif _isinstance(ti, FlexibleTypeInformation):
+            ob = self._constructInstance_flexti(ti, id, *args, **kw)
         else:
             raise ValueError('Unknown type information class for %s' %
                              type_name)
