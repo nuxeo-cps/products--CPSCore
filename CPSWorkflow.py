@@ -38,8 +38,9 @@ from Products.CPSWorkflow.states import StateDefinition as CPSStateDefinition
 
 from warnings import warn
 
-warn( "The module, 'Products.CPSCore.CPSWorkflow' "
-      "is a deprecated "
-      "compatiblity alias for 'Products.CPSWorkflow.workflow';"
-      "please use "
-      "the new module instead.", DeprecationWarning)
+warn("The module, "
+     "'Products.CPSCore.CPSWorkflow' "
+     "is a deprecated compatiblity alias for "
+     "'Products.CPSWorkflow.workflow'; "
+     "please use the new module instead.",
+     DeprecationWarning)
