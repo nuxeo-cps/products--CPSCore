@@ -9,17 +9,19 @@ Proxies, document repository and workflows
 
   Vocabulary
 
-    I call "workspace" a place where documents are usually created and
-    worked on, and "section" a place where documents are put after
-    publication so that the site's anonymous or general users can see
-    them.
+    In our scenario, a workspace is a place where documents are
+    usually created and worked on, and a section is a place where
+    documents are submitted and then published so that the site's
+    anonymous or general users can see them.
 
   Internationalization
 
-    Site languages are managed through a Localizer instance at the root
-    of the portal, which must be named 'Localizer' . The default
-    language in Localizer will be the default language for the
-    documents.
+    Site languages are managed through a Localizer -- and later
+    TranslationService -- instance at the root of the portal, which
+    must be named 'Localizer'. If several languages are available when
+    displaying a document, the chosen one is first the active language
+    in Localizer is the chosen language for the documents if
+    available, or the default language in Localizer.
 
   Proxies
 
@@ -31,10 +33,12 @@ Proxies, document repository and workflows
 
     A proxy:
 
-    - has a portal_type,
-
     - has a docid, which is the identifier of the set of documents
       (differentiated by their rev) to which this proxy is related,
+
+    - has the same portal_type as its set of documents, which makes it
+      possible to associate actions to it, for instance for the
+      different views,
 
     - has a mapping of language -> rev, where language can be 'fr' or
       'en' for instance; rev is an integer. Together (docid, rev)
@@ -48,9 +52,9 @@ Proxies, document repository and workflows
 
   Document repository
 
-    The document repository stores all version of all documents in the
-    site. "Document" means anything that has to be versionned, so this
-    may include for instance the section folders themselves.
+    The document repository stores all versions of all documents in the site.
+    "Document" means anything that has to be versionned, so this may include for
+    instance the section folders themselves.
 
     A document in the repository has:
 
@@ -59,11 +63,9 @@ Proxies, document repository and workflows
     - a rev (revision), which is an integer; several documents may be
       present with the same docid but different rev,
 
-    - a portal_type, which makes it possible to associate actions to it,
-      for instance for the different views,
+    - a portal_type, but only used for proxies mirroring it,
 
-    - generally, all the attributes describing the "content" of the
-      document,
+    - the content itself,
 
     - security information to control for instance its visibility (View)
       and modifiability (Modify portal content) (and others according to
@@ -86,7 +88,8 @@ Proxies, document repository and workflows
     Language
 
       Whenever a document is created in a given language, its
-      'setLanguage' method is called to initialize the language.
+      'setLanguage' method is called to initialize this language as
+      the default language.
 
   Document views
 
@@ -100,29 +103,36 @@ Proxies, document repository and workflows
     Especially, the ZPT views of the document have to take both into
     account.
 
-    The proxy object ('here' in ZPT) must be used for:
+    The proxy object ('here' in ZPT) must be used in short for
+    *contextual* operations, e.g.:
 
     - absolute_url(),
 
-    - getId(), title_or_id(),
+    - getId(), title_or_id() (note that the title is fetched from the
+      repository document),
 
     - objectIds(), objectValues(), objectItems(), when access to
-      subobjects of a folderish object is needed,
+      subobjects of a folderish object is needed (documents from the
+      repository have no knowledge of subobjects),
 
     - breadcrumb computations.
 
     The document repository object (tal:define="doc here/getContent")
-    must be used for:
+    must be used in short for *contentish* operations, e.g.:
 
-    - any method (edit(), getProperty()),
+    - accessing an attribute the proxy don't mirror: in short, all but
+      portal_type,
 
-    - any data accessor (Title(), Description(), etc.).
+    - accessing any data accessor; you'll find that a proxy has its
+      Title() and Type() methods returning expected values, i.e.
+      values from the pointed document in the repository, but they
+      just call getContent() as you would.
 
-    Because the views for a portal type must have meaning when applied
-    to a proxy object, all views must be provided by CMF skins. Having
-    the view being directly implemented as a method in the python class
-    of the CMF object won't work, as all views will be applied to
-    proxies from CMF's point of view.
+    Because the views for a portal type must have a meaning when
+    applied to a proxy object, all views must be provided by CMF
+    skins. Having the view being directly implemented as a method in
+    the python class of the CMF object won't work, as all views will
+    be applied to proxies from CMF's point of view.
 
   Modifications
 
@@ -155,7 +165,7 @@ Proxies, document repository and workflows
 
     In CPS workflows are placeful, this means that we can decide that
     for a given subtree, a given portal_type will follow a given
-    workflow. A placeful (local) workflows is used for instance to have
+    workflow. A placeful (local) workflow is used for instance to have
     a subtree dedicated to public content where objects must pass
     through a reviewing process, and another subtree where the objects
     can be created and worked upon easily by the members.
@@ -177,8 +187,8 @@ Proxies, document repository and workflows
     checks.
 
     A number of transition flags have been added to DCWorkflow. These
-    flags govern some special CPS behavior of the transition. They can
-    be subdivded in several categories.
+    flags govern some special CPS behaviors for the transition. They
+    can be subdivided in several categories.
 
     Allowing subobject behavior
 
@@ -190,9 +200,10 @@ Proxies, document repository and workflows
       Once a container allows certain operation, the workflow for the
       portal type itself will have to allow the operation too.
 
-      Some of these behavior are checked by the manage_CPScopyObjects,
-      manage_CPScutObjects and manage_CPSpasteObjects methods. This will
-      be integrated into core Zope methods later.
+      Some of these behaviors are checked by the
+      manage_CPScopyObjects, manage_CPScutObjects and
+      manage_CPSpasteObjects methods. This will be integrated into
+      core Zope methods later.
 
     Initial transitions
 
@@ -224,7 +235,9 @@ Proxies, document repository and workflows
         back into its original version.
 
       - "Merge object with existing in same state" is used when in the
-        destination state there should be only one docid in a state.
+        destination state there should be only one docid in a state,
+        e.g. only one published revision while several ones are
+        pending.
 
   Publishing
 
@@ -330,8 +343,8 @@ Proxies, document repository and workflows
       The document is edited
 
         The scripts that edit the document have to call
-        context.getEditableContent before doing modifications, to ensure
-        that the revision used is really modifiable.
+        context.getEditableContent() before doing modifications, to
+        ensure that the revision used is really modifiable.
 
         When using CPSDocument and its renderEdit method (which is
         called on the object, not the proxy), the proxy must be passed
@@ -347,14 +360,14 @@ Proxies, document repository and workflows
         initial transitions they have for News. The user then choses a
         section among the possible ones.
 
-        The submission process itself consits of the creation of a
-        revision of the document in the document repository, and the
-        creation of a proxy to that revision in the section. The current
-        revision is used, but because the "pending" state in the section
-        is a "frozen" state, which means that no other editable version
-        of that document is allowed to exist (to ensure that the
-        reviewer sees a non-editable document), the revision is marked
-        "frozen". In other kinds of workflows, this wouldn't be needed.
+        The submission process itself consits of freezing the current
+        revision of the document and creating a proxy to that revision
+        in the section.  Freezing the submitted revision is needed to
+        ensure the submitted/published document could not be modified
+        afterwards. If the working document happens to be modified, a
+        getEditableContent() would automatically create a new revision
+        to work on. In other kinds of workflows, this wouldn't be
+        needed.
 
         Examining all sections could be costly, and in most cases it's
         possible to use a cache like the TreesTool.
@@ -362,8 +375,8 @@ Proxies, document repository and workflows
       A reviewer reviews the document
 
         The section reviewer sees a new submitted document. To know that
-        the reviewer has something to review, the catalog is queried for
-        all documents in the "pending" state.
+        the reviewer has something to review, the catalog can be
+        queried for all documents in the "pending" state.
 
         When the reviewer decides to publish the document, the
         corresponding workflow transition is invoked and the proxy
