@@ -178,11 +178,12 @@ def resetSessionLanguageSelection(request):
     except KeyError:
         pass
 
-def makeId(s, lower=0, portal_type=None):
+def makeId(s, max_chars=80, lower=0, portal_type=None):
     warn("The method, "
          "'Products.CPSCore.utils.makeId' "
          "is a deprecated compatiblity alias for "
          "'Products.CPSUtil.id.generateId'; "
          "please use the new method instead.",
          DeprecationWarning)
-    return generateId(s, lower=lower, portal_type=portal_type)
+    return generateId(s, max_chars=max_chars, lower=lower,
+                      portal_type=portal_type)
