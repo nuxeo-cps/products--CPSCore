@@ -62,12 +62,12 @@ class ProxyBase(Base):
         """
         self._version_infos = version_infos.copy()
 
-    security.declareProtected(ViewManagementScreens, 'getVersionInfos')
+    security.declareProtected(View, 'getVersionInfos')
     def getVersionInfos(self):
         """Return the version infos for this proxy."""
         return self._version_infos.copy()
 
-    security.declareProtected(ViewManagementScreens, 'getRepoId')
+    security.declareProtected(View, 'getRepoId')
     def getRepoId(self):
         """Return the repoid for this proxy."""
         return self._repoid
