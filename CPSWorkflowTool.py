@@ -318,9 +318,8 @@ class CPSWorkflowTool(WorkflowTool):
         for ti in ttool.listTypeInfo():
             if ti.getId() != type_name:
                 continue
-            if hasattr(ti, 'cps_proxy_type'):
-                proxy_type = ti.cps_proxy_type
-                break
+            proxy_type = getattr(ti, 'cps_proxy_type', None)
+            break
 
         if initial_behavior == TRANSITION_INITIAL_PUBLISHING:
             ob = container.copyContent(old_ob, id)
