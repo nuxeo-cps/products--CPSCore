@@ -33,8 +33,6 @@ from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.PortalFolder import PortalFolder
-from Products.CMFCore.TypesTool import FactoryTypeInformation
-from Products.CMFCore.TypesTool import ScriptableTypeInformation
 from Products.DCWorkflow.utils import modifyRolesForPermission
 
 from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
