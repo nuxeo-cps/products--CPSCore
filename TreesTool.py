@@ -189,6 +189,8 @@ class TreeCache(SimpleItemWithProperties):
 
         Called by the the trees tool's notify method.
         """
+        self._maybeUpgrade()
+
         urltool = getToolByName(self, 'portal_url')
         plen = len(urltool.getPortalObject().getPhysicalPath())
         rpath = '/'.join(ob.getPhysicalPath()[plen:])
