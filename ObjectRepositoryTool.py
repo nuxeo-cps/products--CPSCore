@@ -241,10 +241,10 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
             if not hasattr(self, newid):
                 break
             newv += 1
-        self.copyContent(ob, newid)
-        ob._cps_frozen = 0
+        newob = self.copyContent(ob, newid)
+        newob._cps_frozen = 0
         # Reset (acquire) modification permission.
-        modifyRolesForPermission(ob, ModifyPortalContent, [])
+        modifyRolesForPermission(newob, ModifyPortalContent, [])
         # XXX add some info to the history
         return newv
 
@@ -292,8 +292,8 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
 
         (Called by ProxyTool.)
         """
-        #LOG('obrep', DEBUG, 'setObjectSecurity repoid=%s v=%s perms=%s' %
-        #    (repoid, version_info, userperms))
+        LOG('obrep', DEBUG, 'setObjectSecurity repoid=%s v=%s perms=%s' %
+            (repoid, version_info, userperms))
         ob = self.getObjectVersion(repoid, version_info)
         lroles = {}
         for user, perms in userperms.items():
