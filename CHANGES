@@ -8,7 +8,7 @@ New features:
 
 Bug fixes:
 ~~~~~~~~~~
--
+- Fix random id collision problem in manage_addSubscriber.
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
