@@ -19,7 +19,7 @@
 """Tests for the object repository
 """
 
-import Zope
+import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
 
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest

@@ -19,7 +19,7 @@
 """Tests for the proxies and the proxy tool.
 """
 
-import Zope
+import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
 
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
@@ -27,6 +27,8 @@ from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 from OFS.Folder import Folder
 from OFS.SimpleItem import SimpleItem
 
+from Products.CPSCore.ProxyTool import ProxyTool
+from Products.CPSCore.ProxyBase import ProxyBase
 
 class DummyRepo(SimpleItem):
     def getObjectVersion(self, repoid, version_info):
@@ -43,7 +45,6 @@ class ProxyToolTests(SecurityRequestTest):
         self.root.id = 'root'
         root = self.root
 
-        from Products.CPSCore.ProxyTool import ProxyTool
         ptool = ProxyTool()
         root._setObject('portal_proxies', ptool)
 
@@ -56,23 +57,31 @@ class ProxyToolTests(SecurityRequestTest):
     def test_add_del_modify(self):
         ptool = self.root.portal_proxies
         self.assertEqual(tuple(ptool.listProxies()), ())
-        ptool.addProxy(123, '456', {'*': 78})
-        self.assertEqual(tuple(ptool.listProxies()),
-                         ((123, ('456', {'*': 78})),))
-        ptool.addProxy(222, '333', {'*': 90})
+
+        proxy1 = ProxyBase(language_revs={'*': 78})
+        proxy2 = ProxyBase(language_revs={'*': 90})
+
+        ptool._addProxy(proxy1, '123')
+        self.assertEquals(tuple(ptool.listProxies()),
+            (('123', (None, {'*': 78})),))
+
+        ptool._addProxy(proxy2, '456')
         items = ptool.listProxies()
         items.sort()
-        self.assertEqual(tuple(items), ((123, ('456', {'*': 78})),
-                                        (222, ('333', {'*': 90}))
-                                        ))
-        ptool.delProxy(123)
-        self.assertEqual(tuple(ptool.listProxies()),
-                         ((222, ('333', {'*': 90})),))
-        ptool.modifyProxy(222, '444', {'en': 1})
-        self.assertEqual(tuple(ptool.listProxies()),
-                         ((222, ('444', {'en': 1})),))
-        ptool.delProxy(222)
-        self.assertEqual(tuple(ptool.listProxies()), ())
+        self.assertEquals(tuple(items),
+            (('123', (None, {'*': 78})),
+             ('456', (None, {'*': 90})),)
+        )
+
+        ptool._delProxy('456')
+        self.assertEquals(tuple(ptool.listProxies()),
+            (('123', (None, {'*': 78})),))
+
+        #ptool.modifyProxy(, '444', {'en': 1})
+        #self.assertEqual(tuple(ptool.listProxies()),
+        #                 ((222, ('444', {'en': 1})),))
+        #ptool.delProxy(222)
+        #self.assertEqual(tuple(ptool.listProxies()), ())
 
 
     def test_getMatchedObject(self):

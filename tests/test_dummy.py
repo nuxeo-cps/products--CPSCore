@@ -10,8 +10,8 @@ class Test(unittest.TestCase):
 
     def test_example(self):
         # example
-        self.failUnlessEqual(0, len(self.dico))
-        self.failUnlessRaises(KeyError, lambda x:x[1], self.dico)
+        self.assertEquals(0, len(self.dico))
+        self.assertRaises(KeyError, lambda x: x[1], self.dico)
         return 0
 
 

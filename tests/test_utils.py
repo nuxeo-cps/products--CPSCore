@@ -1,10 +1,9 @@
+from Testing import ZopeTestCase
+from Products.CPSCore import utils
+
 import unittest
-import sys
-sys.path.append("..")
-try:
-    import utils
-except ImportError:
-    from Products.CPSCore import utils
+import random
+from OFS.ObjectManager import checkValidId
 
 class Test(unittest.TestCase):
 
@@ -13,6 +12,11 @@ class Test(unittest.TestCase):
         s1 = "C'est l'été!"
         self.assertEquals(utils.makeId(s1), "C_est_l_ete!")
         self.assertEquals(utils.makeId(s1, lower=1), "c_est_l_ete!")
+
+        for i in range(0, 100):
+            id = ''.join([chr(random.randint(32, 128)) for i in range(0, 10)])
+            #checkValidId(utils.makeId(id))
+
 
     def test_isinstance(self):
         class A: pass

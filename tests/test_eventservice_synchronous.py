@@ -2,8 +2,7 @@
 Simple test for portal_elements
 """
 
-import Zope
-from Acquisition import aq_base, aq_parent, aq_inner
+import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
 
 from OFS.SimpleItem import SimpleItem
@@ -77,9 +76,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
         setSecurityPolicy(self._oldPolicy)
 
     def test_0_notification_by_type_and_event_type(self):
-        """Test that our subscriber is notified.
-        Filtering is done on object meta_type and event_type
-        """
+        # Test that our subscriber is notified.
+        # Filtering is done on object meta_type and event_type
         tool = self.tool
         subscriber = self.subscriber
         tool.manage_addSubscriber(
@@ -106,9 +104,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
         self.assertEqual(subscriber.notified, 1)
 
     def test_1_notification_by_type(self):
-        """Test that our subscriber is notified.
-        Filtering is done on object meta_type
-        """
+        # Test that our subscriber is notified.
+        # Filtering is done on object meta_type
         tool = self.tool
         subscriber = self.subscriber
         tool.manage_addSubscriber(
@@ -132,9 +129,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
         self.assertEqual(subscriber.notified, 2)
 
     def test_2_notification_by_event_type(self):
-        """Test that our subscriber is notified.
-        Filtering is done on event type
-        """
+        # Test that our subscriber is notified.
+        # Filtering is done on event type
         tool = self.tool
         subscriber = self.subscriber
         tool.manage_addSubscriber(
@@ -158,9 +154,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
         self.assertEqual(subscriber.notified, 2)
 
     def test_3_notification_no_filter(self):
-        """Test that our subscriber is notified.
-        Don't filter
-        """
+        # Test that our subscriber is notified.
+        # Don't filter
         tool = self.tool
         subscriber = self.subscriber
         tool.manage_addSubscriber(

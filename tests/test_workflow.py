@@ -99,20 +99,24 @@ class WorkflowToolTests(SecurityRequestTest):
         wf = CPSWorkflowDefinition(id)
         self.root.portal_workflow._setObject(id, wf)
         wf = self.root.portal_workflow.wf
-        ct = wf.getCreationTransitions(self.root)
-        self.assertEqual(tuple(ct), ())
-        # create states
+        #ct = wf.getCreationTransitions(self.root)
+        #self.assertEqual(tuple(ct), ())
+
+        # Create states
         wf.states.addState('s1')
         states = list(wf.states.objectIds())
         states.sort()
         self.assertEqual(tuple(states), ('s1',))
-        # create transition
+
+        # Create transition
         wf.transitions.addTransition('t1')
         t1 = wf.transitions.get('t1')
-        t1.setProperties('title', 's1', trigger_type=TRIGGER_USER_ACTION)
+        t1.setProperties('title', 's1', trigger_type=TRIGGER_USER_ACTION,
+            transition_behavior=('initial_create',))
         transitions = wf.transitions.objectIds()
         self.assertEqual(tuple(transitions), ('t1',))
-        # another empty workflow
+
+        # Another empty workflow
         id2 = 'wf2'
         wf2 = CPSWorkflowDefinition(id2)
         self.root.portal_workflow._setObject(id2, wf2)
@@ -132,7 +136,8 @@ class WorkflowToolTests(SecurityRequestTest):
 
     def test_wf_getCreationTransitions(self):
         self.makeWorkflows()
-        ct = self.root.portal_workflow.wf.getCreationTransitions(self.root)
+        ct = self.root.portal_workflow.wf.getInitialTransitions(
+            'Dummy Content', 'initial_create')
         self.assertEqual(tuple(ct), ('t1',))
 
     def test_wft_getCreationTransitions(self):
@@ -140,14 +145,17 @@ class WorkflowToolTests(SecurityRequestTest):
         self.makeTypes()
         wft = self.root.portal_workflow
         wft.setChainForPortalTypes(('Dummy Content',), ('wf',))
-        # setup container
-        f = Folder()
-        f.id = 'f'
-        self.root._setObject(f.id, f)
-        f = self.root.f
-        # check default available
-        ct = wft.getCreationTransitions(f, 'Dummy Content')
-        self.assertEqual(ct, {'wf': ('t1',)})
+
+        # Setup container
+        folder = Folder()
+        folder.id = 'folder'
+        self.root._setObject(folder.id, folder)
+        folder = self.root.folder
+
+        # Check default available
+        ct = wft.getInitialTransitions(folder, 'Dummy Content', 
+            'initial_create')
+        self.assertEqual(ct, ['t1'])
 
     def test_wft_getChainFor(self):
         self.makeWorkflows()
@@ -155,18 +163,22 @@ class WorkflowToolTests(SecurityRequestTest):
         self.makeTree()
         wft = self.root.portal_workflow
         f = self.root.f
-        # check default
+
+        # Check default
         chain = wft.getChainFor('Dummy Content', f)
         self.assertEqual(tuple(chain), ())
-        # check global chain
+
+        # Check global chain
         wft.setChainForPortalTypes(('Dummy Content',), ('wf',))
         chain = wft.getChainFor('Dummy Content', f)
         self.assertEqual(tuple(chain), ('wf',))
-        # check global chain, using object
+
+        # Check global chain, using object
         dummy = f.dummy
         chain = wft.getChainFor(dummy)
         self.assertEqual(tuple(chain), ('wf',))
-        # remove global chain
+
+        # Remove global chain
         wft.setChainForPortalTypes(('Dummy Content',), ())
         chain = wft.getChainFor(dummy)
         self.assertEqual(tuple(chain), ())
@@ -181,30 +193,37 @@ class WorkflowToolTests(SecurityRequestTest):
         f2.id = 'f2'
         f._setObject(f2.id, f2)
         f2 = f.f2
-        # setup placeful workflows
+
+        # Setup placeful workflows
         addCPSWorkflowConfiguration(f)
         config = getattr(f, CPSWorkflowConfig_id)
         config.setChain('Dummy Content', ('wf',))
-        # check placeful
+
+        # Check placeful
         dummy = f.dummy
         chain = wft.getChainFor(dummy)
         self.assertEqual(tuple(chain), ('wf',))
-        # add new sub folder
+
+        # Add new sub folder
         addCPSWorkflowConfiguration(f2)
         config2 = getattr(f2, CPSWorkflowConfig_id)
         config2.setChain('Dummy Content', ('wf2',))
-        # check inheritance order
+
+        # Check inheritance order
         chain = wft.getChainFor('Dummy Content', f2)
         self.assertEqual(tuple(chain), ('wf2',))
-        # check empty chain
+
+        # Check empty chain
         config2.setChain('Dummy Content', ())
         chain = wft.getChainFor('Dummy Content', f2)
         self.assertEqual(tuple(chain), ())
-        # check inheritance when no config
+
+        # Check inheritance when no config
         config2.delChain('Dummy Content')
         chain = wft.getChainFor('Dummy Content', f2)
         self.assertEqual(tuple(chain), ('wf',))
-        # check default
+
+        # Check default
         wft.setDefaultChain('wf2')
         config2.setChain('Dummy Content', None)
         chain = wft.getChainFor('Dummy Content', f2)

@@ -2,8 +2,12 @@
 Simple test for portal_elements
 """
 
-import Zope
-from Acquisition import aq_base, aq_parent, aq_inner
+import Testing.ZopeTestCase.ZopeLite as Zope
+from Testing import ZopeTestCase
+ZopeTestCase.installProduct('CMFCore')
+ZopeTestCase.installProduct('CMFDefault')
+ZopeTestCase.installProduct('MailHost')
+ZopeTestCase.installProduct('CPSCore')
 import unittest
 
 from AccessControl.SecurityManagement import newSecurityManager
@@ -14,8 +18,9 @@ from security import PermissiveSecurityPolicy, AnonymousUser
 
 from Products.CPSCore.EventServiceTool import EventServiceTool
 
+
 class EventServiceToolTest(unittest.TestCase):
-    """\
+    """
     Test portal_elements
     """
 
