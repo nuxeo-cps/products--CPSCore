@@ -1,0 +1,17 @@
+# $Id$
+
+# misc -------------------
+TranslationService > 0.6
+Localizer
+BTreeFolder2
+DCWorkflow
+
+# CMF ---------------------
+CMFCore > 1.4.2
+CMFDefault > 1.4.2
+CMFTopic
+CMFCalendar
+
+# CPS ---------------------
+CPSWorkflow
+#CPSUtil
