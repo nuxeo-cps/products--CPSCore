@@ -469,6 +469,11 @@ def unserialize_proxy(ser, ob=None):
 class NotAProxy:
     security = ClassSecurityInfo()
 
+    security.declareProtected(View, 'getDocid')
+    def getDocid(self):
+        """No Docid."""
+        return ''
+
     security.declareProtected(View, 'getDefaultLanguage')
     def getDefaultLanguage(self):
         """Get the default language."""
