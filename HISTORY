@@ -1,4 +1,24 @@
 *******************************************
+** CPSCore V3.10.1 [R1 build 2004/05/05-15:37 by madarche]
+
+Requires:
+~~~~~~~~~
+- update your custom tree tool info_method script 
+  the method should handle a doc parameter
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Implement recursive deletion of local roles, especially when deleting a
+  member (Closes #319: Roles locally assigned not deleted with the user
+  account). Needs feedback.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- in MembershipTools/deleteMembers adding default arg check_permission
+- TreesTool pass doc object to the info_method
+
+*******************************************
 ** CPSCore V3.10.0 [R1 build 2004/04/29-11:09 by madarche]
 
 Requires:
