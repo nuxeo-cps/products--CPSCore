@@ -1,4 +1,25 @@
 *******************************************
+** CPSCore V3.4.0 [R1 build 2004-01/06-15:12 by anguenot]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+
+New features:
+~~~~~~~~~~~~~
+-
+
+Bug fixes:
+~~~~~~~~~~
+-
+
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Refactoring : split mergedLocalRoles / mergedLocalRolesWithPath
+- 'getAllowedContentTypes' to gather allowed portal types by the workflow
+  (obsoletes allowed_content_types from a portal type).
+-
+*******************************************
 ** CPSCore V3.3.1 [R1 build 2003/12/23-11:03 by ben]
 
 ZODB Requires:
