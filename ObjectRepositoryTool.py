@@ -33,7 +33,7 @@ class ObjectRepository(UniqueObject, Folder):
     available in several versions.
 
     It can be queried for the best version of a given object matching
-    a set of constraints, for instance on freshness or language.
+    a set of constraints, for instance on language.
 
     repoid is an identifier unique to the repository that describes a set
     of versions of one object.
@@ -55,13 +55,15 @@ class ObjectRepository(UniqueObject, Folder):
     def addObjectVersion(self, object, repoid, version_info):
         """Add the version version_info of the object repoid.
 
-        repoid is a unique id, version_info is a tuple describing the version.
+        repoid is a unique id.
+        version_info is an integer describing the version.
         If repoid is None (new object without previous versions), a new
         one is created and returned.
         """
         id = self._get_id(repoid, version_info)
         object._setId(id)
         self._setObject(id, object)
+        return id
 
     security.declarePrivate('delObjectVersion')
     def delObjectVersion(self, repoid, version_info):
@@ -71,14 +73,14 @@ class ObjectRepository(UniqueObject, Folder):
 
     security.declarePrivate('getObjectVersion')
     def getObjectVersion(self, repoid, version_info):
-        """Get a version of an object, or None."""
+        """Get a version of an object."""
         id = self._get_id(repoid, version_info)
-        return self._getOb(id, None)
+        return self._getOb(id)
 
     security.declarePrivate('delObject')
     def delObject(self, repoid):
         """Delete all the versions of an object."""
-        prefix = '%s__' % repoid
+        prefix = self._get_id_prefix(repoid)
         for id in self.objectIds():
             if id.startswith(prefix):
                 self._delObject(id)
@@ -97,13 +99,16 @@ class ObjectRepository(UniqueObject, Folder):
     security.declarePrivate('listRepoIds')
     def listRepoIds(self):
         """List all the repoids in the repository."""
-        repoids = []
+        idd = {}
+        has = idd.has_key
         for id in self.objectIds():
             repoid, version_info = self._split_id(id)
             if repoid is None:
                 continue
-            repoids.append(repoid)
-        return repoids
+            if has(repoid):
+                continue
+            idd[repoid] = None
+        return idd.keys()
 
     security.declarePrivate('listVersions')
     def listVersions(self, repoid):
@@ -120,22 +125,23 @@ class ObjectRepository(UniqueObject, Folder):
         return version_infos
 
     #
-    # misc
+    # Misc
     #
 
+    def _get_id_prefix(self, repoid):
+        return '%s__' % repoid
+
     def _get_id(self, repoid, version_info):
-        ver = version_info[0]
-        lang = version_info[1]
-        id = '%s__%s__%s' % (repoid, ver, lang)
+        id = '%s__%s' % (repoid, version_info)
         return id
 
     def _split_id(self, id):
         try:
-            repoid, ver, lang = id.split('__')
+            repoid, version_info = id.split('__')
+            version_info = int(version_info)
         except ValueError:
             LOG('ObjectRepository', ERROR, 'Cannot split id %s' % id)
             return (None, None)
-        version_info = (ver, lang)
         return (repoid, version_info)
 
     #
