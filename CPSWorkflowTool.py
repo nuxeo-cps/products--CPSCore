@@ -173,7 +173,7 @@ class CPSWorkflowTool(WorkflowTool):
 
         The object created will be a proxy to a real object if the type
         type_name has an action of id 'isproxytype' and of action
-        'folder' or 'document'.
+        'folder', 'document' or 'folderishdocument'.
         """
         container = self._container_maybe_rpath(container)
         LOG('invokeFactoryFor', DEBUG, 'Called with container=%s type_name=%s '
