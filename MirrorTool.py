@@ -42,7 +42,7 @@ class MirrorTool(UniqueObject, Folder):
 
     security.declarePrivate('notify_mirror')
     def notify_mirror(self, event_type, object, infos):
-        if event_type not in ['add_object', 'del_object']:
+        if event_type not in ['sys_add_object', 'sys_del_object']:
             return
         if not object.isPrincipiaFolderish:
             return
@@ -58,12 +58,12 @@ class MirrorTool(UniqueObject, Folder):
         base = self.restrictedTraverse(base_path, None)
         if base is None:
             return
-        if event_type == 'add_object':
+        if event_type == 'sys_add_object':
             f = Folder()
             f.id = object_id
             f.title = object.title
             base._setObject(object_id, f)
-        elif event_type == 'del_object':
+        elif event_type == 'sys_del_object':
             if object_id in base.objectIds():
                 base.manage_delObjects([object_id])
 

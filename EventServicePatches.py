@@ -17,13 +17,12 @@
 # 02111-1307, USA.
 #
 # $Id$
+"""Patch Zope so that it sends standard notifications.
+"""
 
-from zLOG import LOG, INFO
-
+from zLOG import LOG, DEBUG
 from Products.NuxCPS3.EventServiceTool import getEventService
 
-# XXX this patches should be in the same place
-# Some patches so classical zope actions send notifications
 
 def notify(self, event_type, object, *args, **kw):
     evtool = getEventService(self)
@@ -32,23 +31,18 @@ def notify(self, event_type, object, *args, **kw):
 
 def manage_afterAdd(self, *args, **kw):
     """manage_afterAdd patched for event service notification."""
+    notify(self, 'sys_add_object', self, *args, **kw)
     self.cps_old_manage_afterAdd(*args, **kw)
-    notify(self, 'add_object', self, *args, **kw)
 
 def manage_beforeDelete(self, *args, **kw):
     """manage_beforeDelete patched for event service notification."""
-    notify(self, 'del_object', self, *args, **kw)
     self.cps_old_manage_beforeDelete(*args, **kw)
+    notify(self, 'sys_del_object', self, *args, **kw)
 
 def manage_afterClone(self, *args, **kw):
     """manage_afterClone patched for event service notification."""
     self.cps_old_manage_afterClone(*args, **kw)
-    notify(self, 'clone_object', self, *args, **kw)
-
-
-from OFS.ObjectManager import ObjectManager
-from OFS.SimpleItem import Item
-from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
+    notify(self, 'sys_clone_object', self, *args, **kw)
 
 def patch_action(class_, func):
     action = func.__name__
@@ -60,16 +54,14 @@ def patch_action(class_, func):
         setattr(class_, old_action, old)
         ok = 'Done.'
     setattr(class_, action, func)
-    LOG('EventService', INFO, ('patching %s.%s... %s' %
+    LOG('EventService', DEBUG, ('patching %s.%s... %s' %
                                (class_.__name__, action, ok)))
 
-patch_action(ObjectManager, manage_afterAdd)
-patch_action(Item, manage_afterAdd)
-patch_action(CMFCatalogAware, manage_afterAdd)
-patch_action(ObjectManager, manage_beforeDelete)
-patch_action(Item, manage_beforeDelete)
-patch_action(CMFCatalogAware, manage_beforeDelete)
-patch_action(ObjectManager, manage_afterClone)
-patch_action(Item, manage_afterClone)
-patch_action(CMFCatalogAware, manage_afterClone)
+from OFS.ObjectManager import ObjectManager
+from OFS.SimpleItem import Item
+from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
+for class_ in (Item, ObjectManager, CMFCatalogAware):
+    patch_action(class_, manage_afterAdd)
+    patch_action(class_, manage_beforeDelete)
+    patch_action(class_, manage_afterClone)

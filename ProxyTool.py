@@ -40,7 +40,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     and the documents they point to.
 
     The proxy tool must be registered with the event service to receive
-    add_object and del_object events, with action 'proxy'.
+    sys_add_object and sys_del_object events, with action 'proxy'.
     """
 
     id = 'portal_proxies'
@@ -177,7 +177,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         (Called by ProxyBase.) XXX but should use an event
         """
         # XXX should not get directly an object... or should it?
-        LOG('setSecurity', DEBUG, '--- ob %s' % '/'.join(ob.getPhysicalPath()))
+        #LOG('setSecurity', DEBUG, '--- ob %s' % '/'.join(ob.getPhysicalPath()))
         hubtool = getToolByName(self, 'portal_eventservice')
         repotool = getToolByName(self, 'portal_repository')
         # Gather versions
@@ -187,7 +187,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         for lang, version_info in version_infos.items():
             versions[version_info] = None
         versions = versions.keys()
-        LOG('setSecurity', DEBUG, 'repoid %s versions %s' % (repoid, versions))
+        #LOG('setSecurity', DEBUG, 'repoid %s versions %s' % (repoid, versions))
         # Gather the hubids of proxies pointing to any version
         hubids = {}
         for version_info in versions:
@@ -196,32 +196,32 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             for hubid in infos.keys():
                 hubids[hubid] = None
         hubids = hubids.keys()
-        LOG('setSecurity', DEBUG, 'hubids %s' % (hubids,))
+        #LOG('setSecurity', DEBUG, 'hubids %s' % (hubids,))
         # Get user permissions for users that have a (merged) local role
         allperms = self._getRelevantPermissions()
-        LOG('setSecurity', DEBUG, 'relevant perms %s' % (allperms,))
+        #LOG('setSecurity', DEBUG, 'relevant perms %s' % (allperms,))
         userperms = {}
         portal = aq_parent(aq_inner(self))
         for hubid in hubids:
             location = hubtool.getLocation(hubid)
-            LOG('setSecurity', DEBUG, 'location %s' % (location,))
+            #LOG('setSecurity', DEBUG, 'location %s' % (location,))
             ob = portal.unrestrictedTraverse(location) # XXX
             merged = mergedLocalRoles(ob, withgroups=1).items()
-            LOG('setSecurity', DEBUG, 'merged %s' % (merged,))
+            #LOG('setSecurity', DEBUG, 'merged %s' % (merged,))
             # Collect permissions of users
             for perm in allperms:
                 proles = rolesForPermissionOn(perm, ob)
-                LOG('setSecurity', DEBUG, '  perm %s proles %s'
-                    % (perm, proles))
+                #LOG('setSecurity', DEBUG, '  perm %s proles %s'
+                #    % (perm, proles))
                 for user, lroles in merged:
-                    LOG('setSecurity', DEBUG, '    user %s' % (user,))
+                    #LOG('setSecurity', DEBUG, '    user %s' % (user,))
                     for lr in lroles:
                         if lr in proles:
                             perms = userperms.setdefault(user, [])
                             if perm not in perms:
-                                LOG('setSecurity', DEBUG, '      addperm')
+                                #LOG('setSecurity', DEBUG, '      addperm')
                                 perms.append(perm)
-        LOG('setSecurity', DEBUG, 'userperms is %s' % (userperms,))
+        #LOG('setSecurity', DEBUG, 'userperms is %s' % (userperms,))
         # Now set security on versions.
         for version_info in versions:
             repotool.setObjectSecurity(repoid, version_info, userperms)
@@ -279,16 +279,16 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         Called when a proxy is added/deleted. Updates the list
         of existing proxies.
         """
-        if event_type not in ('add_object', 'del_object'):
+        if event_type not in ('sys_add_object', 'sys_del_object'):
             return
         if not isinstance(object, ProxyBase):
             return
         hubid = infos['hubid']
-        if event_type == 'add_object':
+        if event_type == 'sys_add_object':
             repoid = object.getRepoId()
             version_infos = object.getVersionInfos()
             self.addProxy(hubid, repoid, version_infos)
-        elif event_type == 'del_object':
+        elif event_type == 'sys_del_object':
             self.delProxy(hubid)
         # Refresh security
         self.setSecurity(object)

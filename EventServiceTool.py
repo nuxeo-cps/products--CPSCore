@@ -39,6 +39,7 @@ from types import StringType, UnicodeType, TupleType
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner, aq_base
 from AccessControl import ClassSecurityInfo
+from AccessControl import Unauthorized
 
 from BTrees.IOBTree import IOBTree
 from BTrees.OIBTree import OIBTree
@@ -194,22 +195,23 @@ class EventServiceTool(UniqueObject, Folder):
         self._rlocation_to_hubid = OIBTree()
         """
         # notification_dict is typically:
-        {'add_object': {'folder': {'synchronous': [{'subscriber': 'portal_foo',
-                                                    'action': 'notify_mymeth',
-                                                    'compressed': 0,
-                                                    },
-                                                   {'subscriber': 'portal_log',
-                                                    'action': 'notify_log',
-                                                    'compressed': 0,
-                                                    },
-                                                   ],
-                                   'asynchronous': [...],
-                                   },
-                        '*': { ... },
-                        },
+        {'sys_add_object':
+                 {'folder': {'synchronous': [{'subscriber': 'portal_foo',
+                                              'action': 'notify_mymeth',
+                                              'compressed': 0,
+                                              },
+                                             {'subscriber': 'portal_log',
+                                              'action': 'notify_log',
+                                              'compressed': 0,
+                                              },
+                                             ],
+                             'asynchronous': [...],
+                             },
+                  '*': { ... },
+                  },
          '*': { ... },
          }
-         # And portal_foo.notify_mymeth('add_object', object, infos) will
+         # And portal_foo.notify_mymeth('sys_add_object', object, infos) will
          # be called.
          """
 
@@ -217,13 +219,15 @@ class EventServiceTool(UniqueObject, Folder):
     # API
     #
 
-    # XXX the permissions are problematic here, as we want users
-    # to notify user events, but not system events.
-    security.declarePublic('notify')
+    security.declarePrivate('notify')
     def notify(self, event_type, object, infos):
         """Notifies subscribers of an event
 
-        Passed infos is {'args': args, 'kw': kw} for add_object/del_object
+        infos is a dictionnary with keys:
+          hubid
+          args, kw  (for sys_add_object, sys_del_object (unused))
+
+        This method is private.
         """
         hubid = self._objecthub_notify(event_type, object, infos)
         infos['hubid'] = hubid
@@ -248,6 +252,16 @@ class EventServiceTool(UniqueObject, Folder):
                     action = sub_def['action']
                     meth = getattr(subscriber, action)
                     meth(event_type, object, infos)
+
+    security.declarePublic('notifyEvent')
+    def notifyEvent(self, event_type, object, infos):
+        """Notifies subscribers of an event
+
+        This method is public, so it cannot notify of system events.
+        """
+        if event_type.startswith('sys_'):
+            raise Unauthorized, event_type
+        return self.notify(event_type, object, infos)
 
     #
     # ObjectHub API
@@ -365,9 +379,9 @@ class EventServiceTool(UniqueObject, Folder):
             LOG('EventServiceTool', ERROR,
                 'Hub: notify %s for bad location %s' % (event_type, location))
             return None
-        if event_type == 'add_object':
+        if event_type == 'sys_add_object':
             return self._register(rlocation)
-        elif event_type == 'del_object':
+        elif event_type == 'sys_del_object':
             return self._unregister(rlocation)
         else:
             return self._rlocation_to_hubid.get(rlocation)

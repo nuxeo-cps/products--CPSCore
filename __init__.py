@@ -27,11 +27,13 @@ from Products.CMFCore.CMFCorePermissions import AddPortalContent
 import ElementsTool
 import EventServiceTool
 import EventServicePatches
-import LoggerTool
-import MirrorTool
+#import LoggerTool
+#import MirrorTool
 import ProxyTool
 import ObjectRepositoryTool
 import CPSWorkflowTool
+import TreesTool
+
 from CPSWorkflowConfiguration import CPSWorkflowConfiguration
 from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
 
@@ -46,12 +48,13 @@ import CPSWorkflow
 
 tools = (
     EventServiceTool.EventServiceTool,
-    LoggerTool.LoggerTool,
-    MirrorTool.MirrorTool,
+#    LoggerTool.LoggerTool,
+#    MirrorTool.MirrorTool,
     ElementsTool.ElementsTool,
     ProxyTool.ProxyTool,
     ObjectRepositoryTool.ObjectRepositoryTool,
     CPSWorkflowTool.CPSWorkflowTool,
+    TreesTool.TreesTool,
 )
 
 contentClasses = (CPSFolder.CPSFolder,
@@ -86,7 +89,6 @@ def initialize(registrar):
         ElementsTool.DefaultElement,
         permission='Add a Default Element',
         constructors=(
-            # XXX should not use an unbound method as a factory !!!
             ElementsTool.ElementsTool.manage_addDefaultElement,
         )
     )
@@ -96,7 +98,6 @@ def initialize(registrar):
         EventServiceTool.SubscriberDef,
         permission='Add a Subscriber Definition',
         constructors=(
-            # XXX should not use an unbound method as a factory !!!
             EventServiceTool.EventServiceTool.manage_addSubscriber,
         )
     )
@@ -107,6 +108,14 @@ def initialize(registrar):
         permission='Manager portal',
         constructors=(addCPSWorkflowConfiguration,)
     )
+
+    # Tree Cache
+    registrar.registerClass(
+        TreesTool.TreeCache,
+        permission='Manager portal',
+        constructors=(TreesTool.TreesTool.manage_addCPSTreeCache,)
+    )
+    utils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.gif', globals())
 
     # CPS Content and Folder objects
     utils.ContentInit(

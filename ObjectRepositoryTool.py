@@ -60,8 +60,8 @@ def set_local_roles_with_groups(ob, lroles):
     Return True if something was changed.
     """
     # XXX move this to NuxUserGroups
-    LOG('obrep', DEBUG, 'setlocal: ob=%s lroles=%s'
-        % ('/'.join(ob.getPhysicalPath()), lroles,))
+    #LOG('obrep', DEBUG, 'setlocal: ob=%s lroles=%s'
+    #    % ('/'.join(ob.getPhysicalPath()), lroles,))
     udict = {}
     gdict = {}
     for k, roles in lroles.items():
@@ -75,14 +75,14 @@ def set_local_roles_with_groups(ob, lroles):
     uroles = ob.__ac_local_roles__ or {}
     groles = ob.__ac_local_group_roles__ or {}
     if uroles != udict:
-        LOG('obrep', DEBUG, ' set udict=%s' % (udict,))
+        #LOG('obrep', DEBUG, ' set udict=%s' % (udict,))
         ob.__ac_local_roles__ = udict
         changed = 1
     if groles != gdict:
-        LOG('obrep', DEBUG, ' set gdict=%s' % (gdict,))
+        #LOG('obrep', DEBUG, ' set gdict=%s' % (gdict,))
         ob.__ac_local_group_roles__ = gdict
         changed = 1
-    LOG('obrep', DEBUG, ' changed=%s' % changed)
+    #LOG('obrep', DEBUG, ' changed=%s' % changed)
     return changed
 
 
@@ -302,8 +302,8 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder):
 
         (Called by ProxyTool.)
         """
-        LOG('obrep', DEBUG, 'setObjectSecurity repoid=%s v=%s perms=%s' %
-            (repoid, version_info, userperms))
+        #LOG('obrep', DEBUG, 'setObjectSecurity repoid=%s v=%s perms=%s' %
+        #    (repoid, version_info, userperms))
         ob = self.getObjectVersion(repoid, version_info)
         lroles = {}
         for user, perms in userperms.items():
