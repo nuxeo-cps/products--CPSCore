@@ -328,7 +328,7 @@ class CPSWorkflowTool(WorkflowTool):
             self._insertWorkflowRecursive(ob, initial_transition,
                                           initial_behavior, kwargs)
         elif initial_behavior == TRANSITION_INITIAL_CREATE:
-            if proxy_type is None:
+            if not proxy_type:
                 # XXX constructContent doesn't exist everywhere !
                 # XXX especially when creating at the root of the portal.
                 ob = container.constructContent(type_name, id, **kwargs)
