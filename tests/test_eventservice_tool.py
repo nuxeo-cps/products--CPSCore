@@ -15,7 +15,8 @@ from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.SecurityManagement import noSecurityManager
 from AccessControl.SecurityManager import setSecurityPolicy
 from Testing.makerequest import makerequest
-from security import PermissiveSecurityPolicy, AnonymousUser
+from Products.CMFCore.tests.base.security \
+     import PermissiveSecurityPolicy, AnonymousUser
 
 from Products.CPSCore.EventServiceTool import EventServiceTool
 

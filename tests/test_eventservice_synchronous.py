@@ -4,13 +4,18 @@ Simple test for portal_elements
 """
 
 import Testing.ZopeTestCase.ZopeLite as Zope
+from Testing import ZopeTestCase
 import unittest
 
 from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.SecurityManagement import noSecurityManager
 from AccessControl.SecurityManager import setSecurityPolicy
 from Testing.makerequest import makerequest
-from security import PermissiveSecurityPolicy, AnonymousUser
+
+ZopeTestCase.installProduct('CMFCore', quiet=1)
+
+from Products.CMFCore.tests.base.security \
+     import PermissiveSecurityPolicy, AnonymousUser
 
 from Products.CPSCore.EventServiceTool import EventServiceTool
 
