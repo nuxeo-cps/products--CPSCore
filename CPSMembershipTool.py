@@ -121,7 +121,7 @@ class CPSMembershipTool(MembershipTool):
             member_roles = [role for role in roles
                             if role not in ('Member', 'Authenticated')]
             member_roles.sort()
-            return tuple(member_roles)
+            return member_roles
 
     security.declareProtected(View, 'setLocalRoles')
     def setLocalRoles(self, obj, member_ids, member_role, reindex=1):
