@@ -1,5 +1,6 @@
 # (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
-# Authors: Alexandre Fernandez <alex@nuxeo.com>
+# Authors: Florent Guillaime <fg@nuxeo.com>
+#          Alexandre Fernandez <alex@nuxeo.com>
 #
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -33,12 +34,13 @@ class CPSMembershipTool(MembershipTool):
     meta_type = 'CPS Membership Tool'
 
     security = ClassSecurityInfo()
-
-    def getMergedLocalRoles(self, object, withgroup=1):
+    
+    security.declareProtected(View, 'getMergedLocalRoles')
+    def getMergedLocalRoles(self, object, withgroups=1):
         """
         return aquisition roles
         """
-        return mergedLocalRoles(object, withgroup)
+        return mergedLocalRoles(object, withgroups)
 
     security.declareProtected(View, 'setLocalGroupRoles')
     def setLocalGroupRoles(self, obj, ids, role, reindex=1):
