@@ -79,6 +79,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # portal_type after construction.
         version_infos = {'*': version_info}
         # Note: this calls wf.notifyCreated() for all wf!
+        # Note: this needs the 'Add portal content' permission!
         if hasattr(aq_base(container), 'invokeFactoryCMF'):
             meth = container.invokeFactoryCMF
         else:
