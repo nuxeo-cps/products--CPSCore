@@ -72,33 +72,28 @@ class SubscriberDef(SimpleItemWithProperties):
             'type': 'string',
             'mode': 'w',
             'label': 'Subscriber',
-        },
-        {
+        }, {
             'id': 'action',
             'type': 'string',
             'mode': 'w',
             'label': 'Action',
-        },
-        {
+        }, {
             'id': 'meta_type_',
             'type': 'string',
             'mode': 'w',
             'label': 'Meta Type',
-        },
-        {
+        }, {
             'id': 'event_type',
             'type': 'tokens',
             'mode': 'w',
             'label': 'Event Type',
-        },
-        {
+        }, {
             'id': 'notification_type',
             'type': 'selection',
             'mode': 'w',
             'label': 'Notification Type',
             'select_variable': 'notification_types', # Acquired from tool
-        },
-        {
+        }, {
             'id': 'compressed',
             'type': 'boolean',
             'mode': 'w',
