@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.2.2 [R1 build 2003/11/17-14:46 by ben]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- getCPSCandidateLocal roles now works correctly when Anonymous.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.2.1 [R1 build 2003/11/06-11:52 by guillaum]
 
 ZODB Requires:

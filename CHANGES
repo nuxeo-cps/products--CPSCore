@@ -1,12 +1,15 @@
 ZODB Requires:
 ~~~~~~~~~~~~~~
 -
+
 New features:
 ~~~~~~~~~~~~~
 -
+
 Bug fixes:
 ~~~~~~~~~~
-- getCPSCandidateLocal roles now works correctly when Anonymous.
+-
+
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
