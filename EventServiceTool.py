@@ -216,6 +216,8 @@ class EventServiceTool(UniqueObject, Folder):
     # API
     #
 
+    # XXX the permissions are problematic here, as we want users
+    # to notify user events, but not system events.
     security.declarePublic('notify')
     def notify(self, event_type, object, infos):
         """Notifies subscribers of an event
