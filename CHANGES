@@ -12,6 +12,7 @@ Bug fixes:
   access rights in portal_trees.
 - Fixed CMF bug by not swallowing ConflictError in wrapUser.
 - Correctly index the security of a user's home folder at creation.
+- Tightened security of the repository.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Move files related to permissions around.
