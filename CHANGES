@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Fix memberarea creation so that join is again possible.
+- P2 #202 Cannot register any longer.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
