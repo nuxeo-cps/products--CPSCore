@@ -80,13 +80,20 @@ class TestBlockingIndex(unittest.TestCase):
     def testEmpty(self):
         index = self._index
         self.assertEqual(len(index) ,0)
-        self.assertEqual(index._length() ,0)
         self.assertEqual(index.getEntryForObject(1234), None)
 
     def testAddRemove(self):
         index = self._index
         ob = DummyObject('a', ['Foo', 'Bar', '-Baz', 'Goo'])
         index.index_object(1234, ob)
+        self.assertEqual(len(index), 1)
+        ob2 = DummyObject('a', ['Foo', '-Bar', '-Baz', 'Goo'])
+        index.index_object(456, ob2)
+        self.assertEqual(len(index), 2)
+        index.unindex_object(1234)
+        self.assertEqual(len(index), 1)
+        index.unindex_object(456)
+        self.assertEqual(len(index), 0)
 
     def xxxtestUnIndex(self):
         self._populateIndex()

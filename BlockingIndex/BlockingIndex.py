@@ -36,8 +36,8 @@ from Products.PluginIndexes.common import safe_callable
 
 from Globals import DTMLFile
 from BTrees.IOBTree import IOBTree
-from BTrees.OOBTree import OOBTree
-from BTrees.IIBTree import IITreeSet
+from BTrees.OOBTree import OOBTree, OOSet, difference
+from BTrees.IIBTree import IITreeSet, union
 from BTrees.Length import Length
 
 
@@ -119,7 +119,7 @@ class BlockingIndex(Persistent, SimpleItem):
 
     def clear(self):
         """Clear the index."""
-        self._index = OOBTree() # keyword -> row of rid (int or IITreeSet)
+        self._index = OOBTree() # keyword -> set of rid (int or IITreeSet)
         # In _index, the value for the key None is an OOBTree
         # for blocking indexes, mapping keyword -> subindex
         self._unindex = IOBTree() # rid -> blocks
@@ -156,7 +156,47 @@ class BlockingIndex(Persistent, SimpleItem):
 
         Called by ZCatalog's search method.
         """
-        YYY
+        record = parseIndexRequest(request, self.id, self.query_options)
+        if record.keys is None:
+            return None
+
+        todo = {}
+        for key in record.keys:
+            todo[key] = None
+
+        r = None
+
+        if 1:
+            index = self._index
+            # Positive indexes
+            for key in todo.keys():
+                set = index.get(key)
+                if set is None:
+                    continue
+                if isinstance(set, IntType):
+                    set = IISet((set,))
+                r = union(r, set)
+                # Delete used key
+                del todo[key]
+            if not todo:
+                break
+            # Now find blocking indexes
+            blocking_index = index.get(None)
+            if blocking_index is None:
+                break
+            for key in blocking_index.keys():
+                if key not in todo_keys:
+                    contexts.append(blocking_index[key])
+            
+
+
+
+
+        if type(r) is IntType:  r=IISet((r,))
+        if r is None:
+            return IISet(), (self.id,)
+        else:
+            return r, (self.id,)
 
     def getEntryForObject(self, rid, default=_marker):
         """Get all the information we have on a rid."""
@@ -205,16 +245,16 @@ class BlockingIndex(Persistent, SimpleItem):
                     context[0] = index # update for blocking pass
                     setindex(index)
                 for value in block:
-                    row = index.get(value)
-                    if row is None:
+                    set = index.get(value)
+                    if set is None:
                         # first value, just store an int
                         index[value] = rid
-                    elif isinstance(row, IntType):
-                        # row was an int, make it a IITreeSet
-                        index[value] = IITreeSet((row, rid))
+                    elif isinstance(set, IntType):
+                        # set was an int, make it a IITreeSet
+                        index[value] = IITreeSet((set, rid))
                     else:
-                        # extend existing row
-                        row.insert(rid)
+                        # extend existing set
+                        set.insert(rid)
             if not blocks:
                 break
             # Blocking assertions
@@ -235,6 +275,56 @@ class BlockingIndex(Persistent, SimpleItem):
                     else:
                         # Got subindex
                         context = [subindex, None]
+                    new_contexts.append(context)
+            contexts = new_contexts
+
+    def _removeForward(self, rid, blocks):
+        """Remove the entry from the forward indexes."""
+        contexts = [[self._index, lambda: None]]
+        while blocks:
+            # Positive assertions
+            block = blocks.pop(0)
+            for index, delindex in contexts:
+                for value in block:
+                    set = index.get(value)
+                    if set is None:
+                        raise KeyError(rid)
+                    elif isinstance(set, IntType):
+                        # set was an int
+                        if set != rid:
+                            raise KeyError(rid)
+                        del index[value]
+                        # if now empty, delete whole index
+                        if not index:
+                            delindex()
+                    else:
+                        # set was a set
+                        try:
+                            set.remove(rid)
+                        except KeyError:
+                            raise KeyError(rid)
+                        if len(set) == 1:
+                            # store just an int if there's only one
+                            index[value] = set.keys()[0]
+            if not blocks:
+                break
+            # Blocking assertions
+            block = blocks.pop(0)
+            new_contexts = []
+            for index, delindex_ in contexts:
+                blocking_index = index.get(None)
+                if blocking_index is None:
+                    raise KeyError('blocking index')
+                for value in block:
+                    subindex = blocking_index.get(value)
+                    if subindex is None:
+                        raise KeyError(value)
+                    def delindex():
+                        del blocking_index[value]
+                        # if now empty, remove whole blocking index
+                        if not blocking_index:
+                            del index[None]
+                    context = [subindex, delindex]
                     new_contexts.append(context)
             contexts = new_contexts
 
