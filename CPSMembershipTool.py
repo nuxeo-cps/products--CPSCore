@@ -211,8 +211,6 @@ class CPSMembershipTool(MembershipTool):
             user = user.__of__(aclu)
 
         if members is not None and user is not None:
-            f_title = "%s's Home" % member_id
-
             # Setup a temporary security manager so that creation is not
             # hampered by insufficient roles.
             old_user = getSecurityManager().getUser()
