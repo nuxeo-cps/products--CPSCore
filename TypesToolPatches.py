@@ -23,7 +23,7 @@ from AccessControl.PermissionRole import PermissionRole
 from OFS.PropertyManager import PropertyManager
 from Products.CMFCore.TypesTool import TypeInformation
 from Products.CMFCore.TypesTool import FactoryTypeInformation as FTI
-from Products.CMFCore.CMFCorePermissions import ManageProperties
+from Products.CMFCore.CMFCorePermissions import ManageProperties, View
 
 TypeInformation.manage_propertiesForm = PropertyManager.manage_propertiesForm
 TypeInformation.manage_addProperty__roles__ = PermissionRole(ManageProperties)
@@ -38,10 +38,17 @@ if 'cps_is_searchable' not in ftiprops_ids:
         )
     FTI.cps_is_searchable = 0
 
-if 'cps_proxytype' not in ftiprops_ids:
+if 'cps_proxy_type' not in ftiprops_ids:
     FTI._properties = FTI._properties + (
-        {'id':'cps_proxytype', 'type': 'selection', 'mode':'w',
+        {'id':'cps_proxy_type', 'type': 'selection', 'mode':'w',
          'select_variable':'getProxyTypesAllowed', 'label':'CPS Proxytype'},
         )
-    FTI.cps_proxytype = ''
+    FTI.cps_proxy_type = ''
 
+
+def getProxyTypesAllowed(self):
+    """ """
+    return ['','document','folder','folderishdocument']
+
+FTI.getProxyTypesAllowed = getProxyTypesAllowed
+FTI.getProxyTypesAllowed__roles__ = PermissionRole(View)
