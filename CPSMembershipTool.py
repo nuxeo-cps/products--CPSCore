@@ -98,6 +98,7 @@ class CPSMembershipTool(MembershipTool):
     security.declareProtected(View, 'getCandidateLocalRoles')
     def getCPSCandidateLocalRoles(self, obj):
         """What local roles according to the context ?"""
+        # XXX This code must change, it has knowledge of CPSDefault.
         member = self.getAuthenticatedMember()
         roles = member.getRolesInContext(obj)
         if 'WorkspaceManager' in roles or\
@@ -105,8 +106,11 @@ class CPSMembershipTool(MembershipTool):
            'Manager' in roles:
             return self.getPortalRoles()
         else:
-            member_roles = list(roles)
-            del member_roles[member_roles.index('Member')]
+            member_roles = [role for role in roles
+                            if role not in ('Member', 'Authenticated')]
+            #member_roles = list(roles)
+            #del member_roles[member_roles.index('Member')]
+            member_roles.sort()
             return tuple(member_roles)
 
     security.declareProtected(View, 'setLocalRoles')
