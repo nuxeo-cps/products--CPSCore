@@ -31,6 +31,7 @@ import MirrorTool
 import ProxyTool
 import ObjectRepository
 import CPSWorkflowTool
+from WorkflowConfiguration import WorkflowConfiguration, addWorkflowConfiguration
 
 # register CPSWorkflow
 import CPSWorkflow
@@ -61,6 +62,7 @@ def initialize(registrar):
         ElementsTool.DefaultElement,
         permission='Add a Default Element',
         constructors=(
+            # XXX should not use an unbound method as a factory !!!
             ElementsTool.ElementsTool.manage_addDefaultElement,
         )
     )
@@ -70,6 +72,15 @@ def initialize(registrar):
         EventServiceTool.SubscriberDef,
         permission='Add a Subscriber Definition',
         constructors=(
+            # XXX should not use an unbound method as a factory !!!
             EventServiceTool.EventServiceTool.manage_addSubscriber,
         )
     )
+
+    # Workflow Configuration Object
+    registrar.registerClass(
+        WorkflowConfiguration,
+        permission='Manager portal',
+        constructors=(addWorkflowConfiguration,)
+    )
+

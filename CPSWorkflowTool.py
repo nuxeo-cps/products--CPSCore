@@ -29,6 +29,8 @@ from Products.CMFCore.utils import getToolByName, _checkPermission
 from Products.CMFCore.CMFCorePermissions import AddPortalContent
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
+from Products.NuxCPS3.WorkflowConfiguration import WorkflowConfiguration_id
+
 
 class CPSWorkflowTool(WorkflowTool):
     """A Workflow Tool extending the CMFCore one with CPS features.
@@ -37,7 +39,7 @@ class CPSWorkflowTool(WorkflowTool):
     - Placefulness
 
     A creation transition is the fact that an object created in a workflow
-    can be created according to several transitions in to their initial
+    can be created according to several transitions into its initial
     state. This choice must be available to the user.
     """
 
@@ -58,18 +60,19 @@ class CPSWorkflowTool(WorkflowTool):
         """Get the possible creation transitions in a container.
 
         Returns a dict of {wf_id: sequence_of_transitions}.
+        The sequence is None for non-CPS workflows (meaning that
+        a default state will be used).
         """
-        # XXX
-        # - get the allowed workflows in this container
-        wfs = self.getWorkflowsForContainer(container, portal_type)
+        wfs = self.getChainFor(portal_type, container=container)
         creation_transitions = {}
         for wf in wfs:
-            creation_transitions[wf.getId()] = ['_create'] # XXX
+            if hasattr(aq_base(wf), 'getCreationTransitions'):
+                transitions = wf.getCreationTransitions()
+            else:
+                # Not a CPS Workflow.
+                transitions = None
+            creation_transitions[wf.getId()] = transitions
         return creation_transitions
-        #return {'workflow_foo': ['submit', 'publish'],
-        #        'workflow_bar': [],
-        #        }
-
 
     security.declarePublic('invokeFactoryFor')
     def invokeFactoryFor(self, container, portal_type, id,
@@ -84,15 +87,22 @@ class CPSWorkflowTool(WorkflowTool):
             raise Unauthorized
         possible_transitions = self.getCreationTransitions(container,
                                                            portal_type)
+        # Check that all requested transitions are available.
         for wf_id, transition in creation_transitions.items():
-            if transition not in possible_transitions.get(wf_id, []):
+            possible = possible_transitions.get(wf_id)
+            if possible is None:
+                # Non-CPS workflow.
                 raise WorkflowException(
-                    "No workflow allows the creation of %s using %s" %
-                    (portal_type, creation_transitions))
+                    "Workflow %s cannot have creation transitions" % (wf_id,))
+            if transition not in possible:
+                raise WorkflowException(
+                    "Workflow %s cannot create %s using transition '%s'" %
+                    (wf_id, portal_type, transition))
         # calls wf.notifyCreated!
         container.invokeFactory(portal_type, id, *args, **kw)
         # XXX should get new id effectively used! CMFCore bug!
         ob = container[id]
+        # Do transitions for all workflows.
         for wf_id, transitions in possible_transitions.items():
             transition = creation_transitions.get(wf_id)
             if transition is None:
@@ -125,12 +135,20 @@ class CPSWorkflowTool(WorkflowTool):
         if pt is None:
             return ()
         if container is None:
-            LOG('CPSWorkflowTool', DEBUG,
+            LOG('CPSWorkflowTool', ERROR,
                 'getChainFor: no container for ob %s' % (ob,))
             return ()
+        # Find placeful workflow configuration object.
+        wfconf = getattr(container, WorkflowConfiguration_id, None)
+        if wfconf is not None:
+            return wfconf._getPlacefulChainFor(pt)
+        # Nothing placeful found.
+        return self.getGlobalChainFor(pt)
 
-        # XXX not placeful for now
-        return WorkflowTool.inheritedAttribute('getChainFor')(self, pt)
+    security.declarePrivate('getGlobalChainFor')
+    def getGlobalChainFor(self, ob):
+        """Get the global chain for a given object or portal_type."""
+        return WorkflowTool.inheritedAttribute('getChainFor')(self, ob)
 
     #
     # ZMI

@@ -20,8 +20,8 @@
 """
 
 from zLOG import LOG, ERROR, DEBUG
-from Globals import InitializeClass
-from Globals import PersistentMapping
+from Acquisition import aq_base
+from Globals import InitializeClass, PersistentMapping
 from AccessControl import ClassSecurityInfo
 
 from OFS.Folder import Folder
@@ -36,11 +36,14 @@ from Products.CMFCore.WorkflowTool import addWorkflowFactory
 from Products.DCWorkflow.DCWorkflow import DCWorkflowDefinition
 
 
+CREATION_STATE = 'creation_'
+
+
 class CPSWorkflowDefinition(DCWorkflowDefinition):
     """A Workflow implementation with proxy support.
 
     Features:
-    - Creation states
+    - Creation transitions (those from the creation_ state)
     - Extended transition description
     """
 
@@ -49,45 +52,31 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
     security = ClassSecurityInfo()
 
+    def manage_afterAdd(self, item, container):
+        """Add special creation_ state after add."""
+        if aq_base(self) is aq_base(item):
+            if self.states.get(CREATION_STATE) is None:
+                self.states.addState(CREATION_STATE)
+                self.states.get(CREATION_STATE).title = 'Creation'
+                self.states.setInitialState(CREATION_STATE)
+        DCWorkflowDefinition.inheritedAttribute('manage_afterAdd')(
+            self, item, container)
+
     #
     # API
     #
 
     security.declarePrivate('getCreationTransitions')
     def getCreationTransitions(self):
-        """Get the possible creation transitions."""
-        # XXX
-        return ['_create']
+        """Get the possible creation transitions.
 
-    # overloaded
-    def notifyCreated(self, ob):
-        """Notify this workflow after an object has been created
-        and put in its new place.
-
-        This does nothing.
-        Actual workflow insertion is done through doActionFor.
+        A creation transition is a transition from the creation_ state.
         """
-        pass
-
-    # overloaded
-    def isActionSupported(self, ob, action):
-        sdef = self._getWorkflowStateOf(ob)
-        if sdef is None:
-            # not in a workflow
-            if action == '_create': # XXX use real creation transitions
-                return 1
-            return 0
-        return DCWorkflowDefinition.inheritedAttribute('isActionSupported')(
-            self, ob, action)
-
-    # overloaded
-    def doActionFor(self, ob, action, **kw):
-        """Do a workflow transition."""
-        if action == '_create':
-            # XXX temporary
-            return self._changeStateOf(ob, None)
-        return DCWorkflowDefinition.inheritedAttribute('doActionFor')(
-            self, ob, action, **kw)
+        creation_state = self.states.get(CREATION_STATE)
+        if creation_state is None:
+            return []
+        transitions = creation_state.getTransitions()
+        return [t.getId() for t in transitions]
 
 
 InitializeClass(CPSWorkflowDefinition)
