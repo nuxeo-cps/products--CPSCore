@@ -6,9 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Added missing coding in python file
-
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- New API proxy.delArchivedRevisions(revs) to delete some archived revisions.
-- proxy.getArchivedInfos also returns is_archived info.
+-

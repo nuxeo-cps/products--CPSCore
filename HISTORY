@@ -1,4 +1,22 @@
 *******************************************
+** CPSCore V3.16.0 [R1 build 2004/07/07-17:06 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Added missing coding in python file
+
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- New API proxy.delArchivedRevisions(revs) to delete some archived revisions.
+- proxy.getArchivedInfos also returns is_archived info.
+
+*******************************************
 ** CPSCore V3.15.3 [R1 build 2004/07/07-12:04 by madarche]
 
 Requires:
