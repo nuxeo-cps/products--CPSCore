@@ -248,6 +248,8 @@ class TreeCacheTest(SecurityRequestTest):
                           [0, 1])
         self.assertEquals([d['title'] for d in l],
                           ['Foo', 'Bar'])
+        self.assertEquals([d['nb_children'] for d in l],
+                          [1, 0])
 
         # Add another
         cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
@@ -259,6 +261,8 @@ class TreeCacheTest(SecurityRequestTest):
                           [0, 1, 1])
         self.assertEquals([d['title'] for d in l],
                           ['Foo', 'Bar', 'Baz'])
+        self.assertEquals([d['nb_children'] for d in l],
+                          [2, 0, 0])
 
         # Check re-add existing one
         cmf.root.foo._delObject('bar')
@@ -284,12 +288,16 @@ class TreeCacheTest(SecurityRequestTest):
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
+        self.assertEquals([d['nb_children'] for d in l],
+                          [1, 0])
 
         # Delete child
         cache.notify_tree('sys_del_object', cmf.root.foo.bar, {})
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo'])
+        self.assertEquals([d['nb_children'] for d in l],
+                          [0])
 
         # Delete root itself
         cache.notify_tree('sys_del_object', cmf.root.foo, {})
@@ -374,6 +382,19 @@ class TreeCacheTest(SecurityRequestTest):
         l = cache.getList(filter=0)
         self.assertEquals([d['title'] for d in l],
                           ['Foo', 'NewBar'])
+        self.assertEquals(l[1], {
+            'allowed_roles_and_users': ['Manager'],
+            'depth': 1,
+            'id': 'bar',
+            'local_roles': {'user:unit_tester': ('Owner',)},
+            'nb_children': 0,
+            'path': '/cmf/root/foo/bar',
+            'portal_type': 'ThePortalType',
+            'rpath': 'root/foo/bar',
+            'title': 'NewBar',
+            'url': 'cmf/root/foo/bar',
+            'visible': 0,
+            })
 
 
 def test_suite():
