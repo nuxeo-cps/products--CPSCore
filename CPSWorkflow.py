@@ -329,11 +329,10 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
 
         if TRANSITION_BEHAVIOR_CHECKIN in behavior:
-            dest_object = kwargs.get('dest_object')
-            if dest_object is None:
-                raise WorkflowException("Missing dest_object for checkin"
+            dest_objects = kwargs.get('dest_objects')
+            if dest_objects is None:
+                raise WorkflowException("Missing dest_objects for checkin"
                                         " transition=%s" % tdef.getId())
-            dest_object = self._object_maybe_rpath(dest_object)
             checkin_transition = kwargs.get('checkin_transition')
             if checkin_transition is None:
                 raise WorkflowException("Missing checkin_transition for "
@@ -343,9 +342,18 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                                         "allowed=%s"
                                         % (checkin_transition,
                                            tdef.checkin_allowed_transitions))
-            # Doc checkin.
-            wftool.checkinObject(ob, dest_object, checkin_transition)
-            # Now delete original object.
+            for dest_object in dest_objects:
+                dest_object = self._object_maybe_rpath(dest_object)
+                # Check that the default language is still the same than
+                # when we did checkout. # XXX We want to be more flexible.
+                lang = ob.getDefaultLanguage()
+                if (ob._getFromLanguageRevisions().get(lang, 1) !=
+                    dest_object._getLanguageRevisions().get(lang, 2)):
+                    raise WorkflowException("Cannot checkin into changed "
+                                            "document %s" %
+                                       '/'.join(dest_object.getPhysicalPath()))
+                wftool.checkinObject(ob, dest_object, checkin_transition)
+            # Now delete the original object.
             container = aq_parent(aq_inner(ob))
             container._delObject(ob.getId())
             raise ObjectDeleted
