@@ -23,16 +23,18 @@ from Acquisition import aq_base
 from Products.CMFCore import utils
 from Products.CMFCore.DirectoryView import registerDirectory
 
-# Elements
 import ElementsTool
-
-# Event Service
 import EventServiceTool
 import EventServicePatches
 import LoggerTool
 import MirrorTool
 import ProxyTool
 import ObjectRepository
+import CPSWorkflowTool
+
+# register CPSWorkflow
+import CPSWorkflow
+
 
 tools = (
     EventServiceTool.EventServiceTool,
@@ -41,6 +43,7 @@ tools = (
     ElementsTool.ElementsTool,
     ProxyTool.ProxyTool,
     ObjectRepository.ObjectRepository,
+    CPSWorkflowTool.CPSWorkflowTool,
 )
 
 registerDirectory('skins', globals())
