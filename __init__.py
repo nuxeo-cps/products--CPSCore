@@ -23,7 +23,7 @@ from zLOG import LOG, INFO
 from Acquisition import aq_base
 from Products.CMFCore import utils
 from Products.CMFCore.DirectoryView import registerDirectory
-from Products.CMFCore.CMFCorePermissions import AddPortalContent
+from Products.CMFCore.CMFCorePermissions import AddPortalContent, ManagePortal
 
 import AllowModules
 
@@ -108,14 +108,14 @@ def initialize(registrar):
     # Workflow Configuration Object
     registrar.registerClass(
         CPSWorkflowConfiguration,
-        permission='Manager portal',
+        permission=ManagePortal,
         constructors=(addCPSWorkflowConfiguration,)
     )
 
     # Tree Cache
     registrar.registerClass(
         TreesTool.TreeCache,
-        permission='Manager portal',
+        permission=ManagePortal,
         constructors=(TreesTool.TreesTool.manage_addCPSTreeCache,)
     )
     utils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.gif', globals())
