@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- added (optional) l10n support to TreesTool getList() method
 Bug fixes:
 ~~~~~~~~~~
 -
