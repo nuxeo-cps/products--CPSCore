@@ -11,6 +11,9 @@ class DummyRoot(Folder):
                     ('DoStuff', (), ('Manager',)),)
         return ValueError(name)
 
+    def getPhysicalRoot(self):
+        return self
+
 class DummyRepo(SimpleItem):
     def __init__(self):
         self.sec = {}
