@@ -45,20 +45,15 @@ from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSCore.utils import _isinstance
 from Products.CPSCore.utils import isUserAgentMsie
-
+from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
+     KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
+     KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY, REQUEST_LANGUAGE_KEY
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder
 from Products.CPSCore.CPSBase import CPSBaseDocument
 
-
-KEYWORD_DOWNLOAD_FILE = 'downloadFile'
-KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
-KEYWORD_SWITCH_LANGUAGE = 'switchLanguage'
-KEYWORD_VIEW_LANGUAGE = 'viewLanguage'
-SESSION_LANGUAGE_KEY = 'CPS_SWITCH_LANGUAGE'
-REQUEST_LANGUAGE_KEY = 'CPS_VIEW_LANGUAGE'
 DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
-KEYWORD_ARCHIVED_LANGUAGE = 'switchLanguage'
+
 PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
 
 
