@@ -377,7 +377,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         return res
 
     security.declarePrivate('getCloneAllowedTransitions')
-    def getCloneAllowedTransitions(self, ob, tid):
+    def getCloneAllowedTransitions(self, ob):
         """Get the list of allowed initial transitions for clone."""
         sdef = self._getWorkflowStateOf(ob)
         if sdef is None:
