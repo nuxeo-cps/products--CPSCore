@@ -24,6 +24,12 @@ class Test(unittest.TestCase):
         self.assert_(utils._isinstance(a, A))
         self.failIf(utils._isinstance(b, A))
 
+    def test_isUserAgentMsie(self):
+        request = {'HTTP_USER_AGENT': "Mozilla/1.0"}
+        self.assert_(not utils.isUserAgentMsie(request))
+        request = {'HTTP_USER_AGENT': "MSIE"}
+        self.assert_(utils.isUserAgentMsie(request))
+
 def test_suite():
     loader = unittest.TestLoader()
     return loader.loadTestsFromTestCase(Test)
