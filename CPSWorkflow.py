@@ -1,4 +1,4 @@
-# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002-2004 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -472,10 +472,13 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
         # Update variables.
         state_values = new_sdef.var_values
-        if state_values is None: state_values = {}
+        if state_values is None:
+            state_values = {}
         tdef_exprs = None
-        if tdef is not None: tdef_exprs = tdef.var_exprs
-        if tdef_exprs is None: tdef_exprs = {}
+        if tdef is not None:
+            tdef_exprs = tdef.var_exprs
+        if tdef_exprs is None:
+            tdef_exprs = {}
         status = {}
         for id, vdef in self.variables.items():
             if not vdef.for_status:
