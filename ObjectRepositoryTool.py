@@ -137,11 +137,10 @@ class ObjectRepositoryTool(UniqueObject,
 
     security.declarePrivate('getFreeRevision')
     def getFreeRevision(self, docid):
-        """Get a free revision for a docid."""
-        # Return a revision one more than the last used.
+        """Get a free revision for a docid.
 
-        maxrev = 0
-
+        Returns a revision one more than the last used.
+        """
         existingRevs = self.keyRange(docid+'__0001', docid+'__9999')
         if len(existingRevs):
             # this new way of getting the highest revision
