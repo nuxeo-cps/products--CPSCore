@@ -11,5 +11,5 @@ New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Add the Language method (mainly for indexing) computing another language
   revision.
-- Add the getRelativePath method (mainly for indexing/metadata) method and use
-  it.
+- new wrapper method relative_path and relative_path_depth for indexing
+  and catalog metadata purpose
