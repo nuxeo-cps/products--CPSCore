@@ -44,7 +44,6 @@ from Products.CMFCore.permissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import TimeoutCache, getCache
-from Products.CPSCore.utils import _isinstance
 from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
@@ -379,7 +378,7 @@ class ProxyBase(Base):
 
     def _setSecurityRecursive(self, ob, pxtool=None):
         """Propagate security changes made on the proxy."""
-        if not _isinstance(ob, ProxyBase):
+        if not isinstance(ob, ProxyBase):
             return
         if pxtool is None:
             pxtool = getToolByName(self, 'portal_proxies')
@@ -663,7 +662,7 @@ class FileDownloader(Acquisition.Explicit):
                     "Not a base attribute: '%s'" % name)
                 raise KeyError(name)
             file = getattr(ob, name)
-            if file is not None and not _isinstance(file, File):
+            if file is not None and not isinstance(file, File):
                 LOG('FileDownloader.getitem', DEBUG,
                     "Attribute '%s' is not a File but %s" %
                     (name, `file`))
@@ -1054,7 +1053,7 @@ class ViewZip(Acquisition.Explicit):
                     "Not a base attribute: '%s'" % name)
                 raise KeyError(name)
             file = getattr(ob, name)
-            if file is not None and not _isinstance(file, File):
+            if file is not None and not isinstance(file, File):
                 LOG('ViewZip.getitem', DEBUG,
                     "Attribute '%s' is not a File but %s" %
                     (name, `file`))
@@ -1390,7 +1389,7 @@ class ProxyFolderishDocument(ProxyFolder):
     security.declarePrivate('_freezeProxyRecursive')
     def _freezeProxyRecursive(self, ob, pxtool):
         """Freeze this proxy and recurse."""
-        if not _isinstance(ob, ProxyBase):
+        if not isinstance(ob, ProxyBase):
             return
         self._freezeProxy(ob, pxtool)
         for subob in ob.objectValues():
@@ -1489,7 +1488,7 @@ class ProxyBTreeFolderishDocument(ProxyBTreeFolder):
     security.declarePrivate('_freezeProxyRecursive')
     def _freezeProxyRecursive(self, ob, pxtool):
         """Freeze this proxy and recurse."""
-        if not _isinstance(ob, ProxyBase):
+        if not isinstance(ob, ProxyBase):
             return
         self._freezeProxy(ob, pxtool)
         for subob in ob.objectValues():

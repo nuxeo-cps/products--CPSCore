@@ -38,7 +38,6 @@ from Products.CMFCore.utils import mergedLocalRoles
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
-from Products.CPSCore.utils import _isinstance
 from Products.CPSCore.CPSCorePermissions import ViewArchivedRevisions
 from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
      REQUEST_LANGUAGE_KEY
@@ -591,7 +590,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     def _unshareContentDoRecursion(self, proxy, repotool):
         """Unshare content, and recurse."""
-        if not _isinstance(proxy, ProxyBase):
+        if not isinstance(proxy, ProxyBase):
             return
         self._unshareContent(proxy, repotool)
         for subob in proxy.objectValues():
@@ -683,7 +682,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """
         # XXX should not get directly an object... or should it?
 
-        if not _isinstance(proxy, ProxyBase):
+        if not isinstance(proxy, ProxyBase):
             return
 
         self._setSecurityOnDocid(proxy.getDocid(), skip_rpath=skip_rpath)
@@ -740,9 +739,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         ti = ttool.getTypeInfo(type_name)
         if ti is None:
             raise ValueError('No type information for %s' % type_name)
-        if _isinstance(ti, FactoryTypeInformation):
+        if isinstance(ti, FactoryTypeInformation):
             ob = self._constructInstance_fti(container, ti, id, *args, **kw)
-        elif _isinstance(ti, ScriptableTypeInformation):
+        elif isinstance(ti, ScriptableTypeInformation):
             ob = self._constructInstance_sti(container, ti, id, *args, **kw)
         else:
             raise ValueError('Unknown type information class for %s' %
@@ -852,7 +851,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                           'sys_del_object',
                           'sys_modify_object',
                           'modify_object'):
-            if _isinstance(object, ProxyBase):
+            if isinstance(object, ProxyBase):
                 #LOG('ProxyTool', DEBUG, 'Got %s for proxy %s'
                 #    % (event_type, '/'.join(object.getPhysicalPath())))
                 rpath = infos['rpath']
@@ -943,7 +942,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     def _recurse_rebuild(self, ob, utool):
         """Rebuild all proxies recursively."""
-        if not _isinstance(ob, ProxyBase):
+        if not isinstance(ob, ProxyBase):
             return
         rpath = utool.getRelativeUrl(ob)
         self._addProxy(ob, rpath)

@@ -20,3 +20,4 @@ New internal features:
 - Factorized code from CPSCore.utils to the method CPSUtil.id.generateId.
 - Don't index repository objects anymore
 - Use CPSCompat for Zope/CMF forward-compatibility monkey-patching.
+- Removed deprecated _isinstance, now use normal python isinstance.

@@ -26,9 +26,6 @@ are:
   - getAllowedRolesAndUsersOfObject(object)
   - getAllowedRolesAndUsersOfUser(user)
 
-Other utility functions:
-  - _isinstance(ob, class)
-
 This code uses if possible the following methods on the user folder:
   - mergedLocalRoles
   - mergedLocalRolesWithPath
@@ -163,6 +160,7 @@ CMFCore.utils._mergedLocalRoles = mergedLocalRoles
 # Utility functions
 #
 
+# XXX this is deprecated and will be removed.
 def _isinstance(ob, cls):
     try:
         return isinstance(ob, cls)

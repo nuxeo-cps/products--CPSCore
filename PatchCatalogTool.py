@@ -30,7 +30,7 @@ from Products.CMFCore.utils import getToolByName, _getAuthenticatedUser, \
 from Products.CMFCore.permissions import AccessInactivePortalContent
 
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject, \
-     getAllowedRolesAndUsersOfUser, _isinstance
+     getAllowedRolesAndUsersOfUser
 from Products.CPSCore.ProxyBase import ProxyBase, KEYWORD_SWITCH_LANGUAGE, \
      KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY
 from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
@@ -56,7 +56,7 @@ class IndexableObjectWrapper:
             return vars[name]
         ob = self.__ob
         proxy = None
-        if _isinstance(ob, ProxyBase):
+        if isinstance(ob, ProxyBase):
             proxy = ob
             if (self.__is_default_proxy and
                 name in ('getL10nTitles', 'getL10nDescriptions')) or (
@@ -147,7 +147,7 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
         vars = {}
     path = uid.split('/')
     proxy = None
-    if _isinstance(object, ProxyBase):
+    if isinstance(object, ProxyBase):
         proxy = object
         languages = proxy.getProxyLanguages()
     if proxy is None or len(languages) == 1 or \
@@ -182,7 +182,7 @@ def cat_unindexObject(self, object):
     """Remove from catalog."""
     default_uid = self._CatalogTool__url(object)
     proxy = None
-    if _isinstance(object, ProxyBase):
+    if isinstance(object, ProxyBase):
         proxy = object
         languages = proxy.getProxyLanguages()
     if proxy is None or len(languages) == 1:

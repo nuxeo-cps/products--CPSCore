@@ -34,7 +34,6 @@ from OFS.CopySupport import CopyError, _cb_decode, sanity_check
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
-from Products.CPSCore.utils import _isinstance
 
 
 class TypeConstructor(Base):
@@ -110,9 +109,9 @@ class TypeConstructor(Base):
         if hasattr(aq_base(ti), '_constructInstance'):
             # New API for CPS.
             ob = ti._constructInstance(self, id, *args, **kw)
-        elif _isinstance(ti, FactoryTypeInformation):
+        elif isinstance(ti, FactoryTypeInformation):
             ob = self._constructInstance_fti(ti, id, *args, **kw)
-        elif _isinstance(ti, ScriptableTypeInformation):
+        elif isinstance(ti, ScriptableTypeInformation):
             ob = self._constructInstance_sti(ti, id, *args, **kw)
         else:
             raise ValueError('Unknown type information class for %s' %
