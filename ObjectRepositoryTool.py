@@ -139,21 +139,6 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder):
         self.constructContent(type_name, id, *args, **kw)
         return (repoid, version_info)
 
-    # XXX used for what?
-    security.declarePrivate('addObjectVersion')
-    def addObjectVersion(self, object, repoid, version_info):
-        """Add the version version_info of the object repoid.
-
-        repoid is a unique id.
-        version_info is an integer describing the version.
-        If repoid is None (new object without previous versions), a new
-        one is created and returned.
-        """
-        id = self._get_id(repoid, version_info)
-        object._setId(id)
-        self._setObject(id, object)
-        return id
-
     security.declarePrivate('delObjectVersion')
     def delObjectVersion(self, repoid, version_info):
         """Delete a version of an object."""
@@ -395,6 +380,7 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder):
 
         The object is cloned into the repository.
         """
+        # This code is derived from CopySupport.CopyContainer.manage_clone
         if not ob.cb_isCopyable():
             raise CopyError, 'Copy not supported: %s' % ob.getId()
         try:
@@ -410,6 +396,8 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder):
         self._setObject(id, ob)
         ob = self._getOb(id)
         ob.manage_afterClone(ob)
+        if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
+            on.manage_afterCMFAdd(ob, self)
         return ob
 
     #

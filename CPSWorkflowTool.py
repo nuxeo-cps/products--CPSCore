@@ -222,9 +222,6 @@ class CPSWorkflowTool(WorkflowTool):
                 container.invokeFactoryCMF(type_name, id, *args, **kw)
                 # XXX should get new id effectively used! CMFCore bug!
                 ob = container[id]
-            # Send CMF add event for this newly constructed CMF object.
-            infos = {'args': args, 'kw': kw}
-            getEventService(self).notify('sys_add_cmf_object', ob, infos)
         # Do creation transitions for all workflows.
         reindex = 0
         for wf_id, transition in all_transitions.items():
@@ -233,6 +230,8 @@ class CPSWorkflowTool(WorkflowTool):
             reindex = 1
         if reindex:
             self._reindexWorkflowVariables(ob)
+        # Send CMF add event
+        ob.manage_afterCMFAdd(ob, container)
         return ob
 
 

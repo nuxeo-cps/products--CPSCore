@@ -72,6 +72,7 @@ fake_event_service = FakeEventService()
 
 def getEventService(context):
     """Return the event service relative to context."""
+    # XXX Maybe cache it in REQUEST for improved speed?
     return getToolByName(context, 'portal_eventservice', fake_event_service)
 
 

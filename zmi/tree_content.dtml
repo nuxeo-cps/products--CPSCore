@@ -5,7 +5,7 @@
 <form action="<dtml-var name="URL1">">
 
 <p class="form-text">
-&dtml-id; contains <dtml-var "_.len(list)"> levels.
+This tree contains <dtml-var "_.len(list)"> levels.
 </p>
 
 <p class="form-element">

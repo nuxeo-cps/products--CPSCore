@@ -23,7 +23,10 @@ from zLOG import LOG, DEBUG
 from types import DictType
 from copy import deepcopy
 from Globals import InitializeClass, DTMLFile
+from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
+from ZODB.PersistentMapping import PersistentMapping
+from ZODB.PersistentList import PersistentList
 
 from OFS.Folder import Folder
 
@@ -48,7 +51,7 @@ class TreesTool(UniqueObject, Folder):
         LOG('TreesTool', DEBUG, 'Got %s for %s'
             % (event_type, '/'.join(object.getPhysicalPath())))
         if event_type not in ('sys_add_cmf_object',
-                              'sys_clone_object',
+                              'sys_order_object',
                               'sys_del_object',
                               'modify_object'):
             return
@@ -57,7 +60,7 @@ class TreesTool(UniqueObject, Folder):
         id = object.getId()
         LOG('TreesTool', DEBUG, 'Notifying...')
         for tree in self.objectValues():
-            tree.notify(event_type, object, infos)
+            tree.notify_tree(event_type, object, infos)
 
     #
     # ZMI
@@ -121,8 +124,15 @@ class TreeCache(SimpleItemWithProperties):
 
     def __init__(self, id, **kw):
         self._setId(id)
-        self._tree = {} # XXX use PersistentMapping here, in init()
-        self._list = [] # XXX use PersistentList...
+        self._clear()
+
+    def _new_tree(self, d={}):
+        return PersistentMapping(d)
+
+    def _clear(self):
+        self._tree = self._new_tree() # The full tree.
+        self._pointers = []           # A list of subtrees.
+        self._flat = []               # A list of tree nodes only.
 
     security.declareProtected(ViewManagementScreens, 'all_type_names')
     def all_type_names(self):
@@ -136,47 +146,144 @@ class TreeCache(SimpleItemWithProperties):
         res.sort()
         return res
 
-    security.declarePrivate('notify')
-    def notify(self, event_type, object, infos):
+    security.declarePrivate('notify_tree')
+    def notify_tree(self, event_type, object, infos):
         """Hook called when the tree changes."""
-        portal = getToolByName(self, 'portal_url').getPortalObject()
+        LOG('Tree.notify_tree', DEBUG, 'Event %s' % event_type)
+        hubtool = getToolByName(self, 'portal_eventservice')
+        urltool = getToolByName(self, 'portal_url')
+        portal = urltool.getPortalObject()
         plen = len(portal.getPhysicalPath())
-        if self._is_candidate(object, plen):
-            LOG('Tree', DEBUG, 'ob is candidate, rebuilding.')
-            self.rebuild()
+        rebuild = 0
+        if event_type == 'sys_add_cmf_object':
+            if not self._is_candidate(object, plen):
+                return
+            # New object.
+            container = aq_parent(aq_inner(object))
+            tree = self._find_tree(container)
+            if tree is None:
+                # Container not found, but object may be the new root...
+                root = self.root
+                if root.endswith('/'):
+                    root = root[:-1]
+                rpath = urltool.getRelativeUrl(object)
+                if rpath != root:
+                    return
+                LOG('notify_tree', DEBUG, 'Added a new root %s' % root)
+                self.rebuild()
+                return
+            LOG('notify_tree', DEBUG, '  Adding object')
+            # XXX Here we have to be careful not to readd something
+            # we already have, which can happen for a rename: we
+            # have already received the sys_order_object event
+            # and thus fully recomputed the children.
+            subtree = self._get_tree(object, tree['depth']+1)
+            id = object.getId()
+            for child in tree['children']:
+                if child['id'] == id:
+                    LOG('notify_tree', DEBUG, '   Aha, already there')
+                    # Already there.
+                    return
+            # XXX adds at end... should find from container order.
+            tree['children'].append(subtree)
+            rebuild = 1
+        elif event_type == 'sys_del_object':
+            # Deleted object.
+            container = aq_parent(aq_inner(object))
+            tree = self._find_tree(container)
+            if tree is None:
+                # Container not found, but object may be the root...
+                root = self.root
+                if root.endswith('/'):
+                    root = root[:-1]
+                rpath = urltool.getRelativeUrl(object)
+                if rpath != root:
+                    return
+                LOG('notify_tree', DEBUG, 'Deleting root %s' % root)
+                self._clear()
+                return
+            id = object.getId()
+            children = tree['children']
+            for i in range(len(children)):
+                if children[i]['id'] == id:
+                    LOG('notify_tree', DEBUG, '  Del pos %s' % i)
+                    children.pop(i)
+                    rebuild = 1
+                    break
+        elif event_type == 'sys_order_object':
+            container = object
+            tree = self._find_tree(container)
+            if tree is None:
+                return
+            LOG('notify_tree', DEBUG, '  Found tree')
+            # XXX We recompute the whole subtree, we could be more intelligent
+            depth = tree['depth']
+            children = self._get_children(container, depth+1, plen, hubtool)
+            tree['children'] = children
+            rebuild = 1
+        else: # event_type == 'modify_object'
+            tree = self._find_tree(object)
+            if tree is None:
+                return
+            LOG('notify_tree', DEBUG, '  Found tree')
+            info = self._get_info(object, plen, hubtool)
+            LOG('notify_tree', DEBUG, '  Updating info %s' % `info`)
+            # Ensure script-provided data doesn't conflict.
+            for k in ('depth', 'children'):
+                if info.has_key(k):
+                    del info[k]
+            tree.update(info)
+            rebuild = 1
+        if rebuild:
+            self._finish_rebuild()
+
+
+    def _find_tree(self, ob):
+        """Find the tree entry for the object."""
+        urltool = getToolByName(self, 'portal_url')
+        portal = urltool.getPortalObject()
+        if self.root:
+            root = portal.unrestrictedTraverse(self.root, default=None)
+            if root is None:
+                return None
+        else:
+            root = portal
+        path = '/'.join(ob.getPhysicalPath())
+        tree = None
+        for info in self._pointers:
+            # XXX _pointers could even be a dict...
+            if info['path'] == path:
+                tree = info
+                break
+        return tree
+
 
     security.declarePrivate('rebuild')
     def rebuild(self):
         """Rebuild all the tree."""
-        urltool = getToolByName(self, 'portal_url')
-        hubtool = getToolByName(self, 'portal_eventservice')
-        portal = urltool.getPortalObject()
-        plen = len(portal.getPhysicalPath())
-        info_method = self.info_method.strip()
-        self._sanitize()
+        portal = getToolByName(self, 'portal_url').getPortalObject()
         if self.root:
-            ob = portal.unrestrictedTraverse(self.root)
+            root = portal.unrestrictedTraverse(self.root, default=None)
+            if root is None:
+                self._clear()
+                return
         else:
-            ob = portal
-        tree = self._rebuild(ob, 0, plen, info_method, hubtool)
-        self._tree = tree
-        # Compute list
-        flat = [] # XXX persistentlist
-        self._flatten(tree, flat)
-        self._list = flat
-
-    def _sanitize(self):
-        if self.root != self.root.strip():
-            self.root = self.root.strip()
+            root = portal
+        LOG('rebuild', DEBUG, 'Rebuilding from %s'
+            % '/'.join(root.getPhysicalPath()))
+        self._tree = self._get_tree(root, 0)
+        self._finish_rebuild()
 
     def _is_candidate(self, ob, plen):
         """Return True if the object should be cached."""
         LOG('Tree', DEBUG, 'Is %s candidate?' % ob.getId())
-        if ob.meta_type not in self.meta_types:
-            LOG('Tree', DEBUG, ' No, mt=%s' % ob.meta_type)
+        bob = aq_base(ob)
+        if getattr(bob, 'meta_type', None) not in self.meta_types:
+            LOG('Tree', DEBUG, ' No, mt=%s' % getattr(bob, 'meta_type', None))
             return 0
-        if getattr(ob, 'portal_type', None) not in self.type_names:
-            LOG('Tree', DEBUG, ' No, pt=%s' % ob.portal_type)
+        type_names = self.type_names or [] # Stupid, may be ''.
+        if getattr(bob, 'portal_type', None) not in type_names:
+            LOG('Tree', DEBUG, ' No, pt=%s' % getattr(bob, 'portal_type', None))
             return 0
         root = self.root
         if not root:
@@ -187,50 +294,69 @@ class TreeCache(SimpleItemWithProperties):
         LOG('Tree', DEBUG, ' Returns ok=%s' % ok)
         return ok
 
-    def _get_one(self, ob, plen, info_method, hubtool, hubid=None):
+    def _get_info(self, ob, plen, hubtool):
         """Get info on one object."""
-        res = {} # XXX use PersistentMapping here
-        if info_method:
-            method = getattr(ob, info_method, None)
+        info = None
+        if self.info_method:
+            method = getattr(ob, self.info_method, None)
             if method is not None:
                 r = method()
                 if isinstance(r, DictType):
-                    res = r
+                    info = self._new_tree(r)
                 else:
-                    LOG('TreeCache', ERROR, '_get_one returned non-dict %s'
+                    LOG('TreeCache', ERROR, '_get_info returned non-dict %s'
                         % `r`)
-        if hubid is None:
-            hubid = hubtool.getHubId(ob)
+        if info is None:
+            # Empty info
+            info = self._new_tree()
         ppath = ob.getPhysicalPath()
-        res.update({'id': ob.getId(),
-                    'url': ob.absolute_url(),
-                    'path': '/'.join(ppath),
-                    'rpath': '/'.join(ppath[plen:]),
-                    'hubid': hubid,
-                    })
+        info.update({'id': ob.getId(),
+                     'url': ob.absolute_url(),
+                     'path': '/'.join(ppath),
+                     'rpath': '/'.join(ppath[plen:]),
+                     'hubid': hubtool.getHubId(ob),
+                     })
         # XXX compute ~allowedRolesAndUsers too
-        return res
+        return info
 
-    def _rebuild(self, ob, depth, plen, info_method, hubtool):
-        """Rebuild, starting at ob."""
-        res = self._get_one(ob, plen, info_method, hubtool)
-        res['depth'] = depth
-        children = [] # XXX persistentlist
+    def _get_children(self, ob, depth, plen, hubtool):
+        children = PersistentList()
         for subob in ob.objectValues():
             if self._is_candidate(subob, plen):
-                children.append(self._rebuild(subob, depth+1,
-                                              plen, info_method, hubtool))
-        res['children'] = children
-        return res
+                children.append(self._get_tree_r(subob, depth, plen, hubtool))
+        return children
 
-    def _flatten(self, info, res):
+    def _get_tree_r(self, ob, depth, plen, hubtool):
+        """Rebuild, starting at ob."""
+        tree = self._get_info(ob, plen, hubtool)
+        children = self._get_children(ob, depth+1, plen, hubtool)
+        tree['depth'] = depth
+        tree['children'] = children
+        return tree
+
+    def _get_tree(self, ob, depth):
+        hubtool = getToolByName(self, 'portal_eventservice')
+        urltool = getToolByName(self, 'portal_url')
+        portal = urltool.getPortalObject()
+        plen = len(portal.getPhysicalPath())
+        return self._get_tree_r(ob, depth, plen, hubtool)
+
+    def _finish_rebuild(self):
+        pointers = PersistentList()
+        flat = []
+        self._flatten(self._tree, pointers, flat)
+        self._pointers = pointers
+        self._flat = flat
+
+    def _flatten(self, tree, pointers, flat):
         """Flatten the informations."""
-        d = info.copy()
-        res.append(d)
+        d = tree.data.copy() # .data because tree is PersistentMapping
+        pointers.append(tree)
+        flat.append(d)
         if d.has_key('children'):
             del d['children']
-            for subinfo in info['children']:
-                self._flatten(subinfo, res)
+            for subtree in tree['children']:
+                self._flatten(subtree, pointers, flat)
 
     #
     # API
@@ -245,13 +371,16 @@ class TreeCache(SimpleItemWithProperties):
 
     security.declareProtected(View, 'getTree')
     def getTree(self):
-        """Return the cached tree."""
-        return deepcopy(self._tree)
+        """Return the cached tree.
+
+        Eeach node is a dictionnary containing the following information:
+        """
+        return deepcopy(self._tree) # XXX untested, probably fails
 
     security.declareProtected(View, 'getList')
     def getList(self):
         """Return the cached tree as a list."""
-        return deepcopy(self._list)
+        return deepcopy(self._flat)
 
     #
     # ZMI
