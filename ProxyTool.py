@@ -27,7 +27,7 @@ from AccessControl import ClassSecurityInfo
 from AccessControl.PermissionRole import rolesForPermissionOn
 
 from Products.CMFCore.CMFCorePermissions import View
-from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
+from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
@@ -178,7 +178,10 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         res = []
         for hubid, langs in infos.items():
             rpath = hubtool.getLocation(hubid, relative=1)
-            ob = portal.unrestrictedTraverse(rpath)
+            try:
+                ob = portal.unrestrictedTraverse(rpath)
+            except KeyError:
+                raise 'debug', 'rpath=%s hubid=%s id=%s infos=%s' % (rpath, hubid, id, infos)
             if _checkPermission(View, ob):
                 res.append({'object': ob,
                             'rpath': rpath,
@@ -412,17 +415,65 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             self.setSecurity(object)
 
     #
+    # Management
+    #
+
+    security.declareProtected(ManagePortal, 'getVersionsUsed')
+    def getVersionsUsed(self):
+        """Return management info about all the proxies.
+
+        Return a dict of {repoid: dict of {version: None}}
+        """
+        infos = {}
+        for hubid, (repoid, version_infos) in self._hubid_to_info.items():
+            for lang, vi in version_infos.items():
+                infos.setdefault(repoid, {})[vi] = None
+        return infos
+
+    security.declareProtected(ManagePortal, 'getBrokenProxies')
+    def getBrokenProxies(self):
+        """Return the broken proxies.
+
+        Return a list of (hubid, info).
+        """
+        hubtool = getToolByName(self, 'portal_eventservice')
+        portal = aq_parent(aq_inner(self))
+        broken = []
+        for hubid, info in self._hubid_to_info.items():
+            rpath = hubtool.getLocation(hubid, relative=1)
+            try:
+                ob = portal.unrestrictedTraverse(rpath)
+            except (AttributeError, KeyError):
+                broken.append((hubid, info))
+        return broken
+
+    #
     # ZMI
     #
 
     manage_options = (
+        {'label': 'Management',
+         'action': 'manage_proxiesInfo',
+        },
         {'label': 'Proxies',
          'action': 'manage_listProxies',
         },
         ) + SimpleItemWithProperties.manage_options
 
-    security.declareProtected(ViewManagementScreens, 'manage_listProxies')
+    security.declareProtected(ManagePortal, 'manage_proxiesInfo')
+    manage_proxiesInfo = DTMLFile('zmi/proxy_proxiesInfo', globals())
+
+    security.declareProtected(ManagePortal, 'manage_listProxies')
     manage_listProxies = DTMLFile('zmi/proxy_list_proxies', globals())
 
+    security.declareProtected(ManagePortal, 'manage_purgeBrokenProxies')
+    def manage_purgeBrokenProxies(self, REQUEST):
+        """Purge the broken proxies."""
+        broken = self.getBrokenProxies()
+        for hubid, infos in broken:
+            del self._hubid_to_info[hubid]
+        REQUEST.RESPONSE.redirect(self.absolute_url() +
+                                  '/manage_proxiesInfo?search=1'
+                                  '?manage_tabs_message=Purged.')
 
 InitializeClass(ProxyTool)

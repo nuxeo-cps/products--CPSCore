@@ -21,7 +21,7 @@ from zLOG import LOG, ERROR, DEBUG
 import sys
 import random
 from types import TupleType, ListType
-from Globals import InitializeClass
+from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base
 from AccessControl import ClassSecurityInfo
 from AccessControl.Permission import Permission, name_trans
@@ -32,6 +32,7 @@ from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
+from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.DCWorkflow.utils import modifyRolesForPermission
 
@@ -313,6 +314,36 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
             ob.reindexObjectSecurity()
 
     #
+    # Management
+    #
+
+    security.declareProtected(ManagePortal, 'getManagementInformation')
+    def getManagementInformation(self):
+        """Return management info.
+
+        Return a list of ids used, and of those that are used by no proxy.
+        """
+        pxtool = getToolByName(self, 'portal_proxies')
+        infos = pxtool.getVersionsUsed()
+        used = []
+        unused = []
+        for id in self.objectIds():
+            repoid, vi = self._split_id(id)
+            if repoid is None:
+                LOG('ObjectRepositoryTool', DEBUG, 'bad id %s' % id)
+                continue
+            if not infos.has_key(repoid):
+                unused.append(id)
+                continue
+            if not infos[repoid].has_key(vi):
+                unused.append(id)
+                continue
+            used.append(id)
+        return {'unused': unused,
+                'used': used,
+                }
+
+    #
     # Misc
     #
 
@@ -343,7 +374,22 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
     # ZMI
     #
 
-    manage_options = PortalFolder.manage_options
+    manage_options = (
+        {'label': 'Management',
+         'action': 'manage_repoInfo',
+        },
+        ) + PortalFolder.manage_options
+
+    security.declareProtected(ManagePortal, 'manage_repoInfo')
+    manage_repoInfo = DTMLFile('zmi/repo_repoInfo', globals())
+
+    security.declareProtected(ManagePortal, 'manage_purgeOrphans')
+    def manage_purgeOrphans(self, REQUEST):
+        """Purge all orphan versions."""
+        infos = self.getManagementInformation()
+        self.manage_delObjects(infos['unused'])
+        REQUEST.RESPONSE.redirect(self.absolute_url()+'/manage_repoInfo'
+                                  '?manage_tabs_message=Purged.')
 
     # XXX security?
     security.declarePublic('manage_redirectVersion')
