@@ -149,6 +149,10 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
         # has revision __9998 in the repository is __9999
         ortool._tree[docid + '__9998'] = 'dummy'
         self.assertEquals(ortool.getFreeRevision(docid), 9999)
+        # check listRevisions
+        revs = ortool.listRevisions(docid)
+        for rev in (2, 9998):
+            self.assert_(rev in revs)
 
 
 def test_suite():
