@@ -397,6 +397,14 @@ class CPSWorkflowTool(WorkflowTool):
             "inserting %s using transition=%s behavior=%s kw=%s" %
             (ob.getId(), initial_transition, initial_behavior, kwargs))
         reindex = 0
+
+        # Remove old workflow information.
+        try:
+            delattr(ob, 'workflow_history')
+        except (AttributeError, KeyError):
+            # ExtensionClasses raise KeyError... duh.
+            pass
+
         for wf in self.getWorkflowsFor(ob):
             if hasattr(aq_base(wf), 'insertIntoWorkflow'):
                 wf.insertIntoWorkflow(ob, initial_transition, initial_behavior,
@@ -457,7 +465,8 @@ class CPSWorkflowTool(WorkflowTool):
         """Merge a proxy into some existing one.
 
         Merging is the act of adding the revisions of a proxy into an
-        existing one in the same container.
+        existing one in the same container. If the proxy is a folderishdoc,
+        also replaces the old subobjects with the new ones.
 
         Returns the destination object, or None if no merging was found.
 
@@ -471,6 +480,19 @@ class CPSWorkflowTool(WorkflowTool):
         if dest_ob is not None:
             pxtool = getToolByName(self, 'portal_proxies')
             pxtool.checkinRevisions(ob, dest_ob)
+
+        # For folderish documents, copy subobjects into new container.
+        if _isinstance(dest_ob, ProxyFolderishDocument):
+            # Erase old
+            ids = [id for id in dest_ob.objectIds() if not id.startswith('.')]
+            dest_ob.manage_delObjects(ids)
+
+            # Copy new
+            ids = [id for id in ob.objectIds() if not id.startswith('.')]
+            for id in ids:
+                subob = ob._getOb(id)
+                dest_ob.copyContent(subob, id)
+
         return dest_ob
 
     security.declarePublic('isObjectMergeable')
@@ -603,9 +625,11 @@ class CPSWorkflowTool(WorkflowTool):
             (ob.getId(), action))
         if not _isinstance(ob, ProxyBase): # XXX
             return
-        self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
+        # Do the recursion children first, so that if we have to do an
+        # accept and a merge, subdocuments are merged already published.
         for subob in ob.objectValues():
             self._doActionForRecursive(subob, action, wf_id=wf_id, *args, **kw)
+        self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
 
     #
     # History/status management
