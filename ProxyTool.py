@@ -171,7 +171,10 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     security.declarePrivate('checkinRevisions')
     def checkinRevisions(self, proxy, dest_proxy):
-        """Checkin a proxy's revisions into a destination proxy."""
+        """Checkin a proxy's revisions into a destination proxy.
+
+        Also used for proxy merge.
+        """
         for lang, rev in proxy._getLanguageRevisions().items():
             dest_proxy.setLanguageRevision(lang, rev)
         dest_proxy.proxyChanged()
