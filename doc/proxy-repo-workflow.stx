@@ -68,8 +68,8 @@ Proxies, document repository and workflows
     - security information to control for instance its visibility (View)
       and modifiability (Modify portal content) (and others according to
       the workflow). The security information is the union of all the
-      settings of the proxies that point to it. See Security synthesis
-      below.
+      settings of the proxies that point to it. See security.stx for
+      more about security.
 
     Freezing
 
@@ -290,25 +290,6 @@ Proxies, document repository and workflows
     To solve this, the worklow tool now has a getFullHistoryOf() method,
     that returns the full history. The full history is actually stored
     in the repository tool.
-
-  Security synthesis
-
-    A proxy has security applied to it by the workflow. This typically
-    controls visibility and modifiability. The document itself, in the
-    repository, must be protected by the same security settings. In
-    addition, there is the problem that several proxies with different
-    workflow states and thus different security settings can point to
-    the same document, so a "security synthesis" has to be done.
-
-    The security synthesis must take each proxy, find which users have
-    specific workflow permissions, merge them, and apply the result to
-    the object in the repository. This is done by
-    ProxyTool.setSecurity().
-
-    There is a small complication here, which is that zope cannot
-    directly give a permission to a user, but only permissions to roles
-    and roles to users. So the repository tool has specific roles that
-    are designed to map only to one permission.
 
   Document lifecycle
 
