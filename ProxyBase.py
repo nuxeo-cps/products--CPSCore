@@ -458,7 +458,7 @@ class ProxyBase(Base):
 
     security.declarePublic('getProxyLanguages')
     def getProxyLanguages(self):
-        """return all available languages."""
+        """Return all available languages."""
         return self._getLanguageRevisions().keys()
 
     #
@@ -479,11 +479,10 @@ class ProxyBase(Base):
 
     security.declareProtected(View, 'getL10nTitles')
     def getL10nTitles(self):
-        """return a dict of title in all available languages,
-        This is used for catalog metadata.
+        """Return a dict of title in all available languages.
 
-        See the indexableWrapperObject to understand how it
-        is used as metadata."""
+        This is used for catalog metadata, see the indexableWrapperObject
+        to understand how it is used as metadata."""
         ret = {}
         if self.use_mcat:
             title = self.getContent().Title()
@@ -496,7 +495,8 @@ class ProxyBase(Base):
 
     security.declareProtected(View, 'getL10nDescriptions')
     def getL10nDescriptions(self):
-        """return a dict of description in all available languages,
+        """Return a dict of description in all available languages.
+
         This is used for catalog metadata."""
         ret = {}
         if self.use_mcat:
@@ -506,6 +506,15 @@ class ProxyBase(Base):
             ob = self.getContent(lang=locale)
             ret[locale] = ob.Description()
         return ret
+
+    security.declareProtected(View, 'isDefaultLanguage')
+    def isDefaultLanguage(self):
+        """Return 1 if proxy is the default language proxy.
+
+        This is used as catalog index."""
+        if self.getLanguage() == self.getDefaultLanguage():
+            return 1
+        return 0
 
     #
     # Helper for proxy folderish documents
