@@ -87,8 +87,10 @@ class CPSWorkflowTool(WorkflowTool):
     def getCreationTransitions(self, container, type_name):
         """Get the possible creation transitions in a container.
 
+        container can be an rpath.
         Returns a dict of {wf_id: [sequence of transitions]}.
         """
+        container = self._container_maybe_rpath(container)
         LOG('CPSWFT', DEBUG, 'get creation transitions for pt=%s in %s' %
             (type_name, '/'.join(container.getPhysicalPath())))
         wf_ids = self.getChainFor(type_name, container=container)
@@ -103,6 +105,15 @@ class CPSWorkflowTool(WorkflowTool):
         LOG('CPSWFT', DEBUG, 'creation transitions are %s' %
             `creation_transitions`)
         return creation_transitions
+
+    def _container_maybe_rpath(self, container):
+        if isinstance(container, StringType):
+            rpath = container
+            if not rpath or rpath.find('..') >= 0 or rpath.startswith('/'):
+                raise Unauthorized(rpath)
+            portal = getToolByName(self, 'portal_url').getPortalObject()
+            container = portal.unrestrictedTraverse(rpath)
+        return container
 
     def _getAllCreationTransitions(self, container, type_name,
                                    creation_transitions):
@@ -141,6 +152,7 @@ class CPSWorkflowTool(WorkflowTool):
         type_name has an action of id 'isproxytype' and of action
         'folder' or 'document'.
         """
+        container = self._container_maybe_rpath(container)
         LOG('invokeFactoryFor', DEBUG, 'Called with container=%s type_name=%s '
             'id=%s creation_transitions=%s' % (container.getId(), type_name,
                                                id, creation_transitions))
@@ -235,7 +247,7 @@ class CPSWorkflowTool(WorkflowTool):
 
 
     security.declarePublic('getCloneAllowedTransitions')
-    def getCloneAllowedTransitions(self, ob, tid):
+    def getCloneAllowedTransitions(self, ob):
         """Get the list of allowed initial transitions for clone."""
         # XXX rethink this in the presence of chains with several wfs.
         res = []
@@ -245,7 +257,7 @@ class CPSWorkflowTool(WorkflowTool):
             if not hasattr(aq_base(wf), 'getCloneAllowedTransitions'):
                 # Not a CPS workflow.
                 continue
-            allowed = wf.getCloneAllowedTransitions(ob, tid)
+            allowed = wf.getCloneAllowedTransitions(ob)
             res.extend([t for t in allowed if t not in res])
         return res
 
