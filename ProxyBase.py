@@ -463,12 +463,13 @@ class ProxyBase(Base):
     #
 
     security.declareProtected(ModifyPortalContent, 'addLanguageToProxy')
-    def addLanguageToProxy(self, lang, REQUEST=None, *args, **kw):
+    def addLanguageToProxy(self, lang, from_lang=None, REQUEST=None, *args,
+                           **kw):
         """Add a new language."""
         if REQUEST is not None:
             raise Unauthorized("Not accessible TTW")
         pxtool = getToolByName(self, 'portal_proxies')
-        rev = pxtool.createRevision(self, lang, *args, **kw)
+        rev = pxtool.createRevision(self, lang, from_lang, *args, **kw)
         return rev
 
     security.declareProtected(ModifyPortalContent, 'delLanguageFromProxy')
