@@ -127,7 +127,7 @@ class IndexationManagerTCSubscriber(BaseTCSubscriber):
                 'idxs' : idxs,
                 'with_security':with_security,
                 }
-            struct['reindex'] = idxs is not None and True or False
+            struct['reindex'] = idxs is not None
             ##LOG("Struct---------", DEBUG, str(struct))
             self._queue.append(struct)
         else:
