@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.12.0 [R1 build 2004/05/18-16:00 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- #119: IndexableObjectWrapper add the proxy id to SearchableText
+  to enable full text search on proxy id
+Bug fixes:
+~~~~~~~~~~
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.11.0 [R1 build 2004/05/14-16:10 by ben]
 
 Requires:
