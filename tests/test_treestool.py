@@ -338,7 +338,7 @@ class TreeCacheTest(SecurityRequestTest):
         self.assertEquals([d['allowed_roles_and_users'] for d in l],
                           [['Manager'], ['Manager']])
         self.assertEquals([d['local_roles'] for d in l],
-                          [{}, {'user:unit_tester': ('Owner',)}])
+                          [{}, {'user:Anonymous User': ('Owner',)}])
 
         # Change security
         bar._View_Permission = ('SomeRole',)
@@ -377,7 +377,7 @@ class TreeCacheTest(SecurityRequestTest):
             'allowed_roles_and_users': ['Manager'],
             'depth': 1,
             'id': 'bar',
-            'local_roles': {'user:unit_tester': ('Owner',)},
+            'local_roles': {'user:Anonymous User': ('Owner',)},
             'nb_children': 0,
             'path': '/cmf/root/foo/bar',
             'portal_type': 'ThePortalType',
