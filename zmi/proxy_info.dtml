@@ -38,7 +38,13 @@
   <td align="left">
     <div class="list-item">
       <a href="&dtml-ppath;/portal_repository/manage_redirectVersion?repoid:int=&dtml.url_quote-repoid;&amp;version:int=&dtml.url_quote-version;">
-        <dtml-var "getContent(lang=lang).title_or_id()" html_quote>
+        <dtml-let doc="getContent(lang=lang)">
+          <dtml-if "doc is not _.None">
+            <dtml-var "getContent(lang=lang).title_or_id()" html_quote>
+          <dtml-else>
+            <em>Broken object (&dtml-repoid;)</em>
+          </dtml-if>
+        </dtml-let>
       </a>
     </div>
   </td>
