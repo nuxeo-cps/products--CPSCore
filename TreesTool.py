@@ -22,10 +22,11 @@
 from zLOG import LOG, DEBUG, ERROR
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base, aq_parent, aq_inner
-from AccessControl import getSecurityManager
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+from AccessControl import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl.SecurityManagement import setSecurityManager
 from AccessControl.User import UnrestrictedUser as BaseUnrestrictedUser
 
 from BTrees.OOBTree import OOBTree
@@ -259,14 +260,14 @@ class TreeCache(SimpleItemWithProperties):
 
                 # Call the info method while being a temporary Manager
                 # so that it can access protected methods.
-                user = getSecurityManager().getUser()
+                old_sm = getSecurityManager()
                 tmp_user = UnrestrictedUser('manager', '', ['Manager'], '')
                 tmp_user = tmp_user.__of__(self.acl_users)
                 try:
                     newSecurityManager(None, tmp_user)
                     info = method(doc=doc)
                 finally:
-                    newSecurityManager(None, user)
+                    setSecurityManager(old_sm)
 
                 if not isinstance(info, dict):
                     LOG('TreeCache', ERROR,

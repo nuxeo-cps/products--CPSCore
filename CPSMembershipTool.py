@@ -34,7 +34,9 @@ from smtplib import SMTPException
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+from AccessControl import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl.SecurityManagement import setSecurityManager
 from AccessControl.User import nobody
 from AccessControl.User import UnrestrictedUser
 from Acquisition import aq_base, aq_parent, aq_inner
@@ -378,25 +380,30 @@ class CPSMembershipTool(MembershipTool):
         tmp_user = CPSUnrestrictedUser(member_id, '',
                                        ['Manager', 'Member'], '')
         tmp_user = tmp_user.__of__(self.acl_users)
+        old_sm = getSecurityManager()
         newSecurityManager(None, tmp_user)
 
-        # Create member area.
-        members.invokeFactory(self.memberfolder_portal_type, member_area_id)
-        member_area = members._getOb(member_area_id)
-        # TODO set workspace properties ? title ..
-        member_area.changeOwnership(member)
-        member_area.manage_setLocalRoles(member_id, list(self.memberfolder_roles))
-        member_area.reindexObjectSecurity()
+        try:
+            # Create member area.
+            members.invokeFactory(self.memberfolder_portal_type,
+                                  member_area_id)
+            member_area = members._getOb(member_area_id)
+            # TODO set workspace properties ? title ..
+            member_area.changeOwnership(member)
+            member_area.manage_setLocalRoles(member_id,
+                                             list(self.memberfolder_roles))
+            member_area.reindexObjectSecurity()
 
-        # Rebuild the tree with corrected local roles.
-        # This needs a user that can View the object.
-        portal_eventservice = getToolByName(self, 'portal_eventservice')
-        portal_eventservice.notify('sys_modify_security', member_area, {})
+            # Rebuild the tree with corrected local roles.
+            # This needs a user that can View the object.
+            portal_eventservice = getToolByName(self, 'portal_eventservice')
+            portal_eventservice.notify('sys_modify_security', member_area, {})
 
-        self._createMemberContentAsManager(member, member_id, member_area)
+            self._createMemberContentAsManager(member, member_id, member_area)
 
-        # Revert to original user.
-        newSecurityManager(None, user)
+        finally:
+            # Revert to original user.
+            setSecurityManager(old_sm)
 
         self._createMemberContent(member, member_id, member_area)
 
