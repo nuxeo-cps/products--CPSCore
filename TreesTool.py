@@ -38,6 +38,7 @@ from Products.CMFCore.utils \
 
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfUser
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject
+from Products.CPSUtil.text import truncateText
 
 
 def intersects(a, b):
@@ -380,6 +381,38 @@ class TreeCache(SimpleItemWithProperties):
         except KeyError:
             pass
 
+    def _localize(self, info, locale_keys, locale):
+        """Localize info attributes specified in locale_keys into the locale
+        language.
+
+        Available keys are:
+        - title
+          - title_or_id
+          - short_title
+        - description
+        Other keys are ignored
+        """
+        if ( 'title' in locale_keys and
+             info.has_key('l10n_titles') and
+             info['l10n_titles'].has_key(locale) ):
+            info['title'] = info['l10n_titles'][locale]
+            if info['title']:
+                title_or_id = info['title']
+            else:
+                title_or_id = info['id']
+            if 'title_or_id' in locale_keys:
+                info['title_or_id'] = title_or_id
+            if 'short_title' in locale_keys:
+                info['short_title'] = truncateText(title_or_id)
+
+        # XXX: make this part generic (any key instead of description)
+        if ( 'description' in locale_keys and
+             info.has_key('l10n_descriptions') and
+             info['l10n_descriptions'].has_key(locale) ):
+            info['description'] = info['l10n_descriptions'][locale]
+
+        return info
+
     #
     # API
     #
@@ -406,7 +439,7 @@ class TreeCache(SimpleItemWithProperties):
     security.declareProtected(View, 'getList')
     def getList(self, prefix=None, start_depth=0, stop_depth=999,
                 filter=True, order=True, count_children=False,
-                REQUEST=None):
+                locale_keys=None, locale_lang=None, REQUEST=None):
         """Return a subportion of the tree, flattened into a list.
 
         Only returns the part between start_depth and stop_depth inclusive,
@@ -417,6 +450,9 @@ class TreeCache(SimpleItemWithProperties):
         If order is true, keeps original zodb order (slower).
 
         If count_children is true, get info about nb_children (slower).
+
+        If locale_keys is not None, info keys are translated into locale_lang
+        (slower).
 
         Each list element is a mapping containing the following keys:
           id
@@ -518,6 +554,11 @@ class TreeCache(SimpleItemWithProperties):
             for info in res:
                 info['nb_children'] = counters.get(info['rpath'], 0)
 
+
+        # Check locale
+        if locale_keys is not None:
+            res = [ self._localize(info, locale_keys, locale_lang)
+                    for info in res ]
         return res
 
     #
