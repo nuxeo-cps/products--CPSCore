@@ -146,7 +146,7 @@ class ObjectRepositoryTool(UniqueObject,
                 maxrev = rev
         return maxrev + 1
 
-    security.declarePrivate('createRevision') # XXX renamed from invokeFactory
+    security.declarePrivate('createRevision')
     def createRevision(self, docid_, type_name_, *args, **kw):
         """Create an object with docid and a new revision in the repository.
 
@@ -174,7 +174,6 @@ class ObjectRepositoryTool(UniqueObject,
         id = self._getId(docid, rev)
         return self.hasObject(id)
 
-    # XXX was def getObjectVersion(self, repoid, version_info):
     security.declarePrivate('getObjectRevision')
     def getObjectRevision(self, docid, rev):
         """Get a revision of an object.
@@ -189,14 +188,15 @@ class ObjectRepositoryTool(UniqueObject,
                 'Did not find expected document %s' % id)
             raise
 
+    # XXX unused except by unit tests
     security.declarePrivate('delObjectRevisions')
     def delObjectRevisions(self, docid):
         """Delete all the revisions of an object."""
         prefix = self._getIdPrefix(docid)
         # XXX costly
-        ids_to_delete = [ id for id in self.objectIds() 
-                             if id.startswith(prefix) ]
-        for id in ids_to_delete: 
+        ids_to_delete = [id for id in self.objectIds()
+                         if id.startswith(prefix)]
+        for id in ids_to_delete:
             self._delObject(id)
 
         # Warning: don't do:
