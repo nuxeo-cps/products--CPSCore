@@ -26,6 +26,7 @@ from AccessControl import ClassSecurityInfo
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import AccessContentsInformation
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
+from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.NuxCPS3.CPSBase import CPSBaseFolder
 from Products.NuxCPS3.CPSBase import CPSBaseDocument
@@ -110,10 +111,36 @@ class ProxyBase(Base):
 
         (Called by CPSWorkflow.)
         """
+        # XXX use an event?
         hubtool = getToolByName(self, 'portal_eventservice')
         hubid = hubtool.getHubId(self)
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool.freezeProxy(hubid)
+
+    #
+    # Security
+    #
+
+    def _setSecurity(self):
+        """Propagate security changes made on the proxy."""
+        # Now gather permissions for each version
+        pxtool = getToolByName(self, 'portal_proxies')
+        pxtool.setSecurity(self)
+
+    # overloaded
+    def reindexObject(self, idxs=[]):
+        """Called to reindex when the object has changed."""
+        if not idxs or 'allowedRolesAndUsers' in idxs:
+            # XXX should use an event for that
+            self._setSecurity()
+        # Doesn't work if CMFCatalogAware isn't an ExtensionClass:
+        #return CMFCatalogAware.reindexObject(self, idxs=idxs)
+        return CMFCatalogAware.__dict__['reindexObject'](self, idxs=idxs)
+
+    # XXX also call _setSecurity from:
+    #  manage_role
+    #  manage_acquiredPermissions
+    #  manage_changePermissions
 
     #
     # Helpers

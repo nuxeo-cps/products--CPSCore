@@ -253,6 +253,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 wftool.cloneObject(ob, container, creation_transitions)
         elif tdef.transition_behavior == TRANSITION_BEHAVIOR_FREEZE:
             # Freeze the object.
+            # XXX use an event?
             ob.freezeProxy()
         #
         ###

@@ -31,7 +31,7 @@ and can be queried for those.
 # the event service has to pass the hubid to subscribers as additional
 # info.
 
-from zLOG import LOG, ERROR
+from zLOG import LOG, ERROR, DEBUG
 from DateTime import DateTime
 import random
 from types import StringType, UnicodeType, TupleType
@@ -256,6 +256,7 @@ class EventServiceTool(UniqueObject, Folder):
     security.declarePublic('getHubId')
     def getHubId(self, object_or_location):
         """Get the hubid of an object or location, or None."""
+        #LOG('getHubId', DEBUG, 'for ob_or_loc=%s' % `object_or_location`)
         t = type(object_or_location)
         if t in (StringType, UnicodeType):
             location = object_or_location
@@ -264,10 +265,13 @@ class EventServiceTool(UniqueObject, Folder):
         else:
             location = '/'.join(object_or_location.getPhysicalPath())
         rlocation = self._get_rlocation(location)
+        #LOG('getHubId', DEBUG, 'rlocation=%s' % rlocation)
         if rlocation is None:
             LOG('EventServiceTool', ERROR,
                 'Hub: getHubId for bad location %s' % location)
             return None
+        #hubid = self._rlocation_to_hubid.get(rlocation)
+        #LOG('getHubId', DEBUG, 'hubid=%s' % hubid)
         return self._rlocation_to_hubid.get(rlocation)
 
     security.declarePublic('getLocation')
