@@ -29,7 +29,6 @@ from OFS.Folder import Folder
 
 from Products.CPSCore.ProxyTool import ProxyTool
 from Products.CPSCore.ProxyBase import ProxyBase, ProxyDocument
-from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
 
 from dummy import DummyRepo, DummyPortalUrl, DummyWorkflowTool, DummyRoot
 

@@ -42,7 +42,7 @@ from Products.CPSCore.CPSWorkflowConfiguration \
     import addCPSWorkflowConfiguration
 from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
 
-from dummy import Dummy, DummyTypeInfo, DummyContent, DummyTypesTool
+from dummy import DummyContent, DummyTypesTool
 
 
 class WorkflowToolTests(SecurityRequestTest):

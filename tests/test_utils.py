@@ -3,7 +3,6 @@ from Testing import ZopeTestCase
 from Products.CPSCore import utils
 
 import unittest
-import random
 
 class Test(unittest.TestCase):
 

@@ -6,7 +6,6 @@ Simple test for portal_elements
 import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
 
-from OFS.SimpleItem import SimpleItem
 from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.SecurityManagement import noSecurityManager
 from AccessControl.SecurityManager import setSecurityPolicy
