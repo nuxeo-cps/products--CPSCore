@@ -959,7 +959,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             self._delProxy(rpath)
         REQUEST.RESPONSE.redirect(self.absolute_url() +
                                   '/manage_proxiesInfo?searchbrokenindexes=1'
-                                  '?manage_tabs_message=Purged.')
+                                  '&manage_tabs_message=Purged.')
 
     security.declareProtected(ManagePortal, 'manage_purgeBrokenProxies')
     def manage_purgeBrokenProxies(self, REQUEST=None):
@@ -975,6 +975,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             self._delProxy(rpath)
         REQUEST.RESPONSE.redirect(self.absolute_url() +
                                   '/manage_proxiesInfo?searchbrokenindexes=1'
-                                  '?manage_tabs_message=Purged.')
+                                  '&manage_tabs_message=Purged.')
 
 InitializeClass(ProxyTool)
