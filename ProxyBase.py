@@ -124,16 +124,19 @@ class ProxyBase(Base):
     def freezeProxy(self):
         """Freeze the proxy.
 
-        Any modification to a frozen version should be forbidden by the
-        rest of the system.
-
         (Called by CPSWorkflow.)
         """
-        # XXX use an event?
         hubtool = getToolByName(self, 'portal_eventservice')
-        hubid = hubtool.getHubId(self)
         pxtool = getToolByName(self, 'portal_proxies')
-        pxtool.freezeProxy(hubid)
+        self._freezeProxy(self, hubtool, pxtool)
+
+    security.declarePrivate('_freezeProxy')
+    def _freezeProxy(self, ob, hubtool, pxtool):
+        """Freeze the proxy."""
+        # XXX use an event?
+        hubid = hubtool.getHubId(ob)
+        if hubid is not None:
+            pxtool.freezeProxy(hubid)
 
     def __getitem__(self, name):
         """Transparent traversal of the proxy to the real subobjects."""
@@ -274,6 +277,18 @@ factory_type_information = (
      'allowed_content_types': (),
      'actions': (),
      },
+    {'id': 'CPS Proxy Folderish Document',
+     'description': 'A proxy to a folderish document.',
+     'title': '',
+     'content_icon': 'folder_icon.gif',
+     'product': 'NuxCPS3',
+     'meta_type': 'CPS Proxy Folderish Document',
+     'factory': 'addProxyFolderishDocument',
+     'immediate_view': '',
+     'filter_content_types': 1,
+     'allowed_content_types': (),
+     'actions': (),
+     },
     )
 
 class ProxyFolder(ProxyBase, CPSBaseFolder):
@@ -313,6 +328,62 @@ class ProxyDocument(ProxyBase, CPSBaseDocument):
 InitializeClass(ProxyDocument)
 
 
+class ProxyFolderishDocument(ProxyFolder):
+    """A proxy folderish document is a folderish document,
+    whose data is indirected to a document in a repository."""
+
+    meta_type = 'CPS Proxy Folderish Document'
+    # portal_type will be set to the target's portal_type after creation
+
+    _isFolderishDocument = 1
+
+    security = ClassSecurityInfo()
+
+    #
+    # Utility methods
+    #
+
+    security.declareProtected(View, 'thisProxyFolderishDocument')
+    def thisProxyFolderishDocument(self):
+        """Return this folderish document, used by acquisition."""
+        return self
+
+    security.declareProtected(View, 'topProxyFolderishDocument')
+    def topProxyFolderishDocument(self):
+        """Return the top enclosing folderish document, used by acquisition."""
+        container = aq_parent(aq_inner(self))
+        try:
+            return container.topProxyFolderishDocument()
+        except AttributeError:
+            return self
+
+    #
+    # Freezing
+    #
+
+    security.declarePrivate('freezeProxy')
+    def freezeProxy(self):
+        """Freeze the proxy and all subproxies.
+
+        (Called by CPSWorkflow.)
+        """
+        # XXX use an event?
+        hubtool = getToolByName(self, 'portal_eventservice')
+        pxtool = getToolByName(self, 'portal_proxies')
+        self._freezeProxyRecursive(self, hubtool, pxtool)
+
+    security.declarePrivate('_freezeProxyRecursive')
+    def _freezeProxyRecursive(self, ob, hubtool, pxtool):
+        """Freeze this proxy and recurse."""
+        if not isinstance(ob, ProxyBase):
+            return
+        self._freezeProxy(ob, hubtool, pxtool)
+        for subob in ob.objectValues():
+            self._freezeProxyRecursive(subob, hubtool, pxtool)
+
+InitializeClass(ProxyFolderishDocument)
+
+
 def addProxyFolder(container, id, repoid=None, version_infos=None,
                    REQUEST=None):
     """Add a proxy folder."""
@@ -328,6 +399,16 @@ def addProxyDocument(container, id, repoid=None, version_infos=None,
     """Add a proxy document."""
     # container is a dispatcher when called from ZMI
     ob = ProxyDocument(id, repoid=repoid, version_infos=version_infos)
+    id = ob.getId()
+    container._setObject(id, ob)
+    if REQUEST is not None:
+        REQUEST.RESPONSE.redirect(container.absolute_url()+'/manage_main')
+
+def addProxyFolderishDocument(container, id, repoid=None, version_infos=None,
+                              REQUEST=None):
+    """Add a proxy folderish document."""
+    # container is a dispatcher when called from ZMI
+    ob = ProxyFolderishDocument(id, repoid=repoid, version_infos=version_infos)
     id = ob.getId()
     container._setObject(id, ob)
     if REQUEST is not None:

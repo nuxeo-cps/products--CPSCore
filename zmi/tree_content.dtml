@@ -19,10 +19,14 @@ This tree contains <dtml-var "_.len(list)"> levels.
   <tr class="list-header">
     <td width="5%" align="right" colspan="2" valign="top">
       <div class="list-item">Depth</div></td>
-    <td width="80%" align="left" valign="top">
+    <td width="40%" align="left" valign="top">
       <div class="list-item">Path</div></td>
     <td width="15%" align="left" valign="top">
       <div class="list-item">Hub Id</div></td>
+    <td width="20%" align="left" valign="top">
+      <div class="list-item">LocalRoles</div></td>
+    <td width="20%" align="left" valign="top">
+      <div class="list-item">Allowed</div></td>
   </tr>
   </dtml-if>
   <dtml-if name="sequence-odd"><tr class="row-normal">
@@ -38,6 +42,12 @@ This tree contains <dtml-var "_.len(list)"> levels.
     </td>
     <td align="left" valign="top">
       <div class="form-text">&dtml-hubid;</div>
+    </td>
+    <td align="left" valign="top">
+      <div class="form-text">&dtml-localroles;</div>
+    </td>
+    <td align="left" valign="top">
+      <div class="form-text">&dtml-allowed_roles_users;</div>
     </td>
   </tr>
   <dtml-if sequence-end>

@@ -64,12 +64,14 @@ contentClasses = (CPSFolder.CPSFolder,
                   CPSDummyDocument.CPSDummyDocument,
                   ProxyBase.ProxyFolder,
                   ProxyBase.ProxyDocument,
+                  ProxyBase.ProxyFolderishDocument,
                   )
 
 contentConstructors = (CPSFolder.addCPSFolder,
                        CPSDummyDocument.addCPSDummyDocument,
                        ProxyBase.addProxyFolder,
                        ProxyBase.addProxyDocument,
+                       ProxyBase.addProxyFolderishDocument,
                        )
 
 fti = (CPSFolder.factory_type_information +
