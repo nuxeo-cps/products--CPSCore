@@ -400,10 +400,14 @@ class CPSWorkflowTool(WorkflowTool):
             LOG('_insertWorkflowRecursive', DEBUG, "  Is not a proxy")
             #return # XXX correct?
         self._insertWorkflow(ob, initial_transition, initial_behavior, kwargs)
-        # XXX should only do recursion if it's a proxy folderish document?
-        for subob in ob.objectValues():
-            self._insertWorkflowRecursive(subob, initial_transition,
-                                          initial_behavior, kwargs)
+        # The recursion is only applied if it's a proxy folderish document.
+        # If the considered object is a folder, its content should not be
+        # subject to workflow modifications.
+        isproxyfolderishdoc = _isinstance(ob, ProxyFolderishDocument)
+        if isproxyfolderishdoc:
+            for subob in ob.objectValues():
+                self._insertWorkflowRecursive(subob, initial_transition,
+                                              initial_behavior, kwargs)
 
     security.declarePrivate('checkinObject')
     def checkinObject(self, ob, dest_ob, transition):
