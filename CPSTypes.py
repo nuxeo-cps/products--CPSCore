@@ -21,8 +21,13 @@
 
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
+from Acquisition import aq_base
 
 from ExtensionClass import Base
+
+from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.TypesTool import FactoryTypeInformation
+from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
 
 class TypeConstructor(Base):
