@@ -22,7 +22,7 @@ The object repository tool stores versions of documents.
 It also stores workflow-related information for those documents.
 """
 
-from zLOG import LOG, ERROR, DEBUG
+from zLOG import LOG, ERROR, DEBUG, TRACE
 import sys
 import random
 from types import TupleType
@@ -43,6 +43,7 @@ from BTrees.OOBTree import OOBTree
 
 from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
+from Products.CPSCore.EventServiceTool import getEventService
 
 
 class NoWorkflowConfiguration:
@@ -62,7 +63,7 @@ InitializeClass(NoWorkflowConfiguration)
 def set_local_roles_with_groups(ob, lroles):
     """Set all the local roles and group local roles.
 
-    Return True if something was changed.
+    Returns True if something was changed.
     """
     # XXX move this to NuxUserGroups
     #LOG('obrep', DEBUG, 'setlocal: ob=%s lroles=%s'
@@ -158,6 +159,9 @@ class ObjectRepositoryTool(UniqueObject,
         rev = self.getFreeRevision(docid_)
         id = self._get_id(docid_, rev)
         ob = self.constructContent(type_name_, id, *args, **kw)
+        evtool = getEventService(self)
+        evtool.notify('sys_add_cmf_object', ob, {})
+        # XXX or call ob.manage_afterCMFAdd(ob, self) ? recurse ?
         return ob, rev
 
     security.declarePrivate('delObjectRevision')
@@ -183,8 +187,8 @@ class ObjectRepositoryTool(UniqueObject,
         try:
             return self._getOb(id)
         except KeyError:
-            LOG('ObjectRepositoryTool', DEBUG, 'subids=%s'
-                % `list(self.objectIds())`)
+            LOG('ObjectRepositoryTool', ERROR,
+                'Did not find expected document %s' % id)
             raise
 
     security.declarePrivate('delObjectRevisions')
@@ -369,9 +373,11 @@ class ObjectRepositoryTool(UniqueObject,
         userperms is a dict of {user: [sequence of permissions]}
         user is user:uid or group:gid
 
+        Returns True if security was changed.
+
         (Called by ProxyTool.)
         """
-        LOG('ObjectRepositoryTool', DEBUG,
+        LOG('ObjectRepositoryTool', TRACE,
             'setRevisionSecurity docid=%s rev=%s perms=%s' %
             (docid, rev, userperms))
         ob = self.getObjectRevision(docid, rev)
@@ -382,6 +388,7 @@ class ObjectRepositoryTool(UniqueObject,
         changed = set_local_roles_with_groups(ob, lroles)
         if changed:
             ob.reindexObjectSecurity()
+        return changed
 
     #
     # Staging
