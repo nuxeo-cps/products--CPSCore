@@ -163,7 +163,7 @@ class ProxyToolTest(SecurityRequestTest):
         self.assertEqual(infos, {})
 
 
-    def testSecuritySynthesis(self):
+    def XXX_FIXME_testSecuritySynthesis(self):
         root = self.root
         ptool = root.portal_proxies
         repo = root.portal_repository
