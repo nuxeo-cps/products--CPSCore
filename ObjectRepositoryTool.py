@@ -403,6 +403,7 @@ class ObjectRepositoryTool(UniqueObject,
         if self.hasObject(id):
             self._delObject(id)
         self._setObject(id, ob)
+        LOG('ObjectRepositoryTool', DEBUG, 'importObject id=%s' % id)
 
     #
     # Management
