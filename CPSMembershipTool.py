@@ -29,6 +29,7 @@ from Products.CMFCore.CMFCorePermissions import View, ManagePortal
 from Products.CMFCore.ActionsTool import ActionInformation as AI
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import _checkPermission
+from Products.CMFCore.utils import getToolByName
 from Products.CMFDefault.MembershipTool import MembershipTool
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
 from Products.NuxUserGroups.LocalRolesWithGroups import \
@@ -145,6 +146,8 @@ class CPSMembershipTool(MembershipTool):
         if members is not None and user is not None:
             f_title = "%s's Home" % member_id
 
+            portal_eventservice = getToolByName(self, 'portal_eventservice')
+
             # XXX : GOTTA FIX THAT IN A MORE PROPER WAY
             # Hack to pass workflow guards
             manage_setLocalGroupRoles(members, 'role:Anonymous',
@@ -153,8 +156,15 @@ class CPSMembershipTool(MembershipTool):
             members.invokeFactory('Workspace', member_id)
 
             manage_delLocalGroupRoles(members, ['role:Anonymous'])
+
+
             # TODO set workspace properties ? title ..
             f = getattr(members, member_id)
+
+            # this is done to rebuild the tree without
+            # role:Anonymous local role
+            portal_eventservice.notifyEvent('modify_object', f, {})
+
             # Grant ownership to Member
             try:
                 f.changeOwnership(user)

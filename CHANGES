@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- P2 #71: basebox_menu should display authorized workspaces
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - sf code cleaning
