@@ -218,12 +218,7 @@ class CPSWorkflowTool(WorkflowTool):
                 ob = pxtool.createProxy(proxy_type, container, type_name, id,
                                         *args, **kw)
             else:
-                # Create a normal CMF document.
-                # Note: this needs the 'Add portal content' permission!
-                container.invokeFactoryCMF(type_name, id, *args, **kw)
-                # Note: this calls wf.notifyCreated() for all wf!
-                # XXX should get new id effectively used! CMFCore bug!
-                ob = container[id]
+                ob = container.constructContent(type_name, id, *args, **kw)
         # Do creation transitions for all workflows.
         reindex = 0
         for wf_id, transition in all_transitions.items():

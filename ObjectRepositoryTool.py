@@ -38,6 +38,7 @@ from Products.CMFCore.TypesTool import ScriptableTypeInformation
 from Products.DCWorkflow.utils import modifyRolesForPermission
 
 from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
+from Products.NuxCPS3.CPSTypes import TypeConstructor
 
 
 class NoWorkflowConfiguration:
@@ -87,7 +88,7 @@ def set_local_roles_with_groups(ob, lroles):
 
 
 # XXX we'll want a btreefolder2 here, not a folder
-class ObjectRepositoryTool(UniqueObject, PortalFolder):
+class ObjectRepositoryTool(UniqueObject, PortalFolder, TypeConstructor):
     """An object repository stores objects that can be
     available in several versions.
 
@@ -326,53 +327,8 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder):
     #.cps_workflow_configuration = NoWorkflowConfiguration()
 
     #
-    # Misc: object creation without CMF security checks
+    # Copy without security XXX move this elsewhere?
     #
-
-    def _constructInstance_fti(self, ti, id, *args, **kw):
-        if not ti.product or not ti.factory:
-            raise ValueError('Product factory for %s was undefined: %s.%s'
-                             % (ti.getId(), ti.product, ti.factory))
-        p = self.manage_addProduct[ti.product]
-        meth = getattr(p, ti.factory, None)
-        if meth is None:
-            raise ValueError('Product factory for %s was invalid: %s.%s'
-                             % (ti.getId(), ti.product, ti.factory))
-        if getattr(aq_base(meth), 'isDocTemp', 0):
-            newid = meth(meth.aq_parent, self.REQUEST, id=id, *args, **kw)
-        else:
-            newid = meth(id, *args, **kw)
-        newid = newid or id
-        return self._getOb(newid)
-
-    def _constructInstance_sti(self, ti, id, *args, **kw):
-        constr = self.restrictedTraverse(ti.constructor_path)
-        constr = aq_base(constr).__of__(self)
-        return constr(self, id, *args, **kw)
-
-    security.declarePrivate('constructContent')
-    def constructContent(self, type_name, id, *args, **kw):
-        """Construct an CMFish object without all the security checks.
-
-        The object is constructed in the repository.
-        """
-        ttool = getToolByName(self, 'portal_types')
-        ti = ttool.getTypeInfo(type_name)
-        if ti is None:
-            raise ValueError('No type information for %s' % type_name)
-        if isinstance(ti, FactoryTypeInformation):
-            ob = self._constructInstance_fti(ti, id, *args, **kw)
-        elif isinstance(ti, ScriptableTypeInformation):
-            ob = self._constructInstance_sti(ti, id, *args, **kw)
-        else:
-            raise ValueError('Unknown type information class for %s' %
-                             type_name)
-        if ob.getId() != id:
-            # Sanity check
-            raise ValueError('Constructing %s, id changed from %s to %s' %
-                             (type_name, id, ob.getId()))
-        ob._setPortalTypeName(type_name)
-        ob.reindexObject(idxs=['portal_type', 'Type'])
 
     security.declarePrivate('copyContent')
     def copyContent(self, ob, id):

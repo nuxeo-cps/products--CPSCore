@@ -74,22 +74,14 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repoid, version_info = repotool.invokeFactory(type_name, repoid=None,
                                                       version_info=None,
                                                       *args, **kw)
+        version_infos = {'*': version_info}
         # Create the proxy to that document
         # The proxy is a normal CMF object except that we change its
         # portal_type after construction.
-        version_infos = {'*': version_info}
-        # Note: this calls wf.notifyCreated() for all wf!
-        # Note: this needs the 'Add portal content' permission!
-        if hasattr(aq_base(container), 'invokeFactoryCMF'):
-            meth = container.invokeFactoryCMF
-        else:
-            meth = container.invokeFactory
-        meth(proxy_type_name, id, repoid=repoid, version_infos=version_infos)
-        # XXX should get new id effectively used! CMFCore bug!
-        ob = container[id]
-        # Set the correct portal_type for the proxy
-        ob._setPortalTypeName(type_name)
-        ob.reindexObject(idxs=['portal_type', 'Type'])
+        ob = container.constructContent(proxy_type_name, id,
+                                        final_type_name=type_name,
+                                        repoid=repoid,
+                                        version_infos=version_infos)
         return ob
 
     security.declarePrivate('listProxies')

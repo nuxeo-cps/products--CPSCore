@@ -38,6 +38,7 @@ from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 
 from Products.NuxCPS3.EventServiceTool import getEventService
+from Products.NuxCPS3.CPSTypes import TypeConstructor
 
 
 defaultencoding = sys.getdefaultencoding()
@@ -122,7 +123,7 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
 InitializeClass(CPSBaseDocument)
 
 
-class CPSBaseFolder(CPSBaseDocument):
+class CPSBaseFolder(CPSBaseDocument, TypeConstructor):
     """The base from which all CPS folder objects derive."""
 
     meta_type = 'CPS Base Folder'
@@ -136,13 +137,15 @@ class CPSBaseFolder(CPSBaseDocument):
     # when invokeFactory is called.
     #
 
-    security.declareProtected(AddPortalContent, 'invokeFactory')
+    security.declarePublic('invokeFactory')
     def invokeFactory(self, type_name, id, RESPONSE=None, *args, **kw):
         """Create a CMF object in this folder.
 
         A creation_transitions argument should be passed for CPS
         object creation.
-        Creation is governed by the workflows allowed by the workflow tool.
+
+        This method is public as creation security is governed
+        by the workflows allowed by the workflow tool.
         """
         wftool = getToolByName(self, 'portal_workflow')
         newid = wftool.invokeFactoryFor(self, type_name, id, *args, **kw)
@@ -153,12 +156,6 @@ class CPSBaseFolder(CPSBaseDocument):
             RESPONSE.redirect('%s/%s' % (ob.absolute_url(),
                                          info.immediate_view))
         return newid
-
-    security.declarePrivate('invokeFactoryCMF')
-    def invokeFactoryCMF(self, type_name, id, RESPONSE=None, *args, **kw):
-        """Original CMF factory invocation."""
-        return PortalFolder.invokeFactory(self, type_name, id,
-                                          RESPONSE=RESPONSE, *args, **kw)
 
     #
     # ZMI
