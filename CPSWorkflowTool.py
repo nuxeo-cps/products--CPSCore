@@ -391,6 +391,7 @@ class CPSWorkflowTool(WorkflowTool):
             LOG('_insertWorkflowRecursive', DEBUG, "  Is not a proxy")
             #return # XXX correct?
         self._insertWorkflow(ob, initial_transition, initial_behavior, kwargs)
+        # XXX should only do recursion if it's a proxy folderish document?
         for subob in ob.objectValues():
             self._insertWorkflowRecursive(subob, initial_transition,
                                           initial_behavior, kwargs)
