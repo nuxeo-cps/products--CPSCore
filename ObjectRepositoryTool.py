@@ -16,6 +16,11 @@
 # 02111-1307, USA.
 #
 # $Id$
+"""Object Repository Tool.
+
+The object repository tool stores versions of documents.
+It also stores workflow-related information for those documents.
+"""
 
 from zLOG import LOG, ERROR, DEBUG
 import sys
@@ -36,6 +41,7 @@ from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.DCWorkflow.utils import modifyRolesForPermission
 from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2
+from BTrees.OOBTree import OOBTree
 
 from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
@@ -92,6 +98,9 @@ class ObjectRepositoryTool(UniqueObject,
                            TypeConstructor, TypeContainer):
     """An object repository stores objects that can be
     available in several versions.
+
+    It also stores centrally the workflow history for all the versions
+    of an object.
 
     It can be queried for the best version of a given object matching
     a set of constraints, for instance on language.
@@ -454,6 +463,28 @@ class ObjectRepositoryTool(UniqueObject,
             return (None, None)
         else:
             return (docid, rev)
+
+    #
+    # Workflow history management
+    #
+
+    def _check_history_present(self):
+        """Upgrades: check that _histories is present.
+        """
+        if not hasattr(aq_base(self), '_histories'):
+            self._histories = OOBTree()
+
+    security.declarePrivate('getHistory')
+    def getHistory(self, docid):
+        """Get the workflow history for a docid, or None."""
+        self._check_history_present()
+        return self._histories.get(docid)
+
+    security.declarePrivate('setHistory')
+    def setHistory(self, docid, history):
+        """Set the workflow history for a docid."""
+        self._check_history_present()
+        self._histories[docid] = history
 
     #
     # Forbid any workflow

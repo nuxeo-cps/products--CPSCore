@@ -22,9 +22,10 @@
 from zLOG import LOG, ERROR, DEBUG
 from types import StringType
 from Acquisition import aq_base, aq_parent, aq_inner
-from Globals import InitializeClass, DTMLFile
-from AccessControl import ClassSecurityInfo
+from Globals import InitializeClass, DTMLFile, PersistentMapping
+from AccessControl import ClassSecurityInfo, Unauthorized
 
+from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import View
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
@@ -58,6 +59,7 @@ class CPSWorkflowTool(WorkflowTool):
 
     - Initial transition knowledge for CPSWorkflow
     - Placefulness
+    - Delegates storage of workflow history for proxies to repository tool
     """
 
     id = 'portal_workflow'
@@ -467,6 +469,52 @@ class CPSWorkflowTool(WorkflowTool):
         self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
         for subob in ob.objectValues():
             self._doActionForRecursive(subob, action, wf_id=wf_id, *args, **kw)
+
+    #
+    # History/status management
+    #
+
+    security.declarePublic('getFullHistoryOf')
+    def getFullHistoryOf(self, ob):
+        """Return the full history of an object.
+
+        Uses aggregated history for proxies.
+
+        Returns () for non-proxies.
+        """
+        if not _checkPermission(View, ob):
+            raise Unauthorized("Can't get history of an unreachable object.")
+        if not _isinstance(ob, ProxyBase):
+            return ()
+        repotool = getToolByName(self, 'portal_repository')
+        return repotool.getHistory(ob.getDocid()) or ()
+
+    security.declarePrivate('setStatusOf')
+    def setStatusOf(self, wf_id, ob, status):
+        """Append an entry to the workflow history.
+
+        Stores the local history in the object itself.
+        Stores the aggregated history using the repository tool.
+
+        The entry also has 'rpath' and 'workflow_id' values stored.
+
+        Invoked by workflow definitions.
+        """
+        # Additional info in status: rpath, workflow_id
+        repotool = getToolByName(self, 'portal_repository')
+        utool = getToolByName(self, 'portal_url')
+        status = status.copy()
+        status['rpath'] = utool.getRelativeUrl(ob)
+        status['workflow_id'] = wf_id
+        # Standard CMF storage.
+        WorkflowTool.setStatusOf(self, wf_id, ob, status)
+        # Store aggregated history in repository.
+        if not _isinstance(ob, ProxyBase):
+            return
+        docid = ob.getDocid()
+        wfh = repotool.getHistory(docid) or ()
+        wfh += (status,)
+        repotool.setHistory(docid, wfh)
 
     #
     # Misc
