@@ -252,7 +252,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 # XXX - forbid it ?
                 # XXX - inc tag ?
 
-                proxy.setLanguageRevision(lang, rev)
+                proxy.setLanguageRevision(lang, newrev)
                 proxy.proxyChanged()
 
             return newob
@@ -402,12 +402,19 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if not _isinstance(proxy, ProxyBase):
             return
 
+        #import traceback
+        #from StringIO import StringIO
+        #s = StringIO()
+        #traceback.print_stack(file=s)
+        #LOG('setSecurity', DEBUG, 'called from tb:\n%s' % s.getvalue())
+
         # Gather revisions.
         docid = proxy.getDocid()
         revs = {}
         for lang, rev in proxy._getLanguageRevisions().items():
             revs[rev] = None
         revs = revs.keys()
+        LOG('setSecurity', DEBUG, "gathered revisions %s" % `revs`)
 
         # Gather the rpaths of proxies pointing to any revision.
         rpaths = {}
@@ -632,7 +639,11 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             elif event_type == 'sys_del_object':
                 dodel = 1
             # Refresh security on the revisions.
-            self.setSecurity(object, skip_rpath=rpath)
+            if dodel:
+                skip_rpath = rpath
+            else:
+                skip_rpath = None
+            self.setSecurity(object, skip_rpath=skip_rpath)
             if dodel:
                 # Must be done last...
                 self._delProxy(rpath)
