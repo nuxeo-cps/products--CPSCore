@@ -412,8 +412,6 @@ class CPSMembershipTool(MembershipTool):
         while newid.endswith('_'):
             newid = newid[:-1]
 
-        newid = newid.lower()
-
         if not newid:
             # Fallback if empty or incorrect
             newid = str(int(DateTime())) + str(randrange(1000, 10000))
