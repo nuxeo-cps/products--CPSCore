@@ -18,14 +18,23 @@
 """This file contains all patches for the CMFDefault product."""
 
 from zLOG import LOG, DEBUG, INFO
+from DateTime.DateTime import DateTime
+from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 
 
-#------------------------------------------------------------
+#############################################################
+# Fix overflow error when using DateIndex for expires
+#
+LOG('PatchCMFDefault.DefaultDublinCoreImpl', INFO,
+    'CPSCore patch __CEILING_DATE to year 3000 to prevent DateIndex overflow')
+
+DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
+
+
+#############################################################
 # This patch submitted by efge fixes CMFDefault bug
 # http://www.zope.org/Collectors/CMF/300
 #
-from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
-
 LOG('PatchCMFDefault.DefaultDublinCoreImpl', INFO,
     'CPSCore Patching Creator CMFDefault bug #300')
 
