@@ -21,6 +21,7 @@
 """
 
 from zLOG import LOG, DEBUG
+
 from Products.NuxCPS3.EventServiceTool import getEventService
 
 
@@ -44,6 +45,11 @@ def manage_afterClone(self, *args, **kw):
     self.cps_old_manage_afterClone(*args, **kw)
     notify(self, 'sys_clone_object', self, *args, **kw)
 
+def move_object_to_position(self, *args, **kw):
+    res = self.cps_old_move_object_to_position(*args, **kw)
+    notify(self, 'sys_order_object', self, *args, **kw)
+    return res
+
 def patch_action(class_, func):
     action = func.__name__
     old_action = 'cps_old_%s' % action
@@ -65,3 +71,8 @@ for class_ in (Item, ObjectManager, CMFCatalogAware):
     patch_action(class_, manage_afterAdd)
     patch_action(class_, manage_beforeDelete)
     patch_action(class_, manage_afterClone)
+
+
+import Products.OrderedFolderSupportPatch # ensure it does its patches
+
+patch_action(ObjectManager, move_object_to_position)
