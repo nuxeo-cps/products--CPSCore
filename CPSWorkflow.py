@@ -167,6 +167,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         context of the container.
         """
         if creation_transition is None:
+            LOG('notifyCreated', DEBUG, 'Workflow %s called without a '
+                'creation_transition' % self.getId())
             return
         tdef = self.transitions.get(creation_transition, None)
         if tdef is None:
