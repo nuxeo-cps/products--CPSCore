@@ -178,6 +178,7 @@ class CPSWorkflowConfiguration(SimpleItem):
                           sub_save=None, sub_del=None,
                           REQUEST=None):
         """Edit the chains."""
+        # XXX: what if REQUEST = None ?
         kw = REQUEST.form
         ttool = getToolByName(self, 'portal_types')
         if sub_save is not None:
@@ -225,7 +226,7 @@ class CPSWorkflowConfiguration(SimpleItem):
     security.declareProtected(ManageWorkflows, 'manage_addChain')
     def manage_addChain(self, portal_type, chain, under_sub_add=None,
                         REQUEST=None):
-        """Add a chains."""
+        """Add a chain."""
         if under_sub_add is None:
             set = self.setChain
         else:
