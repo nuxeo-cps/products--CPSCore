@@ -32,7 +32,7 @@ Other utility functions:
 
 """
 
-from zLOG import LOG, INFO, DEBUG
+from zLOG import LOG, DEBUG, TRACE
 import string
 
 # Local role (group) support monkey patches start here
@@ -47,7 +47,7 @@ from DateTime.DateTime import DateTime
 from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 from random import randrange
 
-LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
+LOG('CPSCore.utils', TRACE, 'Patching CMF local role support')
 
 def mergedLocalRoles(object, withgroups=0):
     #LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
@@ -192,7 +192,7 @@ def _listAllowedRolesAndUsers(self, user):
 CatalogTool._listAllowedRolesAndUsers = _listAllowedRolesAndUsers
 
 
-LOG('CPSCore.utils', INFO, 'Patching CMF Catalog IndexableObjectWrapper')
+LOG('CPSCore.utils', TRACE, 'Patching CMF Catalog IndexableObjectWrapper')
 def __cps_wrapper_getattr__(self, name):
     """This is the indexable wrapper getter for CPS,
     proxy try to get the repository document attributes,
@@ -276,7 +276,7 @@ def relative_path_depth(self):
 IndexableObjectWrapper.relative_path_depth = relative_path_depth
 
 
-LOG('CPSCore.utils', INFO, 'Patching Zope TopicIndex.clear method')
+LOG('CPSCore.utils', TRACE, 'Patching Zope TopicIndex.clear method')
 def topicindex_clear(self):
     """Fixing cmf method that remove all filter."""
     for fid, filteredSet in self.filteredSets.items():
@@ -284,7 +284,7 @@ def topicindex_clear(self):
 TopicIndex.clear = topicindex_clear
 
 
-LOG('CPSCore.utils', INFO, 'Patching CMF DublinCore never expires date')
+LOG('CPSCore.utils', TRACE, 'Patching CMF DublinCore never expires date')
 # this remove the overflow pb when using a DateIndex for expires
 DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
 
