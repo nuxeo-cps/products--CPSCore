@@ -354,10 +354,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                                         % (initial_transition,
                                     tdef.checkout_allowed_initial_transitions))
             language_map = kwargs.get('language_map')
-            if language_map is None:
-                raise WorkflowException("Missing language_map for "
-                                        "checkout transition=%s" %
-                                        tdef.getId())
         if TRANSITION_BEHAVIOR_CHECKIN in behavior:
             dest_objects = kwargs.get('dest_objects')
             if dest_objects is None:
