@@ -24,6 +24,7 @@ import string
 
 # Local role (group) support monkey patches start here
 
+from AccessControl.PermissionRole import rolesForPermissionOn
 from Products.CMFCore import utils
 from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
      CatalogTool
@@ -74,7 +75,7 @@ IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
 def _getAllowedRolesAndUsers(user):
     """Returns a list with all roles this user has + the username"""
     LOG('CPSCore utils', DEBUG, '_getAllowedRolesAndUsers()')
-    # The userfolder does not have CPS group support
+
     result = list(user.getRoles())
     result.append('Anonymous')
     result.append('user:%s' % user.getUserName())
