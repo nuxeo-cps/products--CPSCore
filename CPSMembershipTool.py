@@ -193,7 +193,9 @@ class CPSMembershipTool(MembershipTool):
         ws_root =  getattr(parent, WORKSPACES, None)
         members =  getattr(ws_root, MEMBERS, None)
 
-        user = aclu.getUser(member_id).__of__(aclu)
+        user = aclu.getUser(member_id)
+        if user is not None:
+            user = user.__of__(aclu)
 
         if members is not None and user is not None:
             f_title = "%s's Home" % member_id
