@@ -352,14 +352,13 @@ class CPSMembershipTool(MembershipTool):
     security.declarePublic('isHomeless')
     def isHomeless(self, member=None):
         """Return 1 if member have no home using homeless attribute."""
-        ret = 0
         if member is None:
             member = self.getAuthenticatedMember()
         if hasattr(member, 'getProperty'):
             ret = member.getProperty('homeless', '0')
             if ret and ret != '0':
-                ret = 1
-        return ret
+                return 1
+        return 0
 
 
     # Overloaded to do folder access through _getOb.
