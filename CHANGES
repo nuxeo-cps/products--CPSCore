@@ -9,4 +9,4 @@ Bug fixes:
 - #451: Make getProxyLanguages (formerly known as Languages) acquisition-safe
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- 
+- More unit tests.
