@@ -1,4 +1,21 @@
 *******************************************
+** CPSCore V3.8.1 [R1 build 2004/03/26-09:58 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- getHomeFolderId truncate home path to 20 chars
+  making people with long uid homeless
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.8.0 [R1 build 2004/03/25-11:35 by ben]
 
 Requires:

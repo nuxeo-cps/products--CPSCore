@@ -6,8 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- getHomeFolderId truncate home path to 20 
-  making people with long uid homeless
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
