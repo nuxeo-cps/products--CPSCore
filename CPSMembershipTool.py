@@ -226,35 +226,52 @@ class CPSMembershipTool(MembershipTool):
             obj.reindexObjectSecurity()
 
     security.declareProtected(View, 'deleteLocalGroupRoles')
-    def deleteLocalGroupRoles(self, obj, ids, role, reindex=1):
-        """Delete local group roles for members member_ids."""
+    def deleteLocalGroupRoles(self, obj, ids, role=None, reindex=1):
+        """Delete local group roles for members ids.
+
+        If role is None, delete all roles, otherwise delete only this one.
+        Never deletes the roles a user doesn't already have,
+        unless he is a Manager (or has a "managing role").
+
+        Returns a boolean saying if something changed.
+        """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
-        has_proper_role = 0
-        for r in self.roles_managing_local_roles:
-            if r in my_roles:
-                has_proper_role = 1
-                break
-        if has_proper_role or 'Manager' in my_roles or role in my_roles:
-            for group_id in ids:
-                current_roles = list(obj.get_local_roles_for_groupid(
-                    groupid=group_id))
-                new_roles = [r for r in current_roles
-                             if r != role]
-                obj.manage_delLocalGroupRoles(groupids=[group_id])
-                if new_roles:
-                    obj.manage_setLocalGroupRoles(group_id, new_roles)
+        if 'Manager' in my_roles:
+            has_managing_role = 1
         else:
-            # Only remove the roles we have.
-            for id in ids:
-                roles = obj.get_local_roles_for_groupid(id)
-                roles = [r for r in roles if r not in my_roles]
+            has_managing_role = 0
+            for r in self.roles_managing_local_roles:
+                if r in my_roles:
+                    has_managing_role = 1
+                    break
+        if role is None:
+            if has_managing_role:
+                removed_roles = None # all
+            else:
+                removed_roles = my_roles
+        else:
+            if has_managing_role or role in my_roles:
+                removed_roles = [role]
+            else:
+                # Cannot change anything
+                return 0
+        changed = 0
+        for id in ids:
+            current_roles = list(obj.get_local_roles_for_groupid(id))
+            if removed_roles is None: # all
+                roles = []
+            else:
+                roles = [r for r in current_roles if r not in removed_roles]
+            if roles != current_roles:
+                changed = 1
                 if roles:
                     obj.manage_setLocalGroupRoles(id, roles)
                 else:
                     obj.manage_delLocalGroupRoles([id])
-        if reindex:
+        if changed and reindex:
             obj.reindexObjectSecurity()
+        return changed
 
     security.declareProtected(ManagePortal, 'setMembersFolderById')
     def setMembersFolderById(self, id=''):
