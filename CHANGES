@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Now the 'homeless' attribute of a member is taken into account through a
+  direct query to the members directory.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

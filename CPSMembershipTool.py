@@ -409,12 +409,12 @@ class CPSMembershipTool(MembershipTool):
         ret = 0
         if member is None:
             member = self.getAuthenticatedMember()
-        if hasattr(member, 'getProperty'):
-            ret = member.getProperty('homeless', 0)
-            if ret and ret != '0':
-                ret = 1
-            else:
-                ret = 0
+
+        portal_directories = getToolByName(self, 'portal_directories')
+        memberEntry = portal_directories.members.getEntry(member.getMemberId())
+        if memberEntry:
+            ret = memberEntry.get('homeless', 0)
+
         return ret
 
     # Overloaded to do folder access through _getOb.
