@@ -10,13 +10,13 @@ class Test(unittest.TestCase):
 
     def test_makeId(self):
         # example
-        s1 = "C'est l'été!"
-        self.assertEquals(utils.makeId(s1), "C_est_l_ete!")
-        self.assertEquals(utils.makeId(s1, lower=1), "c_est_l_ete!")
+        s1 = "C'est l'été !"
+        self.assertEquals(utils.makeId(s1), "C_est_l_ete")
+        self.assertEquals(utils.makeId(s1, lower=1), "c_est_l_ete")
 
-        for i in range(0, 100):
-            id = ''.join([chr(random.randint(32, 128)) for i in range(0, 10)])
-            #checkValidId(utils.makeId(id))
+        #for i in range(0, 100):
+        #    id = ''.join([chr(random.randint(32, 128)) for i in range(0, 10)])
+        #    checkValidId(utils.makeId(id))
 
 
     def test_isinstance(self):
