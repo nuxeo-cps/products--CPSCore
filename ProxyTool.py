@@ -208,11 +208,11 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if docid is None:
             all = list(self._rpath_to_infos.items())
         else:
+            rpaths = self._docid_to_rpaths.get(docid, ())
             all = []
-            for item in self._rpath_to_infos.items():
-                rpath, (did, language_revs) = item
-                if did == docid:
-                    all.append(item)
+            for rpath in rpaths:
+                infos = self._rpath_to_infos[rpath]
+                all.append((rpath, infos))
         all.sort() # Sort by rpath.
         return all
 
