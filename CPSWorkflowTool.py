@@ -281,8 +281,14 @@ class CPSWorkflowTool(WorkflowTool):
         """Recursively insert into workflows."""
         LOG('_insertWorkflow', DEBUG, 'recursively inserting %s into workflows %s' %
             (ob.getId(), all_transitions))
-        if not isinstance(ob, ProxyBase): # XXX correct?
-            return
+        try:
+            isproxy = isinstance(ob, ProxyBase)
+        except TypeError:
+            # In python 2.1 isinstance() raises TypeError
+            # instead of returning 0 for ExtensionClasses.
+            isproxy = 0
+        if not isproxy:
+            return # XXX correct?
         self._insertWorkflow(ob, all_transitions)
         for subob in ob.objectValues():
             self._insertWorkflowRecursive(subob, all_transitions)
@@ -314,7 +320,13 @@ class CPSWorkflowTool(WorkflowTool):
         The workflow object must perform its own security checks.
         """
         # Don't recurse for initial transitions! # XXX urgh
-        if isinstance(ob, ProxyFolderishDocument) and not kw.has_key('clone_data'):
+        try:
+            isproxyfolderishdoc = isinstance(ob, ProxyFolderishDocument)
+        except TypeError:
+            # In python 2.1 isinstance() raises TypeError
+            # instead of returning 0 for ExtensionClasses.
+            isproxyfolderishdoc = 0
+        if isproxyfolderishdoc and not kw.has_key('clone_data'):
             self._doActionForRecursive(ob, action, wf_id=wf_id, *args, **kw)
         else:
             self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
@@ -354,7 +366,13 @@ class CPSWorkflowTool(WorkflowTool):
         """Recursively calls doactionfor."""
         LOG('_doActionForRecursive', DEBUG, 'ob=%s action=%s' %
             (ob.getId(), action))
-        if not isinstance(ob, ProxyBase): # XXX
+        try:
+            isproxy = isinstance(ob, ProxyBase)
+        except TypeError:
+            # In python 2.1 isinstance() raises TypeError
+            # instead of returning 0 for ExtensionClasses.
+            isproxy = 0
+        if not isproxy: # XXX
             return
         self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
         for subob in ob.objectValues():

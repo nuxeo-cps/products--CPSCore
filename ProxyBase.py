@@ -170,7 +170,13 @@ class ProxyBase(Base):
 
     def _setSecurityRecursive(self, ob, pxtool=None):
         """Propagate security changes made on the proxy."""
-        if not isinstance(ob, ProxyBase):
+        try:
+            isproxy = isinstance(ob, ProxyBase)
+        except TypeError:
+            # In python 2.1 isinstance() raises TypeError
+            # instead of returning 0 for ExtensionClasses.
+            isproxy = 0
+        if not isproxy:
             return
         if pxtool is None:
             pxtool = getToolByName(self, 'portal_proxies')
@@ -400,7 +406,13 @@ class ProxyFolderishDocument(ProxyFolder):
     security.declarePrivate('_freezeProxyRecursive')
     def _freezeProxyRecursive(self, ob, hubtool, pxtool):
         """Freeze this proxy and recurse."""
-        if not isinstance(ob, ProxyBase):
+        try:
+            isproxy = isinstance(ob, ProxyBase)
+        except TypeError:
+            # In python 2.1 isinstance() raises TypeError
+            # instead of returning 0 for ExtensionClasses.
+            isproxy = 0
+        if not isproxy:
             return
         self._freezeProxy(ob, hubtool, pxtool)
         for subob in ob.objectValues():

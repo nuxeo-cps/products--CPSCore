@@ -230,7 +230,13 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """
         # XXX should not get directly an object... or should it?
         #LOG('setSecurity', DEBUG, '--- ob %s' % '/'.join(ob.getPhysicalPath()))
-        if not isinstance(ob, ProxyBase):
+        try:
+            isproxy = isinstance(ob, ProxyBase)
+        except TypeError:
+            # In python 2.1 isinstance() raises TypeError
+            # instead of returning 0 for ExtensionClasses.
+            isproxy = 0
+        if not isproxy:
             return
         # XXX should be sent also by the one sending an event instead of
         #     calling this directly
@@ -334,11 +340,20 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         ti = ttool.getTypeInfo(type_name)
         if ti is None:
             raise ValueError('No type information for %s' % type_name)
-        if isinstance(ti, FactoryTypeInformation):
+        try:
+            isfti = isinstance(ti, FactoryTypeInformation)
+        except TypeError:
+            # In python 2.1 isinstance() raises TypeError
+            # instead of returning 0 for ExtensionClasses.
+            isfti = 0
+        try:
+            issti = isinstance(ti, ScriptableTypeInformation)
+        except TypeError:
+            issti = 0
+        if isfti:
             ob = self._constructInstance_fti(container, ti, id, *args, **kw)
-        elif isinstance(ti, ScriptableTypeInformation):
+        elif issti:
             ob = self._constructInstance_sti(container, ti, id, *args, **kw)
-        else:
             raise ValueError('Unknown type information class for %s' %
                              type_name)
         if ob.getId() != id:
