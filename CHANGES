@@ -10,3 +10,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Use CMFCore.permissions instead of CMFCore.CMFCorePermissions
+- LOG patches at a lower level.
