@@ -20,6 +20,7 @@
 """
 
 from zLOG import LOG, ERROR, DEBUG
+from types import TupleType
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass, PersistentMapping, DTMLFile
 from AccessControl import ClassSecurityInfo
@@ -70,7 +71,7 @@ class CPSStates(DCWFStates):
 class CPSTransitionDefinition(DCWFTransitionDefinition):
     meta_type = 'CPS Workflow Transition'
 
-    transition_behavior = TRANSITION_BEHAVIOR_NORMAL
+    transition_behavior = ()
     clone_allowed_transitions = []
     checkout_original_transition_id = ' '
 
@@ -84,6 +85,7 @@ class CPSTransitionDefinition(DCWFTransitionDefinition):
                       REQUEST=None, **kw):
         """Set the properties."""
         if transition_behavior is not None:
+            # XXX set as tuple
             self.transition_behavior = transition_behavior
         if clone_allowed_transitions is not None:
             self.clone_allowed_transitions = clone_allowed_transitions
@@ -228,7 +230,11 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         #
         LOG('CPSWorkflow', DEBUG, 'Behavior in wf %s, trans %s: %s'
             % (self.getId(), tdef.getId(), tdef.transition_behavior))
-        if tdef.transition_behavior == TRANSITION_BEHAVIOR_CLONE:
+        # XXX forward-compatibility
+        behavior = tdef.transition_behavior
+        if not isinstance(behavior, TupleType):
+            behavior = (behavior,)
+        if TRANSITION_BEHAVIOR_CLONE in behavior:
             # Clone the object.
             clone_data = kwargs.get('clone_data')
             if clone_data is None:
@@ -239,7 +245,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             for container_path, creation_transitions in clone_data.items():
                 container = portal.restrictedTraverse(container_path)
                 wftool.cloneObject(ob, container, creation_transitions)
-        elif tdef.transition_behavior == TRANSITION_BEHAVIOR_FREEZE:
+        if TRANSITION_BEHAVIOR_FREEZE in behavior:
             # Freeze the object.
             # XXX use an event?
             ob.freezeProxy()
@@ -337,7 +343,11 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             tdef = self.transitions.get(tid, None)
             if tdef is None:
                 continue
-            if tdef.transition_behavior != TRANSITION_BEHAVIOR_SUBCREATE:
+            # XXX forward-compatibility
+            behavior = tdef.transition_behavior
+            if not isinstance(behavior, TupleType):
+                behavior = (behavior,)
+            if TRANSITION_BEHAVIOR_SUBCREATE not in behavior:
                 LOG('WF', DEBUG, '  Note a subcreate')
                 continue
             if not self._checkTransitionGuard(tdef, ob):
@@ -387,7 +397,11 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             tdef = self.transitions.get(tid, None)
             if tdef is None:
                 continue
-            if tdef.transition_behavior != TRANSITION_BEHAVIOR_CLONE:
+            # XXX forward-compatibility
+            behavior = tdef.transition_behavior
+            if not isinstance(behavior, TupleType):
+                behavior = (behavior,)
+            if TRANSITION_BEHAVIOR_CLONE not in behavior:
                 continue
             if not self._checkTransitionGuard(tdef, ob):
                 continue
