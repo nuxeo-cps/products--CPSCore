@@ -26,10 +26,12 @@ from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
 from AccessControl.PermissionRole import rolesForPermissionOn
 
+from Products.CMFCore.CMFCorePermissions import View
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
@@ -162,17 +164,27 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     security.declarePublic('getProxiesFromId')
     def getProxiesFromId(self, id):
-        """Get the proxy infos from a repo id (gotten from the catalog)."""
+        """Get the proxy infos from a repo id (gotten from the catalog).
+
+        Only returns the proxies that are visible.
+        """
         repotool = getToolByName(self, 'portal_repository')
         hubtool = getToolByName(self, 'portal_eventservice')
+        portal = aq_parent(aq_inner(self))
         repoid, version_info = repotool.getRepoIdAndVersionFromId(id)
         if repoid is None:
-            return {}
+            return []
         infos = self.getMatchingProxies(repoid, version_info)
-        res = {}
+        res = []
         for hubid, langs in infos.items():
             rpath = hubtool.getLocation(hubid, relative=1)
-            res[rpath] = langs
+            ob = portal.unrestrictedTraverse(rpath)
+            if _checkPermission(View, ob):
+                res.append({'object': ob,
+                            'rpath': rpath,
+                            'hubid': hubid,
+                            'langs': langs,
+                            })
         return res
 
     security.declarePrivate('freezeProxy')
@@ -382,20 +394,38 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         Called when a proxy is added/deleted. Updates the list
         of existing proxies.
+
+        Called when a document is modified. Notifies the proxies
+        that they have implicitly been modified.
         """
-        if event_type not in ('sys_add_object', 'sys_del_object'):
-            return
-        if not isinstance(object, ProxyBase):
-            return
-        hubid = infos['hubid']
-        if event_type == 'sys_add_object':
-            repoid = object.getRepoId()
-            version_infos = object.getVersionInfos()
-            self.addProxy(hubid, repoid, version_infos)
-        elif event_type == 'sys_del_object':
-            self.delProxy(hubid)
-        # Refresh security
-        self.setSecurity(object)
+        if event_type in ('sys_add_object', 'sys_del_object'):
+            if not isinstance(object, ProxyBase):
+                return
+            hubid = infos['hubid']
+            if event_type == 'sys_add_object':
+                repoid = object.getRepoId()
+                version_infos = object.getVersionInfos()
+                self.addProxy(hubid, repoid, version_infos)
+            elif event_type == 'sys_del_object':
+                self.delProxy(hubid)
+            # Refresh security
+            self.setSecurity(object)
+        elif event_type == 'modify_object':
+            if isinstance(object, ProxyBase):
+                return
+            # If an object in the repo is modified, notify all proxies
+            # XXX urgh, the event should be received by the repo
+            repotool = getToolByName(self, 'portal_repository')
+            evtool = getToolByName(self, 'portal_eventservice')
+            hubtool = evtool
+            portal = aq_parent(aq_inner(self))
+            id = object.getId()
+            repoid, version_info = repotool.getRepoIdAndVersionFromId(id)
+            if repoid is not None:
+                infos = self.getMatchingProxies(repoid, version_info)
+                for hubid in infos.keys():
+                    ob = portal.restrictedTraverse(hubtool.getLocation(hubid, relative=1))
+                    evtool.notify('modify_object', ob, {})
 
     #
     # ZMI
