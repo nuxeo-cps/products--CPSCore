@@ -8,6 +8,8 @@ Bug fixes:
 ~~~~~~~~~~
 - When copying/pasting an object, workflow history was not pasted
   on the new object.
+- Use the object when checking allowed behaviours, not its rpath. (Besides, the
+  code goes through CMFCore/WorkflowTool, which doesn't understand rpaths.)
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

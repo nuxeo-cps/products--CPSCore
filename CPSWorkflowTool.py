@@ -79,7 +79,9 @@ class CPSWorkflowTool(WorkflowTool):
     # Allow user code access to constants.
     #
 
+    TRANSITION_ALLOWSUB_CHECKOUT =   TRANSITION_ALLOWSUB_CHECKOUT
     TRANSITION_INITIAL_CREATE =      TRANSITION_INITIAL_CREATE
+    TRANSITION_INITIAL_CHECKOUT =    TRANSITION_INITIAL_CHECKOUT
     TRANSITION_INITIAL_PUBLISHING =  TRANSITION_INITIAL_PUBLISHING
     TRANSITION_BEHAVIOR_PUBLISHING = TRANSITION_BEHAVIOR_PUBLISHING
 
@@ -99,6 +101,7 @@ class CPSWorkflowTool(WorkflowTool):
 
         If transition is present, only check a transition with this name.
         """
+        container = self._container_maybe_rpath(container)
         behavior = {
             'create': TRANSITION_ALLOWSUB_CREATE,
             'delete': TRANSITION_ALLOWSUB_DELETE,
