@@ -1,4 +1,23 @@
 *******************************************
+** CPSCore V3.14.1 [R1 build 2004/06/24-09:55 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- In CPSMembershipTool, the fact that the 'homeless' attribute of a member is
+  taken into account through a direct query to the members directory (since the
+  last release) made the creation of users'home folders bug, so it is now taken,
+  as it was before, through the member passed to the method isHomeless().
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.14.0 [R1 build 2004/06/14-09:02 by ben]
 
 Requires:
