@@ -69,7 +69,6 @@ class CPSWorkflowTool(WorkflowTool):
         wf_ids = self.getChainFor(container)
         for wf_id in wf_ids:
             wf = self.getWorkflowById(wf_id)
-            LOG('CPSWFT', DEBUG, 'wf %s' % wf_id)
             if not hasattr(aq_base(wf), 'isCreationAllowedIn'):
                 # Not a CPS workflow.
                 continue
@@ -90,7 +89,7 @@ class CPSWorkflowTool(WorkflowTool):
 
         Returns a dict of {wf_id: [sequence of transitions]}.
         """
-        LOG('CPSWFT', DEBUG, 'get creation transitions for pt=%s' % type_name)
+        #LOG('CPSWFT', DEBUG, 'get creation transitions for pt=%s' % type_name)
         wf_ids = self.getChainFor(type_name, container=container)
         creation_transitions = {}
         for wf_id in wf_ids:
@@ -100,7 +99,7 @@ class CPSWorkflowTool(WorkflowTool):
                 continue
             transitions = wf.getCreationTransitions(container)
             creation_transitions[wf_id] = transitions
-        LOG('CPSWFT', DEBUG, 'cr_transitions are %s' % `creation_transitions`)
+        #LOG('CPSWFT', DEBUG, 'cr_transitions are %s' % `creation_transitions`)
         return creation_transitions
 
     def _getAllCreationTransitions(self, container, type_name,
@@ -265,12 +264,19 @@ class CPSWorkflowTool(WorkflowTool):
         looking for them at the object itself, or in the container
         if provided.
         """
+        LOG('getChainFor', DEBUG, 'ob=%s, container=%s'
+            % (type(ob)==type('') and ob or ob.getPhysicalPath(), container))
+##         import traceback
+##         from StringIO import StringIO
+##         s = StringIO()
+##         traceback.print_stack(file=s)
+##         LOG('getChainFor', DEBUG, 'comming from tb:\n%s' % s.getvalue())
+
         if isinstance(ob, StringType):
             pt = ob
         elif hasattr(aq_base(ob), '_getPortalTypeName'):
             pt = ob._getPortalTypeName()
             if container is None:
-                #container = aq_parent(aq_inner(ob))
                 container = ob
         else:
             pt = None
@@ -283,7 +289,9 @@ class CPSWorkflowTool(WorkflowTool):
         # Find placeful workflow configuration object.
         wfconf = getattr(container, CPSWorkflowConfig_id, None)
         if wfconf is not None:
-            chain = wfconf.getPlacefulChainFor(pt)
+            # Was it here or did we acquire?
+            start_here = hasattr(aq_base(container), CPSWorkflowConfig_id)
+            chain = wfconf.getPlacefulChainFor(pt, start_here=start_here)
             if chain is not None:
                 return chain
         # Nothing placeful found.

@@ -47,7 +47,7 @@ class NoWorkflowConfiguration:
     security = ClassSecurityInfo()
 
     security.declarePrivate('getPlacefulChainFor')
-    def getPlacefulChainFor(self, portal_type):
+    def getPlacefulChainFor(self, portal_type, start_here=None):
         """No workflow chain is allowed."""
         return ()
 

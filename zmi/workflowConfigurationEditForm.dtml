@@ -3,24 +3,36 @@
 <dtml-var manage_tabs>
 </dtml-let>
 
-<h3>Placeful workflow configuration</h3>
+<h2>Placeful workflow configuration</h2>
 
 <p class="form-help">
-  You can define a chain (a comma-separated sequence of workflows) for
-  each type. This will override, in this folder and below, the chain for
-  this type.
+
+  You can define a workflow chain (a comma-separated sequence of
+  workflows) for each type. The <em>local</em> workflow chains will
+  override, in this folder and below, the chain for this type. The
+  <em>below</em> workflow chains will override only below this folder.
 </p>
 <p class="form-help">
   <tt>(Default)</tt> means to use the default chain specified in
   portal_workflow.
 </p>
 
+
+<dtml-in "({'types_info': types_infos[0],
+            'addable_info': addable_infos[0],
+            'kind': 'Local workflow chains',
+            'prefix': ''},
+           {'types_info': types_infos[1],
+            'addable_info': addable_infos[1],
+            'kind': 'Below workflow chains',
+            'prefix': 'under_'},
+           )" mapping>
+
+<h3>&dtml-kind;</h3>
+
 <dtml-if types_info>
 <form action="manage_editChains" method="POST">
 <table>
-<tr class="list-header">
-  <td colspan="3" class="form-label">Workflow chains</td>
-</tr>
 <tr>
   <td>&nbsp;</td>
   <td class="form-label">Type</td>
@@ -29,14 +41,14 @@
 <dtml-in types_info mapping sort=id>
 <tr>
   <td>
-    <input type="checkbox" name="cb_&dtml-id;">
+    <input type="checkbox" name="&dtml-prefix;cb_&dtml-id;">
   </td>
   <td class="form-element">
    <a href="&dtml-portal_url;/portal_types/&dtml.url_quote-id;/manage_workspace"
     >&dtml-id;<dtml-if title> (&dtml-title;)</dtml-if></a>
   </td>
   <td class="form-element">
-   <input type="text" name="chain_&dtml-id;" value="&dtml-chain;" size="60" />
+   <input type="text" name="&dtml-prefix;chain_&dtml-id;" value="&dtml-chain;" size="60" />
   </td>
 </tr>
 </dtml-in>
@@ -50,14 +62,12 @@
 </tr>
 </table>
 </form>
-<dtml-else>
-<p>No placeful workflow chain has been defined.</p>
 </dtml-if>
 
 <dtml-if addable_info>
 <form action="manage_addChain" method="POST">
 <table>
-<tr class="list-header">
+<tr>
   <td colspan="2" class="form-label">Add a workflow chain</td>
 </tr>
 <tr>
@@ -83,12 +93,13 @@
 <tr>
   <td>&nbsp;</td>
   <td>
-    <input type="submit" name="sub_add" value="Add" />
+    <input type="submit" name="&dtml-prefix;sub_add" value="Add" />
   </td>
 </tr>
 </table>
 </form>
 </dtml-if>
 
+</dtml-in>
 
 <dtml-var manage_page_footer>

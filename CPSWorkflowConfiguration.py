@@ -54,6 +54,7 @@ class CPSWorkflowConfiguration(SimpleItem):
 
     def __init__(self):
         self._chains_by_type = PersistentMapping()
+        self._chains_by_type_under = PersistentMapping()
         # The None value means "use the default chain".
         # If a key is present, then the chain is overloaded,
         #    otherwise any acquired config is used.
@@ -63,9 +64,8 @@ class CPSWorkflowConfiguration(SimpleItem):
     # API called by CPS Workflow Tool
     #
 
-    def _get_chain_or_default(self, portal_type):
+    def _get_chain_or_default(self, portal_type, chain):
         """Return the chain for portal_type, or the Default chain."""
-        chain = self._chains_by_type[portal_type]
         if chain is not None:
             return chain
         wftool = getToolByName(self, 'portal_workflow')
@@ -73,23 +73,37 @@ class CPSWorkflowConfiguration(SimpleItem):
         return wftool.getDefaultChainFor(portal_type)
 
     security.declarePrivate('getPlacefulChainFor')
-    def getPlacefulChainFor(self, portal_type):
+    def getPlacefulChainFor(self, portal_type, start_here=1):
         """Get the chain for the given portal_type.
 
         Returns None if no placeful chain is found.
         Acquires from parent configurations if needed.
         """
+        LOG('CPSWFCFG', DEBUG, 'getpl url=%s pt=%s start=%s'
+            % (self.absolute_url(), portal_type, start_here))
+        if not start_here:
+            LOG('CPSWFCFG', DEBUG, 'under')
+            if self._chains_by_type_under.has_key(portal_type):
+                chain = self._chains_by_type_under[portal_type]
+                LOG('CPSWFCFG', DEBUG, ' got chain %s' % `chain`)
+                return self._get_chain_or_default(portal_type, chain)
+            LOG('CPSWFCFG', DEBUG, ' no chain')
+        LOG('CPSWFCFG', DEBUG, 'local')
         if self._chains_by_type.has_key(portal_type):
-            return self._get_chain_or_default(portal_type)
+            chain = self._chains_by_type[portal_type]
+            LOG('CPSWFCFG', DEBUG, ' got chain %s' % `chain`)
+            return self._get_chain_or_default(portal_type, chain)
+        LOG('CPSWFCFG', DEBUG, 'no chain, ask above')
         # Ask above.
         parent = aq_parent(aq_inner(aq_parent(aq_inner(self))))
         try:
             higher_conf = parent.aq_acquire(CPSWorkflowConfig_id,
                                             containment=1)
+            LOG('CPSWFCFG', DEBUG, 'found in parent...')
         except AttributeError:
             # Nothing placeful found.
             return None
-        return higher_conf.getPlacefulChainFor(portal_type)
+        return higher_conf.getPlacefulChainFor(portal_type, start_here=0)
 
     #
     # Internal API
@@ -107,10 +121,27 @@ class CPSWorkflowConfiguration(SimpleItem):
             chain = tuple(chain)
         self._chains_by_type[portal_type] = chain
 
+    security.declareProtected(ManageWorkflows, 'setChainUnder')
+    def setChainUnder(self, portal_type, chain):
+        """Set the "under" chain for a portal type."""
+        wftool = getToolByName(self, 'portal_workflow')
+        if chain is not None:
+            for wf_id in chain:
+                if not wftool.getWorkflowById(wf_id):
+                    raise ValueError, (
+                        '"%s" is not a workflow ID.' % wf_id)
+            chain = tuple(chain)
+        self._chains_by_type_under[portal_type] = chain
+
     security.declareProtected(ManageWorkflows, 'delChain')
     def delChain(self, portal_type):
         """Delete the chain for a portal type."""
         del self._chains_by_type[portal_type]
+
+    security.declareProtected(ManageWorkflows, 'delChainUnder')
+    def delChainUnder(self, portal_type):
+        """Delete the chain for a portal type."""
+        del self._chains_by_type_under[portal_type]
 
     #
     # ZMI
@@ -127,31 +158,35 @@ class CPSWorkflowConfiguration(SimpleItem):
     def manage_editForm(self, REQUEST=None):
         """The edit form."""
         ttool = getToolByName(self, 'portal_types')
-        cbt = self._chains_by_type
-        types_info = []
-        addable_info = []
-        for ti in ttool.listTypeInfo():
-            id = ti.getId()
-            title = ti.Title()
-            if cbt.has_key(id):
-                chain = cbt[id]
-                if chain is not None:
-                    chain_str = ', '.join(chain)
+        types_infos = []
+        addable_infos = []
+        for cbt in self._chains_by_type, self._chains_by_type_under:
+            types_info = []
+            addable_info = []
+            for ti in ttool.listTypeInfo():
+                id = ti.getId()
+                title = ti.Title()
+                if cbt.has_key(id):
+                    chain = cbt[id]
+                    if chain is not None:
+                        chain_str = ', '.join(chain)
+                    else:
+                        chain_str = '(Default)'
+                    if title == id:
+                        title = None
+                    types_info.append({'id': id,
+                                       'title': title,
+                                       'chain': chain_str})
                 else:
-                    chain_str = '(Default)'
-                if title == id:
-                    title = None
-                types_info.append({'id': id,
-                                   'title': title,
-                                   'chain': chain_str})
-            else:
-                if title != id:
-                    title = '%s (%s)' % (title, id)
-                addable_info.append({'id': id,
-                                     'title': title})
+                    if title != id:
+                        title = '%s (%s)' % (title, id)
+                    addable_info.append({'id': id,
+                                         'title': title})
+            types_infos.append(types_info)
+            addable_infos.append(addable_info)
         return self._manage_editForm(REQUEST,
-                                     types_info=types_info,
-                                     addable_info=addable_info)
+                                     types_infos=types_infos,
+                                     addable_infos=addable_infos)
 
     security.declareProtected(ManageWorkflows, 'manage_editChains')
     def manage_editChains(self,
@@ -161,45 +196,62 @@ class CPSWorkflowConfiguration(SimpleItem):
         kw = REQUEST.form
         ttool = getToolByName(self, 'portal_types')
         if sub_save is not None:
-            cbt = self._chains_by_type
-            for ti in ttool.listTypeInfo():
-                id = ti.getId()
-                if not cbt.has_key(id):
-                    continue
-                chain = kw.get('chain_%s' % id)
-                if chain is None:
-                    continue
-                if chain == '(Default)':
-                    chain = None
+            for cbt in self._chains_by_type, self._chains_by_type_under:
+                if cbt is self._chains_by_type:
+                    prefix = 'chain_'
+                    set = self.setChain
                 else:
-                    chain = chain.split(',')
-                    chain = [wf.strip() for wf in chain if wf.strip()]
-                self.setChain(id, chain)
+                    prefix = 'under_chain_'
+                    set = self.setChainUnder
+                for ti in ttool.listTypeInfo():
+                    id = ti.getId()
+                    if not cbt.has_key(id):
+                        continue
+                    chain = kw.get(prefix+id)
+                    if chain is None:
+                        continue
+                    if chain == '(Default)':
+                        chain = None
+                    else:
+                        chain = chain.split(',')
+                        chain = [wf.strip() for wf in chain if wf.strip()]
+                    set(id, chain)
             if REQUEST is not None:
                 REQUEST.set('manage_tabs_message', 'Saved.')
                 return self.manage_editForm(REQUEST)
         elif sub_del is not None:
-            cbt = self._chains_by_type
-            for ti in ttool.listTypeInfo():
-                id = ti.getId()
-                if not cbt.has_key(id):
-                    continue
-                if kw.has_key('cb_%s' % id):
-                    self.delChain(id)
+            for cbt in self._chains_by_type, self._chains_by_type_under:
+                if cbt is self._chains_by_type:
+                    prefix = 'cb_'
+                    dodel = self.delChain
+                else:
+                    prefix = 'under_cb_'
+                    dodel = self.delChainUnder
+                for ti in ttool.listTypeInfo():
+                    id = ti.getId()
+                    if not cbt.has_key(id):
+                        continue
+                    if kw.has_key(prefix+id):
+                        dodel(id)
             if REQUEST is not None:
                 REQUEST.set('manage_tabs_message', 'Deleted.')
                 return self.manage_editForm(REQUEST)
 
     security.declareProtected(ManageWorkflows, 'manage_addChain')
-    def manage_addChain(self, portal_type, chain, REQUEST=None):
+    def manage_addChain(self, portal_type, chain, under_sub_add=None,
+                        REQUEST=None):
         """Add a chains."""
+        if under_sub_add is None:
+            set = self.setChain
+        else:
+            set = self.setChainUnder
         chain = chain.strip()
         if chain == '(Default)':
             chain = None
         else:
             chain = chain.split(',')
             chain = [wf.strip() for wf in chain if wf.strip()]
-        self.setChain(portal_type, chain)
+        set(portal_type, chain)
         if REQUEST is not None:
             REQUEST.set('manage_tabs_message', 'Added.')
             return self.manage_editForm(REQUEST)
