@@ -3,13 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
-- Now the member area id can possibly be different than the member id and can
-  be obtained through the function getHomeFolderId.
-- getHomeFolder check if member have property homeless and 
-  return no home if true
+-
 Bug fixes:
 ~~~~~~~~~~
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- allow skins to access mx.Tidy
+-
