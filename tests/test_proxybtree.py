@@ -18,17 +18,10 @@
 """Tests for the btree proxies."""
 
 import unittest
-from Products.BTreeFolder2.BTreeFolder2 \
-     import BTreeFolder2, ExhaustedUniqueIdsError
-from OFS.ObjectManager import BadRequestException
-from OFS.Folder import Folder
-from Acquisition import aq_base
-from Products.CPSCore.ProxyBase import ProxyBTreeFolder,\
-     ProxyBTreeFolderishDocument
+from Products.BTreeFolder2.tests.testBTreeFolder2 import BTreeFolder2Tests
 
-# Freebie tests
-from Products.BTreeFolder2.tests.testBTreeFolder2 import \
-     TrojanKey, BTreeFolder2Tests
+from Products.CPSCore.ProxyBase import ProxyBTreeFolder
+from Products.CPSCore.ProxyBase import ProxyBTreeFolderishDocument
 
 
 class ProxyBTreeFolderTest(BTreeFolder2Tests):
