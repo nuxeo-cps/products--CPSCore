@@ -40,7 +40,8 @@ if 'cps_is_searchable' not in ftiprops_ids:
 
 if 'cps_proxytype' not in ftiprops_ids:
     FTI._properties = FTI._properties + (
-        {'id':'cps_proxytype', 'type': 'string', 'mode':'w',
-         'label':'CPS Proxytype'},
+        {'id':'cps_proxytype', 'type': 'selection', 'mode':'w',
+         'select_variable':'getProxyTypesAllowed', 'label':'CPS Proxytype'},
         )
     FTI.cps_proxytype = ''
+
