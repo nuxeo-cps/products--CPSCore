@@ -95,6 +95,14 @@ class CPSMembershipTool(MembershipTool):
     memberfolder_portal_type = 'Workspace'
     memberfolder_roles = ('Owner', 'WorkspaceManager')
 
+    # XXX this is slightly better than what was done before (hardcoded roles
+    # in each method) as this one centralises the allowed roles declaration
+    # and thus makes it possible to easily monkry-patch it. Would nethertheless
+    # be more elegant to provide an API for changing roles that can manage
+    # local roles (with proper permissions on methods of this API)
+    roles_managing_local_roles = ['WorkspaceManager', 'SectionManager',
+                                  'Manager']
+
     security = ClassSecurityInfo()
 
     security.declareProtected(View, 'getMergedLocalRoles')
@@ -110,12 +118,15 @@ class CPSMembershipTool(MembershipTool):
     security.declareProtected(View, 'getCandidateLocalRoles')
     def getCPSCandidateLocalRoles(self, obj):
         """What local roles according to the context ?"""
-        # XXX This code must change, it has knowledge of CPSDefault.
+
         member = self.getAuthenticatedMember()
         roles = member.getRolesInContext(obj)
-        if 'WorkspaceManager' in roles or\
-           'SectionManager' in roles or\
-           'Manager' in roles:
+        has_proper_role = 0
+        for r in self.roles_managing_local_roles:
+            if r in roles:
+                has_proper_role = 1
+                break
+        if has_proper_role:
             return self.getPortalRoles()
         else:
             member_roles = [role for role in roles
@@ -128,14 +139,14 @@ class CPSMembershipTool(MembershipTool):
         """ Set local roles on an item """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
-        # XXX This code must change, it has knowledge of CPSDefault.
-        if 'Manager' in my_roles or \
-               'WorkspaceManager' in my_roles or \
-               'SectionManager' in my_roles or \
-               member_role in my_roles:
+        has_proper_role = 0
+        for r in self.roles_managing_local_roles:
+            if r in my_roles:
+                has_proper_role = 1
+                break
+        if has_proper_role or member_role in my_roles:
             for member_id in member_ids:
                 roles = list(obj.get_local_roles_for_userid(userid=member_id))
-
                 if member_role not in roles:
                     roles.append(member_role)
                     obj.manage_setLocalRoles(member_id, roles)
@@ -151,12 +162,13 @@ class CPSMembershipTool(MembershipTool):
         """ Delete local roles for members member_ids """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
-
-        if 'Manager' in my_roles or 'Owner' in my_roles or \
-               'WorkspaceManager' in my_roles or \
-               'SectionManager' in my_roles:
+        has_proper_role = 0
+        for r in self.roles_managing_local_roles:
+            if r in my_roles:
+                has_proper_role = 1
+                break
+        if has_proper_role or 'Owner' in my_roles:
             obj.manage_delLocalRoles(userids=member_ids)
-
         if reindex:
             obj.reindexObjectSecurity()
 
@@ -165,10 +177,12 @@ class CPSMembershipTool(MembershipTool):
         """Set local group roles on an item."""
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
-        if 'Manager' in my_roles or \
-               'WorkspaceManager' in my_roles or \
-               'SectionManager' in my_roles or \
-               role in my_roles:
+        has_proper_role = 0
+        for r in self.roles_managing_local_roles:
+            if r in my_roles:
+                has_proper_role = 1
+                break
+        if has_proper_role or role in my_roles:
             for id in ids:
                 roles = list(obj.get_local_roles_for_groupid(id))
                 if role not in roles:
@@ -182,10 +196,12 @@ class CPSMembershipTool(MembershipTool):
         """Delete local group roles for members member_ids."""
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
-        if 'Manager' in my_roles or \
-           'WorkspaceManager' in my_roles or \
-           'SectionManager' in my_roles or \
-           role in my_roles:
+        has_proper_role = 0
+        for r in self.roles_managing_local_roles:
+            if r in my_roles:
+                has_proper_role = 1
+                break
+        if has_proper_role or role in my_roles:
             obj.manage_delLocalGroupRoles(ids)
         else:
             # Only remove the roles we have.
