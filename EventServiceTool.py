@@ -337,7 +337,7 @@ class EventServiceTool(UniqueObject, Folder):
     def _register(self, rlocation):
         if self._rlocation_to_hubid.has_key(rlocation):
             LOG('EventServiceTool', ERROR,
-                'Hub: attempted to re-register location %s' % location)
+                'Hub: attempted to re-register location %s' % rlocation)
             return self._rlocation_to_hubid[rlocation]
         hubid = self._generate_hubid(rlocation)
         self._rlocation_to_hubid[rlocation] = hubid
