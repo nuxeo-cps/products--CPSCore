@@ -132,7 +132,7 @@ class IndexableObjectWrapper:
 
 
 ### Patching CatalogTool methods
-def cat_catalog_object(self, object, uid, idxs=[]):
+def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
     """Wraps the object with workflow and accessibility
     information just before cataloging."""
     LOG('CatalogToolPatch.catalog_object', DEBUG, 'index uid %s  obj %s' % (
@@ -150,7 +150,7 @@ def cat_catalog_object(self, object, uid, idxs=[]):
     if proxy is None or len(languages) == 1 or \
            KEYWORD_VIEW_LANGUAGE in path:
         w = IndexableObjectWrapper(vars, object)
-        ZCatalog.catalog_object(self, w, uid, idxs)
+        ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
     else:
         if len(languages) == 2:
             # remove previous entry with uid path
@@ -169,7 +169,7 @@ def cat_catalog_object(self, object, uid, idxs=[]):
                                        is_default_proxy=is_default_proxy)
             LOG('CatalogToolPatch.catalog_object', DEBUG,
                 'index uid locale %s' % uid)
-            ZCatalog.catalog_object(self, w, uid, idxs)
+            ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
 
 CatalogTool.catalog_object = cat_catalog_object
 LOG('CatalogToolPatch', INFO, 'Patching CMF CatalogTool.catalog_object')
