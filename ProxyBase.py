@@ -17,7 +17,7 @@
 #
 # $Id$
 
-from zLOG import LOG, ERROR, DEBUG
+from zLOG import LOG, ERROR, DEBUG, TRACE
 from ExtensionClass import Base
 from cPickle import Pickler, Unpickler
 from cStringIO import StringIO
@@ -26,8 +26,10 @@ from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
+from OFS.Image import File
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import View
@@ -40,6 +42,10 @@ from Products.CPSCore.utils import _isinstance
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder
 from Products.CPSCore.CPSBase import CPSBaseDocument
+
+
+KEYWORD_DOWNLOAD_FILE = 'downloadFile'
+KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
 
 
 class ProxyBase(Base):
@@ -202,12 +208,25 @@ class ProxyBase(Base):
         """Transparent traversal of the proxy to the real subobjects.
 
         Used for skins that don't take proxies enough into account.
+
+        Parses URL revision switch of the form:
+          mydoc/archivedRevision/n/...
+
+        Parses URLs for download of the form:
+          mydoc/downloadFile/attrname/mydocname.pdf
         """
-        if hasattr(self, name):
-            raise KeyError, name
+        if name == KEYWORD_ARCHIVED_REVISION:
+            if self.isProxyArchived():
+                raise KeyError(name)
+            switcher = RevisionSwitcher(self)
+            return switcher.__of__(self)
         ob = self._getContent()
         if ob is None:
-            raise KeyError, name
+            raise KeyError(name)
+        if name == KEYWORD_DOWNLOAD_FILE:
+            downloader = FileDownloader(ob)
+            return downloader.__of__(self)
+        #LOG('ProxyBase.getitem', TRACE, '  Aha, retrieved %s from doc' % name)
         try:
             res = getattr(ob, name)
         except AttributeError:
@@ -241,6 +260,11 @@ class ProxyBase(Base):
         """Freeze the proxy."""
         # XXX use an event?
         pxtool.freezeProxy(self)
+
+    security.declarePublic('isProxyArchived')
+    def isProxyArchived(self):
+        """Is the proxy archived. False."""
+        return 0
 
     #
     # Staging
@@ -494,6 +518,194 @@ class ProxyBase(Base):
 InitializeClass(ProxyBase)
 
 
+class FileDownloader(Acquisition.Explicit):
+    """Intermediate object allowing for file download.
+
+    Returned by a proxy during traversal of .../downloadFile/.
+
+    Parses URLs of the form .../downloadFile/attrname/mydocname.pdf
+    """
+
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+
+    def __init__(self, ob):
+        self.ob = ob
+        self.state = 0
+        self.attrname = None
+        self.file = None
+        self.filename = None
+
+    def __repr__(self):
+        s = '<FileDownloader for %s' % `self.ob`
+        if self.state > 0:
+            s += '/'+self.attrname
+        if self.state > 1:
+            s += '/'+self.filename
+        s += '>'
+        return s
+
+    def __bobo_traverse__(self, request, name):
+        state = self.state
+        ob = self.ob
+        LOG('FileDownloader.getitem', DEBUG, 'state=%s name=%s'
+            % (state, name))
+        if state == 0:
+            # First call, swallow attribute
+            if not hasattr(aq_base(ob), name):
+                LOG('FileDownloader.getitem', DEBUG,
+                    "Not a base attribute: '%s'" % name)
+                raise KeyError(name)
+            file = getattr(ob, name)
+            if file is not None and not _isinstance(file, File):
+                LOG('FileDownloader.getitem', DEBUG,
+                    "Attribute '%s' is not a File but %s" %
+                    (name, `file`))
+                raise KeyError(name)
+            self.attrname = name
+            self.file = file
+            self.state = 1
+            return self
+        elif state == 1:
+            # Got attribute, swallow filename
+            self.filename = name
+            self.state = 2
+            return self
+        elif name == 'index_html':
+            return self.index_html
+        else:
+            raise KeyError(name)
+
+    def index_html(self, REQUEST, RESPONSE):
+        """Publish the file or image."""
+        if self.state != 2:
+            return None
+        filename = self.filename
+        BAD_CHARS = r'\%=;'
+        for c in BAD_CHARS:
+            filename = filename.replace(c, '')
+        RESPONSE.setHeader('Content-Disposition',
+                           'inline; filename=%s' % filename)
+        file = self.file
+        if file is not None:
+            return file.index_html(REQUEST, RESPONSE)
+        else:
+            RESPONSE.setHeader('Content-Type', 'text/plain')
+            RESPONSE.setHeader('Content-Length', '0')
+            RESPONSE.write('')
+            return ''
+
+InitializeClass(FileDownloader)
+
+
+class RevisionSwitcher(Acquisition.Explicit):
+    """Intermediate object allowing for revision choice.
+
+    Returned by a proxy during traversal of .../archivedRevision/.
+
+    Parses URLs of the form .../archivedRevision/n/...
+    """
+
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+
+    # Never viewable, so skipped by breadcrumbs.
+    _View_Permission = ()
+
+    def __init__(self, proxy):
+        self.proxy = proxy
+        self.id = KEYWORD_ARCHIVED_REVISION
+
+    def __repr__(self):
+        return '<RevisionSwitcher for %s>' % `self.proxy`
+
+    def __bobo_traverse__(self, request, rev):
+        try:
+            rev = int(rev)
+        except ValueError:
+            LOG('RevisionSwitcher.getitem', DEBUG,
+                "Invalid revision %s" % `rev`)
+            raise KeyError(rev)
+
+        proxy = self.proxy
+        docid = proxy._docid
+        pxtool = getToolByName(proxy, 'portal_proxies')
+        ob = pxtool.getContentByRevision(docid, rev)
+        if ob is None:
+            LOG('RevisionSwitcher.getitem', DEBUG,
+                "Unknown revision %s" % rev)
+            raise KeyError(rev)
+
+        # Find language
+        base_ob = aq_base(ob)
+        if hasattr(base_ob, 'Language'):
+            lang = ob.Language()
+        elif hasattr(base_ob, 'language'):
+            lang = ob.language
+        else:
+            lang = proxy._default_language
+
+        revproxy = VirtualProxy(ob, docid, rev, lang)
+        revproxy._setId(KEYWORD_ARCHIVED_REVISION+'/'+str(rev))
+
+        return revproxy.__of__(proxy)
+
+InitializeClass(RevisionSwitcher)
+
+
+class VirtualProxy(ProxyBase, CPSBaseDocument):
+    """Virtual proxy used for revision access.
+
+    Provides access to a fixed revision.
+    """
+
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+
+    # Never modifiable.
+    _Modify_portal_content_Permission = ()
+
+    def __init__(self, ob, docid, rev, lang):
+        self._ob = ob
+
+        self._docid = docid
+        self._default_language = lang
+        self._language_revs = {lang: rev}
+        self._from_language_revs = {}
+        self._tag = None
+
+        self.portal_type = ob.portal_type
+        # No workflow state.
+
+    security.declarePrivate('_getContent')
+    def _getContent(self, lang=None, rev=None, editable=0):
+        """Get the content object, maybe editable."""
+        if editable:
+            raise ValueError("Cannot get editable version of a virtual proxy")
+        if lang is not None:
+            raise ValueError("Cannot specify lang for a virtual proxy")
+        if rev is not None:
+            raise ValueError("Cannot specify rev for a virtual proxy")
+        return self._ob
+
+    security.declareProtected(View, 'getLanguage')
+    def getLanguage(self, lang=None):
+        """Get the language for the virtual proxy."""
+        return self._default_language
+
+    security.declareProtected(View, 'getRevision')
+    def getRevision(self, lang=None):
+        """Get the revision for the virtual proxy."""
+        return self._language_revs.values()[0]
+
+    security.declarePublic('isProxyArchived')
+    def isProxyArchived(self):
+        """Is the proxy archived. True."""
+        return 1
+
+InitializeClass(VirtualProxy)
+
+
 #
 # Serialization
 #
@@ -572,6 +784,11 @@ class NotAProxy:
     def getEditableContent(self, lang=None):
         """Return the object itself."""
         return self
+
+    security.declarePublic('isProxyArchived')
+    def isProxyArchived(self):
+        """Is the proxy archived."""
+        return 0
 
 InitializeClass(NotAProxy)
 
