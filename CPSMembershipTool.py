@@ -288,6 +288,10 @@ class CPSMembershipTool(MembershipTool):
             else:
                 return None
 
+        homeless = member.getProperty('homeless', '0')
+        if homeless and homeless != '0':
+            return None
+
         # Setup a temporary security manager so that creation is not
         # hampered by insufficient roles.
 
@@ -349,13 +353,14 @@ class CPSMembershipTool(MembershipTool):
         """Return a member's home folder object, or None."""
         member = self.getAuthenticatedMember()
 
-        if member.getProperty('homeless', 0):
-            return None
-
         if id is None:
             if not hasattr(member, 'getMemberId'):
                 return None
             id = member.getMemberId()
+
+        homeless = member.getProperty('homeless', '0')
+        if homeless and homeless != '0':
+            return None
 
         members = self.getMembersFolder()
         if members:
