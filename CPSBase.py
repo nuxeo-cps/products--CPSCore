@@ -52,6 +52,8 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
 
     #_isDiscussable = 1
     isPrincipiaFolderish = 0
+    __dav_collection__ = 0
+    isAnObjectManager = 0
 
     security = ClassSecurityInfo()
 
@@ -126,6 +128,8 @@ class CPSBaseFolder(TypeConstructor, TypeContainer, CPSBaseDocument):
     meta_type = 'CPS Base Folder'
 
     isPrincipiaFolderish = 1
+    __dav_collection__ = 1
+    isAnObjectManager = 1
 
     #
     # ZMI

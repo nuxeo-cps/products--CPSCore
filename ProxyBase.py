@@ -633,10 +633,6 @@ class ProxyDocument(ProxyBase, CPSBaseDocument):
     meta_type = 'CPS Proxy Document'
     # portal_type will be set to the target's portal_type after creation
 
-    isPrincipiaFolderish = 0
-    __dav_collection__ = 0
-    isAnObjectManager = 0
-
     def __init__(self, id, **kw):
         CPSBaseDocument.__init__(self, id)
         ProxyBase.__init__(self, **kw)
