@@ -74,9 +74,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         """
         creation_state = self.states.get(CREATION_STATE)
         if creation_state is None:
-            return []
-        transitions = creation_state.getTransitions()
-        return [t.getId() for t in transitions]
+            return ()
+        return tuple(creation_state.getTransitions())
 
 
 InitializeClass(CPSWorkflowDefinition)

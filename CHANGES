@@ -3,10 +3,10 @@ ZODB Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Initial packaging.
 Bug fixes:
 ~~~~~~~~~~
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Added unit tests for the workflow tool and placeful wf configuration.

@@ -50,6 +50,9 @@ class CPSWorkflowTool(WorkflowTool):
 
     security = ClassSecurityInfo()
 
+    # We don't need a default default chain
+    _default_chain = ()
+
     #def __init__(self):
     #    pass
 
@@ -65,9 +68,10 @@ class CPSWorkflowTool(WorkflowTool):
         The sequence is None for non-CPS workflows (meaning that
         a default state will be used).
         """
-        wfs = self.getChainFor(portal_type, container=container)
+        wf_ids = self.getChainFor(portal_type, container=container)
         creation_transitions = {}
-        for wf in wfs:
+        for wf_id in wf_ids:
+            wf = self.getWorkflowById(wf_id)
             if hasattr(aq_base(wf), 'getCreationTransitions'):
                 transitions = wf.getCreationTransitions()
             else:
@@ -162,3 +166,12 @@ class CPSWorkflowTool(WorkflowTool):
 
 
 InitializeClass(CPSWorkflowTool)
+
+
+def addCPSWorkflowTool(container, REQUEST=None):
+    """Add a CPS Workflow Tool."""
+    ob = CPSWorkflowTool()
+    id = ob.getId()
+    container._setObject(id, ob)
+    if REQUEST is not None:
+        REQUEST.RESPONSE.redirect(container.absolute_url()+'/manage_main')
