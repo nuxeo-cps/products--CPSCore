@@ -189,7 +189,7 @@ class CPSWorkflowTool(WorkflowTool):
     def _container_maybe_rpath(self, container):
         if isinstance(container, StringType):
             rpath = container
-            if not rpath or rpath.find('..') >= 0 or rpath.startswith('/'):
+            if not rpath or rpath.startswith('/') or '..' in rpath.split('/'):
                 raise ValueError(rpath)
             portal = aq_parent(aq_inner(self))
             container = portal.unrestrictedTraverse(rpath)
