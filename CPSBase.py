@@ -93,7 +93,13 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
 
         Automatically derived from all string properties.
         """
-        values = self.propertyValues()
+        try:
+            values = self.propertyValues()
+        except AttributeError, err:
+            LOG('CPSBase.SearchableText', ERROR,
+                'unable to get propertyValues for obj %s,'
+                'AttributeError on %s' % (self.absolute_url(1), err))
+            values = []
         strings = []
         for val in values:
             if isinstance(val, StringType) or isinstance(val, UnicodeType):
