@@ -20,14 +20,22 @@
 #
 # Replace MonkeyPatch of Membershiptool by real object use
 #
-
+# $Id$ 
 
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 
-from Products.CMFCore.CMFCorePermissions import View
+from Products.CMFCore.CMFCorePermissions import View, ManagePortal
 from Products.CMFDefault.MembershipTool import MembershipTool
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
+from Products.NuxUserGroups.LocalRolesWithGroups import \
+     manage_setLocalGroupRoles, manage_delLocalGroupRoles
+
+from zLOG import LOG, DEBUG
+
+# XXX : to move somewhere else 
+WORKSPACES = "workspaces"
+MEMBERS    = "members" 
 
 class CPSMembershipTool(MembershipTool):
 
@@ -74,11 +82,61 @@ class CPSMembershipTool(MembershipTool):
                     obj.manage_delLocalGroupRoles([id])
         if reindex:
             obj.reindexObjectSecurity()
-    
+
+    security.declareProtected(ManagePortal, 'createMemberarea')
+    def createMemberarea(self, member_id):
+        """Create a member area."""
+        
+        parent = self.aq_inner.aq_parent
+        ws_root =  getattr(parent, WORKSPACES, None)
+        members =  getattr(ws_root, MEMBERS, None)
+
+        user = self.acl_users.getUser( member_id ).__of__( self.acl_users )
+
+        if members is not None and user is not None:
+            f_title = "%s's Home" % member_id
+
+            # XXX : GOTTA FIX THAT IN A MORE PROPER WAY 
+            # Hack to pass workflow guards
+            manage_setLocalGroupRoles(members, 'role:Anonymous',
+                                      ['WorkspaceManager'] )
+
+            members.invokeFactory('Workspace', member_id)
+             
+            manage_delLocalGroupRoles(members, ['role:Anonymous'])            
+            # TODO set workspace properties ? title ..
+            f=getattr(members, member_id)            
+            # Grant ownership to Member
+            try: f.changeOwnership(user)
+            except AttributeError:
+                pass  # Zope 2.1.x compatibility
+            f.manage_setLocalRoles(member_id, ['Owner', 'WorkspaceManager'])
+
+    security.declarePublic('getHomeFolder')
+    def getHomeFolder(self, id=None, verifyPermission=0):
+        """ Return a member's home folder object, or None."""
+        
+        if id is None:
+            member = self.getAuthenticatedMember()    
+            if not hasattr(member, 'getMemberId'):
+                return None
+            id = member.getMemberId()        
+        parent = self.aq_inner.aq_parent
+        
+        ws_root =  getattr(parent, WORKSPACES, None)
+        try:
+            members =  getattr(ws_root, MEMBERS, None)
+            folder  =  getattr(members, id, None)            
+            if verifyPermission and not _checkPermission('View', folder):
+                # Don't return the folder if the user can't get to it.
+                return None            
+            return folder        
+        except KeyError:
+            pass
+        return None
+
 InitializeClass(MembershipTool)
 
-    
-    
 def addCPSMembershipTool(dispatcher, **kw):
     """
     add a membership tool
