@@ -37,6 +37,8 @@ from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 
+from Products.NuxCPS3.EventServiceTool import getEventService
+
 
 defaultencoding = sys.getdefaultencoding()
 
@@ -75,7 +77,11 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
         """Edit the document."""
         self.manage_changeProperties(**kw)
         self.reindexObject()
-        # XXX notify event of modify
+        evtool = getEventService(self)
+        # Note: usually we're not a proxy. The repository will listen
+        # for this event and propagate it to the relevant proxies.
+        # XXX make it sys_modify_object ?
+        evtool.notify('modify_object', self, {})
 
     security.declareProtected(View, 'SearchableText')
     def SearchableText(self):
