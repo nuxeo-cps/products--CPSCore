@@ -1,10 +1,35 @@
 """Dummy (= Mock) classes for unit tests"""
 
 from OFS.SimpleItem import SimpleItem
+from OFS.Folder import Folder
+
+class DummyRoot(Folder):
+    def _getProductRegistryData(self, name):
+        if name == 'ac_permissions':
+            return (('Modify', (), ('Manager',)),
+                    ('DoStuff', (), ('Manager',)),)
+        return ValueError(name)
 
 class DummyRepo(SimpleItem):
+    def __init__(self):
+        self.sec = {}
+
     def getObjectVersion(self, repoid, version_info):
         return 'ob_%s_%s' % (repoid, version_info)
+
+    def setRevisionSecurity(self, docid, rev, userperms):
+        self.sec['%s.%s' % (docid, rev)] = userperms
+        return 1
+
+    def _testClearSecurity(self):
+        self.sec = {}
+
+    def _testGetSecurity(self):
+        return self.sec
+
+class DummyWorkflowTool(SimpleItem):
+    def getManagedPermissions(self):
+        return ['View', 'Modify', 'DoStuff']
 
 class DummyPortalUrl(SimpleItem):
     def getPortalObject(self):

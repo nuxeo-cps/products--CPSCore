@@ -27,10 +27,10 @@ from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 from OFS.Folder import Folder
 
 from Products.CPSCore.ProxyTool import ProxyTool
-from Products.CPSCore.ProxyBase import ProxyBase
+from Products.CPSCore.ProxyBase import ProxyBase, ProxyDocument
 from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
 
-from dummy import DummyRepo, DummyPortalUrl
+from dummy import DummyRepo, DummyPortalUrl, DummyWorkflowTool, DummyRoot
 
 
 class ProxyBaseTest(unittest.TestCase):
@@ -82,13 +82,17 @@ class ProxyToolTest(SecurityRequestTest):
     def setUp(self):
         SecurityRequestTest.setUp(self)
 
-        self.root = Folder()
-        self.root.id = 'root'
+        self.root = DummyRoot()
         root = self.root
 
         root._setObject('portal_proxies', ProxyTool())
         root._setObject('portal_repository', DummyRepo())
         root._setObject('portal_url', DummyPortalUrl())
+        root._setObject('portal_workflow', DummyWorkflowTool())
+
+        root.docs = Folder()
+        docs = root.docs
+        docs.id = 'docs'
 
     def test_add_del_modify(self):
         ptool = self.root.portal_proxies
@@ -157,6 +161,76 @@ class ProxyToolTest(SecurityRequestTest):
         self.assertEqual(infos, {})
         infos = ptool.getMatchingProxies('nosuch', 22)
         self.assertEqual(infos, {})
+
+
+    def testSecuritySynthesis(self):
+        root = self.root
+        ptool = root.portal_proxies
+        repo = root.portal_repository
+        docs = root.docs
+
+        proxy1 = ProxyDocument('proxy1',
+                               docid='d', language_revs={'en': 1, 'fr': 2})
+        proxy2 = ProxyDocument('proxy2',
+                               docid='d', language_revs={'en': 3, 'fr': 2})
+        proxy3 = ProxyDocument('proxy3',
+                               docid='d', language_revs={'en': 3})
+        docs.proxy1 = proxy1
+        docs.proxy2 = proxy2
+        docs.proxy3 = proxy3
+        proxy1 = docs.proxy1
+        proxy2 = docs.proxy2
+        proxy3 = docs.proxy3
+        ptool._addProxy(proxy1, 'docs/proxy1')
+        ptool._addProxy(proxy2, 'docs/proxy2')
+        ptool._addProxy(proxy3, 'docs/proxy3')
+
+        l = ptool.listProxies()
+        l.sort()
+        self.assertEquals(l, [('docs/proxy1', ('d', {'en': 1, 'fr': 2})),
+                              ('docs/proxy2', ('d', {'en': 3, 'fr': 2})),
+                              ('docs/proxy3', ('d', {'en': 3})),
+                              ])
+
+        repo._testClearSecurity()
+
+        proxy1.manage_permission('View', ['Reviewer'])
+        proxy1.manage_setLocalRoles('foo', ['Reviewer'])
+        ptool.setSecurity(proxy1)
+        self.assertEquals(repo._testGetSecurity(),
+                          {'d.1': {'foo': ['View']},
+                           'd.2': {'foo': ['View']}})
+
+        proxy2.manage_permission('Modify', ['Reader'])
+        proxy2.manage_setLocalRoles('bar', ['Reader'])
+        ptool.setSecurity(proxy2)
+        self.assertEquals(repo._testGetSecurity(),
+                          {'d.1': {'foo': ['View']},
+                           'd.2': {'foo': ['View'], 'bar': ['Modify']},
+                           'd.3': {'bar': ['Modify']}})
+
+        proxy3.manage_permission('DoStuff', ['Reviewer'])
+        proxy3.manage_setLocalRoles('foo', ['Reviewer'])
+        ptool.setSecurity(proxy3)
+        self.assertEquals(repo._testGetSecurity(),
+                          {'d.1': {'foo': ['View']},
+                           'd.2': {'foo': ['View'], 'bar': ['Modify']},
+                           'd.3': {'foo': ['DoStuff'], 'bar': ['Modify']}})
+
+        proxy2.manage_permission('Modify', [])
+        proxy2.manage_setLocalRoles('bar', ['Reader'])
+        ptool.setSecurity(proxy2)
+        self.assertEquals(repo._testGetSecurity(),
+                          {'d.1': {'foo': ['View']},
+                           'd.2': {'foo': ['View']},
+                           'd.3': {'foo': ['DoStuff']}})
+
+        proxy1.manage_permission('Modify', ['Reviewer'])
+        ptool.setSecurity(proxy1)
+        self.assertEquals(repo._testGetSecurity(),
+                          {'d.1': {'foo': ['View', 'Modify']},
+                           'd.2': {'foo': ['View', 'Modify']},
+                           'd.3': {'foo': ['DoStuff']}})
 
 
 def test_suite():
