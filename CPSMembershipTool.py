@@ -23,8 +23,10 @@
 # $Id$
 
 import sys
+from types import StringType
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
+from AccessControl import Unauthorized
 from AccessControl.SecurityManagement import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.User import nobody
@@ -41,6 +43,7 @@ from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import _getAuthenticatedUser
 from Products.CMFDefault.MembershipTool import MembershipTool
+from Products.CMFCore.MemberDataTool import MemberDataTool
 
 from Products.CPSCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
 
@@ -234,6 +237,18 @@ class CPSMembershipTool(MembershipTool):
                                               default=None)
         return members
 
+    security.declareProtected(ManageUsers, 'deleteMemberArea')
+    def deleteMemberArea(self, member_id):
+        """Delete member area of member specified by member_id."""
+        members = self.getMembersFolder()
+        if not members:
+            return 0
+        if hasattr(aq_base(members), member_id):
+            members.manage_delObjects(member_id)
+            return 1
+        else:
+            return 0
+
     # Based on CVS 1.5 (HEAD) method.
     security.declarePublic(ManagePortal, 'createMemberArea')
     def createMemberArea(self, member_id=''):
@@ -394,6 +409,56 @@ class CPSMembershipTool(MembershipTool):
                     'Error during wrapUser', error=sys.exc_info())
         return u
 
+    # CMF 1.5 method
+    security.declareProtected(ManageUsers, 'deleteMembers')
+    def deleteMembers(self, member_ids, delete_memberareas=1,
+                      delete_localroles=1):
+        """Delete members specified by member_ids.
+
+        XXX does not implement local roles deletion.
+        """
+
+        # Delete members in acl_users.
+        acl_users = self.acl_users
+        if _checkPermission(ManageUsers, acl_users):
+            if type(member_ids) is StringType:
+                member_ids = (member_ids,)
+            member_ids = list(member_ids)
+            for member_id in member_ids[:]:
+                if not acl_users.getUserById(member_id, None):
+                    member_ids.remove(member_id)
+            if hasattr(acl_users, '_doDelUsers'):
+                acl_users._doDelUsers(member_ids)
+            else:
+                try:
+                    acl_users.userFolderDelUsers(member_ids)
+                except (NotImplementedError, 'NotImplemented'):
+                    raise NotImplementedError(
+                        "The underlying User Folder "
+                        "doesn't support deleting members.")
+        else:
+            raise Unauthorized("You need the 'Manage users' "
+                               "permission for the underlying User Folder.")
+
+        # Delete member data in portal_memberdata.
+        mdtool = getToolByName(self, 'portal_memberdata', None)
+        if mdtool:
+            for member_id in member_ids:
+                mdtool.deleteMemberData(member_id)
+
+        # Delete members' home folders including all content items.
+        if delete_memberareas:
+            for member_id in member_ids:
+                 self.deleteMemberArea(member_id)
+
+        ## Delete members' local roles.
+        #if delete_localroles:
+        #    utool = getToolByName(self, 'portal_url', None)
+        #    self.deleteLocalRoles( utool.getPortalObject(), member_ids,
+        #                           reindex=1, recursive=1 )
+
+        return tuple(member_ids)
+
 InitializeClass(MembershipTool)
 
 def addCPSMembershipTool(dispatcher, **kw):
@@ -403,3 +468,20 @@ def addCPSMembershipTool(dispatcher, **kw):
     container = dispatcher.Destination()
     container._setObject(id, mt)
     mt = container._getOb(id)
+
+
+#
+# Patch MemberDataTool to be sure it has a deleteMemberData method
+#
+
+def deleteMemberData(self, member_id):
+    """Delete member data of specified member."""
+    members = self._members
+    if members.has_key(member_id):
+        del members[member_id]
+        return 1
+    else:
+        return 0
+
+MemberDataTool.deleteMemberData = deleteMemberData
+MemberDataTool.deleteMemberData__roles__ = () # Private
