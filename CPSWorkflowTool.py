@@ -223,8 +223,7 @@ class CPSWorkflowTool(WorkflowTool):
                 break
         # Creation or cloning.
         if do_clone:
-            container.manage_clone(old_ob, id)
-            ob = container._getOb(id)
+            ob = container.copyContent(old_ob, id)
         else:
             if proxy_type is not None:
                 # Create a proxy and a document in the repository.
