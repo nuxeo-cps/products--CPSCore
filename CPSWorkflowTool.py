@@ -30,6 +30,7 @@ from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
+from Products.NuxCPS3.ProxyBase import ProxyBase, ProxyFolderishDocument
 from Products.NuxCPS3.EventServiceTool import getEventService
 from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBCREATE
 from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBDELETE
@@ -247,6 +248,7 @@ class CPSWorkflowTool(WorkflowTool):
         # Creation or cloning.
         if do_clone:
             ob = container.copyContent(old_ob, id)
+            self._insertWorkflowRecursive(ob, all_transitions)
         else:
             if proxy_type is not None:
                 # Create a proxy and a document in the repository.
@@ -255,7 +257,16 @@ class CPSWorkflowTool(WorkflowTool):
                                         *args, **kw)
             else:
                 ob = container.constructContent(type_name, id, *args, **kw)
+            self._insertWorkflow(ob, all_transitions)
+        # Send CMF add event
+        ob.manage_afterCMFAdd(ob, container)
+        return ob
+
+    def _insertWorkflow(self, ob, all_transitions):
+        """Insert ob into workflows."""
         # Do creation transitions for all workflows.
+        LOG('_insertWorkflow', DEBUG, 'inserting %s into workflows %s' %
+            (ob.getId(), all_transitions))
         reindex = 0
         for wf_id, transition in all_transitions.items():
             wf = self.getWorkflowById(wf_id)
@@ -263,10 +274,16 @@ class CPSWorkflowTool(WorkflowTool):
             reindex = 1
         if reindex:
             self._reindexWorkflowVariables(ob)
-        # Send CMF add event
-        ob.manage_afterCMFAdd(ob, container)
-        return ob
 
+    def _insertWorkflowRecursive(self, ob, all_transitions):
+        """Recursively insert into workflows."""
+        LOG('_insertWorkflow', DEBUG, 'recursively inserting %s into workflows %s' %
+            (ob.getId(), all_transitions))
+        if not isinstance(ob, ProxyBase): # XXX correct?
+            return
+        self._insertWorkflow(ob, all_transitions)
+        for subob in ob.objectValues():
+            self._insertWorkflowRecursive(subob, all_transitions)
 
     security.declarePublic('getCloneAllowedTransitions')
     def getCloneAllowedTransitions(self, ob):
@@ -282,6 +299,63 @@ class CPSWorkflowTool(WorkflowTool):
             allowed = wf.getCloneAllowedTransitions(ob)
             res.extend([t for t in allowed if t not in res])
         return res
+
+    #
+    # Constrained workflow transitions for folderish documents.
+    #
+
+    security.declarePublic('doActionFor')
+    def doActionFor(self, ob, action, wf_id=None, *args, **kw):
+        """Execute the given workflow action for the object.
+
+        Invoked by user interface code.
+        The workflow object must perform its own security checks.
+        """
+        if isinstance(ob, ProxyFolderishDocument):
+            self._doActionForRecursive(ob, action, wf_id=wf_id, *args, **kw)
+        else:
+            self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
+
+    security.declarePrivate('_doActionFor')
+    def _doActionFor(self, ob, action, wf_id=None, *args, **kw):
+        """Follow a transition."""
+        LOG('_doActionFor', DEBUG, 'start, ob=%s action=%s' %
+            (ob.getId(), action))
+        wfs = self.getWorkflowsFor(ob)
+        if wfs is None:
+            wfs = ()
+        if wf_id is None:
+            if not wfs:
+                raise WorkflowException('No workflows found.')
+            found = 0
+            for wf in wfs:
+                LOG('_doActionFor', DEBUG, ' testing wf %s' % wf.getId())
+                if wf.isActionSupported(ob, action):
+                    LOG('_doActionFor', DEBUG, ' found!')
+                    found = 1
+                    break
+                LOG('_doActionFor', DEBUG, ' not found')
+            if not found:
+                raise WorkflowException(
+                    'No workflow provides the "%s" action.' % action)
+        else:
+            wf = self.getWorkflowById(wf_id)
+            if wf is None:
+                raise WorkflowException(
+                    'Requested workflow definition not found.')
+        return self._invokeWithNotification(
+            wfs, ob, action, wf.doActionFor, (ob, action) + args, kw)
+
+    security.declarePrivate('_doActionForRecursive')
+    def _doActionForRecursive(self, ob, action, wf_id=None, *args, **kw):
+        """Recursively calls doactionfor."""
+        LOG('_doActionForRecursive', DEBUG, 'ob=%s action=%s' %
+            (ob.getId(), action))
+        if not isinstance(ob, ProxyBase): # XXX
+            return
+        self._doActionFor(ob, action, wf_id=wf_id, *args, **kw)
+        for subob in ob.objectValues():
+            self._doActionForRecursive(subob, action, wf_id=wf_id, *args, **kw)
 
     #
     # Misc
