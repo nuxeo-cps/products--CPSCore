@@ -12,7 +12,7 @@ Installation notes
 
     - DCWorkflow
 
-    The following additional products are needed:
+    The following additional products are also needed:
 
     - BTreeFolder2
 
@@ -34,7 +34,7 @@ Installation notes
 
     - VerboseSecurity
 
-    The following product is required to run unit tests
+    The following product is required to run unit tests:
 
     - ZopeTestCase
 
@@ -42,3 +42,4 @@ Installation notes
   Start your server and using the ZMI
     
     - Add a CPSDefault Site
+
