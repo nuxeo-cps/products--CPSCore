@@ -1,4 +1,21 @@
 *******************************************
+** CPSCore V3.9.0 [R1 build 2004/04/22-15:46 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Adding a new getLanguageRevisions() method on the StateChangeInfo workflow
+  objects from DCWorkflow through patching.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.8.3 [R1 build 2004/04/09-15:54 by madarche]
 
 Requires:
