@@ -141,6 +141,7 @@ class ElementsTool(UniqueObject, OFS.Folder.Folder):
             elements['CONTAINER'] = container
 
         elements['PORTAL'] = portal
+        elements['PORTAL_URL'] = portal.absolute_url()
         return elements
 
     # For ElementsMapping
