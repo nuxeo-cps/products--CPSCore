@@ -126,7 +126,10 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             LOG('ProxyTool', DEBUG, 'Found no matching version for hubid %s, repoid %s, lang %s, infos %s' % (hubid, repoid, pref_lang, version_infos))
             return None
         if editable:
+            LOG('ProxyTool', DEBUG, 'Wants editable instead of v=%s' %
+                version_info)
             version_info = repotool.getUnfrozenVersion(repoid, version_info)
+            LOG('ProxyTool', DEBUG, ' Got v=%s' % version_info)
         return repotool.getObjectVersion(repoid, version_info)
 
     security.declarePrivate('getMatchingProxies')
