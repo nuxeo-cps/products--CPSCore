@@ -137,6 +137,8 @@ class WorkflowToolTests(ZopeTestCase.PortalTestCase):
             ass_local_role='WorkspaceManager',
             up_ass_local_role='WorkspaceReader',
             down_ass_local_role='WorkspaceMember',
+            # XXX AT: Does that mean that associates and observers can manage
+            # the Pilots stack ???
             manager_stack_ids=['Associates', 'Observers'])
         associates = SimpleWorkflowStackDefinition(
             DATA_STRUCT_STACK_TYPE_LIFO,
