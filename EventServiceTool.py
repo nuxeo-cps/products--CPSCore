@@ -16,6 +16,19 @@
 # 02111-1307, USA.
 #
 # $Id$
+"""Event Service and Object Hub
+
+The Event Service receives events and dispatches them to interested
+parties.
+
+The Object Hub maintains an association between a location and a hubid,
+and can be queried for those.
+"""
+
+# The two are in the same tool (for now) moment because they have close
+# relationships: the object hub has to know about add/remove events, and
+# the event service has to pass the hubid to subscribers as additional
+# info.
 
 from zLOG import LOG, ERROR
 from DateTime import DateTime
@@ -173,7 +186,7 @@ class EventServiceTool(UniqueObject, Folder):
 
     def __init__(self, *args, **kw):
         self._notification_dict = {}
-        # location is a path relative to the root of the portal,
+        # rlocation is a path relative to the root of the portal,
         # without an initial slash.
         #   '' = portal, 'Members' = members dir, etc.
         self._hubid_to_rlocation = IOBTree()
