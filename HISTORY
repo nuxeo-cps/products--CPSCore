@@ -1,4 +1,22 @@
 *******************************************
+** CPSCore V3.13.0 [R1 build 2004/05/27-15:19 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Added a property in ProxyTool so that the portal default language is used
+  prior to the proxy default language if the latter doesn't have the current
+  language in its revisions; commented and redesigned around.
+Bug fixes:
+~~~~~~~~~~
+- Event notification is now done after all the transition scripts are executed
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.12.1 [R1 build 2004/05/26-15:05 by madarche]
 
 Requires:
