@@ -334,12 +334,8 @@ class ObjectRepositoryTool(UniqueObject,
                 name, data = inhp[:2]
                 if name == perm:
                     p = Permission(name, data, self)
-                    roles = p.getRoles(default=[])
-                    if role not in roles:
-                        r = list(roles)+[role]
-                        if type(roles) is TupleType:
-                            r = tuple(r)
-                        p.setRoles(r)
+                    # Set permission to unacquire, and to Manager.
+                    p.setRoles(('Manager', role))
                     break
         return role
 
