@@ -61,14 +61,14 @@ class CPSWorkflowTool(WorkflowTool):
     #
 
     security.declarePublic('getCreationTransitions')
-    def getCreationTransitions(self, container, portal_type):
+    def getCreationTransitions(self, container, type_name):
         """Get the possible creation transitions in a container.
 
         Returns a dict of {wf_id: sequence_of_transitions}.
         The sequence is None for non-CPS workflows (meaning that
         a default state will be used).
         """
-        wf_ids = self.getChainFor(portal_type, container=container)
+        wf_ids = self.getChainFor(type_name, container=container)
         creation_transitions = {}
         for wf_id in wf_ids:
             wf = self.getWorkflowById(wf_id)
@@ -81,7 +81,7 @@ class CPSWorkflowTool(WorkflowTool):
         return creation_transitions
 
     security.declarePublic('invokeFactoryFor')
-    def invokeFactoryFor(self, container, portal_type, id,
+    def invokeFactoryFor(self, container, type_name, id,
                          creation_transitions={},
                          *args, **kw):
         """Create an object in a container.
@@ -92,7 +92,7 @@ class CPSWorkflowTool(WorkflowTool):
         if not _checkPermission(AddPortalContent, container):
             raise Unauthorized
         possible_transitions = self.getCreationTransitions(container,
-                                                           portal_type)
+                                                           type_name)
         # Check that all requested transitions are available.
         for wf_id, transition in creation_transitions.items():
             possible = possible_transitions.get(wf_id)
@@ -103,9 +103,9 @@ class CPSWorkflowTool(WorkflowTool):
             if transition not in possible:
                 raise WorkflowException(
                     "Workflow %s cannot create %s using transition '%s'" %
-                    (wf_id, portal_type, transition))
+                    (wf_id, type_name, transition))
         # calls wf.notifyCreated!
-        container.invokeFactory(portal_type, id, *args, **kw)
+        container.invokeFactory(type_name, id, *args, **kw)
         # XXX should get new id effectively used! CMFCore bug!
         ob = container[id]
         # Do transitions for all workflows.
@@ -155,7 +155,7 @@ class CPSWorkflowTool(WorkflowTool):
 
     security.declarePrivate('getGlobalChainFor')
     def getGlobalChainFor(self, ob):
-        """Get the global chain for a given object or portal_type."""
+        """Get the global chain for a given object or type_name."""
         return CPSWorkflowTool.inheritedAttribute('getChainFor')(self, ob)
 
     #
