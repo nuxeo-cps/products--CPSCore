@@ -25,6 +25,7 @@ from AccessControl import ClassSecurityInfo
 from Acquisition import aq_base
 
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.CMFCorePermissions import View
 from Products.CMFCore.CMFCorePermissions import AccessContentsInformation
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
@@ -79,6 +80,20 @@ class ProxyBase(Base):
         The returned object may depend on the current language.
         """
         return self._getContent(lang=lang)
+
+    security.declareProtected(View, 'getVersion')
+    def getVersion(self, lang=None):
+        """Return the version of this proxy in the current language."""
+        if lang is None:
+            lang = '*' # XXX
+        version_infos = self._version_infos
+        if version_infos.has_key(lang):
+            version_info = version_infos[lang]
+        elif version_infos.has_key('*'):
+            version_info = version_infos['*']
+        else:
+            version_info = 0
+        return version_info
 
     security.declareProtected(ModifyPortalContent, 'getEditableContent')
     def getEditableContent(self, lang=None):
