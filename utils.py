@@ -45,6 +45,16 @@ from DateTime.DateTime import DateTime
 from random import randrange
 import re
 
+#
+# some shared constants
+# see AllowedModules to check if they are public
+KEYWORD_DOWNLOAD_FILE = 'downloadFile'
+KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
+KEYWORD_SWITCH_LANGUAGE = 'switchLanguage'
+KEYWORD_VIEW_LANGUAGE = 'viewLanguage'
+SESSION_LANGUAGE_KEY = 'CPS_SWITCH_LANGUAGE'
+REQUEST_LANGUAGE_KEY = 'CPS_VIEW_LANGUAGE'
+
 
 # Safe hasattr that doesn't catch unwanted exceptions and checks on base.
 _marker = []
@@ -204,3 +214,10 @@ def isUserAgentMsie(request):
         return 1
     else:
         return 0
+
+def resetSessionLanguageSelection(request):
+    """Clear documents language selection done by switchLanguage"""
+    try:
+        del request.SESSION[SESSION_LANGUAGE_KEY]
+    except KeyError:
+        pass
