@@ -118,7 +118,13 @@ class ProxyBase(Base):
             LOG('ProxyBase', DEBUG, 'No hubid found for proxy object %s'
                 % '/'.join(self.getPhysicalPath()))
             return None
-        return pxtool.getContent(hubid, lang=lang, editable=editable)
+        ob, lang, version_info = pxtool.getContent(hubid, lang=lang, editable=editable)
+        if editable and version_info is not None:
+            if version_info != self.getVersion(lang=lang):
+                # Update proxy if version has changed because editable.
+                self._p_changed = 1
+                self._version_infos[lang] = version_info
+        return ob
 
     security.declarePrivate('freezeProxy')
     def freezeProxy(self):

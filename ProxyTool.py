@@ -107,8 +107,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # XXX should this take a hubid or a proxy as argument?
         """Get the object best matched by a given proxy.
 
-        Returns an object, or None if there is no match.
         If lang is not passed, takes into account the user language.
+        Returns an object, and the lang and version used. XXX
+        Returns None, None, None if there is no match.
 
         If editable, the returned content must be an unfrozen version,
         so a cloning and a version upgrade may happen behind the scene.
@@ -118,7 +119,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repotool = getToolByName(self, 'portal_repository')
         if not self._hubid_to_info.has_key(hubid):
             LOG('ProxyTool', ERROR, 'Getting unknown hubid %s' % hubid)
-            return None
+            return None, None, None
         repoid, version_infos = self._hubid_to_info[hubid]
         if lang is None:
             # XXX get preferred language here - abstract the negociation
@@ -129,15 +130,19 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             version_info = version_infos[lang]
         elif version_infos.has_key('*'):
             version_info = version_infos['*']
+            lang = '*'
         else:
-            LOG('ProxyTool', DEBUG, 'Found no matching version for hubid %s, repoid %s, lang %s, infos %s' % (hubid, repoid, pref_lang, version_infos))
-            return None
+            LOG('ProxyTool', DEBUG, 'Found no matching version for hubid %s, repoid %s, lang %s, infos %s' % (hubid, repoid, lang, version_infos))
+            return None, None, None
         if editable:
             LOG('ProxyTool', DEBUG, 'Wants editable instead of v=%s' %
                 version_info)
             version_info = repotool.getUnfrozenVersion(repoid, version_info)
             LOG('ProxyTool', DEBUG, ' Got v=%s' % version_info)
-        return repotool.getObjectVersion(repoid, version_info)
+            # Now update info
+            version_infos[lang] = version_info
+            self._hubid_to_info[hubid] = (repoid, version_infos)
+        return repotool.getObjectVersion(repoid, version_info), lang, version_info
 
     security.declarePrivate('getMatchingProxies')
     def getMatchingProxies(self, repoid, version_info):
