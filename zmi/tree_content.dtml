@@ -1,7 +1,7 @@
 <dtml-var manage_page_header>
 <dtml-var manage_tabs>
 
-<dtml-let list=getList>
+<dtml-let list="getList(filter=0)">
 <form action="<dtml-var name="URL1">">
 
 <p class="form-text">

@@ -205,7 +205,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         for hubid in hubids:
             location = hubtool.getLocation(hubid)
             #LOG('setSecurity', DEBUG, 'location %s' % (location,))
-            ob = portal.unrestrictedTraverse(location) # XXX
+            if location is None:
+                continue
+            ob = portal.unrestrictedTraverse(location)
             merged = mergedLocalRoles(ob, withgroups=1).items()
             #LOG('setSecurity', DEBUG, 'merged %s' % (merged,))
             # Collect permissions of users

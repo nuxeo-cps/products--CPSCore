@@ -25,6 +25,7 @@ from copy import deepcopy
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
+from AccessControl.PermissionRole import rolesForPermissionOn
 from ZODB.PersistentMapping import PersistentMapping
 from ZODB.PersistentList import PersistentList
 
@@ -35,6 +36,9 @@ from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import UniqueObject, getToolByName
+
+from Products.NuxUserGroups.CatalogToolWithGroups import _allowedRolesAndUsers
+from Products.NuxUserGroups.CatalogToolWithGroups import _getAllowedRolesAndUsers
 
 
 class TreesTool(UniqueObject, Folder):
@@ -240,19 +244,22 @@ class TreeCache(SimpleItemWithProperties):
 
     def _find_tree(self, ob):
         """Find the tree entry for the object."""
-        urltool = getToolByName(self, 'portal_url')
-        portal = urltool.getPortalObject()
-        if self.root:
+        # XXX don't recompute this
+        portal = getToolByName(self, 'portal_url').getPortalObject()
+        plen = len(portal.getPhysicalPath())
+        if self.root and self.root.find('..') < 0 and self.root[:1] != '/':
+            # '..': ensure we don't go outside the portal
+            # '/': same
             root = portal.unrestrictedTraverse(self.root, default=None)
             if root is None:
                 return None
         else:
             root = portal
-        path = '/'.join(ob.getPhysicalPath())
+        rpath = '/'.join(ob.getPhysicalPath()[plen:])
         tree = None
         for info in self._pointers:
             # XXX _pointers could even be a dict...
-            if info['path'] == path:
+            if info['rpath'] == rpath:
                 tree = info
                 break
         return tree
@@ -262,7 +269,8 @@ class TreeCache(SimpleItemWithProperties):
     def rebuild(self):
         """Rebuild all the tree."""
         portal = getToolByName(self, 'portal_url').getPortalObject()
-        if self.root:
+        if self.root and self.root.find('..') < 0:
+            # '..': ensure we don't go outside the portal
             root = portal.unrestrictedTraverse(self.root, default=None)
             if root is None:
                 self._clear()
@@ -288,8 +296,7 @@ class TreeCache(SimpleItemWithProperties):
         root = self.root
         if not root:
             return 1
-        rloc = ob.getPhysicalPath()[plen:]
-        rpath = '/'.join(rloc)
+        rpath = '/'.join(ob.getPhysicalPath()[plen:])
         ok = rpath.startswith(root)
         LOG('Tree', DEBUG, ' Returns ok=%s' % ok)
         return ok
@@ -306,6 +313,7 @@ class TreeCache(SimpleItemWithProperties):
                 else:
                     LOG('TreeCache', ERROR, '_get_info returned non-dict %s'
                         % `r`)
+        allowed_roles_users = _allowedRolesAndUsers(ob)
         if info is None:
             # Empty info
             info = self._new_tree()
@@ -315,8 +323,8 @@ class TreeCache(SimpleItemWithProperties):
                      'path': '/'.join(ppath),
                      'rpath': '/'.join(ppath[plen:]),
                      'hubid': hubtool.getHubId(ob),
+                     'allowed_roles_users': allowed_roles_users,
                      })
-        # XXX compute ~allowedRolesAndUsers too
         return info
 
     def _get_children(self, ob, depth, plen, hubtool):
@@ -369,6 +377,17 @@ class TreeCache(SimpleItemWithProperties):
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(self.absolute_url()+'/manage_listTree')
 
+    security.declarePublic('getRoot')
+    def getRoot(self):
+        """Get the root of this tree, as an rpath."""
+        root = self.root
+        if root.endswith('/'):
+            root = root[:-1]
+        if self.root and self.root.find('..') < 0 and self.root[:1] != '/':
+            return root
+        else:
+            return ''
+
     security.declareProtected(View, 'getTree')
     def getTree(self):
         """Return the cached tree.
@@ -378,9 +397,38 @@ class TreeCache(SimpleItemWithProperties):
         return deepcopy(self._tree) # XXX untested, probably fails
 
     security.declareProtected(View, 'getList')
-    def getList(self):
-        """Return the cached tree as a list."""
-        return deepcopy(self._flat)
+    def getList(self, prefix='', start_depth=0, stop_depth=999, filter=1):
+        """Return the cached tree as a list.
+
+        Only return the part between start_depth and stop_depth inclusive,
+        that are under the prefix (an rpath).
+        If filter=1, skip unviewable entries.
+        """
+        if filter:
+            mtool = getToolByName(self, 'portal_membership')
+            user = mtool.getAuthenticatedMember().getUser()
+            allowed_roles_users = _getAllowedRolesAndUsers(user)
+        res = []
+        for info in self._flat:
+            # check filter
+            if filter:
+                ok = 0
+                for ur in info['allowed_roles_users']:
+                    if ur in allowed_roles_users:
+                        ok = 1
+                        break
+                if not ok:
+                    continue
+            # check prefix
+            rpath = info['rpath']
+            if rpath != prefix and not rpath.startswith(prefix+'/'):
+                    continue
+            # check depth
+            depth = info['depth']
+            if depth < start_depth or depth > stop_depth:
+                continue
+            res.append(info)
+        return res
 
     #
     # ZMI
