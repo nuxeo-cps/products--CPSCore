@@ -253,6 +253,7 @@ class EventServiceTool(UniqueObject, Folder):
     # ObjectHub API
     #
 
+    # XXX security?
     security.declarePublic('getHubId')
     def getHubId(self, object_or_location):
         """Get the hubid of an object or location, or None."""
@@ -274,6 +275,7 @@ class EventServiceTool(UniqueObject, Folder):
         #LOG('getHubId', DEBUG, 'hubid=%s' % hubid)
         return self._rlocation_to_hubid.get(rlocation)
 
+    # XXX security?
     security.declarePublic('getLocation')
     def getLocation(self, hubid, relative=0):
         """Get the location of a hubid, or None."""
@@ -444,5 +446,14 @@ class EventServiceTool(UniqueObject, Folder):
     def manage_getHubIds(self):
         """Return all hubids and rlocations."""
         return self._rlocation_to_hubid.items()
+
+    # XXX security?
+    security.declarePublic('manage_redirectHubId')
+    def manage_redirectHubId(self, hubid, RESPONSE):
+        """Redirect to the management page of the object for a hubid."""
+        location = self.getLocation(hubid)
+        if location is not None:
+            RESPONSE.redirect(location+'/manage_workspace')
+
 
 InitializeClass(EventServiceTool)

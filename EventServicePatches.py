@@ -32,13 +32,13 @@ def notify(self, event_type, object, *args, **kw):
 
 def manage_afterAdd(self, *args, **kw):
     """manage_afterAdd patched for event service notification."""
-    notify(self, 'add_object', self, *args, **kw)
     self.cps_old_manage_afterAdd(*args, **kw)
+    notify(self, 'add_object', self, *args, **kw)
 
 def manage_beforeDelete(self, *args, **kw):
     """manage_beforeDelete patched for event service notification."""
-    self.cps_old_manage_beforeDelete(*args, **kw)
     notify(self, 'del_object', self, *args, **kw)
+    self.cps_old_manage_beforeDelete(*args, **kw)
 
 def manage_afterClone(self, *args, **kw):
     """manage_afterClone patched for event service notification."""

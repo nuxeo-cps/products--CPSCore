@@ -132,7 +132,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     - Knowledge of proxies.
     """
 
-    meta_type = 'Workflow' # Otherwise rename & paste don't work...
+    meta_type = 'CPS Workflow'
     title = 'CPS Workflow Definition'
 
     security = ClassSecurityInfo()
@@ -179,26 +179,14 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             raise Unauthorized
         self._changeStateOf(ob, tdef)
 
-    # XXX update this
-    from Products.DCWorkflow.utils import modifyRolesForPermission
     security.declarePrivate('updateRoleMappingsFor')
     def updateRoleMappingsFor(self, ob):
         """Change the object permissions according to the current state.
 
         Returns True if some change on an object was done.
         """
-        changed = 0
-        sdef = self._getWorkflowStateOf(ob)
-        if sdef is not None and self.permissions:
-            for p in self.permissions:
-                roles = []
-                if sdef.permission_roles is not None:
-                    roles = sdef.permission_roles.get(p, roles)
-                if modifyRolesForPermission(ob, p, roles):
-                    changed = 1
-        return changed
-
-
+        return DCWorkflowDefinition.updateRoleMappingsFor(self, ob)
+        # XXX also send event
 
     def _executeTransition(self, ob, tdef=None, kwargs=None):
         """Put the object in a new state, following transition tdef.
@@ -377,6 +365,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         res.sort()
         return res
 
+    security.declarePrivate('getCloneAllowedTransitions')
     def getCloneAllowedTransitions(self, ob, tid):
         """Get the list of allowed initial transitions for clone."""
         sdef = self._getWorkflowStateOf(ob)
@@ -394,6 +383,11 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             allowed = tdef.clone_allowed_transitions
             res.extend([t for t in allowed if t not in res])
         return res
+
+    security.declarePrivate('getManagedPermissions')
+    def getManagedPermissions(self):
+        """Get the permissions managed by this workflow."""
+        return self.permissions
 
 
 InitializeClass(CPSWorkflowDefinition)

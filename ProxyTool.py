@@ -20,52 +20,19 @@
 """
 
 from zLOG import LOG, ERROR, DEBUG
-from Globals import InitializeClass
+from Globals import InitializeClass, DTMLFile
 from Globals import PersistentMapping
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
+from AccessControl.PermissionRole import rolesForPermissionOn
 
+from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
 
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
 from Products.NuxCPS3.ProxyBase import ProxyBase
-
-
-def lroles_canon(lroles_t):
-    """Canonicalize local roles tuple."""
-    lroles_t = list(lroles_t)
-    lroles_t.sort()
-    lroles = []
-    for user, roles in lroles_t:
-        roles = list(roles)
-        roles.sort()
-        lroles.append((user, tuple(roles)))
-    return tuple(lroles)
-
-def get_local_roles_with_groups(ob):
-    """Get all the local roles and group local roles."""
-    uroles = ob.get_local_roles()
-    groles = ob.get_local_group_roles()
-    uroles = [('user:'+u, r) for u,r in uroles]
-    groles = [('group:'+g, r) for g,r in groles]
-    return uroles + groles
-
-def set_local_roles_with_groups(ob, lroles):
-    """Set all the local roles and group local roles."""
-    # XXX move this to NuxUserGroups
-    udict = {}
-    gdict = {}
-    for k, roles in lroles:
-        if k.startswith('user:'):
-            k = k[len('user:'):]
-            udict[k] = list(roles)
-        elif k.startswith('group:'):
-            k = k[len('group:'):]
-            gdict[k] = list(roles)
-    ob.__ac_local_roles__ = udict
-    ob.__ac_local_group_roles = gdict
 
 
 class ProxyTool(UniqueObject, SimpleItemWithProperties):
@@ -131,7 +98,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         Returns a sequence of (hubid, (repoid, version_infos)).
         NOTE that the version_infos mapping should not be mutated!
         """
-        return self._hubid_to_info.items()
+        all = self._hubid_to_info.items()
+        all.sort() # Sort by hubid.
+        return all
 
     security.declarePrivate('getContent')
     def getContent(self, hubid, lang=None, editable=0):
@@ -203,8 +172,12 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     security.declarePrivate('setSecurity')
     def setSecurity(self, ob):
-        """Reapply the security info to the versions of a proxy."""
+        """Reapply the security info to the versions of a proxy.
+
+        (Called by ProxyBase.) XXX but should use an event
+        """
         # XXX should not get directly an object... or should it?
+        LOG('setSecurity', DEBUG, '--- ob %s' % '/'.join(ob.getPhysicalPath()))
         hubtool = getToolByName(self, 'portal_eventservice')
         repotool = getToolByName(self, 'portal_repository')
         # Gather versions
@@ -214,6 +187,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         for lang, version_info in version_infos.items():
             versions[version_info] = None
         versions = versions.keys()
+        LOG('setSecurity', DEBUG, 'repoid %s versions %s' % (repoid, versions))
         # Gather the hubids of proxies pointing to any version
         hubids = {}
         for version_info in versions:
@@ -222,37 +196,42 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             for hubid in infos.keys():
                 hubids[hubid] = None
         hubids = hubids.keys()
-        # Gather local roles of all hubids
-        # XXX must also gather what permissions affect what local roles!
-        # XXX for now assume no change to the role->permission map
+        LOG('setSecurity', DEBUG, 'hubids %s' % (hubids,))
+        # Get user permissions for users that have a (merged) local role
+        allperms = self._getRelevantPermissions()
+        LOG('setSecurity', DEBUG, 'relevant perms %s' % (allperms,))
+        userperms = {}
         portal = aq_parent(aq_inner(self))
-        merged = {}
         for hubid in hubids:
-            # unrestricted traverse to get to object
-            ob = portal.unrestrictedTraverse(hubtool.getLocation(hubid))
-            obmerged = mergedLocalRoles(ob, withgroups=1)
-            #LOG('setSecurity', DEBUG, 'obmerged for %s is %s' % (hubid, obmerged))
-            for user, roles in obmerged.items():
-                allroles = merged.setdefault(user, [])
-                for r in roles:
-                    if r not in allroles:
-                        allroles.append(r)
-        #LOG('setSecurity', DEBUG, 'merged is %s' % (merged,))
-        merged_local_roles = lroles_canon(merged.items())
-        #LOG('setSecurity', DEBUG, 'merged_t is %s' % (merged_local_roles,))
-        # Now set local roles on versions.
+            location = hubtool.getLocation(hubid)
+            LOG('setSecurity', DEBUG, 'location %s' % (location,))
+            ob = portal.unrestrictedTraverse(location) # XXX
+            merged = mergedLocalRoles(ob, withgroups=1).items()
+            LOG('setSecurity', DEBUG, 'merged %s' % (merged,))
+            # Collect permissions of users
+            for perm in allperms:
+                proles = rolesForPermissionOn(perm, ob)
+                LOG('setSecurity', DEBUG, '  perm %s proles %s'
+                    % (perm, proles))
+                for user, lroles in merged:
+                    LOG('setSecurity', DEBUG, '    user %s' % (user,))
+                    for lr in lroles:
+                        if lr in proles:
+                            perms = userperms.setdefault(user, [])
+                            if perm not in perms:
+                                LOG('setSecurity', DEBUG, '      addperm')
+                                perms.append(perm)
+        LOG('setSecurity', DEBUG, 'userperms is %s' % (userperms,))
+        # Now set security on versions.
         for version_info in versions:
+            repotool.setObjectSecurity(repoid, version_info, userperms)
             ob = repotool.getObjectVersion(repoid, version_info)
-            # Get old roles.
-            old_local_roles = lroles_canon(get_local_roles_with_groups(ob))
-            #LOG('setSecurity', DEBUG, 'version %s had lroles %s'
-            #    % (version_info, old_local_roles))
-            # Don't change if identical.
-            if old_local_roles != merged_local_roles:
-                #LOG('setSecurity', DEBUG, ' setting %s' %
-                #    `merged_local_roles`)
-                set_local_roles_with_groups(ob, merged_local_roles)
-                ob.reindexObjectSecurity()
+
+    def _getRelevantPermissions(self):
+        """Get permissions relevant to security info discovery."""
+        # Get all the permissions managed by all the workflows.
+        wftool = getToolByName(self, 'portal_workflow')
+        return wftool.getManagedPermissions()
 
     #
     # Internal
@@ -313,6 +292,19 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             self.delProxy(hubid)
         # Refresh security
         self.setSecurity(object)
+
+    #
+    # ZMI
+    #
+
+    manage_options = (
+        {'label': 'Proxies',
+         'action': 'manage_listProxies',
+        },
+        ) + SimpleItemWithProperties.manage_options
+
+    security.declareProtected(ViewManagementScreens, 'manage_listProxies')
+    manage_listProxies = DTMLFile('zmi/proxy_list_proxies', globals())
 
 
 InitializeClass(ProxyTool)

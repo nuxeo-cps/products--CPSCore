@@ -26,6 +26,7 @@ from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo, Unauthorized
 
 from Products.CMFCore.utils import getToolByName, _checkPermission
+from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
@@ -287,11 +288,26 @@ class CPSWorkflowTool(WorkflowTool):
         """Get the global chain for a given object or type_name."""
         return CPSWorkflowTool.inheritedAttribute('getChainFor')(self, ob)
 
+    security.declarePrivate('getManagedPermissions')
+    def getManagedPermissions(self):
+        """Get all the permissions managed by the workflows."""
+        perms = {}
+        for wf in self.objectValues():
+            for p in wf.getManagedPermissions():
+                perms[p] = None
+        return perms.keys()
+
     #
     # ZMI
     #
 
     manage_overview = DTMLFile('zmi/explainCPSWorkflowTool', globals())
+
+    def all_meta_types(self):
+        return ({'name': 'CPS Workflow',
+                 'action': 'manage_addWorkflowForm',
+                 'permission': ManagePortal},)
+
 
 
 InitializeClass(CPSWorkflowTool)

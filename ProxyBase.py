@@ -97,7 +97,7 @@ class ProxyBase(Base):
             return None
         hubid = hubtool.getHubId(self)
         if hubid is None:
-            LOG('ProxyBase', ERROR, 'No hubid found for proxy object %s'
+            LOG('ProxyBase', DEBUG, 'No hubid found for proxy object %s'
                 % '/'.join(self.getPhysicalPath()))
             return None
         return pxtool.getContent(hubid, lang=lang, editable=editable)
@@ -164,6 +164,16 @@ class ProxyBase(Base):
     def SearchableText(self):
         """No searchable text."""
         return ''
+
+    security.declarePublic('Type')
+    def Type(self):
+        """Dublin core Type."""
+        # Used by main_template.
+        ob = self.getContent()
+        if ob is not None:
+            return ob.Type()
+        else:
+            return ''
 
     #
     # ZMI

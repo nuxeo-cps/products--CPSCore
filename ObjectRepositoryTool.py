@@ -20,9 +20,11 @@
 from zLOG import LOG, ERROR, DEBUG
 import sys
 import random
+from types import TupleType, ListType
 from Globals import InitializeClass
 from Acquisition import aq_base
 from AccessControl import ClassSecurityInfo
+from AccessControl.Permission import Permission, name_trans
 
 from OFS.CopySupport import CopyError
 
@@ -51,6 +53,37 @@ class NoWorkflowConfiguration:
 
 InitializeClass(NoWorkflowConfiguration)
 
+
+def set_local_roles_with_groups(ob, lroles):
+    """Set all the local roles and group local roles.
+
+    Return True if something was changed.
+    """
+    # XXX move this to NuxUserGroups
+    LOG('obrep', DEBUG, 'setlocal: ob=%s lroles=%s'
+        % ('/'.join(ob.getPhysicalPath()), lroles,))
+    udict = {}
+    gdict = {}
+    for k, roles in lroles.items():
+        if k.startswith('user:'):
+            uid = k[5:]
+            udict[uid] = list(roles)
+        elif k.startswith('group:'):
+            gid = k[6:]
+            gdict[gid] = list(roles)
+    changed = 0
+    uroles = ob.__ac_local_roles__ or {}
+    groles = ob.__ac_local_group_roles__ or {}
+    if uroles != udict:
+        LOG('obrep', DEBUG, ' set udict=%s' % (udict,))
+        ob.__ac_local_roles__ = udict
+        changed = 1
+    if groles != gdict:
+        LOG('obrep', DEBUG, ' set gdict=%s' % (gdict,))
+        ob.__ac_local_group_roles__ = gdict
+        changed = 1
+    LOG('obrep', DEBUG, ' changed=%s' % changed)
+    return changed
 
 
 # XXX we'll want a btreefolder2 here, not a folder
@@ -229,13 +262,56 @@ class ObjectRepository(UniqueObject, PortalFolder):
     def getUnfrozenVersion(self, repoid, version_info):
         """Return the version of an unfrozen version of an object.
 
-        (Called by the proxy tool.)
+        (Called by ProxyTool.)
         """
         ob = self.getObjectVersion(repoid, version_info)
         if not getattr(aq_base(ob), '_cps_frozen', 0):
             return version_info
         newv = self.copyVersion(repoid, version_info)
         return newv
+
+    security.declarePrivate('getPermissionRole')
+    def getPermissionRole(self, perm):
+        """Get a special role mapping only to a permission.
+
+        Register it if it doesn't exist yet.
+        """
+        role = 'permission:' + perm.translate(name_trans)
+        if role not in self.__ac_roles__:
+            # Register the role and add its permission.
+            self._addRole(role)
+            for inhp in self.ac_inherited_permissions(1):
+                name, data = inhp[:2]
+                if name == perm:
+                    p = Permission(name, data, self)
+                    roles = p.getRoles(default=[])
+                    if role not in roles:
+                        r = list(roles)+[role]
+                        if type(roles) is TupleType:
+                            r = tuple(r)
+                        p.setRoles(r)
+                    break
+        return role
+
+    security.declarePrivate('setObjectSecurity')
+    def setObjectSecurity(self, repoid, version_info, userperms):
+        """Set the security on an object.
+
+        userperms is a dict of {user: [sequence of permissions]}
+        user is user:uid or group:gid
+
+        (Called by ProxyTool.)
+        """
+        LOG('obrep', DEBUG, 'setObjectSecurity repoid=%s v=%s perms=%s' %
+            (repoid, version_info, userperms))
+        ob = self.getObjectVersion(repoid, version_info)
+        lroles = {}
+        for user, perms in userperms.items():
+            roles = [self.getPermissionRole(perm) for perm in perms]
+            lroles[user] = roles
+        changed = set_local_roles_with_groups(ob, lroles)
+        if changed:
+            ob.reindexObjectSecurity()
 
     #
     # Misc
@@ -341,6 +417,13 @@ class ObjectRepository(UniqueObject, PortalFolder):
     #
 
     manage_options = PortalFolder.manage_options
+
+    # XXX security?
+    security.declarePublic('manage_redirectVersion')
+    def manage_redirectVersion(self, repoid, version, RESPONSE):
+        """Redirect to the object for a repoid+version."""
+        ob = self.getObjectVersion(repoid, version)
+        RESPONSE.redirect(ob.absolute_url()+'/manage_workspace')
 
 
 InitializeClass(ObjectRepository)
