@@ -254,6 +254,9 @@ def makeId(s, lower=0):
     "Make id from string"
     s = s.replace('Æ', 'AE')
     s = s.replace('æ', 'ae')
+    s = s.replace('¼', 'OE')
+    s = s.replace('½', 'oe')
+    s = s.replace('ß', 'ss')
     id = s.translate(_translation_table)
     if lower:
         id = id.lower()
