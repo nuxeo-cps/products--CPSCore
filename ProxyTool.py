@@ -250,7 +250,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     security.declarePrivate('unshareContent')
     def unshareContent(self, hubid):
-        """Unshare content (after a copy/paste for instance."""
+        """Unshare content (after a copy/paste for instance)."""
         repotool = getToolByName(self, 'portal_repository')
         if not self._hubid_to_info.has_key(hubid):
             LOG('ProxyTool', ERROR, 'Getting unknown hubid %s' % hubid)
