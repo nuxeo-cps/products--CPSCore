@@ -51,10 +51,3 @@ if 'cps_is_proxytype' not in ftiprops_ids:
 ##         'label':'CPS Document'},
 ##        )
 ##    FTI.cps_is_document = 0
-
-if 'cps_is_portalbox' not in ftiprops_ids:
-    FTI._properties = FTI._properties + (
-        {'id':'cps_is_portalbox', 'type': 'boolean', 'mode':'w',
-         'label':'CPS Portal Box'},
-        )
-    FTI.cps_is_portalbox = 0
