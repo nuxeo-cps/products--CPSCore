@@ -6,12 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Correctly reindex the language after setting it on a newly created object.
-- Bug fix on the local roles mannagement (CPSMemberShipTool.py) deleteLocalGroupsRoles
- was missing an argument "role". 
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- The group support API has been generalized to accomodate multiple group
-  support implementations. mergedLocalRoles() should now be imported from
-  Products.CMFCore.utils and _getAllowedRolesAndUsers() and
-  _allowedRolesAndUsers() should now be imported from Products.CPSCore.utils.
+-
