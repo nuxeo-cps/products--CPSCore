@@ -554,21 +554,21 @@ class ObjectRepositoryTool(UniqueObject,
     # Workflow history management
     #
 
-    #def _checkHistoryPresent(self):
-    #    """Upgrades: check that _histories is present."""
-    #    if not hasattr(aq_base(self), '_histories'):
-    #        self._histories = OOBTree()
+    def _checkHistoryPresent(self):
+        """Upgrades: check that _histories is present."""
+        if not hasattr(aq_base(self), '_histories'):
+            self._histories = OOBTree()
 
     security.declarePrivate('getHistory')
     def getHistory(self, docid):
         """Get the workflow history for a docid, or None."""
-        #self._checkHistoryPresent()
+        self._checkHistoryPresent()
         return self._histories.get(docid)
 
     security.declarePrivate('setHistory')
     def setHistory(self, docid, history):
         """Set the workflow history for a docid."""
-        #self._checkHistoryPresent()
+        self._checkHistoryPresent()
         self._histories[docid] = history
 
     #
