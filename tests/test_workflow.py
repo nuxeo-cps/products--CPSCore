@@ -32,6 +32,7 @@ from Products.NuxCPS3.CPSWorkflow import CREATION_STATE
 from Products.NuxCPS3.WorkflowConfiguration import addWorkflowConfiguration
 from Products.NuxCPS3.WorkflowConfiguration import WorkflowConfiguration_id
 
+
 class Dummy(SimpleItem):
     def __init__(self, id):
         self._id = id
@@ -205,12 +206,6 @@ class WorkflowToolTests(SecurityRequestTest):
         config2.setChain('Dummy Content', None)
         chain = wft.getChainFor('Dummy Content', f2)
         self.assertEqual(tuple(chain), ('wf2',))
-
-class WorkflowTests(SecurityRequestTest):
-    """Test Workflows."""
-
-    pass
-
 
 
 def test_suite():
