@@ -26,7 +26,7 @@ import unittest
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 from OFS.SimpleItem import SimpleItem
 
-from Products.CPSCore.TreesTool import TreesTool
+from Products.CPSCore.TreesTool import TreesTool, TreeCache
 
 
 class DummyTreeCache(SimpleItem):
@@ -35,8 +35,14 @@ class DummyTreeCache(SimpleItem):
         self.notified = self.notified + 1
 
 class DummyObject:
+    portal_type = 'ThePortalType'
+    meta_type = 'TheMetaType'
+    def __init__(self, path='/dummy'):
+        self.path = tuple(path.split('/'))
     def getPhysicalPath(self):
-        return ('', 'dummy')
+        return self.path
+    def getId(self):
+        return self.path[-1]
 
 
 class TreesToolTest(unittest.TestCase):
@@ -74,8 +80,61 @@ class TreesToolTest(unittest.TestCase):
 
 
 class TreeCacheTest(SecurityRequestTest):
-    pass
 
+    def makeOne(self):
+        cache = TreeCache('treecache')
+        cache.manage_changeProperties(
+            root='root/foo',
+            type_names=('ThePortalType',),
+            meta_types=('TheMetaType',),
+            )
+        return cache
+
+    def test_is_candidate(self):
+        ppath = '/cmf'.split('/')
+        plen = len(ppath)
+        cache = self.makeOne()
+
+        ob = DummyObject('/cmf/root/foo')
+        self.assert_(cache._is_candidate(ob, plen))
+        ob = DummyObject('/cmf/root/foo/bar')
+        self.assert_(cache._is_candidate(ob, plen))
+        ob = DummyObject('/cmf/root/bar')
+        self.failIf(cache._is_candidate(ob, plen))
+        # We'll never be notified outside of the portal anyway
+        #ob = DummyObject('/moo/root/foo/bar')
+        #self.failIf(cache._is_candidate(ob, plen))
+
+        ob = DummyObject('/cmf/root/foo')
+        ob.portal_type = 'Ah'
+        self.failIf(cache._is_candidate(ob, plen))
+        ob = DummyObject('/cmf/root/foo')
+        ob.meta_type = 'Hehe'
+        self.failIf(cache._is_candidate(ob, plen))
+
+
+    def test_getRoot(self):
+        cache = self.makeOne()
+        self.assertEquals(cache.getRoot(), 'root/foo')
+        cache.root = 'root/beer/'
+        self.assertEquals(cache.getRoot(), 'root/beer')
+        # Anti-loser measures
+        # (Should be done at changeProperties time)
+        # No going up
+        cache.root = 'root/../../hack'
+        self.assertEquals(cache.getRoot(), '')
+        # No absolute path
+        cache.root = '/hack/this'
+        self.assertEquals(cache.getRoot(), '')
+
+    def _test_rebuild(self):
+        pass
+
+    def _test_getTree(self):
+        pass
+
+    def _test_getList(self):
+        pass
 
 def test_suite():
     return unittest.TestSuite((
