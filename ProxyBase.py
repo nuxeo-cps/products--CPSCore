@@ -199,7 +199,8 @@ class ProxyBase(Base):
     def proxyChanged(self):
         """Do necessary notifications after a proxy was changed."""
         pxtool = getToolByName(self, 'portal_proxies')
-        rpath = self.getRelativePath()
+        utool = getToolByName(self, 'portal_url')
+        rpath = utool.getRelativeUrl(self)
         pxtool._modifyProxy(self, rpath) # XXX or directly event ?
         pxtool.setSecurity(self)
         evtool = getEventService(self)
@@ -448,16 +449,6 @@ class ProxyBase(Base):
         # return all available
         return self.getLanguageRevisions().keys()
 
-    security.declarePublic('getRelativePath')
-    def getRelativePath(self, utool=None):
-        """Return computed path relative to the portal.
-
-        Mostly useful when indexing proxies and displaying brains.
-        """
-        if utool is None:
-            utool = getToolByName(self, 'portal_url')
-        return utool.getRelativeUrl(self)
-        
     #
     # Helper for proxy folderish documents
     #
