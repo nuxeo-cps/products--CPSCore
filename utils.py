@@ -28,7 +28,6 @@ are:
 
 Other utility functions:
   - _isinstance(ob, class)
-  - makeId(s, lower=0)
 
 This code uses if possible the following methods on the user folder:
   - mergedLocalRoles
@@ -37,11 +36,9 @@ This code uses if possible the following methods on the user folder:
   - getAllowedRolesAndUsersOfUser
 """
 
-import string
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl.PermissionRole import rolesForPermissionOn
 from Products import CMFCore
-from DateTime.DateTime import DateTime
 from random import randrange
 from types import ListType
 import re
@@ -172,51 +169,6 @@ def _isinstance(ob, cls):
         # In python 2.1 isinstance() raises TypeError
         # instead of returning 0 for ExtensionClasses.
         return 0
-
-_translation_table = string.maketrans(
-    # XXX candidates: @°+=`|
-    r""""'/\:; &ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜİàáâãäåçèéêëìíîïñòóôõöøùúûüıÿ""",
-    r"""--------AAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy""")
-
-_ok_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_.'
-
-# TODO: this assumes we're using latin-1
-# TODO: similar code is duplicated in other places
-# (./CPSDefault/skins/cps_default/computeId.py,
-# ./CPSForum/skins/forum_default/forum_create.py, ./CPSSchemas/BasicWidgets.py,
-# ./CPSWebMail/Attachment.py...)
-def makeId(s, lower=0, portal_type=None):
-    """Generate an id from a given string <s>.
-
-    This method avoids collisions.
-    """
-    # Normalization
-    id = s.translate(_translation_table)
-    id = id.replace('Æ', 'AE')
-    id = id.replace('æ', 'ae')
-    id = id.replace('¼', 'OE')
-    id = id.replace('½', 'oe')
-    id = id.replace('ß', 'ss')
-    id = ''.join([c for c in id if c in _ok_chars])
-    if lower:
-        id = id.lower()
-
-    # Avoiding duplication of meaningless chars
-    id = re.sub('-+', '-', id)
-    id = re.sub('_+', '_', id)
-    id = re.sub('\.+', '.', id)
-
-    # Avoiding annoying presence of meaningless chars
-    while id.startswith('-') or id.startswith('_') or id.startswith('.'):
-        id = id[1:]
-    while id.endswith('-') or id.endswith('_') or id.endswith('.'):
-        id = id[:-1]
-
-    # Fallback if empty
-    if not id:
-        newid = str(int(DateTime())) + str(randrange(1000, 10000))
-        return newid
-    return id
 
 def resetSessionLanguageSelection(request):
     """Clear documents language selection done by switchLanguage"""

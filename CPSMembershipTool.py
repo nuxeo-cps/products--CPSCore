@@ -54,8 +54,8 @@ from Products.CMFCore.utils import _getAuthenticatedUser
 from Products.CMFDefault.MembershipTool import MembershipTool
 from Products.CMFCore.MemberDataTool import MemberDataTool
 
-from Products.CPSUtil.id import generatePassword
-from utils import mergedLocalRoles, mergedLocalRolesWithPath, makeId
+from Products.CPSUtil.id import generateId, generatePassword
+from utils import mergedLocalRoles, mergedLocalRolesWithPath
 
 from zLOG import LOG, DEBUG, PROBLEM, ERROR
 
@@ -490,11 +490,8 @@ class CPSMembershipTool(MembershipTool):
     security.declarePublic('getHomeFolderId')
     def getHomeFolderId(self, id, max_chars_for_id=128):
         """Compute an home folder id for the given member id."""
-        newid = id[:max_chars_for_id]
-        # Normalize
-        newid = makeId(newid)
-
-        return newid
+        id = generateId(id, max_chars_for_id)
+        return id
 
     security.declarePublic('homeFolderExists')
     def homeFolderExists(self, id):
