@@ -264,8 +264,6 @@ class CPSWorkflowTool(WorkflowTool):
         looking for them at the object itself, or in the container
         if provided.
         """
-        LOG('getChainFor', DEBUG, 'ob=%s, container=%s'
-            % (type(ob)==type('') and ob or ob.getPhysicalPath(), container))
 ##         import traceback
 ##         from StringIO import StringIO
 ##         s = StringIO()
