@@ -11,3 +11,5 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Using PNG files instead of GIF files.
+- optimization: docid generation should be faster
+
