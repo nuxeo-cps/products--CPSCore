@@ -228,13 +228,14 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
           - Use the proxy default language;
           - Use the first language found in tricky situations (fallback).
         """
+        utool = getToolByName(self, 'portal_url')
         # TODO Translation Service should be used in the near future
         Localizer = getToolByName(self, 'Localizer', None)
         if lang is None:
             REQUEST = getattr(proxy, 'REQUEST', None)
             if REQUEST is not None and hasattr(REQUEST, '_cps_switch_language'):
                     rpath, l = REQUEST._cps_switch_language
-                    if rpath == proxy.getRelativePath():
+                    if rpath == utool.getRelativeUrl(proxy):
                         lang = l
             elif Localizer is not None:
                 # Find the user-preferred language.

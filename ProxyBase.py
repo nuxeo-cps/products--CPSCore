@@ -443,10 +443,9 @@ class ProxyBase(Base):
         else:
             return ''
 
-    security.declarePublic('Language')
-    def Language(self):
-        """Dublin core Language."""
-        # return all available
+    security.declarePublic('Languages')
+    def Languages(self):
+        """return all available languages."""
         return self.getLanguageRevisions().keys()
 
     #
@@ -759,7 +758,8 @@ class LanguageSwitcher(Acquisition.Explicit):
 
     def __bobo_traverse__(self, REQUEST, lang):
         proxy = self.proxy
-        rpath = proxy.getRelativePath()
+        utool = getToolByName(self, 'portal_url')
+        rpath = utool.getRelativeUrl()
         # store information by the time of the request to change the
         # language used for viewing the current document, bypassing Localizer.
         # XXX Use rpath in the key not to propagate the change to other
