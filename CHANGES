@@ -3,13 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
-- In ProxyTool management tab Proxies can now do a search on docid.
-- The repository has a better purge granularity in the ZMI.
+-
 Bug fixes:
 ~~~~~~~~~~
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- pxtool.getArchivedInfosForDocid() cannot be called directly by user code
-  anymore, instead call proxy.getArchivedInfos()
-- You can use several initial transition create in a workflow (one by state)
+-
