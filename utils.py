@@ -26,3 +26,18 @@ def _isinstance(ob, cls):
         # In python 2.1 isinstance() raises TypeError
         # instead of returning 0 for ExtensionClasses.
         return 0
+
+_translation_table = maketrans(
+    r'\;/ &:ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜİàáâãäåçèéêëìíîïñòóôõöøùúûüıÿ',
+    r'______AAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy')
+
+# XXX: this assumes we're using latin-1
+def makeId(s, lower=0):
+    "Make id from string"
+     s = s.replace('Æ', 'AE')
+     s = s.replace('æ', 'ae')
+     id = s.translate(tr)
+     if lower:
+         id = id.lower()
+     return id
+
