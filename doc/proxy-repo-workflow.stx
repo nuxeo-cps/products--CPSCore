@@ -1,0 +1,209 @@
+Proxies, document repository and workflows
+
+  This document attempts to describe the workings of proxies, the
+  document repository and workflows.
+
+  Document repository
+
+    The document repository stores all version of all documents in the
+    site. "Document" means anything that has to be versionned, so this
+    may include for instance the section folders themselves.
+
+    A document in the repository has:
+
+    - a repoid, which is a string,
+
+    - a version_info, which is an integer; several documents may be
+      present with the same repoid but different version_info,
+
+    - a portal_type, which makes it possible to associated actions to
+      it, for instance for the different views,
+
+    - generally, all the attributes describing the "content" of the
+      document.
+
+    - security information to control its visibility (View) and
+      modifiability (Modify portal content), which is the union of all
+      the settings of the proxies that point to it.
+
+  Proxies
+
+    A proxy is a placeholder for a document (either contentish or
+    folderish), living in the user-visible tree of the site. It points
+    to other documents, which means that virtually a same document can
+    be in several places in the whole tree, with different workflow
+    states in each.
+
+    A proxy:
+
+    - has a portal_type,
+
+    - has a repoid, which is the identifier of the set of documents
+      (differentiated by their versions) to which this proxy is related,
+
+    - has a mapping of language -> version_info, where language can be
+      'fr' or 'en' for instance, or '*' for a default language (always
+      present); version_info is an integer. Together (repoid,
+      version_info) identify a unique document in the repository,
+
+    - has security information applied to it to control its visibility.
+
+  Document views
+
+    What a user sees when he's browsing the site at a given URL is the
+    proxy object at that URL, but it has to be displayed using the data
+    that is stored somewhere in the repository. This means that for all
+    processing relating to the object's location, the proxy has to be
+    used, but for all content-related processing the document in the
+    repository has to be used.
+
+    Especially, the ZPT views of the document have to take both into
+    account.
+
+    The proxy object ('here' in ZPT) must be used for:
+
+    - absolute_url
+
+    - getId
+
+    - breadcrumb computations
+
+    The document repository object (tal:define="doc here/getObject")
+    must be used for:
+
+    - any method (edit(), getProperty()),
+
+    - any data accessor (Title(), Description(), etc.).
+
+  Workflows
+
+    The workflows are based on DCWorkflow with some extensions.
+
+    In CPS workflows are placeful, this means that we can decide that
+    for a given subtree, a given portal_type will follow a given
+    workflow. This is used for instance to have a subtree dedicated to
+    public content where objects must pass through a reviewing process,
+    and another subtree where the objects can be created and worked upon
+    easily by the members.
+
+    Workflows control all the operations of a site, and all the security
+    checks. Notably they control (for each portal_type):
+
+    - if objects of this type can be created here (creation transition),
+
+    - if objects of this type can be submitted or published here (this
+      is another kind of creation (cloning creation transition),
+
+    - if subobjects can be created (if the portal_type is folderish),
+
+    - if a given object can be publish/submit elsewhere, this is the
+      "clone" operation,
+
+    - the usual transitions between states,
+
+    - if common operations can be executed, for instance:
+
+      - edit
+
+      - comment
+
+      - copy
+
+      - delete
+
+    - the checkout/checkin operations.
+
+  Document lifecycle
+
+    This is an attempt to describe the lifecycle of a document. It
+    assumes a site set up with two areas, one which is the workgroups,
+    with folders of portal_type Workgroup, where authors create and
+    modify content, and one area which is the hierarchical public
+    sections, where folders have portal_type Section.
+
+    There is a workgroup document workflow (actually one for each
+    content portal_type), which describes the workflow followed by
+    documents when they are being worked upon.
+
+    There is a section workflow (for each portal_type), which describes
+    the fact that documents go through a submission process before being
+    published.
+
+    Story
+
+      A document is created
+
+        In a workgroup, a new document of portal_type News is created.
+        This is possible because the workflow for Workgroup allows
+        subobject creation, and because the workgroup workflow for News
+        has a creation transition.
+
+        In the workgroup a proxy 'mydoc' with portal_type News is
+        created, it points for all languages to repoid 'abcd' with
+        version 1. In the document repository, a document with repoid
+        'abcd' and version 1 is created, it has portal_type News. It
+        contains the document's data.
+
+      The document is viewed...
+
+      The document is edited
+
+        This is possible because the workgroup workflow for News has an
+        "edit" transition.
+
+        ...
+
+      The document is checked out...
+
+      The document's checkout is edited...
+
+      The document is checked back in...
+
+      The document is submitted to a section.
+
+        This is possible because the workgroup workflow for News allows
+        object "cloning" into other folders. To know in what section it
+        can be submitted or published, all sections are examined and asked
+        what cloning creation transitions they have for News. The user
+        then choses a section amongst the possible ones.
+
+        The submission process itself consits of the creation of a new
+        version of the document in the document repository, and the
+        creation of a proxy to that version in the section. A new
+        version is created instead of using the current one because the
+        "pending" state in the section is a "frozen" state, which means
+        that no other editable version of that document is allowed to
+        exist (to ensure that the reviewer sees a non-editable
+        document). In other kinds of workflows, this wouldn't be needed.
+
+      A reviewer reviews the document
+
+        The section reviewer sees a new submitted document. To know that
+        the reviewer has something to review, the catalog is queried for
+        all documents in the "pending" state.
+
+        When the reviewer decides to publish the document, the
+        corresponding workflow transition is invoked and the proxy
+        changes state.
+
+      The original document is edited
+
+        Because the version is different from the one in the section,
+        there is no conflict.
+
+      The revised document is re-submitted
+
+        The submission process is the same. Now after submission, the
+        section contains one version in the published state, and another
+        version in the pending state. The reviewer, when reviewing the
+        document, will be informed of that fact and may chose to reject
+        the newly submitted version (which means simply removing the
+        proxy), or publish the new version and remove the previous one.
+
+        Having two versions of the same document in the published state
+        must be avoided in a section workflow.
+
+      The published document is commented
+
+        This is possible because the section workflow for News has a
+        "comment" transition.
