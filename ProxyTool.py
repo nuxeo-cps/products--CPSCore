@@ -64,12 +64,15 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         Returns the created proxy object.
         Does not insert the proxy into any workflow.
+        proxy_type is one of 'folder', 'document' or 'folderishdocument'.
         """
         LOG('createProxy', DEBUG, 'Called with proxy_type=%s container=%s '
             'type_name=%s id=%s' % (proxy_type, container.getId(),
                                     type_name, id))
         if proxy_type == 'folder':
             proxy_type_name = 'CPS Proxy Folder'
+        elif proxy_type == 'folderishdocument':
+            proxy_type_name = 'CPS Proxy Folderish Document'
         else:
             proxy_type_name = 'CPS Proxy Document'
         # Create the document in the repository
