@@ -1,9 +1,18 @@
-Elements
+# $Id$
+# CPSCore TODO 
 
-  - CachableElement
+- Packaging
+   o move all skins into CPSDefault/skins
+   o remove CPSDummyDocument
+   o move CPSFolder.py into CPSDefault/Folder.py
+   o remove zexp workflow
+   o update INSTALL.txt
+   o make _ut work on CPSCore
+   o test screnarii use ZTC ? 
 
-  - patches for ZPT and Python Scripts
-
-Events
-
-  - use the new API (see notes.txt)
+# still up to date ???
+- Elements
+   o CachableElement
+   o patches for ZPT and Python Scripts
+- Events
+  o use the new API (see notes.txt)

@@ -3,10 +3,10 @@ ZODB Requires:
 -
 New features:
 ~~~~~~~~~~~~~
-- Initial packaging.
+- Initial packaging of CPSCore 3.x
 Bug fixes:
 ~~~~~~~~~~
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Added unit tests for the workflow tool and placeful wf configuration.
+- 
