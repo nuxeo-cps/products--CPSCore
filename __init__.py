@@ -36,6 +36,7 @@ import ProxyTool
 import ObjectRepositoryTool
 import CPSWorkflowTool
 import TreesTool
+import CPSMembershipTool
 
 from CPSWorkflowConfiguration import CPSWorkflowConfiguration
 from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
@@ -55,6 +56,7 @@ tools = (
     ObjectRepositoryTool.ObjectRepositoryTool,
     CPSWorkflowTool.CPSWorkflowTool,
     TreesTool.TreesTool,
+    CPSMembershipTool.CPSMembershipTool
 )
 
 contentClasses = (ProxyBase.ProxyFolder,
@@ -65,6 +67,7 @@ contentClasses = (ProxyBase.ProxyFolder,
 contentConstructors = (ProxyBase.addProxyFolder,
                        ProxyBase.addProxyDocument,
                        ProxyBase.addProxyFolderishDocument,
+                       CPSMembershipTool.addCPSMembershipTool
                        )
 
 fti = (ProxyBase.factory_type_information +
@@ -111,6 +114,7 @@ def initialize(registrar):
     )
     utils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.gif', globals())
 
+    
     # CPS Content and Folder objects
     utils.ContentInit(
         'CPS Default Documents',
