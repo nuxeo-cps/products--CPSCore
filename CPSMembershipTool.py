@@ -36,11 +36,11 @@ class CPSMembershipTool(MembershipTool):
     security = ClassSecurityInfo()
     
     security.declareProtected(View, 'getMergedLocalRoles')
-    def getMergedLocalRoles(self, object, withgroups=1):
+    def getMergedLocalRoles(self, object, withgroups=1, withpath=0):
         """
         return aquisition roles
         """
-        return mergedLocalRoles(object, withgroups)
+        return mergedLocalRoles(object, withgroups, withpath)
 
     security.declareProtected(View, 'setLocalGroupRoles')
     def setLocalGroupRoles(self, obj, ids, role, reindex=1):
