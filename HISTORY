@@ -1,4 +1,25 @@
 *******************************************
+** CPSCore V3.6.0 [R1 build 2004/02/19-15:53 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Proxies now parse two kinds of special URLs:
+  - mydoc/downloadFile/attrname/mydocname.pdf to download a file
+    This makes it possible to have URLs ending with the file name
+  - mydoc/archivedRevision/n/... to access archived revisions
+    An archived revision is a non-persistent proxy child of the active
+    proxy. It doesn't have any workflow state.
+Bug fixes:
+~~~~~~~~~~
+- Make sure the home folder is never acquired.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Centralized declaration of roles allowed to manage local roles
+
+*******************************************
 ** CPSCore V3.5.1 [R1 build 2004/02/11-14:25 by ben]
 
 Requires:
