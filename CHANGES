@@ -9,4 +9,5 @@ Bug fixes:
 - Correct copy+paste code, proxies are now correctly unshared after paste.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
+- CMF actions within CPSMembershiptool are filtered now for CPS. (Removed Preferences, undo and Add to Favorites)
 - 
