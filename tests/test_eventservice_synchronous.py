@@ -19,6 +19,7 @@
 # $Id$
 
 import unittest
+import time
 
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.Folder import Folder as OFS_Folder
@@ -44,34 +45,29 @@ class FakeUrlTool(Folder):
         return '/'.join(res)
 
 
+class SomeException(Exception): pass
+
 class DummySubscriber(Folder):
-    id = 'portal_subscriber'
-    meta_type = 'Dummy Subscriber'
     notified = 0
-    object = None
-    event_type = None
-    infos = None
     def notify_action(self, event_type, object, infos):
+        if self.getId() == 'buggy' and infos.get('bug'):
+            raise SomeException("Uncaught exception in subscriber")
         self.notified += 1
         self.object = object
         self.event_type = event_type
         self.infos = infos
+        self.time = time.time()
 
 
 class Class1:
     meta_type = 'type1'
     def getId(self):
         return 'instance1'
-    def getPhysicalPath(self, *args, **kw):
-        return ('', 'testsite', 'instance1')
-
 
 class Class2:
     meta_type = 'type2'
     def getId(self):
         return 'instance2'
-    def getPhysicalPath(self, *args, **kw):
-        return ('', 'testsite', 'instance2')
 
 
 class SynchronousNotificationsTest(unittest.TestCase):
@@ -196,6 +192,49 @@ class SynchronousNotificationsTest(unittest.TestCase):
         self.assertEqual(subscriber.notified, 3)
         tool.notify('an_event', object2, {})
         self.assertEqual(subscriber.notified, 4)
+
+    def test_notification_exception_robustness(self):
+        # Test that if a subscriber causes an exception,
+        # the other subscribers are still called.
+        # Needed during delete notification.
+        self.makeInfrastructure()
+        tool = self.tool
+        subscriber = self.subscriber
+        buggy = DummySubscriber('buggy')
+        self.portal._setObject('buggy', buggy)
+
+        tool.manage_addSubscriber(
+            subscriber='buggy',
+            action='action',
+            meta_type="*",
+            event_type="an_event",
+            notification_type="synchronous",
+            compressed=0
+        )
+        tool.manage_addSubscriber(
+            subscriber=subscriber.getId(),
+            action='action',
+            meta_type="*",
+            event_type="an_event",
+            notification_type="synchronous",
+            compressed=0
+        )
+
+        object = Class1()
+
+        # Check ordering of event subscribers
+        tool.notify('an_event', object, {})
+        self.assertEqual(buggy.notified, 1)
+        self.assertEqual(subscriber.notified, 1)
+        self.assert_(buggy.time < subscriber.time)
+
+        # Make the buggy one raise an exception
+        self.assertRaises(SomeException, tool.notify,
+                          'an_event', object, {'bug': 1})
+
+        # Check that the other subscriber was notified.
+        self.assertEqual(subscriber.notified, 2)
+
 
 def test_suite():
     return unittest.TestSuite((

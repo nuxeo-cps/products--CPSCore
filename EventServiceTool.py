@@ -1,6 +1,6 @@
-# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
-# Author: Julien Jalon <jj@nuxeo.com>
-#         Florent Guillaume <fg@nuxeo.com>
+# (C) Copyright 2002-2005 Nuxeo SARL <http://nuxeo.com>
+# Authors: Julien Jalon
+#          Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -22,15 +22,17 @@
 The Event Service receives events and dispatches them to interested parties.
 """
 
-from zLOG import LOG, ERROR, DEBUG
-from DateTime import DateTime
+import sys
 import random
 from types import StringType
+from DateTime import DateTime
+from zLOG import LOG, ERROR, DEBUG
 
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner, aq_base
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+from ZODB.POSException import ConflictError
 
 from OFS.Folder import Folder
 
@@ -203,27 +205,46 @@ class EventServiceTool(UniqueObject, Folder):
         infos['rpath'] = rpath
         notification_dict = self._notification_dict
         portal = aq_parent(aq_inner(self))
-        for ev_type in (event_type, '*'):
-            event_def = notification_dict.get(ev_type)
-            if event_def is None:
-                continue
-            for me_type in (object.meta_type, '*'):
-                type_def = event_def.get(me_type)
-                if type_def is None:
+        exc_info = None
+        try:
+            for ev_type in (event_type, '*'):
+                event_def = notification_dict.get(ev_type)
+                if event_def is None:
                     continue
-                not_def = type_def.get('synchronous')
-                if not_def is None:
-                    continue
-                for sub_def in not_def:
-                    subscriber_id = sub_def['subscriber']
-                    subscriber = getattr(portal, subscriber_id, None)
-                    if subscriber is None:
-                        LOG('EventServiceTool', ERROR, 'No subscriber %s'
-                            % subscriber_id)
+                for me_type in (object.meta_type, '*'):
+                    type_def = event_def.get(me_type)
+                    if type_def is None:
                         continue
-                    action = sub_def['action']
-                    meth = getattr(subscriber, action)
-                    meth(event_type, object, infos)
+                    not_def = type_def.get('synchronous')
+                    if not_def is None:
+                        continue
+                    for sub_def in not_def:
+                        subscriber_id = sub_def['subscriber']
+                        subscriber = getattr(portal, subscriber_id, None)
+                        if subscriber is None:
+                            LOG('EventServiceTool', ERROR, 'No subscriber %s'
+                                % subscriber_id)
+                            continue
+                        action = sub_def['action']
+                        try:
+                            meth = getattr(subscriber, action)
+                            meth(event_type, object, infos)
+                        except ConflictError:
+                            raise
+                        except:
+                            error = sys.exc_info()
+                            LOG('EventServiceTool.notify', ERROR,
+                                "Exception in subscriber", error=error)
+                            if exc_info is None:
+                                # Store this exception for later reraise
+                                exc_info = error
+                            error = None
+            # If there were exceptions, reraise the first one
+            if exc_info is not None:
+                raise exc_info[0], exc_info[1], exc_info[2]
+        finally:
+            # Cleanup potential reference to traceback object
+            exc_info = None
 
     security.declarePublic('notifyEvent')
     def notifyEvent(self, event_type, object, infos):
