@@ -11,3 +11,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Move files related to permissions around.
+- Cleanup the API for role-related utility functions in utils.
