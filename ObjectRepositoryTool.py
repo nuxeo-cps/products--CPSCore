@@ -132,7 +132,7 @@ class ObjectRepositoryTool(UniqueObject,
             docid, rev = self._split_id(id)
             docidsd[docid] = None
         while 1:
-            docid = str(random.randrange(1,2147483600))
+            docid = str(random.randrange(1, 2147483600))
             if not docidsd.has_key(docid):
                 return docid
 
@@ -146,7 +146,7 @@ class ObjectRepositoryTool(UniqueObject,
             did, rev = self._split_id(id)
             if did == docid and rev > maxrev:
                 maxrev = rev
-        return maxrev+1
+        return maxrev + 1
 
     security.declarePrivate('createRevision') # XXX renamed from invokeFactory
     def createRevision(self, docid_, type_name_, *args, **kw):
@@ -195,9 +195,16 @@ class ObjectRepositoryTool(UniqueObject,
     def delObjectRevisions(self, docid):
         """Delete all the revisions of an object."""
         prefix = self._get_id_prefix(docid)
-        for id in self.objectIds(): # XXX costly
-            if id.startswith(prefix):
-                self._delObject(id)
+        # XXX costly
+        ids_to_delete = [ id for id in self.objectIds() 
+                             if id.startswith(prefix) ]
+        for id in ids_to_delete: 
+            self._delObject(id)
+
+        # Warning: don't do:
+        # for id in self.objectIds():
+        #     if ...: self._delObject(id)
+        # because self.objectIds() is a live object (<OOBTreeItems>).
 
     security.declarePrivate('listAll')
     def listAll(self):
