@@ -19,6 +19,9 @@
 
 from zLOG import LOG, ERROR, DEBUG
 from ExtensionClass import Base
+from cPickle import Pickler, Unpickler
+from cStringIO import StringIO
+from struct import pack, unpack
 from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
@@ -31,6 +34,7 @@ from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
+from Products.NuxCPS3.EventServiceTool import getEventService
 from Products.NuxCPS3.CPSBase import CPSBaseFolder
 from Products.NuxCPS3.CPSBase import CPSBaseDocument
 
@@ -61,6 +65,8 @@ class ProxyBase(Base):
         is an integer.
         """
         self._version_infos = version_infos.copy()
+        # XXX notify event service of change ?
+        # XXX this method is not called yet (will be with i18n)
 
     security.declareProtected(View, 'getVersionInfos')
     def getVersionInfos(self):
@@ -124,6 +130,9 @@ class ProxyBase(Base):
                 # Update proxy if version has changed because editable.
                 self._p_changed = 1
                 self._version_infos[lang] = version_info
+                # Notify of this change.
+                evtool = getEventService(self)
+                evtool.notify('sys_modify_object', self, {})
         return ob
 
     security.declarePrivate('freezeProxy')
@@ -157,6 +166,82 @@ class ProxyBase(Base):
             return ob[name]
         except (KeyError, IndexError, TypeError, AttributeError):
             raise KeyError, name
+
+    #
+    # Staging
+    #
+
+    security.declarePrivate('serialize_proxy')
+    def serialize_proxy(self):
+        """Serialize the proxy, without subobjects.
+
+        Assumes no persistent attributes.
+        Assumes a normal ObjectManager with _objects.
+        Does NOT export subobjects from objectValues().
+        """
+        # skip subobjects
+        skipids = self.objectIds()
+        skipids.append('_objects')
+        # other skipped ids
+        skipids.extend(['_owner',
+                        'workflow_history', # is persistent...
+                        ])
+        # ok ids
+        okids = ['id',
+                 'portal_type',
+                 '_properties',
+                 '__ac_local_roles__',
+                 '__ac_local_group_roles__',
+                 # proxy definition
+                 '_repoid',
+                 '_version_infos',
+                 # dublin core
+                 'title',
+                 'description',
+                 'subject',
+                 'creation_date',
+                 'modification_date',
+                 'effective_date',
+                 'expiration_date',
+                 'rights',
+                 'format',
+                 'language',
+                 'contributors',
+                 ]
+        # writable properties are ok too
+        for prop in self._properties:
+            if 'w' in prop.get('mode', 'w'):
+                okids.append(prop['id'])
+        # extract
+        stuff = {}
+        for k, v in self.__dict__.items():
+            if k in skipids:
+                continue
+            if k in okids:
+                stuff[k] = v
+                continue
+            # security
+            if k.startswith('_') and k.endswith('_Permission'):
+                stuff[k] = v
+                continue
+            LOG('Proxybase', DEBUG, 'serialize of %s found unknown %s=%s'
+                % (self.getId(), k, v))
+        # now serialize stuff
+        f = StringIO()
+        p = Pickler(f, 1)
+        p.dump(stuff)
+        ser = f.getvalue()
+        class_name = self.__class__.__name__
+        return (pack('>I', len(class_name))
+                +class_name
+                +ser)
+
+    security.declarePublic('test_serialize') # XXX tests
+    def test_serialize(self):
+        """Test serialization."""
+        ser = self.serialize_proxy()
+        ob = unserialize_proxy(ser)
+        return `ob.__dict__`
 
     #
     # Security
@@ -275,6 +360,37 @@ class ProxyBase(Base):
     VersionInfos = ComputedAttribute(getVersionInfos, 1)
 
 InitializeClass(ProxyBase)
+
+#
+# Serialization
+#
+
+def unserialize_proxy(ser, ob=None):
+    """Unserialize a proxy from a string.
+
+    If ob is not None, modify that object in place.
+    Returns the object.
+    Does not send any notification.
+    """
+    l = unpack('>I', ser[:4])[0]
+    class_name = ser[4:4+l]
+    ser = ser[4+l:]
+    f = StringIO(ser)
+    p = Unpickler(f)
+    stuff = p.load()
+    if ob is None:
+        if class_name == 'ProxyFolder':
+            ob = ProxyFolder('')
+        elif class_name == 'ProxyDocument':
+            ob = ProxyDocument('')
+        elif class_name == 'ProxyFolderishDocument':
+            ob = ProxyFolderishDocument('')
+        else:
+            LOG('ProxyBase', ERROR, 'unserialize got class_name=%s' %
+                class_name)
+            return None
+    ob.__dict__.update(stuff)
+    return ob
 
 
 factory_type_information = (
