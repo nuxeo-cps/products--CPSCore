@@ -416,7 +416,7 @@ class CPSWorkflowTool(WorkflowTool):
                                     (dest_ob.getId(), transition, details))
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool.checkinRevisions(ob, dest_ob)
-        self.doActionFor(dest_ob, transition)
+        self.doActionFor(dest_ob, transition) # XXX pass kw args ?
 
     security.declarePrivate('mergeObject')
     def mergeObject(self, ob, dest_container, state_var, new_state):
