@@ -1,0 +1,78 @@
+These is some explanation about changes to handle i18n from a CPSCore 3.18.0
+
+$Id$
+
+ProxyBase:
+~~~~~~~~~~
+new methods:
+getL10nTitles(), getL10nDescriptions()
+    this methods return all available translation of the title or description
+    into an dictionnary this is used by the portal_tree to make it i18n,
+
+Languages():
+    return a list of locale abbreviation
+
+Title() and Description():
+    if the proxy have an use_mcat attribute instead of return
+    proxy.getContent.Title() it will return
+    translation_service(proxy.getContent.Title())
+
+    this enable to have structural folder like 'Favorite' 'Root of
+    workspace' ... using the message catalog to i18n their Title and
+    Description without need to create a new document revision
+
+Intermediate Objects:
+LanguageViewer:
+    this is called by the traversall on url like
+      pathToObject/viewLanguage/fr
+    this will force getBestRevision to choose the requested language
+    only during the request life
+    It is mainly used for indexing purpose
+
+LanguageSwitcher
+    this is called by the traversall on url like
+    pathToObject/switchLanguage/fr
+    this will force getBestRevision to choose the requested language
+    this choice is stored into session, so any further request
+    to pahtToObject will return the latest switchLanguage requested
+    It is used by the document language selector
+
+
+ProxyTool
+~~~~~~~~~
+getBestRevision(proxy, lang=None):
+    this method is called by any proxy.getContent() or getEditableContent
+    and choose wich document revision/local to return
+    by order it try to:
+    return the request lang locale if any
+    return the locale setted into the request by languageViewer
+    return the locale setted into session by languageSwitcher
+    return Localizer selected locale
+    return portal default locale
+    return the first available locale
+
+
+PatchCatalogTool
+~~~~~~~~~~~~~~~~
+IndexableObjectWrapper:
+    this class is redefine, this makes things easier
+    there is an optional parameter 'is_default_proxy' this enable for example
+    to create some index only for the default locale proxy
+    this will be usefull when replacing portal_tree by catalog_navigation
+
+catalog_object():
+    If the object have only one locale it behave exactly like standard cmf
+    catalog.
+    If the object have more than one locale (proxy.Languages()>1)
+    then we create one entry by language with path like:
+    objectPath/viewLanguage/fr
+    objectPath/viewLanguage/en
+    ...
+
+uncatalog_object
+    If the object have more than one locale it take care of deleting all
+    catalog entries (objectPath/viewLanguage/*)
+    Otherwise works like cmf
+
+
+* more info CPSDefault/doc/i18n-changes-from-CPSDefault-3_29_0.txt
