@@ -28,6 +28,7 @@ from AccessControl import ClassSecurityInfo
 from Products.CMFCore.CMFCorePermissions import View, ManagePortal
 from Products.CMFCore.ActionsTool import ActionInformation as AI
 from Products.CMFCore.Expression import Expression
+from Products.CMFCore.utils import _checkPermission
 from Products.CMFDefault.MembershipTool import MembershipTool
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
 from Products.NuxUserGroups.LocalRolesWithGroups import \
