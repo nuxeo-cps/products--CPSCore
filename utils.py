@@ -43,6 +43,7 @@ from AccessControl.PermissionRole import rolesForPermissionOn
 from Products import CMFCore
 from DateTime.DateTime import DateTime
 from random import randrange
+import re
 
 
 # Safe hasattr that doesn't catch unwanted exceptions and checks on base.
@@ -167,7 +168,8 @@ _translation_table = string.maketrans(
 
 _ok_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_.'
 
-# XXX: this assumes we're using latin-1
+# TODO: this assumes we're using latin-1
+# TODO: similar code is duplicated in other places (
 def makeId(s, lower=0):
     "Make id from string"
     id = s.translate(_translation_table)
@@ -177,6 +179,7 @@ def makeId(s, lower=0):
     id = id.replace('½', 'oe')
     id = id.replace('ß', 'ss')
     id = ''.join([c for c in id if c in _ok_chars])
+    id = re.sub("_+", "_", id)
     while id.startswith('_') or id.startswith('.'):
         id = id[1:]
     while id.endswith('_'):
