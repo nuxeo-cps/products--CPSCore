@@ -343,6 +343,31 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 res.append(info)
         return res
 
+    security.declarePrivate('_reindexProxiesForObject')
+    def _reindexProxiesForObject(self, ob):
+        """Reindex all the proxies corresponding to an object in the repo."""
+        repotool = getToolByName(self, 'portal_repository')
+        portal = aq_parent(aq_inner(self))
+        docid, rev = repotool.getDocidAndRevisionFromObjectId(ob.getId())
+        LOG('ProxyTool', DEBUG, '_reindexProxiesForObject docid=%s rev=%s'
+            % (docid, rev))
+        if docid is None:
+            return
+        rpaths = self._docid_rev_to_rpaths[(docid, rev)]
+        for rpath in rpaths:
+            docid2, language_revs = self._rpath_to_infos[rpath]
+            try:
+                # XXX costly if search
+                # XXX We should be able to filter by visibility directly
+                proxy = portal.unrestrictedTraverse(rpath)
+            except KeyError:
+                LOG('ProxyTool', ERROR,
+                    '_reindexProxiesForObject no rpath=%s id=%s' % (rpath, id))
+                continue
+            LOG('ProxyTool', DEBUG, '_reindexProxiesForObject reindexing '
+                'rpath=%s' % rpath)
+            proxy.reindexObject()
+
     # XXX implement this
     security.declarePublic('searchResults')
     def searchResults(self, **kw):
@@ -621,29 +646,38 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         if event_type in ('sys_add_object',
                           'sys_del_object',
-                          'sys_modify_object'):
-            if not _isinstance(object, ProxyBase):
-                return
-            LOG('ProxyTool', DEBUG, 'Got %s for %s'
-                % (event_type, '/'.join(object.getPhysicalPath())))
-            rpath = infos['rpath']
-            dodel = 0
-            if event_type == 'sys_add_object':
-                self._addProxy(object, rpath)
-            elif event_type == 'sys_modify_object':
-                self._modifyProxy(object, rpath)
-            elif event_type == 'sys_del_object':
-                dodel = 1
-            # Refresh security on the revisions.
-            if dodel:
-                skip_rpath = rpath
+                          'sys_modify_object',
+                          'modify_object'):
+            if _isinstance(object, ProxyBase):
+                LOG('ProxyTool', DEBUG, 'Got %s for proxy %s'
+                    % (event_type, '/'.join(object.getPhysicalPath())))
+                rpath = infos['rpath']
+                dodel = 0
+                if event_type == 'sys_add_object':
+                    self._addProxy(object, rpath)
+                elif event_type == 'sys_modify_object':
+                    self._modifyProxy(object, rpath)
+                elif event_type == 'sys_del_object':
+                    dodel = 1
+                # Refresh security on the revisions.
+                if dodel:
+                    skip_rpath = rpath
+                else:
+                    skip_rpath = None
+                self.setSecurity(object, skip_rpath=skip_rpath)
+                if dodel:
+                    # Must be done last...
+                    self._delProxy(rpath)
+                LOG('ProxyTool', DEBUG, '  ... done')
             else:
-                skip_rpath = None
-            self.setSecurity(object, skip_rpath=skip_rpath)
-            if dodel:
-                # Must be done last...
-                self._delProxy(rpath)
-            LOG('ProxyTool', DEBUG, '  ... done')
+                repotool = getToolByName(self, 'portal_repository')
+                if repotool.isObjectInRepository(object):
+                    if event_type in ('sys_modify_object', 'modify_object'):
+                        LOG('ProxyTool', DEBUG, 'Got %s for repoob %s'
+                            % (event_type, '/'.join(object.getPhysicalPath())))
+                        # Repo object was modified, reindex all the proxies.
+                        self._reindexProxiesForObject(object)
+                        LOG('ProxyTool', DEBUG, '  ... done')
 
     #
     # Management

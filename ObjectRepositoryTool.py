@@ -238,6 +238,13 @@ class ObjectRepositoryTool(UniqueObject,
         else:
             return (None, None)
 
+    security.declarePublic('isObjectInRepository')
+    def isObjectInRepository(self, ob):
+        """Test if an object is in the repository."""
+        repopath = self.getPhysicalPath()
+        obpath = ob.getPhysicalPath()
+        return obpath[:len(repopath)] == repopath
+
     security.declarePrivate('freezeRevision')
     def freezeRevision(self, docid, rev):
         """Freeze a version of a document.
