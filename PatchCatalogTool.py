@@ -61,7 +61,8 @@ class IndexableObjectWrapper:
             if (self.__is_default_proxy and
                 name in ('getL10nTitles', 'getL10nDescriptions')) or (
                 name in ('getId', 'id', 'path', 'uid', 'modified',
-                         'getPhysicalPath', 'splitPath', 'getProxyLanguages')):
+                         'getPhysicalPath', 'splitPath', 'getProxyLanguages',
+                         'isDefaultLanguage')):
                 # we use the proxy
                 pass
             else:
