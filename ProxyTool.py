@@ -147,20 +147,56 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         return repotool.getObjectVersion(repoid, version_info), lang, version_info
 
     security.declarePrivate('getMatchingProxies')
-    def getMatchingProxies(self, repoid, version_info):
+    def getMatchingProxies(self, repoid, version_info=None):
         """Get the proxies matching a given version of an object.
 
         Returns a mapping of {hubid: [list of lang]}
+        If version_info is None, returns a mapping of {hubids: version_infos}.
         """
         infos = {}
         # XXX must be made faster using a second mapping (repoid, vi) -> hubid
         for hubid, (rid, version_infos) in self._hubid_to_info.items():
             if repoid != rid:
                 continue
-            for lang, vi in version_infos.items():
-                if version_info == vi:
-                    infos.setdefault(hubid, []).append(lang)
+            if version_info is None:
+                infos[hubid] = version_infos
+            else:
+                for lang, vi in version_infos.items():
+                    if version_info == vi:
+                        infos.setdefault(hubid, []).append(lang)
         return infos
+
+    security.declarePublic('getProxyInfoFromRepoId')
+    def getProxyInfoFromRepoId(self, repoid, workflow_vars=()):
+        """Get the proxy infos from a repoid.
+
+        Returns also info for the specified workflow vars.
+        Flags the proxies that are not visible.
+        """
+        repotool = getToolByName(self, 'portal_repository')
+        hubtool = getToolByName(self, 'portal_eventservice')
+        wftool = getToolByName(self, 'portal_workflow')
+        portal = aq_parent(aq_inner(self))
+        infos = self.getMatchingProxies(repoid, version_info=None)
+        res = []
+        for hubid, version_infos in infos.items():
+            rpath = hubtool.getLocation(hubid, relative=1)
+            try:
+                ob = portal.unrestrictedTraverse(rpath)
+            except KeyError:
+                LOG('getProxiesFromRepoId', DEBUG, 'rpath=%s hubid=%s id=%s infos=%s' % (rpath, hubid, id, infos))
+                continue
+            visible = _checkPermission(View, ob)
+            info = {'object': ob,
+                    'rpath': rpath,
+                    'hubid': hubid,
+                    'version_infos': version_infos,
+                    'visible': visible,
+                    }
+            for var in workflow_vars:
+                info[var] = wftool.getInfoFor(ob, var, None)
+            res.append(info)
+        return res
 
     security.declarePublic('getProxiesFromId')
     def getProxiesFromId(self, id):
@@ -181,7 +217,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             try:
                 ob = portal.unrestrictedTraverse(rpath)
             except KeyError:
-                raise 'debug', 'rpath=%s hubid=%s id=%s infos=%s' % (rpath, hubid, id, infos)
+                LOG('getProxiesFromId', DEBUG, 'rpath=%s hubid=%s id=%s infos=%s' % (rpath, hubid, id, infos))
+                continue
             if _checkPermission(View, ob):
                 res.append({'object': ob,
                             'rpath': rpath,
