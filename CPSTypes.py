@@ -90,6 +90,45 @@ class TypeConstructor(Base):
             final_type_name = type_name
         ob._setPortalTypeName(final_type_name)
         ob.reindexObject(idxs=['portal_type', 'Type'])
+        # XXX should notify something
         return ob
 
 InitializeClass(TypeConstructor)
+
+
+class TypeContainer(Base):
+
+    security = ClassSecurityInfo()
+
+    #
+    # Copy without security checks.
+    #
+
+    security.declarePrivate('copyContent')
+    def copyContent(self, ob, id):
+        """Copy an object without all the security checks.
+
+        Similar to manage_clone.
+        Returns the new object.
+        """
+        # This code is derived from CopySupport.CopyContainer.manage_clone
+        if not ob.cb_isCopyable():
+            raise CopyError, 'Copy not supported: %s' % ob.getId()
+        try:
+            self._checkId(id)
+        except: # Huh, stupid string exceptions...
+            raise CopyError, 'Invalid id: %s' % (id,)
+        try:
+            ob._notifyOfCopyTo(self, op=0)
+        except:
+            raise CopyError, 'Clone Error: %s' % (sys.exc_info()[1],)
+        ob = ob._getCopy(self)
+        ob._setId(id)
+        self._setObject(id, ob)
+        ob = self._getOb(id)
+        ob.manage_afterClone(ob)
+        if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
+            on.manage_afterCMFAdd(ob, self)
+        return ob
+
+InitializeClass(TypeContainer)
