@@ -500,7 +500,7 @@ class CPSMembershipTool(MembershipTool):
     # CMF 1.5 method plus check_permission argument
     security.declareProtected(ManageUsers, 'deleteMembers')
     def deleteMembers(self, member_ids, delete_memberareas=1,
-                      delete_localroles=1, check_permission=1):
+                      delete_localroles=0, check_permission=1):
         """Delete members specified by member_ids.
 
         XXX does not implement local roles deletion.
