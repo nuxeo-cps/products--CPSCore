@@ -23,7 +23,7 @@ More information
   slides":http://www.europython.org/Talks/Slides/cps_europython_2003.pdf
     
   See also the "Nuxeo web site":http://www.nuxeo.com/en/ and "CPS
-  Project":http:/www.cps-project.org/ for more details.
+  Project":http://www.cps-project.org/ for more details.
 
   There is now a "cps-devel mailing
   list":http://lists.nuxeo.com/mailman/listinfo/cps-devel for CPS3 (and CPS2)
