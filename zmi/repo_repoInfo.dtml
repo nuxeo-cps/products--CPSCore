@@ -1,28 +1,74 @@
 <dtml-var manage_page_header>
 <dtml-var manage_tabs>
 
-<dtml-let infos=getManagementInformation
-          used="infos['used']"
-          unused="infos['unused']"
-         >
+<dtml-if details>
+  <dtml-with getManagementInformation mapping>
 
-<form action="<dtml-var name="URL1">">
+  <h3>Repository</h3>
 
-<p class="form-text">
-The object repository contains <dtml-var "_.len(used)"> active versions
-and <dtml-var "_.len(unused)"> orphan versions.
-</p>
+  <form action="<dtml-var name="URL1">">
 
-<dtml-if "_.len(unused)">
-<p class="form-element">
-<input class="form-element" type="submit" value="Purge orphan versions"
-       name="manage_purgeOrphans:method">
-</p>
+  <p class="form-text">
+    The repository contains a total of &dtml-nb_docids; docids
+    (&dtml-nb_revs; revisions).
+  </p>
+
+  <p class="form-text">
+    There are &dtml-nb_live_docids; live docids
+   (&dtml-nb_live_revs; live revisions),
+    with &dtml-nb_archived_revs; archived revisions.
+  </p>
+
+  <p class="form-text">
+    There are &dtml-nb_unused_docids; deleted docids
+    (&dtml-nb_unused_revs_docids; deleted revisions).
+  </p>
+
+  <dtml-if "nb_unused_revs_docids">
+    <p class="form-text">
+    <input class="form-element" type="submit" value="Purge deleted revisions"
+           name="manage_purgeDeletedRevisions:method" />
+    </p>
+  </dtml-if>
+
+  <dtml-if "nb_archived_revs">
+  <h3>Archives</h3>
+
+  <p class="form-text">
+    The &dtml-nb_live_docids; live docids have &dtml-nb_archived_revs;
+    archived revisions.
+  </p>
+
+  <p class="form-text">
+    <input class="form-element" type="submit" value="Purge archived revisions"
+           name="manage_purgeArchivedRevisions:method" />
+    keeping no more than
+    <input class="form-element" type="text" name="keep_max" value="2"
+      size="2" />
+    archives per docid.
+  </p>
+  </dtml-if>
+
+  </form>
+
+  </dtml-with>
+<dtml-else>
+  <form action="<dtml-var name="URL0">">
+
+  <h3>Repository</h3>
+
+  <p class="form-text">
+    To get detailed information about the objects in the repository,
+    click below.
+  </p>
+
+  <p class="form-element">
+    <input class="form-element" type="submit" value="Get details"
+      name="details" />
+  </p>
+
+  </form>
 </dtml-if>
-
-
-</form>
-</dtml-let>
 
 
 <dtml-var manage_page_footer>

@@ -432,26 +432,101 @@ class ObjectRepositoryTool(UniqueObject,
         """Return management info.
 
         Return a list of ids used, and of those that are used by no proxy.
+
+        Return a dictionnary with information:
+          nb_revs: total number of revisions
+          nb_docids: total number of docids
+          nb_unused_docids: number of unused docids
+          nb_unused_revs: total number of unused revision
+          nb_unused_revs_docids: number of revisions corresponding to
+                                 unused docids
+          nb_live_revs: number of used revisions
+          nb_archived_revs: number of unused revisions corresponding to
+                            used docids
+          ids_unused_revs_docids: ids for revision of unused docids
         """
         pxtool = getToolByName(self, 'portal_proxies')
-        infos = pxtool.getRevisionsUsed()
-        used = []
-        unused = []
+        pxtool_infos = pxtool.getRevisionsUsed()
+
+
+        nb_revs = 0
+        docids_d = {} # all docids
+        unused_docids_d = {} # all docids that are unused
+        ids_unused_revs_docids = [] # ids for revs of unused docids
+        ids_unused_revs = [] # ids for unused revs
         for id in self.objectIds():
             docid, rev = self._splitId(id)
             if docid is None:
-                LOG('ObjectRepositoryTool', DEBUG, 'bad id %s' % id)
+                LOG('ObjectRepositoryTool', DEBUG,
+                    "Bad id in repository: '%s'" % id)
                 continue
-            if not infos.has_key(docid):
-                unused.append(id)
+            nb_revs += 1
+            docids_d[docid] = None
+            if not pxtool_infos.has_key(docid):
+                unused_docids_d[docid] = None
+                ids_unused_revs_docids.append(id)
+                ids_unused_revs.append(id)
+            elif not pxtool_infos[docid].has_key(rev):
+                ids_unused_revs.append(id)
+        nb_docids = len(docids_d)
+        nb_unused_docids = len(unused_docids_d)
+        nb_unused_revs = len(ids_unused_revs)
+        nb_unused_revs_docids = len(ids_unused_revs_docids)
+        nb_live_docids = nb_docids - nb_unused_docids
+        nb_live_revs = nb_revs - nb_unused_revs
+        nb_archived_revs = nb_unused_revs - nb_unused_revs_docids
+
+        return {
+            'nb_revs': nb_revs,
+            'nb_docids': nb_docids,
+            'nb_unused_docids': nb_unused_docids,
+            'nb_unused_revs': nb_unused_revs,
+            'nb_live_docids': nb_live_docids,
+            'nb_live_revs': nb_live_revs,
+            'nb_unused_revs_docids': nb_unused_revs_docids,
+            'nb_archived_revs': nb_archived_revs,
+            'ids_unused_revs_docids': ids_unused_revs_docids,
+            }
+
+    security.declareProtected(ManagePortal, 'purgeDeletedRevisions')
+    def purgeDeletedRevisions(self):
+        infos = self.getManagementInformation()
+        ids_to_del = infos['ids_unused_revs_docids']
+        LOG('purgeDeletedRevisions', DEBUG, 'deleting %s' % ids_to_del)
+        self.manage_delObjects(ids_to_del)
+
+    security.declareProtected(ManagePortal, 'purgeArchivedRevisions')
+    def purgeArchivedRevisions(self, keep_max):
+        """Purge archived revisions.
+
+        Keeps no more than keep_max archives per docid.
+        """
+        pxtool = getToolByName(self, 'portal_proxies')
+        pxtool_infos = pxtool.getRevisionsUsed()
+
+        docids_archives = {}
+
+        for id in self.objectIds():
+            docid, rev = self._splitId(id)
+            if docid is None:
                 continue
-            if not infos[docid].has_key(rev):
-                unused.append(id)
+            if not pxtool_infos.has_key(docid):
+                # deleted
                 continue
-            used.append(id)
-        return {'unused': unused,
-                'used': used,
-                }
+            if pxtool_infos[docid].has_key(rev):
+                # live
+                continue
+            docids_archives.setdefault(docid, []).append((rev, id))
+        ids_to_del = []
+        for docid, revids in docids_archives.items():
+            if keep_max > 0:
+                revids.sort()
+                revids = revids[:-keep_max]
+            for rev, id in revids:
+                ids_to_del.append(id)
+        LOG('purgeArchivedRevisions', DEBUG, 'keep_max=%s, deleting %s'
+            % (keep_max, ids_to_del))
+        self.manage_delObjects(ids_to_del)
 
     #
     # Id generation
@@ -479,23 +554,21 @@ class ObjectRepositoryTool(UniqueObject,
     # Workflow history management
     #
 
-    # XXX: do we still need this ?
-    def _checkHistoryPresent(self):
-        """Upgrades: check that _histories is present.
-        """
-        if not hasattr(aq_base(self), '_histories'):
-            self._histories = OOBTree()
+    #def _checkHistoryPresent(self):
+    #    """Upgrades: check that _histories is present."""
+    #    if not hasattr(aq_base(self), '_histories'):
+    #        self._histories = OOBTree()
 
     security.declarePrivate('getHistory')
     def getHistory(self, docid):
         """Get the workflow history for a docid, or None."""
-        self._checkHistoryPresent()
+        #self._checkHistoryPresent()
         return self._histories.get(docid)
 
     security.declarePrivate('setHistory')
     def setHistory(self, docid, history):
         """Set the workflow history for a docid."""
-        self._checkHistoryPresent()
+        #self._checkHistoryPresent()
         self._histories[docid] = history
 
     #
@@ -518,13 +591,26 @@ class ObjectRepositoryTool(UniqueObject,
     security.declareProtected(ManagePortal, 'manage_repoInfo')
     manage_repoInfo = DTMLFile('zmi/repo_repoInfo', globals())
 
-    security.declareProtected(ManagePortal, 'manage_purgeOrphans')
-    def manage_purgeOrphans(self, REQUEST):
-        """Purge all orphan versions."""
-        infos = self.getManagementInformation()
-        self.manage_delObjects(infos['unused'])
-        REQUEST.RESPONSE.redirect(self.absolute_url()+'/manage_repoInfo'
-                                  '?manage_tabs_message=Purged.')
+    security.declareProtected(ManagePortal, 'manage_purgeArchivedRevisions')
+    def manage_purgeArchivedRevisions(self, keep_max, REQUEST=None):
+        """Purge archived revisions.
+
+        Keeps no more than keep_max archives per docid.
+        """
+        keep_max = int(keep_max)
+        self.purgeArchivedRevisions(keep_max)
+        if REQUEST is not None:
+            REQUEST.RESPONSE.redirect(self.absolute_url()+'/manage_repoInfo'
+                                      '?manage_tabs_message=Purged.&details=1')
+
+    security.declareProtected(ManagePortal, 'manage_purgeDeletedRevisions')
+    def manage_purgeDeletedRevisions(self, REQUEST=None):
+        """Purge revisions for deleted docids."""
+        self.purgeDeletedRevisions()
+        if REQUEST is not None:
+            REQUEST.RESPONSE.redirect(self.absolute_url()+'/manage_repoInfo'
+                                      '?manage_tabs_message=Purged.&details=1')
+
 
     # XXX security?
     security.declarePublic('manage_redirectRevision')

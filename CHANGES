@@ -4,6 +4,7 @@ Requires:
 New features:
 ~~~~~~~~~~~~~
 - In ProxyTool management tab Proxies can now do a search on docid.
+- The repository has a better purge granularity in the ZMI.
 Bug fixes:
 ~~~~~~~~~~
 -
