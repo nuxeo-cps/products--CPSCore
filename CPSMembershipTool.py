@@ -35,8 +35,9 @@ from Products.CMFCore.ActionsTool import ActionInformation as AI
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
-from Products.CMFCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
 from Products.CMFDefault.MembershipTool import MembershipTool
+
+from Products.CPSCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
 
 from zLOG import LOG, DEBUG
 
