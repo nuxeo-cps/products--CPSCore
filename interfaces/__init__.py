@@ -1,1 +1,1 @@
-from IZODBTransactionHook import IZODBTransactionHook
+from ITransactionCommitSubscriber import ITransactionCommitSubscriber
