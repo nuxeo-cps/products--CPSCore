@@ -28,7 +28,7 @@ from OFS.Folder import Folder
 from OFS.SimpleItem import SimpleItem
 
 from Products.NuxCPS3.CPSWorkflow import CPSWorkflowDefinition
-from Products.NuxCPS3.CPSWorkflow import UNCREATED_STATE
+from Products.NuxCPS3.CPSWorkflow import TRIGGER_CREATION
 from Products.NuxCPS3.CPSWorkflowConfiguration import addCPSWorkflowConfiguration
 from Products.NuxCPS3.CPSWorkflowConfiguration import CPSWorkflowConfiguration_id
 
@@ -91,24 +91,19 @@ class WorkflowToolTests(SecurityRequestTest):
         wf = CPSWorkflowDefinition(id)
         self.root.portal_workflow._setObject(id, wf)
         wf = self.root.portal_workflow.wf
-        ct = wf.getCreationTransitions()
+        ct = wf.getCreationTransitions(self.root)
         self.assertEqual(tuple(ct), ())
         # create states
         wf.states.addState('s1')
         states = list(wf.states.objectIds())
         states.sort()
-        okstates = [UNCREATED_STATE, 's1']
-        okstates.sort()
-        self.assertEqual(tuple(states), tuple(okstates))
-        # create transitions
+        self.assertEqual(tuple(states), ('s1',))
+        # create transition
         wf.transitions.addTransition('t1')
         t1 = wf.transitions.get('t1')
-        t1.setProperties('title', 's1')
+        t1.setProperties('title', 's1', trigger_type=TRIGGER_CREATION)
         transitions = wf.transitions.objectIds()
         self.assertEqual(tuple(transitions), ('t1',))
-        # add creation transition
-        s1 = wf.states.get(UNCREATED_STATE)
-        s1.setProperties(transitions=('t1',))
         # another empty workflow
         id2 = 'wf2'
         wf2 = CPSWorkflowDefinition(id2)
@@ -129,7 +124,7 @@ class WorkflowToolTests(SecurityRequestTest):
 
     def test_wf_getCreationTransitions(self):
         self.makeWorkflows()
-        ct = self.root.portal_workflow.wf.getCreationTransitions()
+        ct = self.root.portal_workflow.wf.getCreationTransitions(self.root)
         self.assertEqual(tuple(ct), ('t1',))
 
     def test_wft_getCreationTransitions(self):

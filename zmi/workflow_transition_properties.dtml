@@ -1,0 +1,192 @@
+<dtml-var manage_page_header>
+<dtml-let management_view="'Properties'">
+<dtml-var manage_tabs>
+</dtml-let>
+
+<form action="setProperties" method="POST">
+<table>
+
+<tr>
+<th align="left">Id</th>
+<td>&dtml-id;</td>
+</tr>
+
+<tr>
+<th align="left">Title</th>
+<td><input type="text" name="title" value="&dtml-title;" size="50" /></td>
+</tr>
+
+<tr>
+<th align="left" valign="top">Description</th>
+<td><textarea name="description" rows="6" cols="35">&dtml-description;</textarea></td>
+</tr>
+
+<tr>
+<th align="left">Destination state</th>
+<td>
+ <select name="new_state_id" size="1">
+  <dtml-let selected="not new_state_id and 'selected' or ' '">
+   <option value="" &dtml-selected;>(Remain in state)</option>
+  </dtml-let>
+  <dtml-in getAvailableStateIds sort>
+   <dtml-let selected="new_state_id == _['sequence-item'] and 'selected' or ' '">
+    <option value="&dtml-sequence-item;" &dtml-selected;>&dtml-sequence-item;</option>
+   </dtml-let>
+  </dtml-in>
+ </select>
+</td>
+</tr>
+
+<tr>
+<th align="left">Trigger type</th>
+<td>
+<dtml-let checked="trigger_type==0 and 'checked' or ' '">
+<input type="radio" name="trigger_type" value="0" &dtml-checked; />
+Automatic
+</dtml-let>
+</td>
+</tr>
+
+<tr>
+<th></th>
+<td>
+<dtml-let checked="trigger_type==50 and 'checked' or ' '">
+<input type="radio" name="trigger_type" value="50" &dtml-checked; />
+Creation transition
+</dtml-let>
+</tr>
+</tr>
+
+<tr>
+<th></th>
+<td>
+<dtml-let checked="trigger_type==1 and 'checked' or ' '">
+<input type="radio" name="trigger_type" value="1" &dtml-checked; />
+Initiated by user action
+</dtml-let>
+</tr>
+</tr>
+
+<tr>
+<th></th>
+<td>
+<dtml-let checked="trigger_type==2 and 'checked' or ' '">
+<input type="radio" name="trigger_type" value="2" &dtml-checked; />
+Initiated by WorkflowMethod
+</dtml-let>
+</tr>
+</tr>
+
+<tr>
+<th align="left" valign="top">Transition behavior</th>
+<td>
+  <input type="radio" name="transition_behavior" value="0"
+      <dtml-if "transition_behavior == 0">checked</dtml-if> />
+    Normal
+</td>
+</tr>
+
+<tr>
+<th></th>
+<td>
+  <input type="radio" name="transition_behavior" value="1"
+      <dtml-if "transition_behavior == 1">checked</dtml-if> />
+    Clone,
+    with allowed creation transitions
+    <input type="text" name="clone_allowed_transitions:tokens"
+      value="&dtml-clone_allowed_transitions;" size="30" />
+</td>
+</tr>
+
+<dtml-comment>
+<tr>
+  <td>
+    <input type="radio" name="transition_behavior" value="2"
+        <dtml-if "transition_behavior == 2">checked</dtml-if> />
+      Checkout,
+      with original following transition
+        <select name="checkout_original_transition_id" size="1">
+          <dtml-in getAvailableTransitionIds sort>
+          <dtml-let trans=sequence-item>
+          <dtml-if "trans != getId()">
+          <dtml-let selected="checkout_original_transition_id == trans and 'selected' or ' '">
+             <option value="&dtml-trans;" &dtml-selected;>&dtml-trans;</option>
+          </dtml-let>
+          </dtml-if>
+          </dtml-let>
+          </dtml-in>
+        </select>
+  </td>
+</tr>
+</dtml-comment>
+
+<tr>
+<th align="left">Script (before)</th>
+<td>
+<select name="script_name">
+<option value="">(None)</option>
+<dtml-in getAvailableScriptIds sort>
+ <dtml-let selected="script_name == _['sequence-item'] and 'selected' or ' '">
+  <option value="&dtml-sequence-item;" &dtml-selected;>&dtml-sequence-item;</option>
+ </dtml-let>
+</dtml-in>
+</select>
+</td>
+</tr>
+
+<tr>
+<th align="left">Script (after)</th>
+<td>
+<select name="after_script_name">
+<option value="">(None)</option>
+<dtml-in getAvailableScriptIds sort>
+ <dtml-let selected="after_script_name == _['sequence-item'] and 'selected' or ' '">
+  <option value="&dtml-sequence-item;" &dtml-selected;>&dtml-sequence-item;</option>
+ </dtml-let>
+</dtml-in>
+</select>
+</td>
+</tr>
+
+<tr>
+<th align="left" valign="top">Guard</th>
+<td>
+ <dtml-with getGuard>
+  <dtml-var guardForm>
+ </dtml-with>
+</td>
+</tr>
+
+<tr>
+<th align="left" valign="top">Display in actions box</th>
+<td>
+ <table>
+  <tr>
+   <th align="left">Name (formatted)</th>
+   <td>
+    <input type="text" name="actbox_name"
+     value="&dtml-actbox_name;" size="50" />
+   </td>
+  </tr>
+  <tr>
+   <th align="left">URL (formatted)</th>
+   <td>
+    <input type="text" name="actbox_url"
+     value="&dtml-actbox_url;" size="50" />
+   </td>
+  </tr>
+  <tr>
+   <th align="left">Category</th>
+   <td>
+    <input type="text" name="actbox_category"
+     value="&dtml-actbox_category;" />
+   </td>
+  </tr>
+ </table>
+</td>
+</tr>
+
+</table>
+<input type="submit" name="submit" value="Save changes" />
+</form>
+<dtml-var manage_page_footer>

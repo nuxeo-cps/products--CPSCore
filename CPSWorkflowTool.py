@@ -73,7 +73,7 @@ class CPSWorkflowTool(WorkflowTool):
         for wf_id in wf_ids:
             wf = self.getWorkflowById(wf_id)
             if hasattr(aq_base(wf), 'getCreationTransitions'):
-                transitions = wf.getCreationTransitions()
+                transitions = wf.getCreationTransitions(container)
             else:
                 # Not a CPS Workflow.
                 transitions = None
@@ -103,15 +103,17 @@ class CPSWorkflowTool(WorkflowTool):
                 raise WorkflowException(
                     "Workflow %s cannot create %s using transition '%s'" %
                     (wf_id, type_name, transition))
-        # calls wf.notifyCreated!
+        # calls wf.notifyCreated()!
         container.invokeFactory(type_name, id, *args, **kw)
         # XXX should get new id effectively used! CMFCore bug!
         ob = container[id]
-        # Do transitions for all workflows.
+        # Do creation transitions for all workflows.
+        reindex = 0
         for wf_id, transitions in allowed.items():
             transition = creation_transitions.get(wf_id)
             if transition is None:
-                # use first default # XXX parametrize default ?
+                # Use first default.
+                # XXX parametrize default ?
                 if not transitions:
                     raise WorkflowException(
                         "Workflow %s does not allow creation" % (wf_id,))
@@ -119,7 +121,10 @@ class CPSWorkflowTool(WorkflowTool):
             wf = self.getWorkflowById(wf_id)
             if wf is None:
                 raise WorkflowException("%s is not a workflow id" % (wf_id,))
-            wf.doActionFor(ob, transition)
+            wf.notifyCreated(ob, creation_transition=transition)
+            reindex = 1
+        if reindex:
+            self._reindexWorkflowVariables(ob)
         return id
 
     # Overloaded for placeful workflow definitions
