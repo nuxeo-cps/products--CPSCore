@@ -117,6 +117,7 @@ class CPSMembershipTool(MembershipTool):
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
 
+        # XXX This code must change, it has knowledge of CPSDefault.
         if 'Manager' in my_roles or \
                'WorkspaceManager' in my_roles or \
                'SectionManager' in my_roles or \
