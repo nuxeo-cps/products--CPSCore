@@ -229,6 +229,7 @@ class TreeCache(SimpleItemWithProperties):
         else: # event_type in ('sys_modify_security', 'modify_object')
             tree = self._find_tree(object)
             if tree is None:
+                LOG('notify_tree', DEBUG, '  Not found tree')
                 return
             LOG('notify_tree', DEBUG, '  Found tree')
             info = self._get_info(object, plen, hubtool)
