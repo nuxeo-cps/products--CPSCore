@@ -122,8 +122,8 @@ class CPSWorkflowTool(WorkflowTool):
         else:
             return 1
 
-    security.declarePublic('getAllowedPortalTypes')
-    def getAllowedPortalTypes(self, ob):
+    security.declarePublic('getAllowedContentTypes')
+    def getAllowedContentTypes(self, ob):
         """Get the list of portal types allowed for creating.
 
            Note that all creation transitions are taken into account, not just

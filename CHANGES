@@ -13,6 +13,6 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Refactoring : split mergedLocalRoles / mergedLocalRolesWithPath
-- 'getAllowedPortalTypes' to gather allowed portal types by the workflow
+- 'getAllowedContentTypes' to gather allowed portal types by the workflow
   (obsoletes allowed_content_types from a portal type).
 -
