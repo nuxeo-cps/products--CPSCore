@@ -48,6 +48,12 @@ class DefaultElement(SimpleItemWithProperties):
             'label': 'Method name'
         },
         {
+            'id': 'description',
+            'type': 'text',
+            'mode': 'w',
+            'label': 'Description'
+        },
+        {
             'id': 'cmf_action',
             'type': 'boolean',
             'mode': 'w',
@@ -57,12 +63,14 @@ class DefaultElement(SimpleItemWithProperties):
 
     from_element = ''
     method_name = ''
+    description = ''
     cmf_action = 0
 
-    def __init__(self, id, from_element, method_name, cmf_action):
+    def __init__(self, id, from_element, method_name, description, cmf_action):
         self.id = id
         self.from_element = from_element
         self.method_name = method_name
+        self.description = description
         self.cmf_action = cmf_action
 
 InitializeClass(DefaultElement)
@@ -160,7 +168,7 @@ class ElementsTool(UniqueObject, OFS.Folder.Folder):
     security.declareProtected(ViewManagementScreens, \
         'manage_addDefaultElement')
     def manage_addDefaultElement(self, name, from_element, method_name,
-                                  cmf_action=0, REQUEST=None):
+                                  description='', cmf_action=0, REQUEST=None):
         """\
         Add a default element to elements mapping
         Virtually:
@@ -169,7 +177,7 @@ class ElementsTool(UniqueObject, OFS.Folder.Folder):
         """
         name = name.upper()
         from_element = from_element.upper()
-        element = DefaultElement(name, from_element, method_name, cmf_action)
+        element = DefaultElement(name, from_element, method_name, description, cmf_action)
         self._setObject(name, element)
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(
