@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-15 -*-
-# Copyright (C) 2004 Nuxeo SARL <http://nuxeo.com>
+# Copyright (C) 2004-2005 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -123,27 +123,27 @@ class TreeCacheTest(SecurityRequestTest):
             )
         return cache
 
-    def test_is_candidate(self):
+    def test_isCandidate(self):
         ppath = '/cmf'.split('/')
         plen = len(ppath)
         cache = self.makeOne()
 
         ob = DummyObject(path='/cmf/root/foo')
-        self.assert_(cache._is_candidate(ob, plen))
+        self.assert_(cache._isCandidate(ob, plen))
         ob = DummyObject(path='/cmf/root/foo/bar')
-        self.assert_(cache._is_candidate(ob, plen))
+        self.assert_(cache._isCandidate(ob, plen))
         ob = DummyObject(path='/cmf/root/bar')
-        self.failIf(cache._is_candidate(ob, plen))
+        self.failIf(cache._isCandidate(ob, plen))
         # We'll never be notified outside of the portal anyway
         #ob = DummyObject(path='/moo/root/foo/bar')
-        #self.failIf(cache._is_candidate(ob, plen))
+        #self.failIf(cache._isCandidate(ob, plen))
 
         ob = DummyObject(path='/cmf/root/foo')
         ob.portal_type = 'Ah'
-        self.failIf(cache._is_candidate(ob, plen))
+        self.failIf(cache._isCandidate(ob, plen))
         ob = DummyObject(path='/cmf/root/foo')
         ob.meta_type = 'Hehe'
-        self.failIf(cache._is_candidate(ob, plen))
+        self.failIf(cache._isCandidate(ob, plen))
 
 
     def test_getRoot(self):
@@ -164,6 +164,9 @@ class TreeCacheTest(SecurityRequestTest):
         app = Folder()
         app._setId('')
         self.app = app
+
+        # fake acl_users
+        app.acl_users = Folder()
 
         cmf = Folder()
         cmf._setId('cmf')
@@ -199,7 +202,7 @@ class TreeCacheTest(SecurityRequestTest):
         cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
 
         cache.rebuild()
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar', 'root/foo/baz'])
         self.assertEquals([d['depth'] for d in l],
@@ -212,19 +215,17 @@ class TreeCacheTest(SecurityRequestTest):
 
         # Add root first
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals(l, [{
             'allowed_roles_and_users': ['Manager'],
             'depth': 0,
             'id': 'foo',
             'local_roles': {},
             'nb_children': 0,
-            'path': '/cmf/root/foo',
             'portal_type': 'ThePortalType',
             'rpath': 'root/foo',
             'title': 'Foo',
-            'url': 'cmf/root/foo',
-            'visible': 0,
+            'visible': False,
             }])
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo'])
@@ -232,7 +233,7 @@ class TreeCacheTest(SecurityRequestTest):
         # Add first child
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
         self.assertEquals([d['depth'] for d in l],
@@ -245,7 +246,7 @@ class TreeCacheTest(SecurityRequestTest):
         # Add another
         cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar', 'root/foo/baz'])
         self.assertEquals([d['depth'] for d in l],
@@ -259,13 +260,20 @@ class TreeCacheTest(SecurityRequestTest):
         cmf.root.foo._delObject('bar')
         cmf.root.foo._setObject('bar', DummyObject('bar', title='NewBar'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
-                          ['root/foo', 'root/foo/bar', 'root/foo/baz'])
+                          ['root/foo', 'root/foo/baz', 'root/foo/bar'])
         self.assertEquals([d['depth'] for d in l],
                           [0, 1, 1])
-        #self.assertEquals([d['title'] for d in l],  # XXX
-        #                  ['Foo', 'NewBar', 'Baz']) # XXX
+        self.assertEquals([d['title'] for d in l],
+                          ['Foo', 'Baz', 'NewBar'])
+
+        # Check without ordering
+        l = cache.getList(filter=False, order=False)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar', 'root/foo/baz'])
+        self.assertEquals([d['title'] for d in l],
+                          ['Foo', 'NewBar', 'Baz'])
 
     def test_event_sys_del_object(self):
         self.makeInfrastructure()
@@ -276,7 +284,7 @@ class TreeCacheTest(SecurityRequestTest):
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
         self.assertEquals([d['nb_children'] for d in l],
@@ -284,7 +292,7 @@ class TreeCacheTest(SecurityRequestTest):
 
         # Delete child
         cache.notify_tree('sys_del_object', cmf.root.foo.bar, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo'])
         self.assertEquals([d['nb_children'] for d in l],
@@ -292,7 +300,7 @@ class TreeCacheTest(SecurityRequestTest):
 
         # Delete root itself
         cache.notify_tree('sys_del_object', cmf.root.foo, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals(l, [])
 
     def test_event_sys_order_object(self):
@@ -308,7 +316,7 @@ class TreeCacheTest(SecurityRequestTest):
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar.b, {})
         cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar', 'root/foo/bar/b',
                            'root/foo/baz'])
@@ -316,7 +324,7 @@ class TreeCacheTest(SecurityRequestTest):
         # Reorder children
         cmf.root.foo.move_object_down('bar')
         cache.notify_tree('sys_order_object', cmf.root.foo, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/baz', 'root/foo/bar',
                            'root/foo/bar/b'])
@@ -332,7 +340,7 @@ class TreeCacheTest(SecurityRequestTest):
         cmf.root.foo._setObject('bar', prebar)
         bar = cmf.root.foo.bar
         cache.notify_tree('sys_add_cmf_object', bar, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
         self.assertEquals([d['allowed_roles_and_users'] for d in l],
@@ -344,7 +352,7 @@ class TreeCacheTest(SecurityRequestTest):
         bar._View_Permission = ('SomeRole',)
         bar.__ac_local_roles__ = {'bob': ['SomeRole']}
         cache.notify_tree('sys_modify_security', bar, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['allowed_roles_and_users'] for d in l],
                           [['Manager'], ['SomeRole', 'user:bob']])
         self.assertEquals([d['local_roles'] for d in l],
@@ -360,7 +368,7 @@ class TreeCacheTest(SecurityRequestTest):
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
         self.assertEquals([d['title'] for d in l],
@@ -370,7 +378,7 @@ class TreeCacheTest(SecurityRequestTest):
         cmf.root.foo._delObject('bar')
         cmf.root.foo._setObject('bar', DummyObject('bar', title='NewBar'))
         cache.notify_tree('modify_object', cmf.root.foo.bar, {})
-        l = cache.getList(filter=0)
+        l = cache.getList(filter=False)
         self.assertEquals([d['title'] for d in l],
                           ['Foo', 'NewBar'])
         self.assertEquals(l[1], {
@@ -379,13 +387,196 @@ class TreeCacheTest(SecurityRequestTest):
             'id': 'bar',
             'local_roles': {'user:Anonymous User': ('Owner',)},
             'nb_children': 0,
-            'path': '/cmf/root/foo/bar',
             'portal_type': 'ThePortalType',
             'rpath': 'root/foo/bar',
             'title': 'NewBar',
-            'url': 'cmf/root/foo/bar',
-            'visible': 0,
+            'visible': False,
             })
+
+    def makeDeepStructure(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        cache = cmf.cache
+
+        # Build structure
+        foo = cmf.root.foo
+        # Visible at root
+        foo._View_Permission = ('Anonymous',)
+        # Rest
+        foo._setObject('baz', DummyObject('baz', title='Baz'))
+        foo._setObject('bar', DummyObject('bar', title='Bar'))
+        foo.bar._setObject('b', DummyObject('b', title='B'))
+        foo.bar.b._setObject('z', DummyObject('z', title='Z'))
+        foo.bar.b._setObject('d', DummyObject('d', title='D'))
+        foo.bar.b.d._setObject('d2', DummyObject('d2', title='D2'))
+        foo.bar.b.d._setObject('d1', DummyObject('d1', title='D1'))
+        # Change security in the middle
+        d = foo.bar.b.d
+        d._View_Permission = ('SomeRole',)
+        d.__ac_local_roles__ = {'bob': ['SomeRole']}
+        # Add them
+        for ob in (foo,
+                   foo.bar,
+                   foo.baz,
+                   foo.bar.b,
+                   foo.bar.b.z,
+                   foo.bar.b.d,
+                   foo.bar.b.d.d2,
+                   foo.bar.b.d.d1,
+                   ):
+            cache.notify_tree('sys_add_cmf_object', ob, {})
+
+        return cache
+
+    def test_deep_no_filtering(self):
+        # Without visibility filtering
+        cache = self.makeDeepStructure()
+
+        # without children
+        l = cache.getList(filter=False, order=False, count_children=False)
+        self.assertEquals([(d['rpath'], d['visible']) for d in l],
+                          [('root/foo',            True),
+                           ('root/foo/bar',        True),
+                           ('root/foo/bar/b',      True),
+                           ('root/foo/bar/b/d',    False),
+                           ('root/foo/bar/b/d/d1', False),
+                           ('root/foo/bar/b/d/d2', False),
+                           ('root/foo/bar/b/z',    True),
+                           ('root/foo/baz',        True),
+                           ])
+        l = cache.getList(filter=False, order=True, count_children=False)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo',
+                           'root/foo/baz',
+                           'root/foo/bar',
+                           'root/foo/bar/b',
+                           'root/foo/bar/b/z',
+                           'root/foo/bar/b/d',
+                           'root/foo/bar/b/d/d2',
+                           'root/foo/bar/b/d/d1',
+                           ])
+
+        # with children
+        l = cache.getList(filter=False, order=False, count_children=True)
+        self.assertEquals([(d['rpath'], d['nb_children']) for d in l],
+                          [('root/foo',            2),
+                           ('root/foo/bar',        1),
+                           ('root/foo/bar/b',      2),
+                           ('root/foo/bar/b/d',    2),
+                           ('root/foo/bar/b/d/d1', 0),
+                           ('root/foo/bar/b/d/d2', 0),
+                           ('root/foo/bar/b/z',    0),
+                           ('root/foo/baz',        0),
+                           ])
+        l = cache.getList(filter=False, order=True, count_children=True)
+        self.assertEquals([(d['rpath'], d['nb_children']) for d in l],
+                          [('root/foo',            2),
+                           ('root/foo/baz',        0),
+                           ('root/foo/bar',        1),
+                           ('root/foo/bar/b',      2),
+                           ('root/foo/bar/b/z',    0),
+                           ('root/foo/bar/b/d',    2),
+                           ('root/foo/bar/b/d/d2', 0),
+                           ('root/foo/bar/b/d/d1', 0),
+                           ])
+
+        # depth and prefix filtering
+        l = cache.getList(filter=False, order=False, count_children=False,
+                          prefix='root/foo/bar/b')
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo/bar/b',
+                           'root/foo/bar/b/d',
+                           'root/foo/bar/b/d/d1',
+                           'root/foo/bar/b/d/d2',
+                           'root/foo/bar/b/z',
+                           ])
+        l = cache.getList(filter=False, order=False, count_children=False,
+                          start_depth=2)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo/bar/b',
+                           'root/foo/bar/b/d',
+                           'root/foo/bar/b/d/d1',
+                           'root/foo/bar/b/d/d2',
+                           'root/foo/bar/b/z',
+                           ])
+        l = cache.getList(filter=False, order=False, count_children=False,
+                          start_depth=2, stop_depth=3)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo/bar/b',
+                           'root/foo/bar/b/d',
+                           'root/foo/bar/b/z',
+                           ])
+        l = cache.getList(filter=False, order=False, count_children=True,
+                          start_depth=1, stop_depth=2)
+        self.assertEquals([(d['rpath'], d['nb_children']) for d in l],
+                          [('root/foo/bar',   1),
+                           ('root/foo/bar/b', 0),
+                           ('root/foo/baz',   0),
+                           ])
+
+
+    def test_deep_with_filtering(self):
+        # With visibility filtering, not visible starting from d
+        cache = self.makeDeepStructure()
+
+        # without children
+        l = cache.getList(filter=True, order=False, count_children=False)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo',
+                           'root/foo/bar',
+                           'root/foo/bar/b',
+                           'root/foo/bar/b/z',
+                           'root/foo/baz',
+                           ])
+        l = cache.getList(filter=True, order=True, count_children=False)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo',
+                           'root/foo/baz',
+                           'root/foo/bar',
+                           'root/foo/bar/b',
+                           'root/foo/bar/b/z',
+                           ])
+
+        # with children
+        l = cache.getList(filter=True, order=False, count_children=True)
+        self.assertEquals([(d['rpath'], d['nb_children']) for d in l],
+                          [('root/foo',            2),
+                           ('root/foo/bar',        1),
+                           ('root/foo/bar/b',      1),
+                           ('root/foo/bar/b/z',    0),
+                           ('root/foo/baz',        0),
+                           ])
+        l = cache.getList(filter=True, order=True, count_children=True)
+        self.assertEquals([(d['rpath'], d['nb_children']) for d in l],
+                          [('root/foo',            2),
+                           ('root/foo/baz',        0),
+                           ('root/foo/bar',        1),
+                           ('root/foo/bar/b',      1),
+                           ('root/foo/bar/b/z',    0),
+                           ])
+
+        # depth and prefix filtering
+        l = cache.getList(filter=True, order=False, count_children=True,
+                          prefix='root/foo/bar/b')
+        self.assertEquals([(d['rpath'], d['nb_children']) for d in l],
+                          [('root/foo/bar/b',   1),
+                           ('root/foo/bar/b/z', 0),
+                           ])
+        l = cache.getList(filter=True, order=False, count_children=True,
+                          start_depth=2)
+        self.assertEquals([(d['rpath'], d['nb_children']) for d in l],
+                          [('root/foo/bar/b',   1),
+                           ('root/foo/bar/b/z', 0),
+                           ])
+        l = cache.getList(filter=True, order=False, count_children=True,
+                          start_depth=1, stop_depth=2)
+        self.assertEquals([(d['rpath'], d['nb_children']) for d in l],
+                          [('root/foo/bar',   1),
+                           ('root/foo/bar/b', 0),
+                           ('root/foo/baz',   0),
+                           ])
+
+
 
 
 def test_suite():
