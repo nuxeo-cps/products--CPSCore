@@ -20,7 +20,7 @@
 
 from zLOG import LOG, INFO
 
-from Products.CMFCore import utils
+from Products.CMFCore import utils as cmfutils
 from Products.CMFCore.CMFCorePermissions import AddPortalContent, ManagePortal
 
 # Don't remove.
@@ -74,7 +74,7 @@ fti = (ProxyBase.factory_type_information +
        ())
 
 def initialize(registrar):
-    utils.ToolInit(
+    cmfutils.ToolInit(
         'CPS Tools',
         tools = tools,
         product_name = 'CPSCore',
@@ -112,11 +112,11 @@ def initialize(registrar):
         permission=ManagePortal,
         constructors=(TreesTool.TreesTool.manage_addCPSTreeCache,)
     )
-    utils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.gif', globals())
+    cmfutils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.gif', globals())
 
     
     # CPS Content and Folder objects
-    utils.ContentInit(
+    cmfutils.ContentInit(
         'CPS Default Documents',
         content_types = contentClasses,
         permission = AddPortalContent,

@@ -70,8 +70,6 @@ class DummyTypesTool(SimpleItem):
             return DummyTypeInfo('Dummy Content')
         return None
 
-
-
 class WorkflowToolTests(SecurityRequestTest):
     """Test CPS Workflow Tool."""
 
