@@ -220,11 +220,12 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """
         # TODO Translation Service should be used instead
         Localizer = getToolByName(self, 'Localizer', None)
-        if lang is None and Localizer is not None:
-            # Find the user-preferred language.
-            lang = Localizer.get_selected_language()
-        else:
-            lang = 'en'
+        if lang is None:
+            if Localizer is not None:
+                # Find the user-preferred language.
+                lang = Localizer.get_selected_language()
+            else:
+                lang = 'en'
         if self.isUsePortalDefaultLang() and Localizer is not None:
             # Find the portal-preferred language.
             default_lang = Localizer.get_default_language()
