@@ -648,8 +648,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         docid = proxy.getDocid()
         language_revs = proxy.getLanguageRevisions()
 
-        self._rpath_to_infos[rpath] = (docid, language_revs)
-
         rpaths = self._docid_to_rpaths.get(docid, ())
         if rpath not in rpaths:
             rpaths = rpaths + (rpath,)
@@ -659,6 +657,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 'Index _docid_to_rpaths for %s already has rpath=%s: %s'
                 % (docid, rpath, rpaths))
             raise ValueError, rpath
+
+        self._rpath_to_infos[rpath] = (docid, language_revs)
 
         revs = {}
         for lang, rev in language_revs.items():
