@@ -145,6 +145,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             version_infos[lang] = version_info
             self._hubid_to_info[hubid] = (repoid, version_infos)
             # XXX should store it in the object too ?
+            # XXX should send event
         return repotool.getObjectVersion(repoid, version_info), lang, version_info
 
     security.declarePrivate('getMatchingProxies')
