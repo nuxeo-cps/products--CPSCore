@@ -112,7 +112,7 @@ class CPSWorkflowTool(WorkflowTool):
         for wf_id, transitions in possible_transitions.items():
             transition = creation_transitions.get(wf_id)
             if transition is None:
-                # use first default
+                # use first default # XXX parametrize default ?
                 if not transitions:
                     raise WorkflowException(
                         "Workflow %s does not allow creation" % (wf_id,))
