@@ -13,3 +13,4 @@ New internal features:
 - Cleanups in section_content_wf.
 - In WebDAV PUT, try to use the edit() method if the document recognizes
   _has_generic_edit_method.
+- CPSBase : _checkId from PortalFolder redefined for being able to defined .cps_xxx at the root of the portal too. (actually .whatever stuffs).
