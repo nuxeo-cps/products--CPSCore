@@ -275,7 +275,8 @@ class CPSMembershipTool(MembershipTool):
         user_id = user.getId()
         if not member_id:
             member_id = user_id
-        if hasattr(aq_base(members), member_id):
+        member_area_id = self.computeId(member_id)
+        if hasattr(aq_base(members), member_area_id):
             return None
         if member_id == user_id:
             member = user
@@ -299,7 +300,6 @@ class CPSMembershipTool(MembershipTool):
         newSecurityManager(None, tmp_user)
 
         # Create member area.
-        member_area_id = self.computeId(member_id)
         members.invokeFactory(self.memberfolder_portal_type, member_area_id)
         member_area = members._getOb(member_area_id)
         # TODO set workspace properties ? title ..
