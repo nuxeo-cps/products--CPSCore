@@ -1,6 +1,7 @@
 Requires:
 ~~~~~~~~~
 - TranslationService > 0.7.0
+- CPSCompat >= 0.1.0
 New features:
 ~~~~~~~~~~~~~
 - Added (optional) l10n support to TreesTool getList() method
@@ -18,3 +19,4 @@ New internal features:
 - Moved CPSCore.utils.manageCPSLanguage into CPSDefault.utils
 - Factorized code from CPSCore.utils to the method CPSUtil.id.generateId.
 - Don't index repository objects anymore
+- Use CPSCompat for Zope/CMF forward-compatibility monkey-patching.

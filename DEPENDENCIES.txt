@@ -15,3 +15,4 @@ CMFCalendar
 # CPS ---------------------
 CPSUtil >= 0.5.0
 CPSWorkflow
+CPSCompat >= 0.1.0

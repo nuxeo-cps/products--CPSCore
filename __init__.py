@@ -20,6 +20,8 @@
 
 from zLOG import LOG, DEBUG, TRACE
 
+import Products.CPSCompat
+
 #
 # Monkey patching starts here
 #

@@ -30,27 +30,3 @@ LOG('PatchCMFDefault.DefaultDublinCoreImpl', INFO,
 
 DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
 
-
-#############################################################
-# This patch submitted by efge fixes CMFDefault bug
-# http://www.zope.org/Collectors/CMF/300
-#
-LOG('PatchCMFDefault.DefaultDublinCoreImpl', INFO,
-    'CPSCore Patching Creator CMFDefault bug #300')
-
-def cmf_Creator(self):
-    """Dublin Core element - resource creator
-
-    using efge patch to prevent http://www.zope.org/Collectors/CMF/300/
-    """
-    # XXX: fixme using 'portal_membership' -- should iterate over
-    #       *all* owners
-    owner_tuple = self.getOwnerTuple()
-    if owner_tuple[0] is None:
-        return 'No owner'
-    return owner_tuple[1]
-DefaultDublinCoreImpl.Creator = cmf_Creator
-
-LOG('PatchCMFDefault.DefaultDublinCoreImpl', DEBUG, 'Patched')
-
-
