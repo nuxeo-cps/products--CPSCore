@@ -80,7 +80,7 @@ def move_object_to_bottom(self, id):
 
 def manage_renameObject(self, id, new_id, REQUEST=None):
     """Rename a particular sub-object"""
-    # Since OFS.CopySupport.CopyContainer::manage_renameObject uses
+    #Since OFS.CopySupport.CopyContainer::manage_renameObject uses
     #_setObject manually, we have to take care of the order after it is done.
     oldpos = self.get_object_position(id)
     res = self._old_ordfold_manage_renameObject(id, new_id, REQUEST)
@@ -91,7 +91,7 @@ def _setObject(self, id, object, roles=None, user=None, set_owner=1, \
                position=None):
     res = self._old_ordfold_setObject(id, object, roles, user, set_owner)
     if position is not None:
-        self.move_object_to_position(id, position)
+         self.move_object_to_position(id, position)
     # otherwise it was inserted at the end
     return res
 
@@ -112,9 +112,14 @@ ObjectManager.move_object_down__roles__ = PermissionRole(ChangeSubobjectsOrder)
 ObjectManager.move_object_to_top__roles__ = PermissionRole(ChangeSubobjectsOrder)
 ObjectManager.move_object_to_bottom__roles__ = PermissionRole(ChangeSubobjectsOrder)
 
-ObjectManager._old_ordfold_manage_renameObject = ObjectManager.inheritedAttribute('manage_renameObject')
-ObjectManager.manage_renameObject = manage_renameObject
+# Otherweise when it's refreshed the _setObject is calling itself recursively
+# Zope.2.7.x
+if not hasattr(ObjectManager, '_old_ordfold_setObject'):
+     ObjectManager._old_ordfold_setObject = ObjectManager._setObject
+if not hasattr(ObjectManager, '_old_ordfold_manage_renameObject'):
+     ObjectManager._old_ordfold_manage_renameObject = ObjectManager.inheritedAttribute(
+          'manage_renameObject')
 
-ObjectManager._old_ordfold_setObject = ObjectManager._setObject
+ObjectManager.manage_renameObject = manage_renameObject
 ObjectManager._setObject = _setObject
 
