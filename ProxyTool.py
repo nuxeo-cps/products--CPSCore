@@ -70,7 +70,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     _properties = SimpleItemWithProperties._properties + (
         {'id': 'use_portal_default_lang', 'type': 'boolean', 'mode': 'w',
-         'label': "Use Localizer default prior to proxies default "\
+         'label': "Use translation_service default prior to proxies default "\
                   "when current lang not found"},)
 
     security = ClassSecurityInfo()
@@ -227,7 +227,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         Returns lang, rev. A priority is made for the language :
           - Use the 'lang' parameter (can be 'default')
           - Use a REQUEST or SESSION override set on that proxy
-          - Use the Localizer selected language
+          - Use the translation_service selected language
           - Use the portal default language
           - Use the proxy default language
           - Use the first language found in tricky situations (fallback).
@@ -247,7 +247,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             lang = proxy.getDefaultLanguage()
         last_check = 'NOCHOICE'
         for check in ('ANYCHOICE?',
-                      'REQUEST', 'LOCALIZER', 'PROXY', 'DEFAULT'):
+                      'REQUEST', 'TRANSLATION_SERVICE', 'PROXY', 'DEFAULT'):
             if lang in languages:
                 break # found a language, exit loop
 
@@ -270,15 +270,16 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                         utool = getToolByName(self, 'portal_url')
                         rpath = utool.getRelativeUrl(proxy)
                         lang = switcher.get(rpath)
-            elif check == 'LOCALIZER': # TODO use translation service
-                Localizer = getToolByName(self, 'Localizer', None)
-                if Localizer is not None:
+            elif check == 'TRANSLATION_SERVICE':
+                translation_service = getToolByName(
+                    self, 'translation_service', None)
+                if translation_service is not None:
                     # 2.1/ try user-preferred language
-                    lang = Localizer.get_selected_language()
+                    lang = translation_service.getSelectedLanguage()
                     if lang not in languages:
                         # 2.2/ try portal-preferred language
                         if self.isUsePortalDefaultLang():
-                            lang = Localizer.get_default_language()
+                            lang = translation_service.getDefaultLanguage()
             elif check == 'PROXY':
                 # 3/ try default proxy lang
                 lang = proxy.getDefaultLanguage()
