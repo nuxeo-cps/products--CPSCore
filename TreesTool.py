@@ -420,7 +420,7 @@ class TreeCache(SimpleItemWithProperties):
             user = mtool.getAuthenticatedMember().getUser()
             allowed_roles_users = _getAllowedRolesAndUsers(user)
         except TypeError: # XXXXX?? getUser() takes exactly 2 arguments (1 given)
-            allowed_roles_users = ['Anonymous']
+            allowed_roles_users = ['Anonymous', 'group:role:Anonymous']
         res = []
         for info in self._flat:
             # check filter
