@@ -322,7 +322,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             dest_container = kwargs.get('dest_container')
             if dest_container is None:
                 raise WorkflowException("Missing dest_container for publishing"
-                                        " transition=%s" % tdef.getId())
+                                        " transition=%s for ob=%s" %
+                                        (tdef.getId(), ob))
             dest_container = self._objectMaybeFromRpath(dest_container)
             # Put it back so that it's useable from variables.
             kwargs['dest_container'] = utool.getRelativeUrl(dest_container)

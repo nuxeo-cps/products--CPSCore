@@ -96,7 +96,7 @@ def initialize(registrar):
         'CPS Tools',
         tools=tools,
         product_name='CPSCore',
-        icon='tool.gif',
+        icon='tool.png',
     ).initialize(registrar)
 
     # Event Service
@@ -121,7 +121,7 @@ def initialize(registrar):
         permission=ManagePortal,
         constructors=(TreesTool.TreesTool.manage_addCPSTreeCache,)
     )
-    cmfutils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.gif', globals())
+    cmfutils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.png', globals())
     
     # CPS Content and Folder objects
     cmfutils.ContentInit(
