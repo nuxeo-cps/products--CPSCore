@@ -196,7 +196,7 @@ class CPSWorkflowTool(WorkflowTool):
         for 'create' found.
 
         The object created will be a proxy to a real object if the type
-        type_name has an action of id 'isproxytype' and of action
+        type_name has an property of id 'cps_proxytype' and of value
         'folder', 'document' or 'folderishdocument'.
         """
         container = self._container_maybe_rpath(container)
@@ -318,8 +318,8 @@ class CPSWorkflowTool(WorkflowTool):
         for ti in ttool.listTypeInfo():
             if ti.getId() != type_name:
                 continue
-            proxy_type = ti.getActionById('isproxytype', None)
-            if proxy_type is not None:
+            if hasattr(ti, 'cps_proxytype'):
+                proxy_type = ti.cps_proxytype
                 break
 
         if initial_behavior == TRANSITION_INITIAL_PUBLISHING:

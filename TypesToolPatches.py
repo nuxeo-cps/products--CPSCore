@@ -38,16 +38,9 @@ if 'cps_is_searchable' not in ftiprops_ids:
         )
     FTI.cps_is_searchable = 0
 
-if 'cps_is_proxytype' not in ftiprops_ids:
+if 'cps_proxytype' not in ftiprops_ids:
     FTI._properties = FTI._properties + (
-        {'id':'cps_is_proxytype', 'type': 'boolean', 'mode':'w',
+        {'id':'cps_proxytype', 'type': 'string', 'mode':'w',
          'label':'CPS Proxytype'},
         )
-    FTI.cps_is_proxytype = 0
-
-##if 'cps_is_document' not in ftiprops_ids:
-##    FTI._properties = FTI._properties + (
-##        {'id':'cps_is_document', 'type': 'boolean', 'mode':'w',
-##         'label':'CPS Document'},
-##        )
-##    FTI.cps_is_document = 0
+    FTI.cps_proxytype = ''
