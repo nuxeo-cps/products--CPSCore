@@ -141,11 +141,16 @@ class ObjectRepositoryTool(UniqueObject,
         # Return a revision one more than the last used.
 
         maxrev = 0
-        for id in self.keyRange(docid+'__0001', docid+'__9999'):
-            did, rev = self._splitId(id)
-            if did == docid and rev > maxrev:
-                maxrev = rev
-        return maxrev + 1
+
+        existingRevs = self.keyRange(docid+'__0001', docid+'__9999')
+        if len(existingRevs):
+            # this new way of getting the highest revision
+            # relies on the fact that keyRange returns a
+            # lexicographically sorted sequence of ids
+            did, rev = self._splitId(existingRevs[-1])
+            return rev + 1
+        else:
+            return 1
 
     security.declarePrivate('createRevision')
     def createRevision(self, docid_, type_name_, *args, **kw):
