@@ -11,4 +11,4 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- optimizing search by adding a prefix for proxy in getProxiesFromObjectId
