@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.18.0 [R1 build 2004/10/21-15:43 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Local role blocking works for 'group:role:Anonymous': '-'.
+Bug fixes:
+~~~~~~~~~~
+- Fixed local group roles deletion by MembershipTool.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Refactored utils and moved stuff to PatchCatalogTool.py.
+
+*******************************************
 ** CPSCore V3.17.0 [R1 build 2004/10/13-08:14 by ben]
 
 Requires:
