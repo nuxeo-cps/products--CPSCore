@@ -162,8 +162,25 @@ class CPSMembershipTool(MembershipTool):
             # thus PortalContent and PortalFolder.
             obj.reindexObjectSecurity()
 
+    security.declarePrivate('_deleteLocalRoles')
+    def _deleteLocalRoles(self, obj, member_ids, member_role=''):
+        """Delete local roles or member_role  on obj for member_ids
+        """
+        if not member_role:
+            obj.manage_delLocalRoles(userids=member_ids)
+        else:
+            for member_id in member_ids:
+                current_roles = list(obj.get_local_roles_for_userid(
+                    userid=member_id))
+                new_roles = [role for role in current_roles
+                             if role != member_role]
+                obj.manage_delLocalRoles(userids=[member_id])
+                if new_roles:
+                    obj.manage_setLocalRoles(member_id, new_roles)
+
     security.declareProtected(View, 'deleteLocalRoles')
-    def deleteLocalRoles(self, obj, member_ids, reindex=1, recursive=0):
+    def deleteLocalRoles(self, obj, member_ids, reindex=1, recursive=0,
+                         member_role=''):
         """ Delete local roles for members member_ids """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
@@ -172,8 +189,9 @@ class CPSMembershipTool(MembershipTool):
             if r in my_roles:
                 has_proper_role = 1
                 break
+
         if has_proper_role or 'Manager' in my_roles or 'Owner' in my_roles:
-            obj.manage_delLocalRoles(userids=member_ids)
+            self._deleteLocalRoles(obj, member_ids, member_role)
 
         if recursive:
             path = '/'.join(obj.getPhysicalPath())
@@ -183,8 +201,7 @@ class CPSMembershipTool(MembershipTool):
                                      localUsersWithRoles=user_ids)
             for brain in results:
                 ob = brain.getObject()
-                ob.manage_delLocalRoles(userids=member_ids)
-
+                self._deleteLocalRoles(ob, member_ids, member_role)
         if reindex:
             obj.reindexObjectSecurity()
 
@@ -219,7 +236,14 @@ class CPSMembershipTool(MembershipTool):
                 has_proper_role = 1
                 break
         if has_proper_role or 'Manager' in my_roles or role in my_roles:
-            obj.manage_delLocalGroupRoles(ids)
+            for group_id in ids:
+                current_roles = list(obj.get_local_roles_for_groupid(
+                    groupid=group_id))
+                new_roles = [r for r in current_roles
+                             if r != role]
+                obj.manage_delLocalGroupRoles(groupids=[group_id])
+                if new_roles:
+                    obj.manage_setLocalGroupRoles(group_id, new_roles)
         else:
             # Only remove the roles we have.
             for id in ids:
