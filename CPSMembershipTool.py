@@ -47,6 +47,11 @@ from Products.CMFCore.MemberDataTool import MemberDataTool
 
 from Products.CPSCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
 
+from DateTime.DateTime import DateTime
+from string import maketrans
+from random import randrange
+import re
+
 from zLOG import LOG, DEBUG, ERROR
 
 
@@ -294,24 +299,25 @@ class CPSMembershipTool(MembershipTool):
         newSecurityManager(None, tmp_user)
 
         # Create member area.
-        members.invokeFactory(self.memberfolder_portal_type, member_id)
-        f = members._getOb(member_id)
+        member_area_id = self.computeId(member_id)
+        members.invokeFactory(self.memberfolder_portal_type, member_area_id)
+        member_area = members._getOb(member_area_id)
         # TODO set workspace properties ? title ..
-        f.changeOwnership(member)
-        f.manage_setLocalRoles(member_id, list(self.memberfolder_roles))
-        f.reindexObjectSecurity()
+        member_area.changeOwnership(member)
+        member_area.manage_setLocalRoles(member_id, list(self.memberfolder_roles))
+        member_area.reindexObjectSecurity()
 
         # Rebuild the tree with corrected local roles.
         # This needs a user that can View the object.
         portal_eventservice = getToolByName(self, 'portal_eventservice')
-        portal_eventservice.notify('sys_modify_security', f, {})
+        portal_eventservice.notify('sys_modify_security', member_area, {})
 
-        self._createMemberContentAsManager(member, member_id, f)
+        self._createMemberContentAsManager(member, member_id, member_area)
 
         # Revert to original user.
         newSecurityManager(None, user)
 
-        self._createMemberContent(member, member_id, f)
+        self._createMemberContent(member, member_id, member_area)
 
     security.declarePublic('createMemberarea')
     createMemberarea = createMemberArea
@@ -351,7 +357,8 @@ class CPSMembershipTool(MembershipTool):
         members = self.getMembersFolder()
         if members:
             try:
-                folder = members._getOb(id)
+                member_area_id = self.computeId(id)
+                folder = members._getOb(member_area_id)
                 if verifyPermission and not _checkPermission('View', folder):
                     # Don't return the folder if the user can't get to it.
                     return None
@@ -359,6 +366,34 @@ class CPSMembershipTool(MembershipTool):
             except AttributeError:
                 pass
         return None
+
+    security.declarePublic('computeId')
+    def computeId(self, id, max_chars_for_id=20):
+        newid = id[:max_chars_for_id]
+
+        # Normalize
+        newid = newid.replace(' ', '_')
+        newid = newid.replace('Æ', 'AE')
+        newid = newid.replace('æ', 'ae')
+        tr = maketrans('ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜİàáâãäåçèéêëìíîïñòóôõöøùúûüıÿ@',
+                       'AAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy_')
+        newid = newid.translate(tr)
+        ok = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_.'
+        newid = ''.join([c for c in newid if c in ok])
+        while newid.startswith('_') or newid.startswith('.'):
+            newid = newid[1:]
+
+        while newid.endswith('_'):
+            newid = newid[:-1]
+
+        newid = newid.lower()
+
+        if not newid:
+            # Fallback if empty or incorrect
+            newid = str(int(DateTime())) + str(randrange(1000, 10000))
+            return newid
+
+        return newid
 
     security.declarePrivate('listActions')
     def listActions(self, info=None):
