@@ -1,4 +1,36 @@
 *******************************************
+** CPSCore V3.5.0 [R1 build 2004/02/07-23:19 by fermigier]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+- You need to remove the OrderedFolderSupportPatch Product as its
+  functionnality is now done inside CPSCore.
+New features:
+~~~~~~~~~~~~~
+- getContent now has an optional rev parameter to access another
+  revision than the default.
+- Archived revisions are viewable by anyone that has permission
+  "View archived revisions" on a proxy.
+Bug fixes:
+~~~~~~~~~~
+- Security synthesis could give too much permissions to some revisions
+  in complex multilingual settings.
+- Correctly deal with user folder's special features (groups) when computing
+  access rights in portal_trees.
+- Fixed CMF bug by not swallowing ConflictError in wrapUser.
+- Correctly index the security of a user's home folder at creation.
+- Tightened security of the repository.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Move files related to permissions around.
+- Cleanup the API for role-related utility functions in utils.
+- Removed unused variable.
+- CPSCore now implements OrderedFolderSupportPatch by itself.
+- Added addLanguageToProxy and delLanguageFromProxy method to proxies to
+  be able to add/remove languages to existing proxies.
+
+
+*******************************************
 ** CPSCore V3.4.0 [R1 build 2004-01/06-15:12 by anguenot]
 
 ZODB Requires:
