@@ -164,7 +164,7 @@ class CPSMembershipTool(MembershipTool):
         if 'Manager' in my_roles or \
            'WorkspaceManager' in my_roles or \
            'SectionManager' in my_roles or \
-           role in my_roles:
+           role in my_roles:  # FIXME: role is not defined
             obj.manage_delLocalGroupRoles(ids)
         else:
             # Only remove the roles we have.
