@@ -347,7 +347,7 @@ class EventServiceTool(UniqueObject, Folder):
         hubid = self._rlocation_to_hubid.get(rlocation)
         if hubid is None:
             LOG('EventServiceTool', ERROR,
-                'Hub: attempted to unregister location %s' % location)
+                'Hub: attempted to unregister location %s' % rlocation)
             return None
         del self._rlocation_to_hubid[rlocation]
         del self._hubid_to_rlocation[hubid]

@@ -48,6 +48,7 @@ def manage_afterClone(self, *args, **kw):
 
 from OFS.ObjectManager import ObjectManager
 from OFS.SimpleItem import Item
+from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 def patch_action(class_, func):
     action = func.__name__
@@ -64,8 +65,11 @@ def patch_action(class_, func):
 
 patch_action(ObjectManager, manage_afterAdd)
 patch_action(Item, manage_afterAdd)
+patch_action(CMFCatalogAware, manage_afterAdd)
 patch_action(ObjectManager, manage_beforeDelete)
 patch_action(Item, manage_beforeDelete)
+patch_action(CMFCatalogAware, manage_beforeDelete)
 patch_action(ObjectManager, manage_afterClone)
 patch_action(Item, manage_afterClone)
+patch_action(CMFCatalogAware, manage_afterClone)
 
