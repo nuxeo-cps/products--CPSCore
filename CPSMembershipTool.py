@@ -100,8 +100,7 @@ class CPSMembershipTool(MembershipTool):
     # and thus makes it possible to easily monkry-patch it. Would nethertheless
     # be more elegant to provide an API for changing roles that can manage
     # local roles (with proper permissions on methods of this API)
-    roles_managing_local_roles = ['WorkspaceManager', 'SectionManager',
-                                  'Manager']
+    roles_managing_local_roles = ['WorkspaceManager', 'SectionManager']
 
     security = ClassSecurityInfo()
 
@@ -126,7 +125,7 @@ class CPSMembershipTool(MembershipTool):
             if r in roles:
                 has_proper_role = 1
                 break
-        if has_proper_role:
+        if has_proper_role or 'Manager' in roles:
             return self.getPortalRoles()
         else:
             member_roles = [role for role in roles
@@ -144,7 +143,7 @@ class CPSMembershipTool(MembershipTool):
             if r in my_roles:
                 has_proper_role = 1
                 break
-        if has_proper_role or member_role in my_roles:
+        if has_proper_role or 'Manager' in my_roles or member_role in my_roles:
             for member_id in member_ids:
                 roles = list(obj.get_local_roles_for_userid(userid=member_id))
                 if member_role not in roles:
@@ -167,7 +166,7 @@ class CPSMembershipTool(MembershipTool):
             if r in my_roles:
                 has_proper_role = 1
                 break
-        if has_proper_role or 'Owner' in my_roles:
+        if has_proper_role or 'Manager' in my_roles or 'Owner' in my_roles:
             obj.manage_delLocalRoles(userids=member_ids)
         if reindex:
             obj.reindexObjectSecurity()
@@ -182,7 +181,7 @@ class CPSMembershipTool(MembershipTool):
             if r in my_roles:
                 has_proper_role = 1
                 break
-        if has_proper_role or role in my_roles:
+        if has_proper_role or 'Manager' in my_roles or role in my_roles:
             for id in ids:
                 roles = list(obj.get_local_roles_for_groupid(id))
                 if role not in roles:
@@ -201,7 +200,7 @@ class CPSMembershipTool(MembershipTool):
             if r in my_roles:
                 has_proper_role = 1
                 break
-        if has_proper_role or role in my_roles:
+        if has_proper_role or 'Manager' in my_roles or role in my_roles:
             obj.manage_delLocalGroupRoles(ids)
         else:
             # Only remove the roles we have.
