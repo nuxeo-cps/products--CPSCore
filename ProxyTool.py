@@ -172,6 +172,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         Also used for proxy merge.
         """
+        if proxy.getDocid() != dest_proxy.getDocid():
+            raise ValueError('Proxies have different docids.')
         for lang, rev in proxy._getLanguageRevisions().items():
             dest_proxy.setLanguageRevision(lang, rev)
         dest_proxy.proxyChanged()
