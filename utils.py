@@ -160,16 +160,7 @@ def _getAllowedRolesAndUsers(user):
 # XXX should be calling getAllowedRolesAndUsersOfUser
 # XXX should be renamed to avoid confusion
 def _listAllowedRolesAndUsers(self, user):
-    #LOG('CPSCore utils', DEBUG, '_listAllowedRolesAndUsers()')
-    aclu = self.acl_users
-    if hasattr(aclu, '_getAllowedRolesAndUsers'):
-        return aclu._getAllowedRolesAndUsers(user)
-    return CatalogTool.old_listAllowedRolesAndUsers(self, user)
-
-if not hasattr(CatalogTool, 'old_listAllowedRolesAndUsers'):
-    CatalogTool.old_listAllowedRolesAndUsers = \
-        CatalogTool._listAllowedRolesAndUsers
-
+    return _getAllowedRolesAndUsers(user)
 CatalogTool._listAllowedRolesAndUsers = _listAllowedRolesAndUsers
 
 # Local role monkey patching ends here
