@@ -22,7 +22,7 @@ from ExtensionClass import Base
 from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
-from Acquisition import aq_base
+from Acquisition import aq_base, aq_parent, aq_inner
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import View
@@ -236,6 +236,19 @@ class ProxyBase(Base):
             return ''
 
     #
+    # Helper for proxy folderish documents
+    #
+
+    security.declareProtected(View, 'isOutsideProxyFolderishDocument')
+    def isOutsideProxyFolderishDocument(self):
+        """Returns true if outside any proxy folderish document."""
+        container = aq_parent(aq_inner(self))
+        if hasattr(container, 'thisProxyFolderishDocument'):
+            return 0
+        else:
+            return 1
+
+    #
     # ZMI
     #
 
@@ -351,12 +364,18 @@ class ProxyFolderishDocument(ProxyFolder):
 
     security.declareProtected(View, 'thisProxyFolderishDocument')
     def thisProxyFolderishDocument(self):
-        """Return this folderish document, used by acquisition."""
+        """Return this proxy folderish document.
+
+        Used by acquisition.
+        """
         return self
 
     security.declareProtected(View, 'topProxyFolderishDocument')
     def topProxyFolderishDocument(self):
-        """Return the top enclosing folderish document, used by acquisition."""
+        """Return the top enclosing proxy folderish document.
+
+        Used by acquisition.
+        """
         container = aq_parent(aq_inner(self))
         try:
             return container.topProxyFolderishDocument()
