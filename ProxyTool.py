@@ -79,9 +79,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             proxy_type_name = 'CPS Proxy Document'
         # Create the document in the repository
         repotool = getToolByName(self, 'portal_repository')
-        repoid, version_info = repotool.invokeFactory(type_name, repoid=None,
-                                                      version_info=None,
-                                                      *args, **kw)
+        repoid, version_info = repotool.invokeFactory(type_name, *args, **kw)
         version_infos = {'*': version_info}
         # Create the proxy to that document
         # The proxy is a normal CMF object except that we change its
@@ -260,6 +258,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         for lang, vi in version_infos.items():
             new_vi = repotool.copyVersion(repoid, vi)
             new_version_infos[lang] = new_vi
+        # Now update info
         self._hubid_to_info[hubid] = (repoid, new_version_infos)
 
     security.declarePrivate('setSecurity')
