@@ -9,11 +9,10 @@ Bug fixes:
 ~~~~~~~~~~
 - Now the 'homeless' attribute of a member is taken into account through a
   direct query to the members directory.
-- XXX reopen #319: Roles locally assigned not deleted with the user account
-  by the time of a better implementation.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Add a new method to IndexableObjectWrapper: localUsersWithRoles, which returns
   users having a role on the object _but_ without any merge.
-- Use this new index to delete all roles of given users when deleting their
-  account (finally closes #319 I hope).
+- deleting an account will not delete local roles assigned to this user 
+  in the datafs, for now this is too costly and not done by default,
+  a zmi management screen to prune invalid local roles is planned.
