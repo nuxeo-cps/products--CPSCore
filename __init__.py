@@ -27,95 +27,14 @@ from zLOG import LOG, INFO, DEBUG
 #
 
 from Products.CMFCore.UndoTool import UndoTool
+import utils # To quickly force the patching of localroles.
 
 _actions = []
 UndoTool._actions = _actions
 LOG("CPSCore", INFO, "Patching CMFCore UndoTool : removing undo action")
 
-## UndoToolPatch ends here
-
-# Local role (group) support patches start here
-
-from Products.CMFCore import utils
-from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
-     CatalogTool
-
-LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
-
-def mergedLocalRoles(object, withgroups=0, withpath=0):
-    LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
-    aclu = object.acl_users
-    if hasattr(aclu, 'mergedLocalRoles'):
-        return aclu.mergedLocalRoles(object, withgroups, withpath)
-    return utils.old_mergedLocalRoles(object)
-
-if not hasattr(utils, 'old_mergedLocalRoles'):
-    utils.old_mergedLocalRoles = utils._mergedLocalRoles
-utils.mergedLocalRoles = mergedLocalRoles
-utils._mergedLocalRoles = mergedLocalRoles
-
-def _allowedRolesAndUsers(ob):
-    LOG('CPSCore utils', DEBUG, '_allowedRolesAndUsers()')
-    aclu = ob.acl_users
-    if hasattr(aclu, '_allowedRolesAndUsers'):
-        return aclu._allowedRolesAndUsers(ob)
-    # The userfolder does not have CPS group support
-    allowed = {}
-    for r in rolesForPermissionOn('View', ob):
-        allowed[r] = 1
-    localroles = utils.mergedLocalRoles(ob) # groups
-    for user_or_group, roles in localroles.items():
-        for role in roles:
-            if allowed.has_key(role):
-                allowed[user_or_group] = 1
-    if allowed.has_key('Owner'):
-        del allowed['Owner']
-    return list(allowed.keys())
-
-def allowedRolesAndUsers(self):
-    """
-    Return a list of roles, users and groups with View permission.
-    Used by PortalCatalog to filter out items you're not allowed to see.
-    """
-    LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
-    ob = self._IndexableObjectWrapper__ob # Eeek, manual name mangling
-    return _allowedRolesAndUsers(ob)
-IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
-
-def _getAllowedRolesAndUsers(user):
-    """Returns a list with all roles this user has + the username"""
-    LOG('CPSCore utils', DEBUG, '_getAllowedRolesAndUsers()')
-    # The userfolder does not have CPS group support
-    result = list(user.getRoles())
-    result.append('Anonymous')
-    result.append('user:%s' % user.getUserName())
-    # deal with groups
-    getGroups = getattr(user, 'getGroups', None)
-    if getGroups is not None:
-        groups = tuple(user.getGroups()) + ('role:Anonymous',)
-        if 'Authenticated' in result:
-            groups = groups + ('role:Authenticated',)
-        for group in groups:
-            result.append('group:%s' % group)
-    # end groups
-    return result
-
-def _listAllowedRolesAndUsers(self, user):
-    LOG('CPSCore utils', DEBUG, '_listAllowedRolesAndUsers()')
-    aclu = self.acl_users
-    if hasattr(aclu, '_getAllowedRolesAndUsers'):
-        return aclu._getAllowedRolesAndUsers(user)
-    return CatalogTool.old_listAllowedRolesAndUsers(self, user)
-
-if not hasattr(CatalogTool, 'old_listAllowedRolesAndUsers'):
-    CatalogTool.old_listAllowedRolesAndUsers = CatalogTool._listAllowedRolesAndUsers
-
-CatalogTool._listAllowedRolesAndUsers = _listAllowedRolesAndUsers
-
-# Local role patching ends here
-
 #
-# Monkey patching ends here
+# UndoToolPatch  monkey patching ends here
 #
 
 from Products.CMFCore import utils as cmfutils
