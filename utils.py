@@ -183,27 +183,37 @@ _ok_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_.'
 # (./CPSDefault/skins/cps_default/computeId.py,
 # ./CPSForum/skins/forum_default/forum_create.py, ./CPSSchemas/BasicWidgets.py,
 # ./CPSWebMail/Attachment.py...)
+def makeId(string, lower=0, portal_type=None):
+    """Generate an id from a given string.
 
-def makeId(s, lower=0):
-    "Make id from string"
-    id = s.translate(_translation_table)
+    This method avoids collisions.
+    """
+    # Normalization
+    id = string.translate(_translation_table)
     id = id.replace('Æ', 'AE')
     id = id.replace('æ', 'ae')
     id = id.replace('¼', 'OE')
     id = id.replace('½', 'oe')
     id = id.replace('ß', 'ss')
     id = ''.join([c for c in id if c in _ok_chars])
-    id = re.sub('_+', '_', id)
-    while id.startswith('_') or id.startswith('.'):
-        id = id[1:]
-    while id.endswith('_'):
-        id = id[:-1]
-    if not id:
-        # Fallback if empty or incorrect
-        newid = str(int(DateTime())) + str(randrange(1000, 10000))
-        return newid
     if lower:
         id = id.lower()
+
+    # Avoiding duplication of meaningless chars
+    id = re.sub('-+', '-', id)
+    id = re.sub('_+', '_', id)
+    id = re.sub('\.+', '.', id)
+
+    # Avoiding annoying presence of meaningless chars
+    while id.startswith('-') or id.startswith('_') or id.startswith('.'):
+        id = id[1:]
+    while id.endswith('-') or id.endswith('_') or id.endswith('.'):
+        id = id[:-1]
+
+    # Fallback if empty
+    if not id:
+        newid = str(int(DateTime())) + str(randrange(1000, 10000))
+        return newid
     return id
 
 def isUserAgentMsie(request):

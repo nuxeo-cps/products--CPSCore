@@ -7,7 +7,7 @@ New features:
   - new PatchCatalogTool: IndexableObjectWrapper and catalog_object rewrite
   - refactoring ProxyTool.getBestRevision()
   - new ProxyBase intermediate objects: LanguageViewer and LanguageSwitcher
-  - new ProxyBase methodes: getL10nTitles, getL10nDescriptions
+  - new ProxyBase methods: getL10nTitles, getL10nDescriptions
   - see doc/i18n-changes-from-CPSCore-3_18_0.txt for more info
 - merging ja-stack-workflows:
  - refactoring CPSWorflow
@@ -31,3 +31,4 @@ New internal features:
 - moving constants like switchLanguage or downloadFile into utils and make
   them available from restricted code
 - DateTimeError from DateTime.DateTime available from restricted code
+- Synced utils.makeId() with CPSDefault computeId.py.
