@@ -219,7 +219,7 @@ class CPSWorkflowTool(WorkflowTool):
                                         *args, **kw)
             else:
                 # Create a normal CMF document.
-                # Note: this need the 'Add portal content' permission!
+                # Note: this needs the 'Add portal content' permission!
                 container.invokeFactoryCMF(type_name, id, *args, **kw)
                 # Note: this calls wf.notifyCreated() for all wf!
                 # XXX should get new id effectively used! CMFCore bug!
