@@ -10,3 +10,5 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Raise an error when creating a revision if the given language is already used.
+- When creating a revision, a source language can be given to copy content from
+  it.

@@ -106,24 +106,33 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
 
     security.declarePrivate('createRevision')
-    def createRevision(self, proxy_, lang_, *args, **kw):
+    def createRevision(self, proxy_, lang_, from_lang_=None, *args, **kw):
         """Create a language's revision for a proxy.
 
-        Returns the revision.
+        Returns the revision. Set from_lang_ (e.g. 'en' or 'fr', etc.) if you
+        want to copy content from another language revision.
 
         (Called by WorkflowTool.)
         """
         proxy = proxy_ # prevent name collision in **kw
         lang = lang_
+        from_lang = from_lang_
         language_revs = proxy._getLanguageRevisions()
-        LOG('ProxyTool', DEBUG, "createRevision lang=%s for %s" %
-            ('/'.join(proxy.getPhysicalPath()), lang))
+        LOG('ProxyTool', DEBUG, "createRevision lang=%s for %s from lang=%s" %
+            ('/'.join(proxy.getPhysicalPath()), lang, from_lang))
         if language_revs.has_key(lang):
             raise ValueError('Language revision %s already exists' % lang)
         repotool = getToolByName(self, 'portal_repository')
         docid = proxy.getDocid()
         type_name = proxy.getPortalTypeName()
-        ob, rev = repotool.createRevision(docid, type_name, *args, **kw)
+        if from_lang is not None:
+            if language_revs.has_key(from_lang):
+                from_rev = language_revs[from_lang]
+            else:
+                from_rev = language_revs[proxy.getDefaultLanguage()]
+            ob, rev = repotool.copyRevision(docid, from_rev)
+        else:
+            ob, rev = repotool.createRevision(docid, type_name, *args, **kw)
         if hasattr(aq_base(ob), 'setLanguage'):
             ob.setLanguage(lang)
             ob.reindexObject(idxs=['Language'])
