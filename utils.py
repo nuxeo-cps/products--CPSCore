@@ -234,6 +234,7 @@ def searchResults(self, REQUEST=None, **kw):
 CatalogTool.searchResults = searchResults
 CatalogTool.__call__ = searchResults
 
+LOG('CPSCore.utils', TRACE, 'Patching CMF Catalog IndexableObjectWrapper')
 def __cps_wrapper_getattr__(self, name):
     """This is the indexable wrapper getter for CPS,
     proxy try to get the repository document attributes,
