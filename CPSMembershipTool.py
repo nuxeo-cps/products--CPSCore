@@ -24,6 +24,9 @@
 
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
+from AccessControl.SecurityManagement import getSecurityManager
+from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl.User import UnrestrictedUser
 
 from Products.CMFCore.CMFCorePermissions import View, ManagePortal
 from Products.CMFCore.ActionsTool import ActionInformation as AI
@@ -40,6 +43,7 @@ from zLOG import LOG, DEBUG
 # XXX : to move somewhere else
 WORKSPACES = "workspaces"
 MEMBERS = "members"
+
 
 class CPSMembershipTool(MembershipTool):
     """ Replace MonkeyPatch of Membershiptool by real object use."""
@@ -191,24 +195,18 @@ class CPSMembershipTool(MembershipTool):
         if members is not None and user is not None:
             f_title = "%s's Home" % member_id
 
-            portal_eventservice = getToolByName(self, 'portal_eventservice')
-
-            # XXX : GOTTA FIX THAT IN A MORE PROPER WAY
-            # Hack to pass workflow guards
-            manage_setLocalGroupRoles(members, 'role:Anonymous',
-                                      ['WorkspaceManager'])
+            # Setup a temporary security manager so that creation is not
+            # hampered by insufficient roles.
+            old_user = getSecurityManager().getUser()
+            # Use member_id so that the Owner role is set for it
+            newSecurityManager(None, UnrestrictedUser(member_id, '',
+                                                      ['Manager', 'Member'],
+                                                      ''))
 
             members.invokeFactory('Workspace', member_id)
 
-            manage_delLocalGroupRoles(members, ['role:Anonymous'])
-
-
-            # TODO set workspace properties ? title ..
             f = getattr(members, member_id)
-
-            # this is done to rebuild the tree without
-            # role:Anonymous local role
-            portal_eventservice.notifyEvent('modify_object', f, {})
+            # TODO set workspace properties ? title ..
 
             # Grant ownership to Member
             try:
@@ -216,7 +214,17 @@ class CPSMembershipTool(MembershipTool):
                 # XXX this method is define in a testcase and just does a pass
             except AttributeError:
                 pass  # Zope 2.1.x compatibility
+
             f.manage_setLocalRoles(member_id, ['Owner', 'WorkspaceManager'])
+
+            # Rebuild the tree with corrected local roles.
+            # This needs a user that can View the object.
+            portal_eventservice = getToolByName(self, 'portal_eventservice')
+            portal_eventservice.notifyEvent('sys_modify_security', f, {})
+
+            newSecurityManager(None, old_user)
+
+
 
     security.declarePublic('getHomeFolder')
     def getHomeFolder(self, id=None, verifyPermission=0):
