@@ -444,7 +444,7 @@ class TreeCache(SimpleItemWithProperties):
         that are under the prefix (an rpath).
         If filter=1, skip unviewable entries.
 
-        Each node is a dictionnary containing the following information:
+        Each node is a dictionary containing the following information:
           id
           url (do not use! XXX will be removed soon)
           path

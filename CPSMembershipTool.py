@@ -243,7 +243,6 @@ class CPSMembershipTool(MembershipTool):
             newSecurityManager(None, old_user)
 
 
-
     security.declarePublic('getHomeFolder')
     def getHomeFolder(self, id=None, verifyPermission=0):
         """Return a member's home folder object, or None."""

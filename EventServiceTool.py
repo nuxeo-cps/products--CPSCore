@@ -192,7 +192,7 @@ class EventServiceTool(UniqueObject, Folder):
     def notify(self, event_type, object, infos):
         """Notifies subscribers of an event
 
-        infos is a dictionnary with keys:
+        infos is a dictionary with keys:
           rpath
           args, kw  (for sys_add_object, sys_del_object (unused))
 
