@@ -45,6 +45,13 @@ WORKSPACES = "workspaces"
 MEMBERS = "members"
 
 
+class CPSUnrestrictedUser(UnrestrictedUser):
+    """Unrestricted user that still has an id."""
+    def getId(self):
+        """Return the ID of the user."""
+        return self.getUserName()
+
+
 class CPSMembershipTool(MembershipTool):
     """ Replace MonkeyPatch of Membershiptool by real object use."""
 
@@ -186,11 +193,12 @@ class CPSMembershipTool(MembershipTool):
     def createMemberarea(self, member_id):
         """Create a member area."""
 
+        aclu = self.acl_users
         parent = self.aq_inner.aq_parent
         ws_root =  getattr(parent, WORKSPACES, None)
         members =  getattr(ws_root, MEMBERS, None)
 
-        user = self.acl_users.getUser(member_id).__of__(self.acl_users)
+        user = aclu.getUser(member_id).__of__(aclu)
 
         if members is not None and user is not None:
             f_title = "%s's Home" % member_id
@@ -199,9 +207,10 @@ class CPSMembershipTool(MembershipTool):
             # hampered by insufficient roles.
             old_user = getSecurityManager().getUser()
             # Use member_id so that the Owner role is set for it
-            newSecurityManager(None, UnrestrictedUser(member_id, '',
-                                                      ['Manager', 'Member'],
-                                                      ''))
+            tmp_user = CPSUnrestrictedUser(member_id, '',
+                                           ['Manager', 'Member'], '')
+            tmp_user = tmp_user.__of__(aclu)
+            newSecurityManager(None, tmp_user)
 
             members.invokeFactory('Workspace', member_id)
 
@@ -220,7 +229,7 @@ class CPSMembershipTool(MembershipTool):
             # Rebuild the tree with corrected local roles.
             # This needs a user that can View the object.
             portal_eventservice = getToolByName(self, 'portal_eventservice')
-            portal_eventservice.notifyEvent('sys_modify_security', f, {})
+            portal_eventservice.notify('sys_modify_security', f, {})
 
             newSecurityManager(None, old_user)
 
