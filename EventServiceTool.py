@@ -272,6 +272,7 @@ class EventServiceTool(UniqueObject, Folder):
     security.declareProtected(ViewManagementScreens, 'manage_editSubscribersForm')
     manage_editSubscribersForm = DTMLFile('zmi/editSubscribersForm', globals())
 
+    manage_editSubscribersForm._setName('manage_main')
     manage_main = manage_editSubscribersForm
 
     security.declareProtected(ViewManagementScreens, 'getSubscribers')
