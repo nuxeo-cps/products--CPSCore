@@ -262,7 +262,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             #if dest_container is None:
             #    raise WorkflowException('Missing dest_container for move '
             #                            'transition=%s' % tdef.getId())
-            #dest_container = self._object_maybe_rpath(dest_container)
+            #dest_container = self._objectMaybeFromRpath(dest_container)
             #ok, why = wftool.isBehaviorAllowedFor(dest_container, #XXXincorrect
             #                                     TRANSITION_INITIAL_MOVE,
             #                                  transition=self.dest_transition,
@@ -281,7 +281,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             if dest_container is None:
                 raise WorkflowException("Missing dest_container for publishing"
                                         " transition=%s" % tdef.getId())
-            dest_container = self._object_maybe_rpath(dest_container)
+            dest_container = self._objectMaybeFromRpath(dest_container)
             initial_transition = kwargs.get('initial_transition')
             if initial_transition is None:
                 raise WorkflowException("Missing initial_transition for "
@@ -297,7 +297,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             if dest_container is None:
                 raise WorkflowException("Missing dest_container for checkout"
                                         " transition=%s" % tdef.getId())
-            dest_container = self._object_maybe_rpath(dest_container)
+            dest_container = self._objectMaybeFromRpath(dest_container)
             initial_transition = kwargs.get('initial_transition')
             if initial_transition is None:
                 raise WorkflowException("Missing initial_transition for "
@@ -313,7 +313,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             if dest_objects is None:
                 raise WorkflowException("Missing dest_objects for checkin"
                                         " transition=%s" % tdef.getId())
-            dest_objects = [self._object_maybe_rpath(d) for d in dest_objects]
+            dest_objects = [self._objectMaybeFromRpath(d) for d in dest_objects]
             checkin_transition = kwargs.get('checkin_transition')
             if checkin_transition is None:
                 raise WorkflowException("Missing checkin_transition for "
@@ -591,13 +591,13 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         """Get the permissions managed by this workflow."""
         return self.permissions
 
-    def _object_maybe_rpath(self, ob):
+    def _objectMaybeFromRpath(self, ob):
         if isinstance(ob, StringType):
             rpath = ob
             if not rpath or rpath.find('..') >= 0 or rpath.startswith('/'):
                 raise Unauthorized(rpath)
             portal = getToolByName(self, 'portal_url').getPortalObject()
-            ob = portal.unrestrictedTraverse(rpath)
+            ob = portal.unrestrictedTraverse(rpath) # XXX unrestricted ?
         return ob
 
     # debug
