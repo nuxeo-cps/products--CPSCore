@@ -144,15 +144,34 @@ class ProxyBase(Base):
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool.setSecurity(self)
 
+    def _setSecurityRecursive(self, ob, pxtool=None):
+        """Propagate security changes made on the proxy."""
+        if not isinstance(ob, ProxyBase):
+            return
+        if pxtool is None:
+            pxtool = getToolByName(self, 'portal_proxies')
+        pxtool.setSecurity(ob)
+        for subob in ob.objectValues():
+            self._setSecurityRecursive(subob, pxtool=pxtool)
+
     # overloaded
     def reindexObject(self, idxs=[]):
         """Called to reindex when the object has changed."""
+        LOG('ProxyBase', DEBUG, 'reindex idxs=%s for %s' % (idxs, '/'.join(self.getPhysicalPath())))
         if not idxs or 'allowedRolesAndUsers' in idxs:
             # XXX should use an event for that
             self._setSecurity()
         # Doesn't work if CMFCatalogAware isn't an ExtensionClass:
         #return CMFCatalogAware.reindexObject(self, idxs=idxs)
         return CMFCatalogAware.__dict__['reindexObject'](self, idxs=idxs)
+
+    # overloaded
+    def reindexObjectSecurity(self):
+        """Called to security-related indexes."""
+        LOG('ProxyBase', DEBUG, 'reindex security for %s' % '/'.join(self.getPhysicalPath()))
+        # XXX should use an event for that
+        self._setSecurityRecursive(self)
+        return CMFCatalogAware.__dict__['reindexObjectSecurity'](self)
 
     # XXX also call _setSecurity from:
     #  manage_role
