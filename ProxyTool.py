@@ -266,6 +266,18 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         return repotool.getObjectRevision(docid, rev)
 
+    security.declarePrivate('getContentByRevision')
+    def getContentByRevision(self, docid, rev):
+        """Return an object for docid and rev.
+
+        Returns None if the there is no such object.
+        """
+        repotool = getToolByName(self, 'portal_repository')
+        if repotool.hasObjectRevision(docid, rev):
+            return repotool.getObjectRevision(docid, rev)
+        else:
+            return None
+
     # XXX was def getProxyInfoFromRepoId(self, repoid, workflow_vars=()):
     security.declarePublic('getProxyInfosFromDocid')
     def getProxyInfosFromDocid(self, docid, workflow_vars=()):
