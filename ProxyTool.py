@@ -557,6 +557,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             ob = self._constructInstance_fti(container, ti, id, *args, **kw)
         elif _isinstance(ti, ScriptableTypeInformation):
             ob = self._constructInstance_sti(container, ti, id, *args, **kw)
+        else:
             raise ValueError('Unknown type information class for %s' %
                              type_name)
         if ob.getId() != id:
