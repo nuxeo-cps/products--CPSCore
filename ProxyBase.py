@@ -26,6 +26,7 @@ from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from Acquisition import aq_base, aq_parent, aq_inner
+from OFS.SimpleItem import Item
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import View
@@ -460,6 +461,59 @@ def unserialize_proxy(ser, ob=None):
     ob.__dict__.update(stuff)
     return ob
 
+#
+# Make Item have standard proxy methods, so that calling
+# for instance ob.getContent() on a non-proxy object will work.
+#
+
+class NotAProxy:
+    security = ClassSecurityInfo()
+
+    security.declareProtected(View, 'getDefaultLanguage')
+    def getDefaultLanguage(self):
+        """Get the default language."""
+        return 'en'
+
+    security.declareProtected(View, 'getLanguageRevisions')
+    def getLanguageRevisions(self):
+        """No mapping."""
+        return {'en': 0}
+
+    security.declareProtected(View, 'getFromLanguageRevisions')
+    def getFromLanguageRevisions(self):
+        """No mapping."""
+        return {}
+
+    security.declareProtected(View, 'getLanguage')
+    def getLanguage(self, lang=None):
+        """Get the selected language."""
+        return 'en'
+
+    security.declareProtected(View, 'getRevision')
+    def getRevision(self, lang=None):
+        """Get the best revision."""
+        return 'en'
+
+    security.declareProtected(View, 'getContent')
+    def getContent(self, lang=None):
+        """Return the object itself."""
+        return self
+
+    security.declareProtected(ModifyPortalContent, 'getEditableContent')
+    def getEditableContent(self, lang=None):
+        """Return the object itself."""
+        return self
+
+InitializeClass(NotAProxy)
+
+# Add all methods to Item class.
+for attr, val in NotAProxy.__dict__.items():
+    if not attr.startswith('_'):
+        setattr(Item, attr, val)
+
+#
+# Concrete types for proxies.
+#
 
 factory_type_information = (
     {'id': 'CPS Proxy Folder',
