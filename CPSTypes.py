@@ -21,6 +21,7 @@
 """
 
 import sys
+from zLOG import LOG, INFO
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 from AccessControl.Permissions import copy_or_move
@@ -37,6 +38,7 @@ from Products.CPSCore.cpsutils import _isinstance
 try:
     from Products.CPSDocument.FlexibleTypeInformation import FlexibleTypeInformation
 except ImportError:
+    LOG('CPSCore', INFO, 'No CPSDocument found, ignoring type.')
     class FlexibleTypeInformation:
         pass
 
