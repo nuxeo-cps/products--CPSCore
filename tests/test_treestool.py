@@ -197,8 +197,24 @@ class TreeCacheTest(SecurityRequestTest):
         cmf.root = DummyObject('root')
         cmf.root.foo = DummyObject('foo', title='Foo')
 
-    def test_inserts(self):
-        # Test basic use.
+
+    def test_rebuild(self):
+        # Test rebuilding a tree
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        cache = cmf.cache
+
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
+        cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
+
+        cache.rebuild()
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar', 'root/foo/baz'])
+        self.assertEquals([d['depth'] for d in l],
+                          [0, 1, 1])
+
+    def test_event_sys_add_cmf_object(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
         cache = cmf.cache
@@ -223,7 +239,7 @@ class TreeCacheTest(SecurityRequestTest):
                           ['root/foo'])
 
         # Add first child
-        cmf.root.foo.bar = DummyObject('bar', title='Bar')
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
@@ -234,7 +250,7 @@ class TreeCacheTest(SecurityRequestTest):
                           ['Foo', 'Bar'])
 
         # Add another
-        cmf.root.foo.baz = DummyObject('baz', title='Baz')
+        cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
@@ -245,7 +261,8 @@ class TreeCacheTest(SecurityRequestTest):
                           ['Foo', 'Bar', 'Baz'])
 
         # Check re-add existing one
-        cmf.root.foo.bar = DummyObject('bar', title='NewBar')
+        cmf.root.foo._delObject('bar')
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='NewBar'))
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
@@ -255,24 +272,109 @@ class TreeCacheTest(SecurityRequestTest):
         #self.assertEquals([d['title'] for d in l],  # XXX
         #                  ['Foo', 'NewBar', 'Baz']) # XXX
 
-    def test_rebuild(self):
-        # Test rebuilding a tree
+    def test_event_sys_del_object(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
         cache = cmf.cache
 
+        # Add
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
-        cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
-
-        cache.rebuild()
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
-                          ['root/foo', 'root/foo/bar', 'root/foo/baz'])
-        self.assertEquals([d['depth'] for d in l],
-                          [0, 1, 1])
+                          ['root/foo', 'root/foo/bar'])
 
-    def _test_getList(self):
-        pass
+        # Delete child
+        cache.notify_tree('sys_del_object', cmf.root.foo.bar, {})
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo'])
+
+        # Delete root itself
+        cache.notify_tree('sys_del_object', cmf.root.foo, {})
+        l = cache.getList(filter=0)
+        self.assertEquals(l, [])
+
+    def test_event_sys_order_object(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        cache = cmf.cache
+
+        # Add
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        cmf.root.foo.bar._setObject('b', DummyObject('b', title='B'))
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar.b, {})
+        cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar', 'root/foo/bar/b',
+                           'root/foo/baz'])
+
+        # Reorder children
+        cmf.root.foo.move_object_down('bar')
+        cache.notify_tree('sys_order_object', cmf.root.foo, {})
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/baz', 'root/foo/bar',
+                           'root/foo/bar/b'])
+
+    def test_event_sys_modify_security(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        cache = cmf.cache
+
+        # Add
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        prebar = DummyObject('bar', title='Bar')
+        cmf.root.foo._setObject('bar', prebar)
+        bar = cmf.root.foo.bar
+        cache.notify_tree('sys_add_cmf_object', bar, {})
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar'])
+        self.assertEquals([d['allowed_roles_and_users'] for d in l],
+                          [['Manager'], ['Manager']])
+        self.assertEquals([d['local_roles'] for d in l],
+                          [{}, {'user:unit_tester': ('Owner',)}])
+
+        # Change security
+        bar._View_Permission = ('SomeRole',)
+        bar.__ac_local_roles__ = {'bob': ['SomeRole']}
+        cache.notify_tree('sys_modify_security', bar, {})
+        l = cache.getList(filter=0)
+        self.assertEquals([d['allowed_roles_and_users'] for d in l],
+                          [['Manager'], ['SomeRole', 'user:bob']])
+        self.assertEquals([d['local_roles'] for d in l],
+                          [{}, {'user:bob': ('SomeRole',)}])
+
+
+    def test_event_modify_object(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        cache = cmf.cache
+
+        # Add
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar'])
+        self.assertEquals([d['title'] for d in l],
+                          ['Foo', 'Bar'])
+
+        # Change
+        cmf.root.foo._delObject('bar')
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='NewBar'))
+        cache.notify_tree('modify_object', cmf.root.foo.bar, {})
+        l = cache.getList(filter=0)
+        self.assertEquals([d['title'] for d in l],
+                          ['Foo', 'NewBar'])
+
 
 def test_suite():
     return unittest.TestSuite((
