@@ -343,7 +343,7 @@ class ProxyBase(Base):
     # overloaded
     def reindexObject(self, idxs=[]):
         """Called to reindex when the object has changed."""
-        LOG('ProxyBase', DEBUG, 'reindex idxs=%s for %s' 
+        LOG('ProxyBase', DEBUG, 'reindex idxs=%s for %s'
             % (idxs, '/'.join(self.getPhysicalPath())))
         if not idxs or 'allowedRolesAndUsers' in idxs:
             # XXX should use an event for that
@@ -355,7 +355,7 @@ class ProxyBase(Base):
     # overloaded
     def reindexObjectSecurity(self):
         """Called to security-related indexes."""
-        LOG('ProxyBase', DEBUG, 'reindex security for %s' 
+        LOG('ProxyBase', DEBUG, 'reindex security for %s'
             % '/'.join(self.getPhysicalPath()))
         # XXX should use an event for that
         self._setSecurityRecursive(self)
@@ -588,11 +588,30 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
     in a repository."""
 
     meta_type = 'CPS Proxy Folder'
-    # portal_type will be set to the target's portal_type after creation
 
     def __init__(self, id, **kw):
         CPSBaseFolder.__init__(self, id)
         ProxyBase.__init__(self, **kw)
+
+    def getCPSCustomCSS(self):
+        """
+        Return the cps custom CSS from this folder
+        or from one of its parents if they have one.
+        """
+
+        portal = self.portal_url.getPortalObject()
+        current = self.getContent()
+        current_proxy = self
+
+        while current.id != portal.id and \
+                  getattr(current, 'cps_custom_css', "") == "":
+            current_proxy = current_proxy.aq_inner.aq_parent
+            current = current_proxy.getContent()
+
+        if current.id == portal.id:
+            return ""
+        else:
+            return current.cps_custom_css
 
     manage_options = (CPSBaseFolder.manage_options[:1] +
                       ProxyBase.proxybase_manage_options +
