@@ -160,12 +160,17 @@ class ProxyBase(Base):
         ob = self._getContent()
         if ob is None:
             raise KeyError, name
-        if hasattr(ob, name):
-            return getattr(ob, name)
         try:
-            return ob[name]
-        except (KeyError, IndexError, TypeError, AttributeError):
-            raise KeyError, name
+            res = getattr(ob, name)
+        except AttributeError:
+            try:
+                res = ob[name]
+            except (KeyError, IndexError, TypeError, AttributeError):
+                raise KeyError, name
+        if hasattr(res, '__of__'):
+            # XXX Maybe incorrect if complex wrapping.
+            res = aq_base(res).__of__(self)
+        return res
 
     #
     # Staging
