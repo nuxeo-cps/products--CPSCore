@@ -1,7 +1,15 @@
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+
+New features:
+~~~~~~~~~~~~~
+-
+
 Bug fixes:
 ~~~~~~~~~~
-- Fix dictionary sharing bug.
+-
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Remove import of ElementsTool.
+-
