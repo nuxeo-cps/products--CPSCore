@@ -343,8 +343,8 @@ class CPSWorkflowTool(WorkflowTool):
             break
 
         if initial_behavior == TRANSITION_INITIAL_PUBLISHING:
-            ob = container.copyContent(old_ob, id)
-            ob.manage_afterCMFAdd(ob, container)
+            ob = container.copyContent(old_ob, id) # XXX should not notify cmfadd
+            ob.manage_afterCMFAdd(ob, container) # XXX later! the object is not finished yet !
             self._insertWorkflowRecursive(ob, initial_transition,
                                           initial_behavior, kwargs)
         elif initial_behavior == TRANSITION_INITIAL_CREATE:
