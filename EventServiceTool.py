@@ -17,15 +17,35 @@
 #
 # $Id$
 
+from zLOG import LOG, ERROR
 from DateTime import DateTime
-from random import randrange
-import OFS
+import random
+from types import StringType, UnicodeType, TupleType
+
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner, aq_base
 from AccessControl import ClassSecurityInfo
-from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties,\
-                                   getToolByName
+
+from BTrees.IOBTree import IOBTree
+from BTrees.OIBTree import OIBTree
+from OFS.Folder import Folder
+
+from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties
+from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
+
+
+CPSSubscriberDefinition_type = 'CPS Subscriber Definition'
+CPSEventServiceTool_type = 'CPS Event Service Tool'
+
+
+def randid():
+    abs = random.randrange(1,2147483600)
+    if random.random() < 0.5:
+        return -abs
+    else:
+        return abs
+
 
 # FakeEventService is for places where no event service is found
 class FakeEventService:
@@ -34,18 +54,22 @@ class FakeEventService:
 
 fake_event_service = FakeEventService()
 
+
 def getEventService(context):
-    """Return the event service relative to context
-    """
+    """Return the event service relative to context."""
     return getToolByName(context, 'portal_eventservice', fake_event_service)
 
-class SubscriberDef(SimpleItemWithProperties):
-    """Subsriber definition is used by Event Service tool.
 
-    It just defines a subsriber to notify on some event.
+class SubscriberDef(SimpleItemWithProperties):
+    """Subscriber definition is used by Event Service tool.
+
+    It just defines a subscriber to notify on some event.
     """
 
-    meta_type = 'CPS Subscriber Definition'
+    meta_type = CPSSubscriberDefinition_type
+
+    security = ClassSecurityInfo()
+    security.declareObjectProtected(ViewManagementScreens)
 
     _properties = (
         {
@@ -77,7 +101,7 @@ class SubscriberDef(SimpleItemWithProperties):
             'type': 'selection',
             'mode': 'w',
             'label': 'Notification Type',
-            'select_variable': 'notification_types',
+            'select_variable': 'notification_types', # Acquired from tool
         },
         {
             'id': 'compressed',
@@ -98,66 +122,95 @@ class SubscriberDef(SimpleItemWithProperties):
         self.notification_type = notification_type
         self.compressed = compressed
 
+    def _refresh(self, exclude_id=None):
+        parent = aq_parent(aq_inner(self))
+        if parent is not None and parent.meta_type == CPSEventServiceTool_type:
+            parent._refresh_notification_dict(exclude_id=exclude_id)
+
     def manage_changeProperties(self, REQUEST=None, **kw):
-        """Change Subsriber definition properties and force Event service
-        tool to recalculate its notification dict.
+        """Change Subscriber definition properties and force Event service
+        tool to refresh its notification dict.
         """
         result = SimpleItemWithProperties.manage_changeProperties(self, **kw)
-        parent = aq_parent(aq_inner(self))
-        if parent and parent.meta_type == 'CPS Event Service Tool':
-            parent._calculate_notification_dict()
+        self._refresh()
         return result
 
     def manage_editProperties(self, REQUEST):
-        """Change Subsriber definition properties and force Event service
-        tool to recalculate its notification dict.
+        """Change Subscriber definition properties and force Event service
+        tool to refresh its notification dict.
         """
         result = SimpleItemWithProperties.manage_editProperties(self, REQUEST)
-        parent = aq_parent(aq_inner(self))
-        if parent and parent.meta_type == 'CPS Event Service Tool':
-            parent._calculate_notification_dict()
+        self._refresh()
         return result
 
     def manage_afterAdd(self, item, container):
-        """Force Event service tool to recalculate its notification dict.
+        """Force Event service tool to refresh its notification dict.
         """
         SimpleItemWithProperties.manage_afterAdd(self, item, container)
         if aq_base(self) is aq_base(item):
-            container._calculate_notification_dict()
+            self._refresh()
 
     def manage_beforeDelete(self, item, container):
-        """Force Event service tool to recalculate its notification dict.
+        """Force Event service tool to refresh its notification dict.
         """
         SimpleItemWithProperties.manage_beforeDelete(self, item, container)
         if aq_base(self) is aq_base(item):
-            container._calculate_notification_dict(exclude_id=item.getId())
+            self._refresh(exclude_id=item.getId())
 
-class EventServiceTool(UniqueObject, OFS.Folder.Folder):
+InitializeClass(SubscriberDef)
+
+
+class EventServiceTool(UniqueObject, Folder):
     """Event service is used to dispatch notifications to subscribers.
     """
 
     id = 'portal_eventservice'
-
-    meta_type = 'CPS Event Service Tool'
+    meta_type = CPSEventServiceTool_type
 
     security = ClassSecurityInfo()
-
-    manage_options = (
-        {
-            'label': 'Subscribers',
-            'action': 'manage_editSubscribersForm',
-        },
-    ) + OFS.Folder.Folder.manage_options[1:]
 
     notification_types = ('synchronous', )
 
     def __init__(self, *args, **kw):
         self._notification_dict = {}
+        # location is a path relative to the root of the portal,
+        # without an initial slash.
+        #   '' = portal, 'Members' = members dir, etc.
+        self._hubid_to_rlocation = IOBTree()
+        self._rlocation_to_hubid = OIBTree()
+        """
+        # notification_dict is typically:
+        {'add_object': {'folder': {'synchronous': [{'subscriber': 'portal_foo',
+                                                    'action': 'notify_mymeth',
+                                                    'compressed': 0,
+                                                    },
+                                                   {'subscriber': 'portal_log',
+                                                    'action': 'notify_log',
+                                                    'compressed': 0,
+                                                    },
+                                                   ],
+                                   'asynchronous': [...],
+                                   },
+                        '*': { ... },
+                        },
+         '*': { ... },
+         }
+         # And portal_foo.notify_mymeth('add_object', object, infos) will
+         # be called.
+         """
+
+    #
+    # API
+    #
 
     security.declarePublic('notify')
     def notify(self, event_type, object, infos):
-        """Notifys subscribers of an event
+        """Notifies subscribers of an event
+
+        Passed infos is {'args': args, 'kw': kw} for add_object/del_object
         """
+        hubid = self._objecthub_notify(event_type, object, infos)
+        infos['hubid'] = hubid
         notification_dict = self._notification_dict
         portal = aq_parent(aq_inner(self))
         for ev_type in (event_type, '*'):
@@ -178,10 +231,51 @@ class EventServiceTool(UniqueObject, OFS.Folder.Folder):
                                     meth = getattr(subscriber, action)
                                     meth(event_type, object, infos)
 
-    def _calculate_notification_dict(self, exclude_id=None):
-        """Calculate notification dict
-        """
-        ids = self.objectIds('CPS Subscriber Definition')
+    #
+    # ObjectHub API
+    #
+
+    security.declarePublic('getHubId')
+    def getHubId(self, object_or_location):
+        """Get the hubid of an object or location, or None."""
+        t = type(object_or_location)
+        if t in (StringType, UnicodeType):
+            location = object_or_location
+        elif t == TupleType:
+            location = '/'.join(object_or_location)
+        else:
+            location = '/'.join(object_or_location.getPhysicalPath())
+        rlocation = self.get_rlocation(location)
+        if rlocation is None:
+            LOG('EventServiceTool', ERROR,
+                'Hub: getHubId for bad location %s' % location)
+            return None
+        return self._rlocation_to_hubid.get(rlocation)
+
+    security.declarePublic('getLocation')
+    def getLocation(self, hubid, relative=0):
+        """Get the location of a hubid, or None."""
+        rlocation = self._hubid_to_rlocation.get(hubid)
+        if rlocation is None:
+            LOG('EventServiceTool', ERROR,
+                'Hub: getLocation for bad hubid %s' % hubid)
+            return None
+        if relative:
+            return rlocation
+        utool = getToolByName(self, 'portal_url')
+        ppath = utool.getPortalPath()
+        if rlocation:
+            return '%s/%s' % (ppath, rlocation)
+        else:
+            return ppath
+
+    #
+    # misc
+    #
+
+    def _refresh_notification_dict(self, exclude_id=None):
+        """Refresh notification dict."""
+        ids = self.objectIds(CPSSubscriberDefinition_type)
         if exclude_id is not None:
             ids = [id for id in ids if id != exclude_id]
         notification_dict = {}
@@ -199,32 +293,101 @@ class EventServiceTool(UniqueObject, OFS.Folder.Folder):
                 })
         self._notification_dict = notification_dict
 
-    # ZMI
+    #
+    # ObjecHub misc
+    #
 
-    security.declareProtected(ViewManagementScreens, \
-        'manage_editSubscribersForm')
-    manage_editSubscribersForm = \
-        DTMLFile('zmi/editSubscribersForm', globals())
+    def _get_rlocation(self, location):
+        if not location.startswith('/'):
+            return location
+        # make relative to portal
+        utool = getToolByName(self, 'portal_url')
+        ppath = utool.getPortalPath()
+        if not location.startswith(ppath):
+            # not under the portal
+            return None
+        location = location[len(ppath)+1:]
+        return location
+
+    def _generate_hubid(self, rlocation):
+        index = getattr(self, '_v_nextid', 0)
+        if index % 4000 == 0:
+            index = randid()
+        hubid_to_rlocation = self._hubid_to_rlocation
+        while not hubid_to_rlocation.insert(index, rlocation):
+            index = randid()
+        self._v_nextid = index + 1
+        return index
+
+    def _objecthub_notify(self, event_type, object, infos):
+        """Treat event from the object hub's point of view."""
+        location = '/'.join(object.getPhysicalPath())
+        rlocation = self._get_rlocation(location)
+        if rlocation is None:
+            LOG('EventServiceTool', ERROR,
+                'Hub: notify %s for bad location %s' % (event_type, location))
+            return None
+        if event_type == 'add_object':
+            return self._register(rlocation)
+        elif event_type == 'del_object':
+            return self._unregister(rlocation)
+        else:
+            return self._rlocation_to_hubid.get(rlocation)
+
+    def _register(self, rlocation):
+        if self._rlocation_to_hubid.has_key(rlocation):
+            LOG('EventServiceTool', ERROR,
+                'Hub: attempted to re-register location %s' % location)
+            return self._rlocation_to_hubid[rlocation]
+        hubid = self._generate_hubid(rlocation)
+        self._rlocation_to_hubid[rlocation] = hubid
+        return hubid
+
+    def _unregister(self, rlocation):
+        hubid = self._rlocation_to_hubid.get(rlocation)
+        if hubid is None:
+            LOG('EventServiceTool', ERROR,
+                'Hub: attempted to unregister location %s' % location)
+            return None
+        del self._rlocation_to_hubid[rlocation]
+        del self._hubid_to_rlocation[hubid]
+        return hubid
+
+    #
+    # ZMI
+    #
+
+    manage_options = (
+        {
+            'label': 'Subscribers',
+            'action': 'manage_editSubscribersForm',
+        },
+        {
+            'label': 'ObjectHub',
+            'action': 'manage_listHubIds',
+        },
+        ) + Folder.manage_options[1:]
+
+
+    security.declareProtected(ViewManagementScreens, 'manage_editSubscribersForm')
+    manage_editSubscribersForm = DTMLFile('zmi/editSubscribersForm', globals())
 
     manage_main = manage_editSubscribersForm
 
-    security.declareProtected(ViewManagementScreens, \
-        'getSubscribers')
+    security.declareProtected(ViewManagementScreens, 'getSubscribers')
     def getSubscribers(self):
-        """Return subscriber definitions
-        """
-        return self.objectValues('CPS Subscriber Definition')
+        """Return subscriber definitions."""
+        return self.objectValues(CPSSubscriberDefinition_type)
 
-    security.declareProtected(ViewManagementScreens, \
-        'manage_addSubscriber')
+    security.declareProtected(ViewManagementScreens, 'manage_addSubscriber')
     def manage_addSubscriber(self, subscriber, action, meta_type,
-                              event_type, notification_type, compressed=0,
-                              REQUEST=None):
-        """Add a subscriber definition
-        """
+                             event_type, notification_type, compressed=0,
+                             REQUEST=None):
+        """Add a subscriber definition."""
         if type(event_type) is type(''):
             event_type = [event_type]
-        id = 'subscriber_%s%s' % (int(DateTime()), randrange(100, 1000))
+        id = 'subscriber_%s%s' % (int(DateTime()),
+                                  random.randrange(100, 1000))
         subscriber_obj = SubscriberDef(id, subscriber, action, meta_type,
                                        event_type, notification_type,
                                        compressed)
@@ -233,5 +396,17 @@ class EventServiceTool(UniqueObject, OFS.Folder.Folder):
             REQUEST.RESPONSE.redirect(
                 '%s/manage_editSubscribersForm' % (self.absolute_url(), )
             )
+
+    #
+    # HubId ZMI
+    #
+
+    security.declareProtected(ViewManagementScreens, 'manage_listHubIds')
+    manage_listHubIds = DTMLFile('zmi/event_listHubIds', globals())
+
+    security.declareProtected(ViewManagementScreens, 'manage_getHubIds')
+    def manage_getHubIds(self):
+        """Return all hubids and rlocations."""
+        return self._rlocation_to_hubid.items()
 
 InitializeClass(EventServiceTool)

@@ -3,3 +3,7 @@ Elements
   - CachableElement
 
   - patches for ZPT and Python Scripts
+
+Events
+
+  - use the new API (see notes.txt)

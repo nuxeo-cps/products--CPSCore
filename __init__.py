@@ -28,63 +28,22 @@ import ElementsTool
 
 # Event Service
 import EventServiceTool
+import EventServicePatches
 import LoggerTool
 import MirrorTool
+import ProxyTool
+import ObjectRepository
 
 tools = (
     EventServiceTool.EventServiceTool,
     LoggerTool.LoggerTool,
     MirrorTool.MirrorTool,
     ElementsTool.ElementsTool,
+    ProxyTool.ProxyTool,
+    ObjectRepository.ObjectRepository,
 )
 
 registerDirectory('skins', globals())
-
-# XXX this patches should be in the same place
-# Some patches so classical zope actions send notifications
-
-from EventServiceTool import getEventService
-
-def patch_action(class_, action):
-    old_action = 'old_' + action
-    if hasattr(class_, old_action):
-        ok = "Old action already there"
-    else:
-        old = getattr(class_, action)
-        setattr(class_, 'old_' + action, old)
-        ok = 'Done'
-    new = eval(action)
-    setattr(class_, action, new)
-    LOG('EventService', INFO, 'patch %s.%s... %s' % \
-        (class_.__name__, action, ok))
-
-def notify(self, event_type, object, *args, **kw):
-    evtool = getEventService(self)
-    infos = {
-        'args': args,
-        'kw': kw,
-    }
-    evtool.notify(event_type, object, infos)
-
-def manage_afterAdd(self, *args, **kw):
-    """manage_afterAdd patched
-    """
-    notify(self, 'add_object', self, *args, **kw)
-    self.old_manage_afterAdd(*args, **kw)
-
-def manage_beforeDelete(self, *args, **kw):
-    """manage_beforeDelete patched
-    """
-    self.old_manage_beforeDelete(*args, **kw)
-    notify(self, 'del_object', self, *args, **kw)
-
-from OFS.ObjectManager import ObjectManager
-from OFS.SimpleItem import Item
-
-patch_action(ObjectManager, 'manage_afterAdd')
-patch_action(Item, 'manage_afterAdd')
-patch_action(ObjectManager, 'manage_beforeDelete')
-patch_action(Item, 'manage_beforeDelete')
 
 def initialize(registrar):
     utils.ToolInit(

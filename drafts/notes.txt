@@ -1,0 +1,75 @@
+# Misc notes by Florent.
+
+
+class IEventTool:
+    """Dispatches events to subscribers.
+
+    The event tool is also an object hub, so new objects are automatically
+    assigned a hubid.
+
+    Subscribers must implement IEventSubscriber.
+    """
+
+    # Sending events
+
+    def notifyEvent(event, ob):
+        """Notify the event service of a new event on ob."""
+
+    # Dispatching events, management
+
+    def subscribeEvent(location, filter):
+        """Add a new event subscriber."""
+
+    def unsubscribeEvent(location):
+        """Delete an event subscriber."""
+
+    def listEventSubscriptions():
+        """Lists all event subscribers (sequence of (location, filter))."""
+
+
+class IEventSubscriber:
+    def notifyEvent(event):
+        """Called when an event is sent."""
+
+
+class IEvent:
+    type = """Type of the event."""
+    object = """Object of the event."""
+    hubid = """HubId of the object."""
+    from_location = """Original location (when move event)."""
+
+
+
+
+
+
+
+########
+
+"""
+proxy queries:
+ - for a proxy, get the objects matched
+    - for proxy display and behavior
+    - for permission/role setting on the proxy=>object
+ - for a given object version, get the proxies that match
+    - to get the "orphan" objects
+    - to be able to apply synthesized permissions from all proxies
+
+actions:
+ - create proxy
+
+ - set proxy to point to (obid, versionid)
+   - forward link proxy_hubid->(obid, versionid)
+
+"""
+
+"""
+unique ids:
+
+ - repid: gives an id to a set of versions for one document. it's unique
+   to a versionned object repository.
+   if there are several repositories, ... XXX ?
+
+ - hubid: gives an id to an object in the ZODB. 
+
+"""
