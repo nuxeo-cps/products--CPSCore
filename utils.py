@@ -250,20 +250,29 @@ def container_path(self):
     return the parent full path."""
     ob = self._IndexableObjectWrapper__ob
     return '/'.join(ob.getPhysicalPath()[:-1])
+
 IndexableObjectWrapper.container_path = container_path
 
 def relative_path(self):
     """This is used to produce a metadata
     return a path relative to the portal."""
     ob = self._IndexableObjectWrapper__ob
-    return ob.portal_url.getRelativeContentURL(ob)
+    try:
+        return ob.portal_url.getRelativeContentURL(ob)
+    except AttributeError:
+        # broken object can't aquire portal_url
+        return ''
 IndexableObjectWrapper.relative_path = relative_path
 
 def relative_path_depth(self):
     """This is used to produce an index
     return the path depth relative to the portal."""
     ob = self._IndexableObjectWrapper__ob
-    return len(ob.portal_url.getRelativeContentPath(ob))
+    try:
+        return len(ob.portal_url.getRelativeContentPath(ob))
+    except AttributeError:
+        # broken object can't aquire portal_url
+        return -1
 IndexableObjectWrapper.relative_path_depth = relative_path_depth
 
 
