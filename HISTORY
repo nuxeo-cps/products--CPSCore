@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.15.1 [R1 build 2004/06/30-09:39 by anahide]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Fixed case where an id with '..' in it couldn't be used by the workflow.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.15.0 [R1 build 2004/06/28-13:17 by anahide]
 
 Requires:

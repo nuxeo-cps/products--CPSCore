@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Fixed case where an id with '..' in it couldn't be used by the workflow.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
