@@ -183,13 +183,13 @@ _ok_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_.'
 # (./CPSDefault/skins/cps_default/computeId.py,
 # ./CPSForum/skins/forum_default/forum_create.py, ./CPSSchemas/BasicWidgets.py,
 # ./CPSWebMail/Attachment.py...)
-def makeId(str, lower=0, portal_type=None):
-    """Generate an id from a given string <str>.
+def makeId(s, lower=0, portal_type=None):
+    """Generate an id from a given string <s>.
 
     This method avoids collisions.
     """
     # Normalization
-    id = str.translate(_translation_table)
+    id = s.translate(_translation_table)
     id = id.replace('Æ', 'AE')
     id = id.replace('æ', 'ae')
     id = id.replace('¼', 'OE')
