@@ -52,6 +52,7 @@ from Products.CMFCore.utils import _getAuthenticatedUser
 from Products.CMFDefault.MembershipTool import MembershipTool
 from Products.CMFCore.MemberDataTool import MemberDataTool
 
+from Products.CPSUtil.id import generatePassword
 from utils import mergedLocalRoles, mergedLocalRolesWithPath, makeId
 
 from zLOG import LOG, DEBUG, PROBLEM, ERROR
@@ -696,9 +697,7 @@ Mime-Version: 1.0
             raise ValueError("The username cannot be found.")
         email_address = member.getProperty('email')
         random.seed()
-        password_length = 10
-        new_password = ''.join(random.sample('_-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-                                             password_length))
+        new_password = generatePassword()
         member.setSecurityProfile(password=new_password, domains=None)
         result['new_password'] = new_password
         result['reset_password_success'] = True
