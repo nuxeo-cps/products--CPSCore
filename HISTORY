@@ -1,4 +1,21 @@
 *******************************************
+** CPSCore V3.16.8 [R1 build 2004/09/21-11:24 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Return files with problematic file suffix as ZIP files (this is only triggered
+  for MSIE browsers and ".sxw", ".sxc" suffixes).
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.16.7 [R1 build 2004/09/15-15:12 by madarche]
 
 Requires:
