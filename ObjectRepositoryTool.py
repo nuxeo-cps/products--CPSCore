@@ -118,6 +118,10 @@ class ObjectRepositoryTool(UniqueObject,
         BTreeFolder2.__init__(self, self.id)
         self._histories = OOBTree()
 
+    security.declarePrivate('keyRange')
+    def keyRange(self, k1, k2):
+        return self._tree.keys(k1, k2)
+
     #
     # API
     #
@@ -125,23 +129,19 @@ class ObjectRepositoryTool(UniqueObject,
     security.declarePrivate('getFreeDocid')
     def getFreeDocid(self):
         """Get a free docid."""
-        # XXX a bit inefficient
-        docidsd = {}
-        for id in self.objectIds():
-            docid, rev = self._splitId(id)
-            docidsd[docid] = None
+
         while 1:
             docid = str(random.randrange(1, 2147483600))
-            if not docidsd.has_key(docid):
+            if not self.keyRange(docid+'__0001', docid+'__9999'):
                 return docid
 
     security.declarePrivate('getFreeRevision')
     def getFreeRevision(self, docid):
         """Get a free revision for a docid."""
         # Return a revision one more than the last used.
-        # XXX a bit inefficient
+
         maxrev = 0
-        for id in self.objectIds():
+        for id in self.keyRange(docid+'__0001', docid+'__9999'):
             did, rev = self._splitId(id)
             if did == docid and rev > maxrev:
                 maxrev = rev
