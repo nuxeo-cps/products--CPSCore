@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- fix: indexing broken object raise AttributeError on relative_path()
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

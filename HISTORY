@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.16.6 [R1 build 2004/09/06-07:50 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- fix: indexing broken object raise AttributeError on relative_path()
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.16.5 [R1 build 2004/08/23-05:48 by fermigier]
 
 Requires:
