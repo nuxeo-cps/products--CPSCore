@@ -37,7 +37,7 @@ class ProxyTool(UniqueObject, Folder):
     and the documents they point to.
 
     The proxy tool must be registered with the event service to
-    receive add_event and del_event, with action 'proxy'.
+    receive add_object and del_object, with action 'proxy'.
     """
 
     id = 'portal_proxies'
