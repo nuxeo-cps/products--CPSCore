@@ -16,11 +16,11 @@ Proxies, document repository and workflows
     - a version_info, which is an integer; several documents may be
       present with the same repoid but different version_info,
 
-    - a portal_type, which makes it possible to associated actions to
-      it, for instance for the different views,
+    - a portal_type, which makes it possible to associate actions to it,
+      for instance for the different views,
 
     - generally, all the attributes describing the "content" of the
-      document.
+      document,
 
     - security information to control its visibility (View) and
       modifiability (Modify portal content), which is the union of all
@@ -44,7 +44,8 @@ Proxies, document repository and workflows
     - has a mapping of language -> version_info, where language can be
       'fr' or 'en' for instance, or '*' for a default language (always
       present); version_info is an integer. Together (repoid,
-      version_info) identify a unique document in the repository,
+      version_info) identify a unique document's version in the
+      repository,
 
     - has security information applied to it to control its visibility.
 
@@ -96,8 +97,8 @@ Proxies, document repository and workflows
 
     - if subobjects can be created (if the portal_type is folderish),
 
-    - if a given object can be publish/submit elsewhere, this is the
-      "clone" operation,
+    - if a given object can be published/submitted elsewhere, this is
+      the "clone" operation,
 
     - the usual transitions between states,
 
@@ -125,9 +126,12 @@ Proxies, document repository and workflows
     content portal_type), which describes the workflow followed by
     documents when they are being worked upon.
 
-    There is a section workflow (for each portal_type), which describes
-    the fact that documents go through a submission process before being
-    published.
+    There is a section document workflow (for each portal_type), which
+    describes the fact that documents go through a submission process
+    before being published.
+
+    There is a workflow for Section themeselves, which permits the
+    versionning of the changes to a section's title and description.
 
     Story
 
@@ -163,9 +167,10 @@ Proxies, document repository and workflows
 
         This is possible because the workgroup workflow for News allows
         object "cloning" into other folders. To know in what section it
-        can be submitted or published, all sections are examined and asked
-        what cloning creation transitions they have for News. The user
-        then choses a section amongst the possible ones.
+        can be submitted or published, all sections are examined and
+        asked if objects can be created in them, and what cloning
+        creation transitions they have for News. The user then choses a
+        section among the possible ones.
 
         The submission process itself consits of the creation of a new
         version of the document in the document repository, and the
