@@ -223,7 +223,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         return lang, language_revs[lang]
 
     security.declarePrivate('getContent')
-    def getContent(self, proxy, lang=None, revision=None, editable=0):
+    def getContent(self, proxy, lang=None, rev=None, editable=0):
         """Get the object best matched by a given proxy.
 
         Returns the object.
@@ -231,7 +231,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         If lang is not passed, takes into account the user language.
 
-        If revision is passed, this specific revision is returned.
+        If rev is passed, this specific revision is returned.
 
         If editable, the returned content must be an unfrozen version,
         so a cloning and a version upgrade may happen behind the scene.
@@ -241,15 +241,16 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repotool = getToolByName(self, 'portal_repository')
 
         docid = proxy.getDocid()
+        rev_wanted = rev
 
         # Find version to use.
         lang, rev = self.getBestRevision(proxy, lang=lang)
         if lang is None:
             return None # Proxy not yet finished.
 
-        if revision is not None:
-            if repotool.hasObjectRevision(docid, revision):
-                rev = revision
+        if rev_wanted is not None:
+            if repotool.hasObjectRevision(docid, rev_wanted):
+                rev = rev_wanted
 
         if editable:
             newob, newrev = repotool.getUnfrozenRevision(docid, rev)

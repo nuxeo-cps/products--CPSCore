@@ -164,14 +164,14 @@ class ProxyBase(Base):
         return pxtool.getBestRevision(self, lang=lang)[1]
 
     security.declareProtected(View, 'getContent')
-    def getContent(self, lang=None, revision=None):
+    def getContent(self, lang=None, rev=None):
         """Get the content object referred to by this proxy.
 
         The returned object may depend on the current language.
 
-        If revision is passed, this specific revision is returned.
+        If rev is passed, this specific revision is returned.
         """
-        return self._getContent(lang=lang, revision=revision)
+        return self._getContent(lang=lang, rev=rev)
 
     security.declareProtected(ModifyPortalContent, 'getEditableContent')
     def getEditableContent(self, lang=None):
@@ -182,11 +182,10 @@ class ProxyBase(Base):
         return self._getContent(lang=lang, editable=1)
 
     security.declarePrivate('_getContent')
-    def _getContent(self, lang=None, revision=None, editable=0):
+    def _getContent(self, lang=None, rev=None, editable=0):
         """Get the content object, maybe editable."""
         pxtool = getToolByName(self, 'portal_proxies')
-        return pxtool.getContent(self, lang=lang, revision=revision,
-                                 editable=editable)
+        return pxtool.getContent(self, lang=lang, rev=rev, editable=editable)
 
     security.declarePrivate('proxyChanged')
     def proxyChanged(self):

@@ -4,7 +4,7 @@ ZODB Requires:
   functionnality is now done inside CPSCore.
 New features:
 ~~~~~~~~~~~~~
-- getContent now has an optional revision parameter to access another
+- getContent now has an optional rev parameter to access another
   revision than the default.
 - Archived revisions are viewable by anyone that has permission
   "View archived revisions" on a proxy.
