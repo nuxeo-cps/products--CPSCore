@@ -93,7 +93,7 @@ class CPSMembershipTool(MembershipTool):
         """What local roles according to the context ?"""
         member = self.getAuthenticatedMember()
         roles = member.getRolesInContext(obj)
-        if 'WorkspacesManager' or 'SectionManager' in roles:
+        if 'WorkspaceManager' in roles or 'SectionManager' in roles:
             return self.getPortalRoles()
         else:
             member_roles = list(roles)
