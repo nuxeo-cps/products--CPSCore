@@ -1041,7 +1041,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
                 stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
                 if stackdef is not None:
-                    stack = stackdef.resetStack()
+                    ds = delegatees.get(wf_var)
                     delegatees[wf_var] = stackdef.resetStack(ds, **kwargs)
 
         #######################################################################
