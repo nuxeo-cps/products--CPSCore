@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-15 -*-
 """Dummy (= Mock) classes for unit tests"""
 
 from OFS.SimpleItem import SimpleItem

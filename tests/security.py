@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-15 -*-
 from Acquisition import Implicit
 
 class PermissiveSecurityPolicy:

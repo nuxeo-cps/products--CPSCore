@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: iso-8859-15 -*-
 #
 #             Perforce Defect Tracking Integration Project
 #              <http://www.ravenbrook.com/project/p4dti/>

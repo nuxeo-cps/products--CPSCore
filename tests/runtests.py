@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-15 -*-
 import os
 from unittest import TestSuite, main
 from sys import modules

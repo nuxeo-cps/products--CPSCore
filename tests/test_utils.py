@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-15 -*-
 from Testing import ZopeTestCase
 from Products.CPSCore import utils
 
