@@ -16,6 +16,9 @@
       o use ZTC ?
       o find scenarii for maximum coverage
 
+- Features
+   o make it possible to specify the destination id when doing publishing
+
 # deprecated tasks ?
 - Elements
    o CachableElement
