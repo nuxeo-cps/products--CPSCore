@@ -6,7 +6,8 @@ New features:
 - Admin can choose to create a calendar or not during user home folder creation
 Bug fixes:
 ~~~~~~~~~~
--
+- getHomeFolderId() does lower case the id it computes
+
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
