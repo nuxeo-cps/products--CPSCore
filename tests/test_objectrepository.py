@@ -26,7 +26,6 @@ import unittest
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
 from OFS.Folder import Folder
-from OFS.SimpleItem import SimpleItem
 
 from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
 

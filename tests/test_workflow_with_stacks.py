@@ -26,7 +26,7 @@ the whole stack workflow API.
 """
 
 import os, sys
-from types import DictType, TupleType, ListType
+from types import DictType
 if __name__ == '__main__':
     execfile(os.path.join(sys.path[0], 'framework.py'))
 
@@ -35,8 +35,6 @@ ZopeTestCase.installProduct('CPSCore')
 
 import Zope
 import unittest
-
-from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
 from OFS.Folder import Folder
 from Products.CMFDefault.Portal import manage_addCMFSite
@@ -57,10 +55,7 @@ from Products.CPSCore.CPSWorkflowStates import *
 from Products.CPSCore.CPSWorkflowTransitions import\
      transition_behavior_export_dict as tbdict
 
-from dummy import Dummy, DummyTypeInfo, DummyContent, DummyTypesTool
-
-from test_cpsworkflowstackdefinition import FakeMembershipTool, \
-     FakeMember, FakeGroup, FakeUserFolderWithGroups
+from dummy import DummyContent
 
 portal_name = 'portal'
 

@@ -46,10 +46,6 @@ from Products.CMFCore.MemberDataTool import MemberDataTool
 
 from utils import mergedLocalRoles, mergedLocalRolesWithPath, makeId
 
-from DateTime.DateTime import DateTime
-from string import maketrans
-from random import randrange
-
 from zLOG import LOG, DEBUG, ERROR
 
 

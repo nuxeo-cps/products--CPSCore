@@ -26,12 +26,10 @@ This module contains all CPS Stack definitions
 from zLOG import LOG, DEBUG
 
 from Globals import InitializeClass
-from Acquisition import aq_parent, aq_inner, aq_base
 from AccessControl import ClassSecurityInfo
 from OFS.SimpleItem import SimpleItem
 
 from Products.CMFCore.CMFCorePermissions import View, ModifyPortalContent
-from Products.CMFCore.WorkflowCore import WorkflowException
 
 from Products.CPSCore.CPSWorkflowStacks import SimpleStack, HierarchicalStack
 from Products.CPSCore.interfaces.IWorkflowStackDefinition import \

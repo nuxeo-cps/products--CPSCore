@@ -24,7 +24,7 @@ from types import StringType, UnicodeType
 
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
-from Acquisition import aq_parent, aq_inner, aq_base
+from Acquisition import aq_parent, aq_inner
 
 from OFS.ObjectManager import ObjectManager
 from OFS.PropertyManager import PropertyManager
