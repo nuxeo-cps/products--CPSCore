@@ -782,7 +782,10 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         portal = aq_parent(aq_inner(self))
 
         # Find all objects in repo pointed by relevant proxies.
-        base_rpath_slash = base_rpath + '/'
+        if base_rpath:
+            base_rpath_slash = base_rpath + '/'
+        else:
+            base_rpath_slash = ''
         docidrevs = {}
         rpaths = [] # for debug
         for rpath, infos in self._rpath_to_infos.items():
