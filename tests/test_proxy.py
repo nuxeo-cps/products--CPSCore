@@ -33,6 +33,12 @@ from Products.CPSCore.ProxyBase import ProxyBase, ProxyDocument
 from dummy import DummyRepo, DummyPortalUrl, DummyWorkflowTool, DummyRoot
 
 
+class PlacefulProxy(ProxyBase, Folder):
+
+    def __init__(self, id, **kw):
+        self.id = id
+        ProxyBase.__init__(self, **kw)
+
 class ProxyBaseTest(unittest.TestCase):
 
     def test1(self):
@@ -144,26 +150,30 @@ class ProxyToolTest(SecurityRequestTest):
         #self.assertEqual(ptool.getMatchedObject(123, 'en'), 'ob_456_78')
         #self.assertEqual(ptool.getMatchedObject(123, 'fr'), 'ob_456_33')
 
-    # XXX: This tests a now defunct method (getMatchingProxies). 
-    # What should we test instead ?
-    def _test_getMatchingProxies(self):
+    def sortinfos(self, infos):
+        tosort = [(i['rpath'], i) for i in infos]
+        tosort.sort()
+        return [t[1] for t in tosort]
+
+    def test_getProxyInfosFromDocid(self):
         ptool = self.root.portal_proxies
-        proxy1 = ProxyBase(language_revs={'fr': 33, '*': 78})
-        proxy2 = ProxyBase(language_revs={'fr': 33, 'en': 0})
-        proxy3 = ProxyBase(language_revs={'fr': 78, 'en': 78})
-        ptool.addProxy(123, '456', {'fr': 33, '*': 78})
-        ptool.addProxy(444, '456', {'*': 33, 'en': 0})
-        ptool.addProxy(888, '456', {'fr': 78, 'en': 78})
-        infos = ptool.getMatchingProxies('456', 33)
-        self.assertEqual(infos, {123: ['fr'], 444: ['*']})
-        infos = ptool.getMatchingProxies('456', 78)
-        self.failUnless(infos.has_key(888))
-        infos[888].sort()
-        self.assertEqual(infos, {123: ['*'], 888: ['en', 'fr']})
-        infos = ptool.getMatchingProxies('456', 314)
-        self.assertEqual(infos, {})
-        infos = ptool.getMatchingProxies('nosuch', 22)
-        self.assertEqual(infos, {})
+        proxy1 = PlacefulProxy('foo', docid='456',
+                               language_revs={'fr': 33, 'en': 78})
+        self.root.foo = proxy1
+        proxy2 = PlacefulProxy('bar', docid='456',
+                               language_revs={'fr': 33, 'en': 4})
+        self.root.bar = proxy2
+        ptool._addProxy(proxy1, '/foo')
+        ptool._addProxy(proxy2, '/bar')
+        infos = ptool.getProxyInfosFromDocid('456')
+        infos = self.sortinfos(infos)
+        self.assertEquals(infos,
+            [{'visible': 1, 'rpath': '/bar', 'object': proxy2,
+              'language_revs': {'fr': 33, 'en': 4}},
+             {'visible': 1, 'rpath': '/foo', 'object': proxy1,
+              'language_revs': {'fr': 33, 'en': 78}}])
+
+        self.assertRaises(KeyError, ptool.getProxyInfosFromDocid, 'blah')
 
 
     def XXX_FIXME_testSecuritySynthesis(self):
