@@ -314,6 +314,11 @@ class TreeCache(SimpleItemWithProperties):
                     LOG('TreeCache', ERROR, '_get_info returned non-dict %s'
                         % `r`)
         allowed_roles_users = _allowedRolesAndUsers(ob)
+        localroles = {}
+        for k, v in ob.get_local_roles():
+            localroles['user:'+k] = v
+        for k, v in ob.get_local_group_roles():
+            localroles['group:'+k] = v
         if info is None:
             # Empty info
             info = self._new_tree()
@@ -324,6 +329,7 @@ class TreeCache(SimpleItemWithProperties):
                      'rpath': '/'.join(ppath[plen:]),
                      'hubid': hubtool.getHubId(ob),
                      'allowed_roles_users': allowed_roles_users,
+                     'localroles': localroles,
                      })
         return info
 
@@ -411,6 +417,7 @@ class TreeCache(SimpleItemWithProperties):
           depth
           hubid
           allowed_roles_users
+          localroles
           children    (for the tree)
           nb_children (for the list)
           visible (0 or 1, when filter=0)
