@@ -232,6 +232,7 @@ class CPSMembershipTool(MembershipTool):
             f.changeOwnership(user)
 
             f.manage_setLocalRoles(member_id, ['Owner', 'WorkspaceManager'])
+            f.reindexObjectSecurity()
 
             # Rebuild the tree with corrected local roles.
             # This needs a user that can View the object.
