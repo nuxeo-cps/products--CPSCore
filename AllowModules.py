@@ -41,6 +41,8 @@ ModuleSecurityInfo('types').declarePublic('IntType', 'StringType',
                                           'ListType', 'DictType',
                                           'TupleType')
 
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic('resetSessionLanguageSelection')
+
 ModuleSecurityInfo(
     'Products.CMFCore.WorkflowCore').declarePublic('WorkflowException')
 
@@ -50,3 +52,16 @@ try:
     ModuleSecurityInfo('mx').declarePublic('Tidy')
 except ImportError:
     pass
+
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+    'KEYWORD_DOWNLOAD_FILE')
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+    'KEYWORD_ARCHIVED_REVISION')
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+    'KEYWORD_SWITCH_LANGUAGE')
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+    'KEYWORD_VIEW_LANGUAGE')
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+    'SESSION_LANGUAGE_KEY')
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+    'REQUEST_LANGUAGE_KEY')
