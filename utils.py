@@ -32,7 +32,7 @@ from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
 LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
 
 def mergedLocalRoles(object, withgroups=0, withpath=0):
-    LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
+    #LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
     aclu = getattr(object, 'acl_users', None)
     if aclu is not None and hasattr(aclu, 'mergedLocalRoles'):
         return aclu.mergedLocalRoles(object, withgroups, withpath)
@@ -44,7 +44,7 @@ utils.mergedLocalRoles = mergedLocalRoles
 utils._mergedLocalRoles = mergedLocalRoles
 
 def _allowedRolesAndUsers(ob):
-    LOG('CPSCore utils', DEBUG, '_allowedRolesAndUsers()')
+    #LOG('CPSCore utils', DEBUG, '_allowedRolesAndUsers()')
     
     aclu = getattr(ob, 'acl_users', None)
     if aclu is not None and hasattr(aclu, '_allowedRolesAndUsers'):
@@ -67,14 +67,14 @@ def allowedRolesAndUsers(self):
     Return a list of roles, users and groups with View permission.
     Used by PortalCatalog to filter out items you're not allowed to see.
     """
-    LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
+    #LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
     ob = self._IndexableObjectWrapper__ob # Eeek, manual name mangling
     return _allowedRolesAndUsers(ob)
 IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
 
 def _getAllowedRolesAndUsers(user):
     """Returns a list with all roles this user has + the username"""
-    LOG('CPSCore utils', DEBUG, '_getAllowedRolesAndUsers()')
+    #LOG('CPSCore utils', DEBUG, '_getAllowedRolesAndUsers()')
 
     result = list(user.getRoles())
     result.append('Anonymous')
@@ -91,7 +91,7 @@ def _getAllowedRolesAndUsers(user):
     return result
 
 def _listAllowedRolesAndUsers(self, user):
-    LOG('CPSCore utils', DEBUG, '_listAllowedRolesAndUsers()')
+    #LOG('CPSCore utils', DEBUG, '_listAllowedRolesAndUsers()')
     aclu = self.acl_users
     if hasattr(aclu, '_getAllowedRolesAndUsers'):
         return aclu._getAllowedRolesAndUsers(user)
