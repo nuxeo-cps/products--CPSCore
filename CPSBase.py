@@ -134,7 +134,7 @@ class CPSBaseFolder(CPSBaseDocument):
         wftool = getToolByName(self, 'portal_workflow')
         newid = wftool.invokeFactoryFor(self, type_name, id, *args, **kw)
         if RESPONSE is not None:
-            ob = self[newid]
+            ob = self._getOb(newid)
             ttool = getToolByName(self, 'portal_types')
             info = ttool.getTypeInfo(type_name)
             RESPONSE.redirect('%s/%s' % (ob.absolute_url(),
