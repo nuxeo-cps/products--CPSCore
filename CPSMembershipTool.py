@@ -125,6 +125,8 @@ class CPSMembershipTool(MembershipTool):
         If ZEO is used, each server will have the same nonce.
         """
         try:
+            # Here we use a variable instance so that each ZEO server will have
+            # the same nonce.
             nonce = self._nonce
         except AttributeError:
             self._nonce = ''.join(random.sample('_-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
@@ -660,14 +662,23 @@ Mime-Version: 1.0
 
     security.declarePublic('resetPassword')
     def resetPassword(self, username, emission_time, reset_token):
-        """Reset the password of a user and return whether it has been successful
-        or not.
+        """Reset the password of a user.
+
+        This methods returns a dictionary containing
+        1. the new randomly generated password
+        2. a boolean telling if the password resetting has been successful
+        3. a boolean telling if the email notification of the new password has
+        been successful.
         """
+        result = {'new_password': None,
+                  'reset_password_success': False,
+                  'email_password_success': False,
+                  }
         if not self.isPasswordResetRequestValid(username,
                                                 emission_time, reset_token):
             LOG('CPSCore.CPSMembershipTool', INFO,
                 "An invalid password reset request has been received.")
-            return False
+            return result
         member = self.getMemberById(username)
         email_address = member.getProperty('email')
         random.seed()
@@ -675,6 +686,8 @@ Mime-Version: 1.0
         new_password = ''.join(random.sample('_-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
                                              password_length))
         member.setSecurityProfile(password=new_password, domains=None)
+        result['new_password'] = new_password
+        result['reset_password_success'] = True
         try:
             mail_from_address = getattr(self.portal_properties,
                                         'email_from_address')
@@ -683,7 +696,7 @@ Mime-Version: 1.0
                 "Your portal has no \"email_from_address\" defined. \
                 Reseting password will not be performed because the users have \
                 to trust who send them this reset password email.")
-            return False
+            return result
         mail_to_address = email_address
         subject = "Password reset: new password"
         visit_url = ("%s/login_form" % self.portal_url())
@@ -708,9 +721,10 @@ Mime-Version: 1.0
         except (socket.error, SMTPException, MailHostError):
             LOG('CPSCore.CPSMembershipTool', PROBLEM,
                 "Error while sending reset token email")
-            return False
+            return result
 
-        return True
+        result['email_password_success'] = True
+        return result
 
     #
     #   ZMI interface methods
