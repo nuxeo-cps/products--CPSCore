@@ -30,6 +30,7 @@ import AllowModules
 import ElementsTool
 import EventServiceTool
 import EventServicePatches
+import TypesToolPatches
 #import LoggerTool
 #import MirrorTool
 import ProxyTool
