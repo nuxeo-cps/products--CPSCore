@@ -644,11 +644,17 @@ Mime-Version: 1.0
         except (socket.error, SMTPException, MailHostError):
             LOG('CPSCore.CPSMembershipTool', PROBLEM,
                 "Error while sending reset token email")
+        result = {'reset_token': reset_token,
+                  'emission_time': request_emission_time,
+            }
+        return result
 
     security.declarePublic('isPasswordResetRequestValid')
     def isPasswordResetRequestValid(self, username, emission_time, reset_token):
         """Return wether a request for a password reset is valid or not."""
         member = self.getMemberById(username)
+        if member is None:
+            raise ValueError("The username cannot be found.")
         hash_object = sha.new()
         hash_object.update(username)
         hash_object.update(emission_time)
@@ -680,6 +686,8 @@ Mime-Version: 1.0
                 "An invalid password reset request has been received.")
             return result
         member = self.getMemberById(username)
+        if member is None:
+            raise ValueError("The username cannot be found.")
         email_address = member.getProperty('email')
         random.seed()
         password_length = 10
