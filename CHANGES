@@ -9,4 +9,5 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Made the product rely on CPSUtil factorized methods.
+- Made the product rely on CPSUtil factorized methods
+- CPS < 3.3 backward compatibility for TreesTool.
