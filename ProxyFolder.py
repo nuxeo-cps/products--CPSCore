@@ -26,18 +26,18 @@ from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 
 from Products.NuxCPS3.ProxyBase import ProxyBase
-from Products.NuxCPS3.CPSBase import CPSBaseDocument
+from Products.NuxCPS3.CPSBase import CPSBaseFolder
 
-class ProxyDocument(ProxyBase, CPSBaseDocument):
-    """A Proxy document is a loose indirection to a document in a
-    repository. It has only convenience method to access that document."""
+class ProxyFolder(ProxyBase, CPSBaseFolder):
+    """A Proxy folder is a folder whose data is indirected to a document
+    in a repository."""
 
-    meta_type = 'CPS Proxy Document'
+    meta_type = 'CPS Proxy Folder'
 
     security = ClassSecurityInfo()
 
     def __init__(self, id, repoid=None, version_infos=None):
-        CPSBaseDocument.__init__(self, id)
+        CPSBaseFolder.__init__(self, id)
         ProxyBase.__init__(self, repoid, version_infos)
 
-InitializeClass(ProxyDocument)
+InitializeClass(ProxyFolder)

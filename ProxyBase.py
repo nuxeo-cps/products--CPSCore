@@ -27,26 +27,40 @@ from Products.CMFCore.CMFCorePermissions import AccessContentsInformation
 
 
 class ProxyBase(Base):
-    """Mixin class for proxy types."""
+    """Mixin class for proxy types.
+
+    A proxy stores the repoid of the document family it points to,
+    and a mapping of language -> version.
+    """
 
     security = ClassSecurityInfo()
 
-    def __init__(self, repoid, version_filter):
+    def __init__(self, repoid, version_infos):
         self._repoid = repoid
-        self._version_filter = version_filter
+        self._version_infos = version_infos
+
+    security.declarePrivate('setVersionInfos')
+    def setVersionInfos(self, version_infos):
+        """Set the version infos for this proxy.
+
+        The version infos is a dict of language -> version,
+        where language can be '*' for the default, and version
+        is an integer.
+        """
+        self._version_infos = version_infos.copy()
+
+    security.declarePrivate('getVersionInfos')
+    def getVersionInfos(self):
+        """Return the version infos for this proxy."""
+        return self._version_infos.copy()
 
     security.declarePrivate('getRepoId')
     def getRepoId(self):
         """Return the repoid for this proxy."""
         return self._repoid
 
-    security.declarePrivate('getVersionFilter')
-    def getVersionFilter(self):
-        """Return the version filter for this proxy."""
-        return self._version_filter
-
     security.declareProtected(AccessContentsInformation, 'getObject')
-    def getObject(self):
+    def getObject(self, lang=None):
         """Return the object referred to by this proxy."""
         pxtool = getToolByName(self, 'portal_proxies', None)
         if pxtool is None:
@@ -61,9 +75,29 @@ class ProxyBase(Base):
             LOG('ProxyBase', ERROR,
                 'No hubid found for %s' % '/'.join(self.getPhysicalPath()))
             return None
-        return pxtool.queryMatchedObject(hubid)
+        return pxtool.getMatchedObject(hubid, lang=lang)
 
+    #
+    # Helpers
+    #
 
+    security.declarePublic('Title')
+    def Title(self):
+        """The object's title."""
+        ob = self.getObject()
+        if ob is not None:
+            return ob.Title()
+        else:
+            return ''
 
+    security.declarePublic('title_or_id')
+    def title_or_id(self):
+        """The object's title or id."""
+        return self.getId()
+
+    security.declarePublic('SearchableText')
+    def SearchableText(self):
+        """No searchable text."""
+        return ''
 
 InitializeClass(ProxyBase)

@@ -31,6 +31,7 @@ from OFS.FindSupport import FindSupport
 
 from Products.CMFCore.CMFCorePermissions import View, ModifyPortalContent
 
+from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
@@ -39,8 +40,8 @@ from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 defaultencoding = sys.getdefaultencoding()
 
 
-class CPSDocumentBase(PortalContent, PortalFolder, DefaultDublinCoreImpl,
-                      PropertyManager):
+class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
+                      DefaultDublinCoreImpl, PropertyManager):
     """The base from which all CPS content objects derive."""
 
     meta_type = 'CPS Base Document'
@@ -104,13 +105,13 @@ class CPSDocumentBase(PortalContent, PortalFolder, DefaultDublinCoreImpl,
         FindSupport.manage_options # Find
         )
 
-InitializeClass(CPSDocumentBase)
+InitializeClass(CPSBaseDocument)
 
 
-class CPSFolderBase(CPSDocumentBase):
+class CPSBaseFolder(CPSBaseDocument):
     """The base from which all CPS folder objects derive."""
 
-    meta_type = 'CPS Folder Base'
+    meta_type = 'CPS Base Folder'
 
     isPrincipiaFolderish = 1
 
@@ -125,7 +126,7 @@ class CPSFolderBase(CPSDocumentBase):
         FindSupport.manage_options # Find
         )
 
-InitializeClass(CPSFolderBase)
+InitializeClass(CPSBaseFolder)
 
 
 def CPSBase_adder(container, ob, REQUEST=None):

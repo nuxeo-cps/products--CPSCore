@@ -18,6 +18,7 @@
 # $Id$
 
 from zLOG import LOG, ERROR, DEBUG
+import random
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 
@@ -51,6 +52,29 @@ class ObjectRepository(UniqueObject, Folder):
     # API
     #
 
+    security.declarePrivate('invokeFactory')
+    def invokeFactory(self, type_name, repoid=None, version_info=None,
+                      *args, **kw):
+        """Create an object with repoid and version in the repository.
+
+        Returns the used repoid.
+        """
+        if version_info is None:
+            return ValueError('version_info must not be None')
+        if repoid is None:
+            while 1:
+                repoid = str(random.randrange(1,2147483600))
+                id = self._get_id(repoid, version_info)
+                if not self.has_key(id):
+                    break
+        else:
+            id = self._get_id(repoid, version_info)
+        ttool = getToolByName(self, 'portal_types')
+        ttool.constructContent(type_name, id, *args, **kw)
+        # XXX constructContent may in the future return a new id!
+        return repoid
+
+    # XXX used for what?
     security.declarePrivate('addObjectVersion')
     def addObjectVersion(self, object, repoid, version_info):
         """Add the version version_info of the object repoid.
@@ -132,7 +156,7 @@ class ObjectRepository(UniqueObject, Folder):
         return '%s__' % repoid
 
     def _get_id(self, repoid, version_info):
-        id = '%s__%s' % (repoid, version_info)
+        id = '%s__%04d' % (repoid, version_info)
         return id
 
     def _split_id(self, id):

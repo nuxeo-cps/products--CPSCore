@@ -30,7 +30,8 @@ from Products.CMFCore.CMFCorePermissions import AddPortalContent
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
 from Products.NuxCPS3.CPSWorkflowConfiguration import CPSWorkflowConfiguration_id
-
+from Products.NuxCPS3.ProxyFolder import ProxyFolder
+from Products.NuxCPS3.ProxyDocument import ProxyDocument
 
 
 class CPSWorkflowTool(WorkflowTool):
@@ -86,8 +87,13 @@ class CPSWorkflowTool(WorkflowTool):
                          *args, **kw):
         """Create an object in a container.
 
-        creation_transitions is a dict of {wf_id: transition}.
-        It is used to decide initial transitions in the object's workflows.
+        The variable creation_transitions is a dict of {wf_id:
+        transition}, it is used to decide initial transitions in the
+        object's workflows.
+
+        The object created will be a proxy to a real object if the type
+        type_name has an action of id 'isproxytype' and whose value may
+        be 'document' or 'folder'.
         """
         if not _checkPermission(AddPortalContent, container):
             raise Unauthorized
@@ -103,10 +109,36 @@ class CPSWorkflowTool(WorkflowTool):
                 raise WorkflowException(
                     "Workflow %s cannot create %s using transition '%s'" %
                     (wf_id, type_name, transition))
-        # calls wf.notifyCreated()!
-        container.invokeFactory(type_name, id, *args, **kw)
-        # XXX should get new id effectively used! CMFCore bug!
-        ob = container[id]
+        # Find out if we must create a normal document or a proxy.
+        proxy_type = None
+        ttool = getToolByName(self, 'portal_types')
+        for ti in ttool.listTypeInfo():
+            proxy_type = ti.getActionById('isproxytype', None)
+            if proxy_type is not None:
+                break
+        if proxy_type is not None:
+            # Use a proxy.
+            # Create the real document in the object repository
+            if proxy_type == 'folder':
+                class_ = ProxyFolder
+            else:
+                class_ = ProxyDocument
+            repo = getToolByName(self, 'portal_repository')
+            version_info = 1
+            repoid = repo.invokeFactory(type_name, repoid=None,
+                                        version_info=version_info,
+                                        *args, **kw)
+            # Create the proxy to that document
+            version_infos = {'*': version_info}
+            proxy = class_(id, repoid=repoid, version_infos=version_infos)
+            container._setObject(id, proxy)
+            ob = container._getOb(id)
+        else:
+            # Use a normal document.
+            # Note: this calls wf.notifyCreated()!
+            container.invokeFactory(type_name, id, *args, **kw)
+            # XXX should get new id effectively used! CMFCore bug!
+            ob = container[id]
         # Do creation transitions for all workflows.
         reindex = 0
         for wf_id, transitions in allowed.items():
@@ -126,6 +158,10 @@ class CPSWorkflowTool(WorkflowTool):
         if reindex:
             self._reindexWorkflowVariables(ob)
         return id
+
+    #
+    # Misc
+    #
 
     # Overloaded for placeful workflow definitions
     def getChainFor(self, ob, container=None):
