@@ -247,7 +247,10 @@ class CallElement:
     def _callIt(self):
         object = _normalizeObject(self._object)
         meth = object.restrictedTraverse(self._method_name)
-        return call_meth(meth, self._elements)
+        if callable(meth):
+            return call_meth(meth, self._elements)
+        else:
+            return meth
 
     def __call__(self):
         return self._callIt()
@@ -262,7 +265,11 @@ class ActionCallElement(CallElement):
             meth = object.restrictedTraverse(action)
         else:
             meth = object
-        result = call_meth(meth, self._elements)
-        evtool = getEventService(object)
-        evtool.notify(self._method_name, object, None)
-        return result
+        if callable(meth):
+            result = call_meth(meth, self._elements)
+            evtool = getEventService(object)
+            evtool.notify(self._method_name, object, None)
+            return result
+        else:
+            evtool.notify(self._method_name, object, None)
+            return meth
