@@ -43,13 +43,10 @@ from Products.CMFCore.CMFCorePermissions import AddPortalContent, ManagePortal
 # Don't remove.
 import AllowModules
 
-#import ElementsTool
 import EventServiceTool
 import EventServicePatches
 import TypesToolPatches
 import PatchBTreeFolder2
-#import LoggerTool
-#import MirrorTool
 import ProxyTool
 import ObjectRepositoryTool
 import CPSWorkflowTool
@@ -69,9 +66,6 @@ import CPSWorkflow
 
 tools = (
     EventServiceTool.EventServiceTool,
-#    LoggerTool.LoggerTool,
-#    MirrorTool.MirrorTool,
-#    ElementsTool.ElementsTool,
     ProxyTool.ProxyTool,
     ObjectRepositoryTool.ObjectRepositoryTool,
     CPSWorkflowTool.CPSWorkflowTool,
@@ -101,15 +95,6 @@ def initialize(registrar):
         icon='tool.gif',
     ).initialize(registrar)
 
-    # Elements
-    #registrar.registerClass(
-    #    ElementsTool.DefaultElement,
-    #    permission='Add a Default Element',
-    #    constructors=(
-    #        ElementsTool.ElementsTool.manage_addDefaultElement,
-    #    )
-    #)
-
     # Event Service
     registrar.registerClass(
         EventServiceTool.SubscriberDef,
@@ -133,7 +118,6 @@ def initialize(registrar):
         constructors=(TreesTool.TreesTool.manage_addCPSTreeCache,)
     )
     cmfutils.registerIcon(TreesTool.TreeCache, 'zmi/tree_icon.gif', globals())
-
     
     # CPS Content and Folder objects
     cmfutils.ContentInit(

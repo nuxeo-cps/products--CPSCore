@@ -40,7 +40,6 @@ from Products.CMFCore.TypesTool import ScriptableTypeInformation
 from Products.CPSCore.utils import _isinstance
 from Products.CPSCore.CPSCorePermissions import ViewArchivedRevisions
 from Products.CPSCore.ProxyBase import ProxyBase
-from Products.CPSCore.EventServiceTool import getEventService
 
 
 class ProxyTool(UniqueObject, SimpleItemWithProperties):

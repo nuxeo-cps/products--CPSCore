@@ -23,9 +23,7 @@ It also stores workflow-related information for those documents.
 """
 
 from zLOG import LOG, ERROR, DEBUG, TRACE
-import sys
 import random
-from types import TupleType
 from Globals import InitializeClass, DTMLFile
 from cStringIO import StringIO
 from Acquisition import aq_base, aq_parent, aq_inner

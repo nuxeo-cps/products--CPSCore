@@ -24,13 +24,9 @@
 """
 
 from AccessControl.PermissionRole import PermissionRole
-from OFS.PropertyManager import PropertyManager
 from Products.CPSCore.CPSCorePermissions import ChangeSubobjectsOrder
 
 # derived from OrderFolder by Stephan Richter, iuveno AG.
-
-from AccessControl.PermissionRole import PermissionRole
-from AccessControl.Permissions import manage_properties
 
 from OFS.ObjectManager import ObjectManager
 

@@ -27,7 +27,6 @@ from types import StringType
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
-from AccessControl.SecurityManagement import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.User import nobody
 from AccessControl.User import UnrestrictedUser
@@ -50,7 +49,6 @@ from Products.CPSCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
 from DateTime.DateTime import DateTime
 from string import maketrans
 from random import randrange
-import re
 
 from zLOG import LOG, DEBUG, ERROR
 
