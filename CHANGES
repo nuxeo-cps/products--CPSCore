@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- #75 remove undo in portal undo (Patch on UndoTool)
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - code re-indent sf
