@@ -23,8 +23,11 @@
 import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
 
-from Products.CMFCore.tests.base.testcase import SecurityRequestTest
+from Acquisition import aq_parent, aq_inner
 from OFS.SimpleItem import SimpleItem
+from OFS.Folder import Folder
+
+from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
 from Products.CPSCore.TreesTool import TreesTool, TreeCache
 
@@ -34,16 +37,37 @@ class DummyTreeCache(SimpleItem):
     def notify_tree(self, event_type, ob, infos):
         self.notified = self.notified + 1
 
-class DummyObject:
+class DummyObject(SimpleItem):
     portal_type = 'ThePortalType'
     meta_type = 'TheMetaType'
-    def __init__(self, path='/dummy'):
+    def __init__(self, path='/dummy', title=''):
         self.path = tuple(path.split('/'))
+        self.title = title
     def getPhysicalPath(self):
         return self.path
     def getId(self):
         return self.path[-1]
+    def get_local_group_roles(self):
+        return {}
 
+class DummyUrlTool(Folder):
+    id = 'portal_url'
+    def getPortalObject(self):
+        return aq_parent(aq_inner(self))
+    def getRelativeUrl(self, ob):
+        pplen = len(self.getPortalObject().getPhysicalPath())
+        path = ob.getPhysicalPath()
+        return '/'.join(path[pplen:])
+
+
+def flatkeys(tree, key='rpath'):
+    rpath = tree[key]
+    children = tree['children']
+    if not children:
+        return rpath
+    else:
+        return (rpath, tuple([flatkeys(child, key=key)
+                              for child in children]))
 
 class TreesToolTest(unittest.TestCase):
 
@@ -126,6 +150,76 @@ class TreeCacheTest(SecurityRequestTest):
         # No absolute path
         cache.root = '/hack/this'
         self.assertEquals(cache.getRoot(), '')
+
+    def test_inserts(self):
+        # Test basic use.
+        app = Folder()
+        app._setId('')
+
+        cmf = Folder()
+        cmf._setId('cmf')
+        app.cmf = cmf
+        cmf = app.cmf # Wrap
+
+        cmf.portal_url = DummyUrlTool()
+
+        cache = self.makeOne()
+        cmf.cache = cache
+        cache = cmf.cache # Wrap
+
+        cache.manage_changeProperties(info_method='info_method')
+        def info_method(doc=None):
+            return {
+                'title': doc.title,
+                }
+        cmf.info_method = info_method
+
+        # Build root hierarchy
+        cmf.root = DummyObject('/cmf/root')
+        cmf.root.foo = DummyObject('/cmf/root/foo', title='Foo')
+
+        # Add root first
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        tree = cache.getTree()
+        self.assertEquals(tree, {
+            'url': 'cmf/root/foo',
+            'portal_type': 'ThePortalType',
+            'allowed_roles_and_users': ['Manager'],
+            'id': 'foo',
+            'depth': 0,
+            'path': '/cmf/root/foo',
+            'local_roles': {},
+            'children': [],
+            'rpath': 'root/foo',
+            'title': 'Foo',
+            })
+        self.assertEquals(flatkeys(tree), 'root/foo')
+
+        # Add first child
+        cmf.root.foo.bar = DummyObject('/cmf/root/foo/bar', title='Bar')
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        tree = cache.getTree()
+        self.assertEquals(flatkeys(tree), ('root/foo', ('root/foo/bar',)))
+        self.assertEquals(flatkeys(tree, key='title'),
+                          ('Foo', ('Bar',)))
+
+        # Add another
+        cmf.root.foo.baz = DummyObject('/cmf/root/foo/baz', title='Baz')
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
+        tree = cache.getTree()
+        self.assertEquals(flatkeys(tree),
+                          ('root/foo', ('root/foo/bar', 'root/foo/baz')))
+        self.assertEquals(flatkeys(tree, key='title'),
+                          ('Foo', ('Bar', 'Baz')))
+
+        # Check re-add existing one
+        cmf.root.foo.bar = DummyObject('/cmf/root/foo/bar', title='NewBar')
+        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        tree = cache.getTree()
+        self.assertEquals(flatkeys(tree),
+                          ('root/foo', ('root/foo/bar', 'root/foo/baz')))
+        #self.assertEquals(flatkeys(tree, key='title'), XXX
+        #                  ('Foo', ('NewBar', 'Baz')))  XXX
 
     def _test_rebuild(self):
         pass
