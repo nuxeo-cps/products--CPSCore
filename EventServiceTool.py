@@ -127,9 +127,8 @@ class SubscriberDef(SimpleItemWithProperties):
         },
     )
 
-    def __init__(self, id, subscriber, action, meta_type,
-                 event_type, notification_type,
-                 compressed):
+    def __init__(self, id, subscriber, action, meta_type, event_type,
+                 notification_type, compressed):
         self.id = id
         self.subscriber = subscriber
         self.action = action
@@ -219,7 +218,6 @@ class EventServiceTool(UniqueObject, Folder):
     #
     # API
     #
-
     security.declarePrivate('notify')
     def notify(self, event_type, object, infos):
         """Notifies subscribers of an event
@@ -267,7 +265,6 @@ class EventServiceTool(UniqueObject, Folder):
     #
     # ObjectHub API
     #
-
     # XXX security?
     security.declarePublic('getHubId')
     def getHubId(self, object_or_location):
@@ -311,7 +308,6 @@ class EventServiceTool(UniqueObject, Folder):
     #
     # misc
     #
-
     def _refresh_notification_dict(self, exclude_id=None):
         """Refresh notification dict."""
         ids = self.objectIds(CPSSubscriberDefinition_type)
@@ -335,7 +331,6 @@ class EventServiceTool(UniqueObject, Folder):
     #
     # ObjecHub misc
     #
-
     def _get_rlocation(self, location):
         """Get a rlocation from a location.
 
@@ -409,7 +404,6 @@ class EventServiceTool(UniqueObject, Folder):
     #
     # ZMI
     #
-
     manage_options = (
         {
             'label': 'Subscribers',
@@ -453,7 +447,6 @@ class EventServiceTool(UniqueObject, Folder):
     #
     # HubId ZMI
     #
-
     security.declareProtected(ViewManagementScreens, 'manage_listHubIds')
     manage_listHubIds = DTMLFile('zmi/event_listHubIds', globals())
 

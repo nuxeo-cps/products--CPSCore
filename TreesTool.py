@@ -21,7 +21,6 @@
 
 from zLOG import LOG, DEBUG
 from types import DictType
-from copy import deepcopy
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo

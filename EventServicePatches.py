@@ -46,7 +46,6 @@ def patch_action(class_, func):
 #
 # OFS
 #
-
 from OFS.ObjectManager import ObjectManager
 from OFS.SimpleItem import Item
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
@@ -68,7 +67,6 @@ for class_ in (Item, ObjectManager, CMFCatalogAware):
 #
 # OrderedFolderSupportPatch
 #
-
 import Products.OrderedFolderSupportPatch # ensure it does its patches
 
 def move_object_to_position(self, *args, **kw):
@@ -83,7 +81,6 @@ patch_action(ObjectManager, move_object_to_position)
 #
 
 # The recursing method
-
 def manage_afterCMFAdd(self, item, container):
     """Notify object and event service of CMF add finalization."""
     notify(self, 'sys_add_cmf_object', self)
@@ -92,7 +89,6 @@ def manage_afterCMFAdd(self, item, container):
 CMFCatalogAware.manage_afterCMFAdd = manage_afterCMFAdd
 
 # manage_renameObject
-
 def manage_renameObject(self, id, new_id, REQUEST=None):
     res = self.cps_old_manage_renameObject(id, new_id, REQUEST=REQUEST)
     ob = self._getOb(new_id)

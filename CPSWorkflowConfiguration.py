@@ -23,16 +23,13 @@ mapping.
 """
 
 from zLOG import LOG, ERROR, DEBUG
-from types import StringType
-from Acquisition import aq_base, aq_parent, aq_inner
+from Acquisition import aq_parent, aq_inner
 from Globals import InitializeClass, DTMLFile, PersistentMapping
-from AccessControl import ClassSecurityInfo, Unauthorized
+from AccessControl import ClassSecurityInfo
 
 from OFS.SimpleItem import SimpleItem
 
-from Products.CMFCore.utils import getToolByName, _checkPermission
-from Products.CMFCore.CMFCorePermissions import AddPortalContent
-from Products.CMFCore.WorkflowTool import WorkflowTool
+from Products.CMFCore.utils import getToolByName
 
 from CPSWorkflowPermissions import ManageWorkflows
 
@@ -63,7 +60,6 @@ class CPSWorkflowConfiguration(SimpleItem):
     #
     # API called by CPS Workflow Tool
     #
-
     def _get_chain_or_default(self, portal_type, chain):
         """Return the chain for portal_type, or the Default chain."""
         if chain is not None:
@@ -99,7 +95,6 @@ class CPSWorkflowConfiguration(SimpleItem):
     #
     # Internal API
     #
-
     security.declareProtected(ManageWorkflows, 'setChain')
     def setChain(self, portal_type, chain):
         """Set the chain for a portal type."""
@@ -137,7 +132,6 @@ class CPSWorkflowConfiguration(SimpleItem):
     #
     # ZMI
     #
-
     manage_options = ({'label' : 'Workflows',
                        'action' : 'manage_editForm',
                        },

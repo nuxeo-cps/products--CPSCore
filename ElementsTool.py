@@ -76,8 +76,7 @@ class DefaultElement(SimpleItemWithProperties):
 InitializeClass(DefaultElement)
 
 class ElementsTool(UniqueObject, OFS.Folder.Folder):
-    """\
-    Elements tool is used to initialize elements mapping and
+    """Elements tool is used to initialize elements mapping and
     and eventually getting it.
     """
 
@@ -101,8 +100,7 @@ class ElementsTool(UniqueObject, OFS.Folder.Folder):
     bases = ['NAVIGATION_BASE', 'SITE_BASE']
 
     def getElements(self, request=None, object=None):
-        """\
-        Return elements mapping with some default elements
+        """Return elements mapping with some default elements
         """
         if request is None:
             request = self.REQUEST
@@ -156,28 +154,30 @@ class ElementsTool(UniqueObject, OFS.Folder.Folder):
         else:
             elements.setCallElement(name, object, def_el.method_name)
 
+    #
     # ZMI
-
-    security.declareProtected(ViewManagementScreens, \
+    #
+    security.declareProtected(ViewManagementScreens,
         'manage_editDefaultElementsForm')
-    manage_editDefaultElementsForm = \
-        DTMLFile('zmi/editDefaultElementsForm', globals())
+    manage_editDefaultElementsForm = DTMLFile(
+        'zmi/editDefaultElementsForm', globals())
 
     manage_main = manage_editDefaultElementsForm
 
-    security.declareProtected(ViewManagementScreens, \
+    security.declareProtected(ViewManagementScreens,
         'manage_addDefaultElement')
     def manage_addDefaultElement(self, name, from_element, method_name,
                                   description='', cmf_action=0, REQUEST=None):
-        """\
-        Add a default element to elements mapping
+        """Add a default element to elements mapping
+
         Virtually:
             elements['name'] = elements['from_element'].method_name()
         If cmf_action is true, use method_name as action name.
         """
         name = name.upper()
         from_element = from_element.upper()
-        element = DefaultElement(name, from_element, method_name, description, cmf_action)
+        element = DefaultElement(name, from_element, method_name, 
+            description, cmf_action)
         self._setObject(name, element)
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(

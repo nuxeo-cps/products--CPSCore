@@ -16,6 +16,7 @@
 # 02111-1307, USA.
 #
 # $Id$
+
 """Workflow extending DCWorklfow with enhanced transitions.
 """
 
@@ -27,11 +28,7 @@ from AccessControl import ClassSecurityInfo
 
 from OFS.Folder import Folder
 
-from Products.CMFCore.utils import UniqueObject
-from Products.CMFCore.utils import SimpleItemWithProperties
-from Products.CMFCore.utils import getToolByName
-
-from Products.CMFCore.WorkflowCore import ObjectDeleted, ObjectMoved
+from Products.CMFCore.WorkflowCore import ObjectMoved
 from Products.CMFCore.WorkflowTool import addWorkflowFactory
 
 from Products.DCWorkflow.DCWorkflow import DCWorkflowDefinition
@@ -42,7 +39,6 @@ from Products.DCWorkflow.Transitions import Transitions as DCWFTransitions
 from Products.DCWorkflow.Expression import StateChangeInfo
 from Products.DCWorkflow.Expression import createExprContext
 
-from Products.DCWorkflow.DCWorkflow import TRIGGER_USER_ACTION
 TRIGGER_CREATION = 10
 
 TRANSITION_BEHAVIOR_NORMAL = 0

@@ -25,7 +25,7 @@ from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo, Unauthorized
 
-from Products.CMFCore.utils import getToolByName, _checkPermission
+from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import View
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCorePermissions import ManagePortal
@@ -33,7 +33,6 @@ from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
 from Products.NuxCPS3.ProxyBase import ProxyBase, ProxyFolderishDocument
-from Products.NuxCPS3.EventServiceTool import getEventService
 from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBCREATE
 from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBDELETE
 from Products.NuxCPS3.CPSWorkflow import TRANSITION_BEHAVIOR_SUBCOPY
@@ -68,7 +67,6 @@ class CPSWorkflowTool(WorkflowTool):
     #
     # API
     #
-
     security.declarePublic('isCreationAllowedIn')
     def isCreationAllowedIn(self, container, get_details=0):
         """Is the creation of a subobject allowed in the container ?"""
@@ -311,7 +309,6 @@ class CPSWorkflowTool(WorkflowTool):
     #
     # Constrained workflow transitions for folderish documents.
     #
-
     security.declarePublic('doActionFor')
     def doActionFor(self, ob, action, wf_id=None, *args, **kw):
         """Execute the given workflow action for the object.
@@ -450,7 +447,6 @@ class CPSWorkflowTool(WorkflowTool):
     #
     # ZMI
     #
-
     manage_overview = DTMLFile('zmi/explainCPSWorkflowTool', globals())
 
     def all_meta_types(self):

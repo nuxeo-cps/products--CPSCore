@@ -16,10 +16,10 @@
 # 02111-1307, USA.
 #
 # $Id$
+
 """Mixin that does TypesTool-like operation on types.
 """
 
-from types import StringType
 import sys
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo

@@ -23,7 +23,7 @@ from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 from EventServiceTool import getEventService
 
-from Acquisition import aq_base, aq_parent, aq_chain
+from Acquisition import aq_base, aq_parent
 
 _marker = []
 
@@ -34,8 +34,7 @@ def call_meth(meth, elements):
         return meth()
 
 class ElementPlaceHolder:
-    """\
-    An element place holde just deffers the call to
+    """An element placeholder just defers the call to
     elements[name] until it is really desired
     """
 
@@ -54,8 +53,7 @@ class ElementPlaceHolder:
 InitializeClass(ElementPlaceHolder)
 
 def _normalizeObject(a):
-    """\
-    Call a if a is an element place holder or a call element
+    """Call a if a is an element placeholder or a call element
     """
     b = aq_base(a)
     if hasattr(b, '_isPlaceHolder') or hasattr(b, '_isCallElement'):
@@ -64,10 +62,8 @@ def _normalizeObject(a):
         return a
 
 class ElementsMapping:
-    """\
-    An ElementsMapping is almost like a classic mapping
-    except it can defer some element computations and other
-    nice things
+    """An ElementsMapping is almost like a classic mapping except it can defer
+    some element computations and other nice things
     """
 
     security = ClassSecurityInfo()
@@ -102,9 +98,8 @@ class ElementsMapping:
         request.other['elements_mapping'] = self
 
     def _getElement(self, name, default=_marker):
-        """\
-        Get element named 'name'. Try to set it if necessary
-        from the default setter
+        """Get element named 'name'. Try to set it if necessary from the
+        default setter
         """
         mapping = self._mapping
         if mapping.has_key(name):
@@ -120,8 +115,7 @@ class ElementsMapping:
             raise KeyError, name
 
     def __getitem__(self, name):
-        """\
-        Get element named 'name'. Expand sequences and calculate
+        """Get element named 'name'. Expand sequences and calculate
         element place holders and call elements
         """
         if self._sequences.has_key(name):
@@ -166,8 +160,7 @@ class ElementsMapping:
         return self._mapping.has_key(name) or name in self._default_keys
 
     def keys(self):
-        """\
-        Return all keys for this mapping including keys promised by
+        """Return all keys for this mapping including keys promised by
         the default setter
         """
         base_keys = self._mapping.keys()
@@ -177,8 +170,7 @@ class ElementsMapping:
         return base_keys
 
     def appendElement(self, name, value):
-        """\
-        Append an element to element named 'name'
+        """Append an element to element named 'name'
         Turn element 'name' into a sequence element.
         If default setter does not set this element,
         [] is always the basis of this sequence element.
@@ -193,8 +185,7 @@ class ElementsMapping:
                 del self._appending[name]
 
     def extendElement(self, name, value):
-        """\
-        As appendElement() but extend element named 'name'
+        """As appendElement() but extend element named 'name'
         """
         if self._sequences.has_key(name):
             self._mapping[name].append((1, value))
@@ -204,8 +195,7 @@ class ElementsMapping:
             self._mapping[name] = [(1, a), (1, value)]
 
     def getElementPlaceHolder(self, name):
-        """\
-        Return an object replacing self[name] until it is really
+        """Return an object replacing self[name] until it is really
         necessary to evaluates it
         """
         return ElementPlaceHolder(self, name)
@@ -273,3 +263,4 @@ class ActionCallElement(CallElement):
         else:
             evtool.notify(self._method_name, object, {})
             return meth
+

@@ -29,9 +29,8 @@ from OFS.ObjectManager import ObjectManager
 from OFS.PropertyManager import PropertyManager
 from OFS.FindSupport import FindSupport
 
-from Products.CMFCore.CMFCorePermissions import View, AddPortalContent
+from Products.CMFCore.CMFCorePermissions import View
 from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
-from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.PortalContent import PortalContent
