@@ -108,8 +108,6 @@ class CPSMembershipTool(MembershipTool):
         else:
             member_roles = [role for role in roles
                             if role not in ('Member', 'Authenticated')]
-            #member_roles = list(roles)
-            #del member_roles[member_roles.index('Member')]
             member_roles.sort()
             return tuple(member_roles)
 
