@@ -322,7 +322,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         docid, rev = repotool.getDocidAndRevisionFromObjectId(id)
         if docid is None:
             return []
-        rpaths = self._docid_rev_to_rpaths[(docid, rev)]
+        rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
         res = []
         for rpath in rpaths:
             docid2, language_revs = self._rpath_to_infos[rpath]
@@ -353,7 +353,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             % (docid, rev))
         if docid is None:
             return
-        rpaths = self._docid_rev_to_rpaths[(docid, rev)]
+        rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
         for rpath in rpaths:
             docid2, language_revs = self._rpath_to_infos[rpath]
             try:
