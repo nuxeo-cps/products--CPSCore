@@ -37,16 +37,24 @@ class DummyTreeCache(SimpleItem):
     def notify_tree(self, event_type, ob, infos):
         self.notified = self.notified + 1
 
-class DummyObject(SimpleItem):
+class DummyObject(Folder):
     portal_type = 'ThePortalType'
     meta_type = 'TheMetaType'
-    def __init__(self, path='/dummy', title=''):
-        self.path = tuple(path.split('/'))
+    def __init__(self, id=None, path=None, title=''):
+        if path is not None:
+            path = tuple(path.split('/'))
+        if id is None and path is not None:
+            id = path[-1]
+        if id is None:
+            id = 'dummy'
+        self.id = id
+        self.path = path
         self.title = title
     def getPhysicalPath(self):
-        return self.path
-    def getId(self):
-        return self.path[-1]
+        if self.path is not None:
+            return self.path
+        else:
+            return Folder.getPhysicalPath(self)
     def get_local_group_roles(self):
         return {}
 
@@ -129,20 +137,20 @@ class TreeCacheTest(SecurityRequestTest):
         plen = len(ppath)
         cache = self.makeOne()
 
-        ob = DummyObject('/cmf/root/foo')
+        ob = DummyObject(path='/cmf/root/foo')
         self.assert_(cache._is_candidate(ob, plen))
-        ob = DummyObject('/cmf/root/foo/bar')
+        ob = DummyObject(path='/cmf/root/foo/bar')
         self.assert_(cache._is_candidate(ob, plen))
-        ob = DummyObject('/cmf/root/bar')
+        ob = DummyObject(path='/cmf/root/bar')
         self.failIf(cache._is_candidate(ob, plen))
         # We'll never be notified outside of the portal anyway
-        #ob = DummyObject('/moo/root/foo/bar')
+        #ob = DummyObject(path='/moo/root/foo/bar')
         #self.failIf(cache._is_candidate(ob, plen))
 
-        ob = DummyObject('/cmf/root/foo')
+        ob = DummyObject(path='/cmf/root/foo')
         ob.portal_type = 'Ah'
         self.failIf(cache._is_candidate(ob, plen))
-        ob = DummyObject('/cmf/root/foo')
+        ob = DummyObject(path='/cmf/root/foo')
         ob.meta_type = 'Hehe'
         self.failIf(cache._is_candidate(ob, plen))
 
@@ -161,10 +169,10 @@ class TreeCacheTest(SecurityRequestTest):
         cache.root = '/hack/this'
         self.assertEquals(cache.getRoot(), '')
 
-    def test_inserts(self):
-        # Test basic use.
+    def makeInfrastructure(self):
         app = Folder()
         app._setId('')
+        self.app = app
 
         cmf = Folder()
         cmf._setId('cmf')
@@ -186,8 +194,14 @@ class TreeCacheTest(SecurityRequestTest):
         cmf.info_method = info_method
 
         # Build root hierarchy
-        cmf.root = DummyObject('/cmf/root')
-        cmf.root.foo = DummyObject('/cmf/root/foo', title='Foo')
+        cmf.root = DummyObject('root')
+        cmf.root.foo = DummyObject('foo', title='Foo')
+
+    def test_inserts(self):
+        # Test basic use.
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        cache = cmf.cache
 
         # Add root first
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
@@ -209,7 +223,7 @@ class TreeCacheTest(SecurityRequestTest):
                           ['root/foo'])
 
         # Add first child
-        cmf.root.foo.bar = DummyObject('/cmf/root/foo/bar', title='Bar')
+        cmf.root.foo.bar = DummyObject('bar', title='Bar')
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
@@ -220,7 +234,7 @@ class TreeCacheTest(SecurityRequestTest):
                           ['Foo', 'Bar'])
 
         # Add another
-        cmf.root.foo.baz = DummyObject('/cmf/root/foo/baz', title='Baz')
+        cmf.root.foo.baz = DummyObject('baz', title='Baz')
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
@@ -231,7 +245,7 @@ class TreeCacheTest(SecurityRequestTest):
                           ['Foo', 'Bar', 'Baz'])
 
         # Check re-add existing one
-        cmf.root.foo.bar = DummyObject('/cmf/root/foo/bar', title='NewBar')
+        cmf.root.foo.bar = DummyObject('bar', title='NewBar')
         cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
         l = cache.getList(filter=0)
         self.assertEquals([d['rpath'] for d in l],
@@ -241,8 +255,21 @@ class TreeCacheTest(SecurityRequestTest):
         #self.assertEquals([d['title'] for d in l],  # XXX
         #                  ['Foo', 'NewBar', 'Baz']) # XXX
 
-    def _test_rebuild(self):
-        pass
+    def test_rebuild(self):
+        # Test rebuilding a tree
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        cache = cmf.cache
+
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
+        cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
+
+        cache.rebuild()
+        l = cache.getList(filter=0)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar', 'root/foo/baz'])
+        self.assertEquals([d['depth'] for d in l],
+                          [0, 1, 1])
 
     def _test_getList(self):
         pass
