@@ -11,4 +11,4 @@ New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Remove dependency on FlexibleTypeInformation by using a standardized
   API _constructInstance() to create a new instance of a TypeInformation.
-- zLOG INFO is now allowed in restricted mode
+- zLOG INFO is now allowed in restricted code
