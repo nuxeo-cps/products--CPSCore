@@ -18,6 +18,7 @@
 """Patch CMF CatalogTool
 """
 from zLOG import LOG, DEBUG, INFO
+from types import TupleType, ListType
 from Acquisition import aq_base
 from DateTime.DateTime import DateTime
 from Products.ZCatalog.ZCatalog import ZCatalog
@@ -204,6 +205,19 @@ LOG('CatalogToolPatch', INFO,
     'Patching CMF CatalogTool._listAllowedRolesAndUsers')
 
 
+def cat_convertQuery(self, kw):
+    # Convert query to modern syntax
+    for k in 'effective', 'expires':
+        kusage = k+'_usage'
+        if not kw.has_key(kusage):
+            continue
+        usage = kw[kusage]
+        if not usage.startswith('range:'):
+            raise ValueError("Incorrect usage %s" % `usage`)
+        kw[k] = {'query': kw[k], 'range': usage[6:]}
+        del kw[kusage]
+CatalogTool._convertQuery = cat_convertQuery
+
 def cat_searchResults(self, REQUEST=None, **kw):
     """Calls ZCatalog.searchResults
 
@@ -218,31 +232,50 @@ def cat_searchResults(self, REQUEST=None, **kw):
     if not _checkPermission( AccessInactivePortalContent, self ):
         base = aq_base( self )
         now = DateTime()
-        usage = kw.get('effective_usage', 'range:min')
-        eff = kw.get('effective', '')
-        if hasattr( base, 'addIndex' ):   # Zope 2.4 and above
-            if eff:
-                eff = DateTime(eff)
-                if usage == 'range:max':
-                    kw[ 'effective' ] = { 'query' : min(eff, now), 'range' : 'max' }
-                else:
-                    kw[ 'effective' ] = { 'query' : (eff, now), 'range' : 'min:max' }
+
+        self._convertQuery(kw)
+
+        # Intersect query restrictions with those implicit to the tool
+        for k in 'effective', 'expires':
+            if kw.has_key(k):
+                range = kw[k]['range'] or ''
+                query = kw[k]['query']
+                if (not isinstance(query, TupleType) and
+                    not isinstance(query, ListType)):
+                    query = (query,)
             else:
-                kw[ 'effective' ] = { 'query' : now, 'range' : 'max' }
-            kw[ 'expires' ] = { 'query' : now, 'range' : 'min' }
-        else:                          # Zope 2.3
-            if eff:
-                if usage == 'range:max':
-                    kw[ 'effective' ] = min(eff, now)
-                    kw[ 'effective_usage'] = 'range:max'
-                else:
-                    kw[ 'effective' ] = (eff, now)
-                    kw[ 'effective_usage' ] = 'range:min:max'
+                range = ''
+                query = None
+            if range.find('min') > -1:
+                lo = min(query)
             else:
-                kw[ 'effective' ] = now
-                kw[ 'effective_usage'] = 'range:max'
-            kw[ 'expires' ] = now
-            kw[ 'expires_usage'  ] = 'range:min'
+                lo = None
+            if range.find('max') > -1:
+                hi = max(query)
+            else:
+                hi = None
+            if k == 'effective':
+                if hi is None or hi > now:
+                    hi = now
+                if lo is not None and hi < lo:
+                    return ()
+            else: # 'expires':
+                if lo is None or lo < now:
+                    lo = now
+                if hi is not None and hi < lo:
+                    return ()
+            # Rebuild a query
+            if lo is None:
+                query = hi
+                range = 'max'
+            elif hi is None:
+                query = lo
+                range = 'min'
+            else:
+                query = (lo, hi)
+                range = 'min:max'
+            kw[k] = {'query': query, 'range': range}
+
     return ZCatalog.searchResults(self, REQUEST, **kw)
 
 CatalogTool.searchResults = cat_searchResults
