@@ -12,3 +12,4 @@ New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - MemberArea creation is now CMF 1.5 compatible, and not done automatically
   during wrapUser.
+- Make getCPSCandidateLocalRoles always return a list.
