@@ -219,7 +219,7 @@ class CPSWorkflowTool(WorkflowTool):
         ob = self._createObject(container, id,
                                 initial_transition, TRANSITION_INITIAL_CREATE,
                                 language=language, type_name=type_name,
-                                *args, **kw)
+                                kwargs=kw)
         return ob.getId()
 
     security.declarePublic('findNewId')
@@ -239,7 +239,7 @@ class CPSWorkflowTool(WorkflowTool):
         return id
 
     security.declarePrivate('cloneObject')
-    def cloneObject(self, ob, container, initial_transition):
+    def cloneObject(self, ob, container, initial_transition, kwargs):
         """Clone ob into container according to some initial transition.
 
         (Called by a CPS workflow during publishing transition.)
@@ -251,13 +251,13 @@ class CPSWorkflowTool(WorkflowTool):
         new_ob = self._createObject(container, id,
                                     initial_transition,
                                     TRANSITION_INITIAL_PUBLISHING,
-                                    old_ob=ob)
+                                    old_ob=ob, kwargs=kwargs)
         return new_ob
 
 
     security.declarePrivate('checkoutObject')
     def checkoutObject(self, ob, container, initial_transition,
-                       language_map):
+                       language_map, kwargs):
         """Checkout ob into container according to some initial transition.
 
         Checkout the languages according to the language map.
@@ -272,14 +272,14 @@ class CPSWorkflowTool(WorkflowTool):
                                     initial_transition,
                                     TRANSITION_INITIAL_CHECKOUT,
                                     language_map=language_map,
-                                    old_ob=ob)
+                                    old_ob=ob, kwargs=kwargs)
         return new_ob
 
     def _createObject(self, container, id,
                       initial_transition, initial_behavior,
                       language=None, type_name=None, old_ob=None,
                       language_map=None,
-                      *args, **kw):
+                      kwargs={}):
         """Create an object in a container, according to initial behavior."""
         LOG('_createObject', DEBUG, 'Called with container=%s id=%s '
             'initial_transition=%s' % (container.getId(), id,
@@ -326,22 +326,23 @@ class CPSWorkflowTool(WorkflowTool):
             ob = container.copyContent(old_ob, id)
             ob.manage_afterCMFAdd(ob, container)
             self._insertWorkflowRecursive(ob, initial_transition,
-                                          initial_behavior)
+                                          initial_behavior, kwargs)
         elif initial_behavior == TRANSITION_INITIAL_CREATE:
             if proxy_type is None:
                 # XXX constructContent doesn't exist everywhere !
                 # XXX especially when creating at the root of the portal.
-                ob = container.constructContent(type_name, id, *args, **kw)
+                ob = container.constructContent(type_name, id, **kwargs)
             else:
                 # Create a proxy and a document in the repository.
                 proxy = pxtool.createEmptyProxy(proxy_type, container,
                                                 type_name, id)
-                pxtool.createRevision(proxy, language, *args, **kw)
+                pxtool.createRevision(proxy, language, **kwargs)
                 # Set the first language as default language.
                 proxy.setDefaultLanguage(language)
                 ob = proxy
             ob.manage_afterCMFAdd(ob, container)
-            self._insertWorkflow(ob, initial_transition, initial_behavior)
+            self._insertWorkflow(ob, initial_transition, initial_behavior,
+                                 kwargs)
         elif initial_behavior == TRANSITION_INITIAL_CHECKOUT:
             if not _isinstance(old_ob, ProxyBase):
                 raise WorkflowException("Can't checkout non-proxy object %s"
@@ -356,27 +357,30 @@ class CPSWorkflowTool(WorkflowTool):
             proxy.setFromLanguageRevisions(from_language_revs)
             ob = proxy
             ob.manage_afterCMFAdd(ob, container)
-            self._insertWorkflow(ob, initial_transition, initial_behavior)
+            self._insertWorkflow(ob, initial_transition, initial_behavior,
+                                 kwargs)
         else:
             raise NotImplementedError(initial_behavior)
         return ob
 
-    def _insertWorkflow(self, ob, initial_transition, initial_behavior):
+    def _insertWorkflow(self, ob, initial_transition, initial_behavior,
+                        kwargs):
         """Insert ob into workflows."""
         # Do initial transition for all workflows.
         LOG('_insertWorkflow', DEBUG,
-            "inserting %s using transition=%s behavior=%s" %
-            (ob.getId(), initial_transition, initial_behavior))
+            "inserting %s using transition=%s behavior=%s kw=%s" %
+            (ob.getId(), initial_transition, initial_behavior, kwargs))
         reindex = 0
         for wf in self.getWorkflowsFor(ob):
             if hasattr(aq_base(wf), 'insertIntoWorkflow'):
-                wf.insertIntoWorkflow(ob, initial_transition, initial_behavior)
+                wf.insertIntoWorkflow(ob, initial_transition, initial_behavior,
+                                      kwargs)
             reindex = 1
         if reindex:
             self._reindexWorkflowVariables(ob)
 
     def _insertWorkflowRecursive(self, ob, initial_transition,
-                                 initial_behavior):
+                                 initial_behavior, kwargs):
         """Recursively insert into workflows.
 
         Only done for proxies... XXX correct?
@@ -387,10 +391,10 @@ class CPSWorkflowTool(WorkflowTool):
         if not _isinstance(ob, ProxyBase):
             LOG('_insertWorkflowRecursive', DEBUG, "  Is not a proxy")
             return # XXX correct?
-        self._insertWorkflow(ob, initial_transition, initial_behavior)
+        self._insertWorkflow(ob, initial_transition, initial_behavior, kwargs)
         for subob in ob.objectValues():
             self._insertWorkflowRecursive(subob, initial_transition,
-                                          initial_behavior)
+                                          initial_behavior, kwargs)
 
     security.declarePrivate('checkinObject')
     def checkinObject(self, ob, dest_ob, transition):

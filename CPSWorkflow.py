@@ -214,6 +214,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         econtext = None
         moved_exc = None
 
+        utool = getToolByName(self, 'portal_url') # CPS
+
         # Figure out the old and new states.
         old_sdef = self._getWorkflowStateOf(ob)
         ### CPS: Allow initial transitions to have no old state.
@@ -246,6 +248,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         LOG('CPSWorkflow', DEBUG, 'Behavior in wf %s, trans %s: %s'
             % (self.getId(), tdef.getId(), behavior))
         wftool = aq_parent(aq_inner(self))
+        kwargs = kwargs.copy() # Because we'll modify it.
+
         if TRANSITION_BEHAVIOR_MOVE in behavior:
             raise NotImplementedError
             ## Check allowed from source container.
@@ -282,6 +286,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 raise WorkflowException("Missing dest_container for publishing"
                                         " transition=%s" % tdef.getId())
             dest_container = self._objectMaybeFromRpath(dest_container)
+            # Put it back so that it's useable from variables.
+            kwargs['dest_container'] = utool.getRelativeUrl(dest_container)
             initial_transition = kwargs.get('initial_transition')
             if initial_transition is None:
                 raise WorkflowException("Missing initial_transition for "
@@ -298,6 +304,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 raise WorkflowException("Missing dest_container for checkout"
                                         " transition=%s" % tdef.getId())
             dest_container = self._objectMaybeFromRpath(dest_container)
+            kwargs['dest_container'] = utool.getRelativeUrl(dest_container)
             initial_transition = kwargs.get('initial_transition')
             if initial_transition is None:
                 raise WorkflowException("Missing initial_transition for "
@@ -308,12 +315,21 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                                         "allowed=%s"
                                         % (initial_transition,
                                     tdef.checkout_allowed_initial_transitions))
+            language_map = kwargs.get('language_map')
+            if language_map is None:
+                raise WorkflowException("Missing language_map for "
+                                        "checkout transition=%s" %
+                                        tdef.getId())
+
         if TRANSITION_BEHAVIOR_CHECKIN in behavior:
             dest_objects = kwargs.get('dest_objects')
             if dest_objects is None:
                 raise WorkflowException("Missing dest_objects for checkin"
                                         " transition=%s" % tdef.getId())
-            dest_objects = [self._objectMaybeFromRpath(d) for d in dest_objects]
+            dest_objects = [self._objectMaybeFromRpath(d)
+                            for d in dest_objects]
+            kwargs['dest_objects'] = [utool.getRelativeUrl(d)
+                                      for d in dest_objects]
             checkin_transition = kwargs.get('checkin_transition')
             if checkin_transition is None:
                 raise WorkflowException("Missing checkin_transition for "
@@ -382,11 +398,11 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             #XXX
 
         if TRANSITION_BEHAVIOR_PUBLISHING in behavior:
-            wftool.cloneObject(ob, dest_container, initial_transition)
+            wftool.cloneObject(ob, dest_container, initial_transition, kwargs)
 
         if TRANSITION_BEHAVIOR_CHECKOUT in behavior:
             wftool.checkoutObject(ob, dest_container, initial_transition,
-                                  kwargs.get('language_map'))
+                                  language_map, kwargs)
 
         if TRANSITION_BEHAVIOR_CHECKIN in behavior:
             for dest_object in dest_objects:
@@ -473,7 +489,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     #
 
     security.declarePrivate('insertIntoWorkflow')
-    def insertIntoWorkflow(self, ob, initial_transition, initial_behavior):
+    def insertIntoWorkflow(self, ob, initial_transition, initial_behavior,
+                           kwargs):
         """Insert an object into the workflow.
 
         The guard on the initial transition is evaluated in the
@@ -496,7 +513,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         if not self._checkTransitionGuard(tdef, container):
             raise WorkflowException("Unauthorized transition %s"
                                     % initial_transition)
-        self._changeStateOf(ob, tdef)
+        self._changeStateOf(ob, tdef, kwargs)
 
 
     security.declarePrivate('isBehaviorAllowedFor')
