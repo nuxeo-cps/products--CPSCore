@@ -24,8 +24,11 @@ from types import DictType
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
-from ZODB.PersistentMapping import PersistentMapping
-from ZODB.PersistentList import PersistentList
+from Globals import PersistentMapping
+try: # Zope <= 2.7
+    from ZODB.PersistentList import PersistentList
+except ImportError: # Zope >= 2.8
+    from persistent.list import PersistentList
 
 from OFS.Folder import Folder
 
