@@ -9,4 +9,4 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- in MembershipTools/deleteMembers adding default arg check_permission
