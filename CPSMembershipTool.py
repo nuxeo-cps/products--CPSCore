@@ -436,10 +436,9 @@ class CPSMembershipTool(MembershipTool):
 
     # We redefine this to fix a security declaration problem in CMF <= 1.4.1.
     security.declareProtected(ListPortalMembers, 'searchMembers')
-    def searchMembers(self, search_param, search_term, *args, **kw):
+    def searchMembers(self, search_param, search_term):
         """Search the membership."""
-        return MembershipTool.searchMembers(self, search_param, search_term,
-                                            *args, **kw)
+        return MembershipTool.searchMembers(self, search_param, search_term)
 
     # Bugfix included in 1.4 branch and HEAD of CMF:
     security.declarePrivate('wrapUser')
