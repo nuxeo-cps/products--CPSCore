@@ -93,7 +93,9 @@ class CPSMembershipTool(MembershipTool):
         """What local roles according to the context ?"""
         member = self.getAuthenticatedMember()
         roles = member.getRolesInContext(obj)
-        if 'WorkspaceManager' in roles or 'SectionManager' in roles:
+        if 'WorkspaceManager' in roles or\
+           'SectionManager' in roles or\
+           'Manager' in roles:
             return self.getPortalRoles()
         else:
             member_roles = list(roles)
@@ -168,6 +170,7 @@ class CPSMembershipTool(MembershipTool):
             # Grant ownership to Member
             try:
                 f.changeOwnership(user)
+                # XXX this method is define in a testcase and just does a pass
             except AttributeError:
                 pass  # Zope 2.1.x compatibility
             f.manage_setLocalRoles(member_id, ['Owner', 'WorkspaceManager'])
