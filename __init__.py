@@ -43,12 +43,10 @@ from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
 LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
 
 def mergedLocalRoles(object, withgroups=0):
-    LOG('CPSCore utils', -199, 'mergedLocalRoles()')
+    LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
     aclu = object.acl_users
     if hasattr(aclu, 'mergedLocalRoles'):
-        LOG('XXX', -199, 'Yah!')
         return aclu.mergedLocalRoles(object, withgroups)
-    LOG('XXX', -199, 'Nah!')
     return utils.old_mergedLocalRoles(object)
 
 if not hasattr(utils, 'old_mergedLocalRoles'):
@@ -57,7 +55,7 @@ utils.mergedLocalRoles = mergedLocalRoles
 utils._mergedLocalRoles = mergedLocalRoles
 
 def _allowedRolesAndUsers(ob):
-    LOG('CPSCore utils', -199, '_allowedRolesAndUsers()')
+    LOG('CPSCore utils', DEBUG, '_allowedRolesAndUsers()')
     aclu = ob.acl_users
     if hasattr(aclu, '_allowedRolesAndUsers'):
         return aclu._allowedRolesAndUsers(ob)
@@ -79,14 +77,14 @@ def allowedRolesAndUsers(self):
     Return a list of roles, users and groups with View permission.
     Used by PortalCatalog to filter out items you're not allowed to see.
     """
-    LOG('CPSCore utils', -199, 'allowedRolesAndUsers()')
+    LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
     ob = self._IndexableObjectWrapper__ob # Eeek, manual name mangling
     return _allowedRolesAndUsers(ob)
 IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
 
 def _getAllowedRolesAndUsers(user):
     """Returns a list with all roles this user has + the username"""
-    LOG('CPSCore utils', -199, '_getAllowedRolesAndUsers()')
+    LOG('CPSCore utils', DEBUG, '_getAllowedRolesAndUsers()')
     # The userfolder does not have CPS group support
     result = list(user.getRoles())
     result.append('Anonymous')
@@ -103,7 +101,7 @@ def _getAllowedRolesAndUsers(user):
     return result
 
 def _listAllowedRolesAndUsers(self, user):
-    LOG('CPSCore utils', -199, '_listAllowedRolesAndUsers()')
+    LOG('CPSCore utils', DEBUG, '_listAllowedRolesAndUsers()')
     aclu = self.acl_users
     if hasattr(aclu, '_getAllowedRolesAndUsers'):
         return aclu._getAllowedRolesAndUsers(user)

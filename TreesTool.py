@@ -454,7 +454,6 @@ class TreeCache(SimpleItemWithProperties):
             allowed_roles_and_users = _getAllowedRolesAndUsers(user)
         except TypeError: # XXXXX?? getUser() takes exactly 2 arguments (1 given)
             allowed_roles_and_users = ['Anonymous', 'group:role:Anonymous']
-        LOG('XXX', -199, str(allowed_roles_and_users))
         res = []
         for info in self._flat:
             # check filter
