@@ -87,7 +87,7 @@ class CPSMembershipTool(MembershipTool):
         return mergedLocalRoles(object, withgroups, withpath)
 
     security.declareProtected(View, 'getCandidateLocalRoles')
-    def getCPSCandidateLocalRoles( self, obj ):
+    def getCPSCandidateLocalRoles(self, obj):
         """ What local roles according to the context ? """
         member = self.getAuthenticatedMember()
 
@@ -96,9 +96,8 @@ class CPSMembershipTool(MembershipTool):
             return self.getPortalRoles()
         else:
             member_roles = list(member.getRolesInContext(obj))
-            del member_roles[member_roles.index( 'Member')]
-
-        return tuple( member_roles )
+            del member_roles[member_roles.index('Member')]
+            return tuple(member_roles)
 
     security.declareProtected(View, 'setLocalGroupRoles')
     def setLocalGroupRoles(self, obj, ids, role, reindex=1):
@@ -141,7 +140,7 @@ class CPSMembershipTool(MembershipTool):
         ws_root =  getattr(parent, WORKSPACES, None)
         members =  getattr(ws_root, MEMBERS, None)
 
-        user = self.acl_users.getUser( member_id ).__of__( self.acl_users )
+        user = self.acl_users.getUser(member_id).__of__(self.acl_users)
 
         if members is not None and user is not None:
             f_title = "%s's Home" % member_id
@@ -165,7 +164,7 @@ class CPSMembershipTool(MembershipTool):
 
     security.declarePublic('getHomeFolder')
     def getHomeFolder(self, id=None, verifyPermission=0):
-        """ Return a member's home folder object, or None."""
+        """Return a member's home folder object, or None."""
 
         if id is None:
             member = self.getAuthenticatedMember()
@@ -186,7 +185,7 @@ class CPSMembershipTool(MembershipTool):
             pass
         return None
 
-    security.declarePrivate( 'listActions' )
+    security.declarePrivate('listActions')
     def listActions(self, info=None):
         """List actions available through the tool."""
         return self._actions

@@ -34,7 +34,8 @@ from Products.CMFCore.WorkflowTool import addWorkflowFactory
 from Products.DCWorkflow.DCWorkflow import DCWorkflowDefinition
 from Products.DCWorkflow.States import StateDefinition as DCWFStateDefinition
 from Products.DCWorkflow.States import States as DCWFStates
-from Products.DCWorkflow.Transitions import TransitionDefinition as DCWFTransitionDefinition
+from Products.DCWorkflow.Transitions \
+    import TransitionDefinition as DCWFTransitionDefinition
 from Products.DCWorkflow.Transitions import Transitions as DCWFTransitions
 from Products.DCWorkflow.Transitions import TRIGGER_USER_ACTION
 from Products.DCWorkflow.Expression import StateChangeInfo
@@ -117,7 +118,8 @@ class CPSTransitionDefinition(DCWFTransitionDefinition):
         if clone_allowed_transitions is not None:
             self.clone_allowed_transitions = clone_allowed_transitions
         if checkout_allowed_initial_transitions is not None:
-            self.checkout_allowed_initial_transitions = checkout_allowed_initial_transitions
+            self.checkout_allowed_initial_transitions = \
+                checkout_allowed_initial_transitions
         if checkin_allowed_transitions is not None:
             self.checkin_allowed_transitions = checkin_allowed_transitions
         # Now call original method.

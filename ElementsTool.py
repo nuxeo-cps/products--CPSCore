@@ -181,7 +181,6 @@ class ElementsTool(UniqueObject, OFS.Folder.Folder):
         self._setObject(name, element)
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(
-                '%s/manage_editDefaultElementsForm' % (self.absolute_url(), )
-            )
+                '%s/manage_editDefaultElementsForm' % (self.absolute_url(),))
 
 InitializeClass(ElementsTool)

@@ -431,8 +431,8 @@ class CPSWorkflowTool(WorkflowTool):
 
         (Called by CPSWorkflow during merge transition.)
         """
-        dest_ob, None = self._checkObjectMergeable(ob, dest_container,
-                                                   state_var, new_state)
+        dest_ob = self._checkObjectMergeable(ob, dest_container,
+                                             state_var, new_state)[0]
         if dest_ob is not None:
             pxtool = getToolByName(self, 'portal_proxies')
             pxtool.checkinRevisions(ob, dest_ob)

@@ -36,7 +36,8 @@ from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 from Products.CPSCore.utils import _isinstance
 try:
-    from Products.CPSDocument.FlexibleTypeInformation import FlexibleTypeInformation
+    from Products.CPSDocument.FlexibleTypeInformation \
+        import FlexibleTypeInformation
 except ImportError:
     LOG('CPSCore', INFO, 'No CPSDocument found, ignoring type.')
     class FlexibleTypeInformation:

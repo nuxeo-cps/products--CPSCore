@@ -49,6 +49,7 @@ class TreesTool(UniqueObject, Folder):
 
     security.declarePrivate('notify_tree')
     def notify_tree(self, event_type, object, infos):
+        # XXX: Docstring ?
         if event_type not in ('sys_add_cmf_object', # XXX ugh clean this up
                               'sys_del_object',
                               'sys_modify_object',

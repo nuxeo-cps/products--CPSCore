@@ -343,7 +343,8 @@ class ProxyBase(Base):
     # overloaded
     def reindexObject(self, idxs=[]):
         """Called to reindex when the object has changed."""
-        LOG('ProxyBase', DEBUG, 'reindex idxs=%s for %s' % (idxs, '/'.join(self.getPhysicalPath())))
+        LOG('ProxyBase', DEBUG, 'reindex idxs=%s for %s' 
+            % (idxs, '/'.join(self.getPhysicalPath())))
         if not idxs or 'allowedRolesAndUsers' in idxs:
             # XXX should use an event for that
             self._setSecurity()
@@ -354,7 +355,8 @@ class ProxyBase(Base):
     # overloaded
     def reindexObjectSecurity(self):
         """Called to security-related indexes."""
-        LOG('ProxyBase', DEBUG, 'reindex security for %s' % '/'.join(self.getPhysicalPath()))
+        LOG('ProxyBase', DEBUG, 'reindex security for %s' 
+            % '/'.join(self.getPhysicalPath()))
         # XXX should use an event for that
         self._setSecurityRecursive(self)
         return CMFCatalogAware.__dict__['reindexObjectSecurity'](self)
