@@ -28,10 +28,33 @@ from Products.CMFCore.CMFCorePermissions import ManageProperties
 TypeInformation.manage_propertiesForm = PropertyManager.manage_propertiesForm
 TypeInformation.manage_addProperty__roles__ = PermissionRole(ManageProperties)
 TypeInformation.manage_delProperties__roles__ = PermissionRole(ManageProperties)
+
 ftiprops_ids = [p['id'] for p in FTI._properties]
+
 if 'cps_is_searchable' not in ftiprops_ids:
     FTI._properties = FTI._properties + (
         {'id':'cps_is_searchable', 'type': 'boolean', 'mode':'w',
          'label':'CPS Searchable'},
         )
     FTI.cps_is_searchable = 0
+
+if 'cps_is_proxytype' not in ftiprops_ids:
+    FTI._properties = FTI._properties + (
+        {'id':'cps_is_proxytype', 'type': 'boolean', 'mode':'w',
+         'label':'CPS Proxytype'},
+        )
+    FTI.cps_is_proxytype = 0
+
+##if 'cps_is_document' not in ftiprops_ids:
+##    FTI._properties = FTI._properties + (
+##        {'id':'cps_is_document', 'type': 'boolean', 'mode':'w',
+##         'label':'CPS Document'},
+##        )
+##    FTI.cps_is_document = 0
+
+if 'cps_is_portalbox' not in ftiprops_ids:
+    FTI._properties = FTI._properties + (
+        {'id':'cps_is_portalbox', 'type': 'boolean', 'mode':'w',
+         'label':'CPS Portal Box'},
+        )
+    FTI.cps_is_portalbox = 0
