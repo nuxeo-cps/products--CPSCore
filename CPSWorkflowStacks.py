@@ -21,7 +21,7 @@
 """Backward compatibility;  see Products.CPSWorkflow.basicstacks
 """
 
-from Products.CPSWorkflow.stack import *
+from Products.CPSWorkflow.stack import Stack as BaseStack
 from Products.CPSWorkflow.basicstacks import *
 
 from warnings import warn
