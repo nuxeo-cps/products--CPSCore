@@ -526,7 +526,7 @@ class CPSWorkflowTool(WorkflowTool):
         """
         # Don't recurse for initial transitions! # XXX urgh
         isproxyfolderishdoc = _isinstance(ob, ProxyFolderishDocument)
-        if isproxyfolderishdoc and not kw.has_key('clone_data'):
+        if isproxyfolderishdoc and not kw.has_key('dest_container'):
             return self._doActionForRecursive(ob, action, wf_id=wf_id,
                                               *args, **kw)
         else:
