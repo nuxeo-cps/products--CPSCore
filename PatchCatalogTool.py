@@ -66,7 +66,9 @@ class IndexableObjectWrapper:
                 pass
             else:
                 # use the repository document instead of the proxy
-                ob = ob.getContent(lang=self.__lang)
+                ob_repo = ob.getContent(lang=self.__lang)
+                if ob_repo is not None:
+                     ob = ob_repo
         elif 'portal_repository' in ob.getPhysicalPath():
             if name in ('SearchableText', 'Title'):
                 # skip useless indexes for repository document
