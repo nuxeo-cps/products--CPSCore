@@ -414,7 +414,13 @@ class CPSMembershipTool(MembershipTool):
         if portal_cpscalendar:
             create_calendar = getattr(portal_cpscalendar, 'create_member_calendar', 1)
             if create_calendar:
-                portal_cpscalendar.createMemberCalendar(member_id)
+                try:
+                    portal_cpscalendar.createMemberCalendar(member_id)
+                # If the Calendar portal types has been removed, we will
+                # get a ValueError exception here.
+                except ValueError:
+                    pass
+                    
 
     # Can be overloaded by subclasses.
     def _createMemberContent(self, member, member_id, member_folder):
