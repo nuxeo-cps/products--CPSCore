@@ -96,9 +96,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         (Called by WorkflowTool.)
         """
-        LOG('ProxyTool', DEBUG, "createEmptyProxy called with proxy_type=%s "
-            "container=%s type_name=%s id=%s docid=%s"
-            % (proxy_type, container.getId(), type_name, id, docid))
+        #LOG('ProxyTool', TRACE, "createEmptyProxy called with proxy_type=%s "
+        #    "container=%s type_name=%s id=%s docid=%s"
+        #    % (proxy_type, container.getId(), type_name, id, docid))
         proxy_type_name = {
             'folder':            'CPS Proxy Folder',
             'folderishdocument': 'CPS Proxy Folderish Document',
@@ -128,8 +128,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         lang = lang_
         from_lang = from_lang_
         language_revs = proxy._getLanguageRevisions()
-        LOG('ProxyTool', DEBUG, "createRevision lang=%s for %s from lang=%s" %
-            ('/'.join(proxy.getPhysicalPath()), lang, from_lang))
+        #LOG('ProxyTool', TRACE, "createRevision lang=%s for %s from lang=%s" %
+        #    ('/'.join(proxy.getPhysicalPath()), lang, from_lang))
         if language_revs.has_key(lang):
             raise ValueError('Language revision %s already exists' % lang)
         repotool = getToolByName(self, 'portal_repository')
@@ -148,7 +148,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             ob.reindexObject(idxs=['Language'])
         proxy.setLanguageRevision(lang, rev)
         proxy.proxyChanged()
-        LOG('ProxyTool', DEBUG, "  created rev=%s" % rev)
+        #LOG('ProxyTool', TRACE, "  created rev=%s" % rev)
         return rev
 
 
@@ -240,9 +240,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             # Proxy construction not finished.
             return None, None
         # XXX fix absolute_url is not unit test friendly
-        LOG('ProxyTool.getBestRevision', TRACE,
-            'proxy:%s lang:%s languages: %s' % (proxy.absolute_url(),
-                                                lang, languages))
+        #LOG('ProxyTool.getBestRevision', TRACE,
+        #    'proxy:%s lang:%s languages: %s' % (proxy.absolute_url(),
+        #                                        lang, languages))
         if lang == 'default':
             lang = proxy.getDefaultLanguage()
         last_check = 'NOCHOICE'
@@ -289,9 +289,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 lang = languages[0]
             last_check = check
 
-        LOG('ProxyTool.getBestRevision', TRACE,
-            'return lang: %s, rev: %s choice: %s' %
-            (lang, language_revs[lang], last_check))
+        #LOG('ProxyTool.getBestRevision', TRACE,
+        #    'return lang: %s, rev: %s choice: %s' %
+        #    (lang, language_revs[lang], last_check))
         return lang, language_revs[lang]
 
 
@@ -328,8 +328,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if editable:
             newob, newrev = repotool.getUnfrozenRevision(docid, rev)
 
-            LOG('ProxyTool', DEBUG,
-                'getContent editable, rev=%s -> %s' % (rev, newrev))
+            #LOG('ProxyTool', TRACE,
+            #    'getContent editable, rev=%s -> %s' % (rev, newrev))
 
             if newrev != rev:
                 proxy.setLanguageRevision(lang, newrev)
@@ -530,8 +530,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repotool = getToolByName(self, 'portal_repository')
         portal = aq_parent(aq_inner(self))
         docid, rev = repotool.getDocidAndRevisionFromObjectId(ob.getId())
-        LOG('ProxyTool', DEBUG, '_reindexProxiesForObject docid=%s rev=%s'
-            % (docid, rev))
+        #LOG('ProxyTool', TRACE, '_reindexProxiesForObject docid=%s rev=%s'
+        #    % (docid, rev))
         if docid is None:
             return
         rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
@@ -545,8 +545,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 LOG('ProxyTool', ERROR,
                     '_reindexProxiesForObject no rpath=%s id=%s' % (rpath, id))
                 continue
-            LOG('ProxyTool', DEBUG, '_reindexProxiesForObject reindexing '
-                'rpath=%s' % rpath)
+            #LOG('ProxyTool', TRACE, '_reindexProxiesForObject reindexing '
+            #    'rpath=%s' % rpath)
             proxy.reindexObject()
 
     # XXX implement this
@@ -852,8 +852,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                           'sys_modify_object',
                           'modify_object'):
             if _isinstance(object, ProxyBase):
-                LOG('ProxyTool', DEBUG, 'Got %s for proxy %s'
-                    % (event_type, '/'.join(object.getPhysicalPath())))
+                #LOG('ProxyTool', DEBUG, 'Got %s for proxy %s'
+                #    % (event_type, '/'.join(object.getPhysicalPath())))
                 rpath = infos['rpath']
                 dodel = 0
                 if event_type == 'sys_add_object':
@@ -876,8 +876,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 repotool = getToolByName(self, 'portal_repository')
                 if repotool.isObjectInRepository(object):
                     if event_type in ('sys_modify_object', 'modify_object'):
-                        LOG('ProxyTool', DEBUG, 'Got %s for repoob %s'
-                            % (event_type, '/'.join(object.getPhysicalPath())))
+                        #LOG('ProxyTool', DEBUG, 'Got %s for repoob %s'
+                        #   % (event_type, '/'.join(object.getPhysicalPath())))
                         # Repo object was modified, reindex all the proxies.
                         self._reindexProxiesForObject(object)
                         #LOG('ProxyTool', DEBUG, '  ... done')
