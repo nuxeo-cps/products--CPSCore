@@ -47,6 +47,7 @@ from Products.CPSCore.CPSBase import CPSBaseDocument
 
 KEYWORD_DOWNLOAD_FILE = 'downloadFile'
 KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
+KEYWORD_ARCHIVED_LANGUAGE = 'archivedLanguage'
 
 
 class ProxyBase(Base):
@@ -213,6 +214,9 @@ class ProxyBase(Base):
         Parses URL revision switch of the form:
           mydoc/archivedRevision/n/...
 
+        Parses URL translation switch of the form:
+          mydoc/archivedLanguage/<lang>/...
+
         Parses URLs for download of the form:
           mydoc/downloadFile/attrname/mydocname.pdf
         """
@@ -221,13 +225,17 @@ class ProxyBase(Base):
                 raise KeyError(name)
             switcher = RevisionSwitcher(self)
             return switcher.__of__(self)
+        elif name == KEYWORD_ARCHIVED_LANGUAGE:
+            if self.isProxyArchived():
+                raise KeyError(name)
+            switcher = LanguageSwitcher(self)
+            return switcher.__of__(self)
         ob = self._getContent()
         if ob is None:
             raise KeyError(name)
         if name == KEYWORD_DOWNLOAD_FILE:
             downloader = FileDownloader(ob, self)
             return downloader.__of__(self)
-        #LOG('ProxyBase.getitem', TRACE, "  Aha, retrieved %s from doc" % name)
         try:
             res = getattr(ob, name)
         except AttributeError:
@@ -692,8 +700,37 @@ class FileDownloader(Acquisition.Explicit):
         file = getattr(document, self.attrname)
         return file.wl_isLocked()
 
-
 InitializeClass(FileDownloader)
+
+
+class LanguageSwitcher(Acquisition.Explicit):
+    """Language Switcher."""
+
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+
+    # Never viewable, so skipped by breadcrumbs.
+    _View_Permission = ()
+
+    def __init__(self, proxy):
+        self.proxy = proxy
+        self.id = KEYWORD_ARCHIVED_LANGUAGE
+
+    def __repr__(self):
+        return '<LanguageSwitcher for %s>' % repr(self.proxy)
+
+    def __bobo_traverse__(self, REQUEST, lang):
+        proxy = self.proxy
+        ob = proxy._getContent(lang=lang)
+        if ob is None:
+            LOG('LanguageSwitcher.getitem', DEBUG,
+                "Invalid language %s" % repr(lang))
+            raise KeyError(lang)
+        revproxy = VirtualProxy(ob, proxy.getDocid(), proxy.getRevision(), lang)
+        revproxy._setId('%s/%s' % (KEYWORD_ARCHIVED_LANGUAGE, lang))
+        return revproxy.__of__(proxy)
+
+InitializeClass(LanguageSwitcher)
 
 
 class RevisionSwitcher(Acquisition.Explicit):
