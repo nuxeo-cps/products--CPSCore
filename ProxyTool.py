@@ -476,6 +476,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             elif event_type == 'sys_del_object':
                 dodel = 1
             # Refresh security
+            # XXX actually should not take into account this to-be-removed
+            #     proxy...
             self.setSecurity(object)
             if dodel:
                 # Must be done last...
