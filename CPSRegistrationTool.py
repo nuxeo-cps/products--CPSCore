@@ -23,7 +23,7 @@
 from re import match
 
 from AccessControl import ClassSecurityInfo
-from Globals import InitializeClass
+from Globals import InitializeClass, DTMLFile
 from OFS.PropertyManager import PropertyManager
 
 from Products.CMFCore.CMFCorePermissions import AddPortalMember
@@ -46,6 +46,8 @@ class CPSRegistrationTool(RegistrationTool, PropertyManager):
 
     manage_options = (PropertyManager.manage_options +
                       RegistrationTool.manage_options)
+
+    manage_overview = DTMLFile('zmi/explainCPSRegistrationTool', globals())
 
     security = ClassSecurityInfo()
 
