@@ -42,6 +42,7 @@ from Products.DCWorkflow.Transitions import TRIGGER_USER_ACTION
 from Products.DCWorkflow.Expression import StateChangeInfo
 from Products.DCWorkflow.Expression import createExprContext
 
+from Products.NuxCPS3.EventServiceTool import getEventService
 from Products.NuxCPS3.cpsutils import _isinstance
 from Products.NuxCPS3.ProxyBase import ProxyBase
 
@@ -239,26 +240,12 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             raise WorkflowException, (
                 'Destination state undefined: ' + new_state)
 
-        # Execute the "before" script.
-        if tdef is not None and tdef.script_name:
-            script = self.scripts[tdef.script_name]
-            # Pass lots of info to the script in a single parameter.
-            sci = StateChangeInfo(
-                ob, self, former_status, tdef, old_sdef, new_sdef, kwargs)
-            try:
-                script(sci)  # May throw an exception.
-            except ObjectMoved, moved_exc:
-                ob = moved_exc.getNewObject()
-                # Re-raise after transition
-
-        ### CPS: Behavior. # XXX some should be after the transition???
+        ### CPS: Behavior sanity checks.
         #
         behavior = tdef.transition_behavior
         LOG('CPSWorkflow', DEBUG, 'Behavior in wf %s, trans %s: %s'
             % (self.getId(), tdef.getId(), behavior))
-
         wftool = aq_parent(aq_inner(self))
-
         if TRANSITION_BEHAVIOR_MOVE in behavior:
             raise NotImplementedError
             ## Check allowed from source container.
@@ -286,10 +273,9 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             #                            (dst_container.getId(), why))
             #XXX now do move (recreate into dest container)
             #XXX raise ObjectDeleted ??? ObjectMoved ???
-
         if TRANSITION_BEHAVIOR_COPY in behavior:
             raise NotImplementedError
-
+            #XXX
         if TRANSITION_BEHAVIOR_PUBLISHING in behavior:
             dest_container = kwargs.get('dest_container')
             if dest_container is None:
@@ -306,8 +292,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                                         "allowed=%s"
                                         % (initial_transition,
                                            tdef.clone_allowed_transitions))
-            wftool.cloneObject(ob, dest_container, initial_transition)
-
         if TRANSITION_BEHAVIOR_CHECKOUT in behavior:
             dest_container = kwargs.get('dest_container')
             if dest_container is None:
@@ -324,15 +308,12 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                                         "allowed=%s"
                                         % (initial_transition,
                                     tdef.checkout_allowed_initial_transitions))
-            wftool.checkoutObject(ob, dest_container, initial_transition,
-                                  kwargs.get('language_map'))
-
-
         if TRANSITION_BEHAVIOR_CHECKIN in behavior:
             dest_objects = kwargs.get('dest_objects')
             if dest_objects is None:
                 raise WorkflowException("Missing dest_objects for checkin"
                                         " transition=%s" % tdef.getId())
+            dest_objects = [self._object_maybe_rpath(d) for d in dest_objects]
             checkin_transition = kwargs.get('checkin_transition')
             if checkin_transition is None:
                 raise WorkflowException("Missing checkin_transition for "
@@ -343,7 +324,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                                         % (checkin_transition,
                                            tdef.checkin_allowed_transitions))
             for dest_object in dest_objects:
-                dest_object = self._object_maybe_rpath(dest_object)
                 # Check that the default language is still the same than
                 # when we did checkout. # XXX We want to be more flexible.
                 lang = ob.getDefaultLanguage()
@@ -352,6 +332,64 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                     raise WorkflowException("Cannot checkin into changed "
                                             "document %s" %
                                        '/'.join(dest_object.getPhysicalPath()))
+        if TRANSITION_BEHAVIOR_DELETE in behavior: # XXX do after transition
+            raise NotImplementedError
+            ## Check that container allows delete.
+            #container = aq_parent(aq_inner(ob))
+            #ok, why = wftool.isBehaviorAllowedFor(container,
+            #                                     TRANSITION_ALLOWSUB_DELETE,
+            #                                     get_details=1)
+            #if not ok:
+            #    raise WorkflowException("Container=%s does not allow "
+            #                            "subobject deletion (%s)" %
+            #                            (container.getId(), why))
+            #container._delObject(ob.getId())
+            #raise ObjectDeleted
+        #
+        ###
+
+        ### CPS: Event notification.
+        #
+        evtool = getEventService(self)
+        # XXX pass a whole sci ?
+        infos = {'kw': kwargs}
+        evtool.notify('workflow_%s' % tdef.getId(), ob, infos)
+        #
+        ###
+
+        # Execute the "before" script.
+        if tdef is not None and tdef.script_name:
+            script = self.scripts[tdef.script_name]
+            # Pass lots of info to the script in a single parameter.
+            sci = StateChangeInfo(
+                ob, self, former_status, tdef, old_sdef, new_sdef, kwargs)
+            try:
+                script(sci)  # May throw an exception.
+            except ObjectMoved, moved_exc:
+                ob = moved_exc.getNewObject()
+                # Re-raise after transition
+
+        ### CPS: Behavior. # XXX some should be after the transition???
+        #
+
+        if TRANSITION_BEHAVIOR_MOVE in behavior:
+            raise NotImplementedError
+            #XXX now do move (recreate into dest container)
+            #XXX raise ObjectDeleted ??? ObjectMoved ???
+
+        if TRANSITION_BEHAVIOR_COPY in behavior:
+            raise NotImplementedError
+            #XXX
+
+        if TRANSITION_BEHAVIOR_PUBLISHING in behavior:
+            wftool.cloneObject(ob, dest_container, initial_transition)
+
+        if TRANSITION_BEHAVIOR_CHECKOUT in behavior:
+            wftool.checkoutObject(ob, dest_container, initial_transition,
+                                  kwargs.get('language_map'))
+
+        if TRANSITION_BEHAVIOR_CHECKIN in behavior:
+            for dest_object in dest_objects:
                 wftool.checkinObject(ob, dest_object, checkin_transition)
             # Now delete the original object.
             container = aq_parent(aq_inner(ob))
@@ -367,18 +405,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
         if TRANSITION_BEHAVIOR_DELETE in behavior: # XXX do after transition
             raise NotImplementedError
-            ## Check that container allows delete.
-            #container = aq_parent(aq_inner(ob))
-            #ok, why = wftool.isBehaviorAllowedFor(container,
-            #                                     TRANSITION_ALLOWSUB_DELETE,
-            #                                     get_details=1)
-            #if not ok:
-            #    raise WorkflowException("Container=%s does not allow "
-            #                            "subobject deletion (%s)" %
-            #                            (container.getId(), why))
-            #container._delObject(ob.getId())
-            #raise ObjectDeleted
-
+            #XXX
         #
         ###
 
