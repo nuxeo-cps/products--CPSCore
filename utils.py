@@ -33,8 +33,8 @@ LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
 
 def mergedLocalRoles(object, withgroups=0, withpath=0):
     LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
-    aclu = object.acl_users
-    if hasattr(aclu, 'mergedLocalRoles'):
+    aclu = getattr(object, 'acl_users', None)
+    if aclu is not None and hasattr(aclu, 'mergedLocalRoles'):
         return aclu.mergedLocalRoles(object, withgroups, withpath)
     return utils.old_mergedLocalRoles(object)
 
