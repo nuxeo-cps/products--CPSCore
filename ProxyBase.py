@@ -359,6 +359,11 @@ class ProxyBase(Base):
             % '/'.join(self.getPhysicalPath()))
         # XXX should use an event for that
         self._setSecurityRecursive(self)
+        # Notify that this proxy's security has changed.
+        # Listeners will have to recurse if necessary.
+        # (The notification for the object repo is done by the repo.)
+        evtool = getEventService(self)
+        evtool.notify('sys_modify_security', self, {})
         return CMFCatalogAware.__dict__['reindexObjectSecurity'](self)
 
     # XXX also call _setSecurity from:
