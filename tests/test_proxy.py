@@ -65,7 +65,9 @@ class ProxyToolTests(SecurityRequestTest):
         self.assertEquals(tuple(ptool.listProxies()),
             (('123', (None, {'*': 78})),))
 
+        # Check that we can't add two proxies with same id
         self.assertRaises(ValueError, ptool._addProxy, proxy2, '123')
+        # No side effects
         self.assertEquals(tuple(ptool.listProxies()),
             (('123', (None, {'*': 78})),))
 
@@ -81,24 +83,32 @@ class ProxyToolTests(SecurityRequestTest):
         self.assertEquals(tuple(ptool.listProxies()),
             (('123', (None, {'*': 78})),))
 
-        #ptool.modifyProxy(, '444', {'en': 1})
-        #self.assertEqual(tuple(ptool.listProxies()),
-        #                 ((222, ('444', {'en': 1})),))
-        #ptool.delProxy(222)
-        #self.assertEqual(tuple(ptool.listProxies()), ())
+        ptool._modifyProxy(proxy2, '123')
+        self.assertEquals(tuple(ptool.listProxies()),
+            (('123', (None, {'*': 90})),))
+        ptool._delProxy('123')
+        self.assertEquals(len(ptool.listProxies()), 0)
 
 
-    def test_getMatchedObject(self):
+    # XXX: This tests a now defunct method (getMatchedObject). 
+    # What should we test instead ?
+    def _test_getMatchedObject(self):
         self.root._setObject('portal_repository', DummyRepo())
         ptool = self.root.portal_proxies
-        ptool.addProxy(123, '456', {'fr': 33, '*': 78})
+        proxy = ProxyBase(language_revs={'fr': 33, '*': 78})
+        ptool._addProxy(proxy, '456')
         self.assertEqual(ptool.getMatchedObject(123), 'ob_456_78')
         self.assertEqual(ptool.getMatchedObject(123, 'en'), 'ob_456_78')
         self.assertEqual(ptool.getMatchedObject(123, 'fr'), 'ob_456_33')
 
-    def test_getMatchingProxies(self):
+    # XXX: This tests a now defunct method (getMatchingProxies). 
+    # What should we test instead ?
+    def _test_getMatchingProxies(self):
         self.root._setObject('portal_repository', DummyRepo())
         ptool = self.root.portal_proxies
+        proxy1 = ProxyBase(language_revs={'fr': 33, '*': 78})
+        proxy2 = ProxyBase(language_revs={'fr': 33, 'en': 0})
+        proxy3 = ProxyBase(language_revs={'fr': 78, 'en': 78})
         ptool.addProxy(123, '456', {'fr': 33, '*': 78})
         ptool.addProxy(444, '456', {'*': 33, 'en': 0})
         ptool.addProxy(888, '456', {'fr': 78, 'en': 78})

@@ -27,8 +27,9 @@ from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 from OFS.Folder import Folder
 from OFS.SimpleItem import SimpleItem
 
+from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
 
-class Dummy(SimpleItem):
+class DummyContent(SimpleItem):
     def __init__(self, id, data=None):
         self._id = id
         self._data = data
@@ -38,6 +39,11 @@ class Dummy(SimpleItem):
 
     def getData(self):
         return self._data
+
+def constructContent(self, type_name, id, *args, **kw):
+    assert type_name == 'DummyContent'
+    self._setObject(id, DummyContent(id, *args, **kw))
+ObjectRepositoryTool.constructContent = constructContent
 
 
 class ObjectRepositoryToolTests(SecurityRequestTest):
@@ -50,7 +56,6 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
         self.root.id = 'root'
         root = self.root
 
-        from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
         ortool = ObjectRepositoryTool()
         root._setObject('portal_repository', ortool)
 
@@ -62,87 +67,77 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
 
     def test_add_del(self):
         ortool = self.root.portal_repository
-        # empty
-        self.assertEqual(tuple(ortool.listAll()), ())
-        # add one
-        ob = Dummy('foo')
-        ortool.addObjectVersion(ob, '123', 3)
-        self.assertEqual(tuple(ortool.listAll()), (('123', 3),))
-        # add another version
-        ob = Dummy('baz')
-        ortool.addObjectVersion(ob, '123', 5)
-        items = ortool.listAll()
-        items.sort()
-        self.assertEqual(tuple(items), (('123', 3), ('123', 5)))
-        # remove non-existent
-        self.assertRaises(AttributeError, ortool.delObjectVersion, '123', 9)
-        # add more
-        ob = Dummy('foo2')
-        ortool.addObjectVersion(ob, 'ahah', 0)
-        ob = Dummy('baz2')
-        ortool.addObjectVersion(ob, 'ahah', 1)
-        items = ortool.listAll()
-        items.sort()
-        self.assertEqual(tuple(items), (('123', 3), ('123', 5),
-                                        ('ahah', 0), ('ahah', 1)))
-        # remove all versions of one
-        ortool.delObject('123')
-        items = ortool.listAll()
-        items.sort()
-        self.assertEqual(tuple(items), (('ahah', 0), ('ahah', 1)))
-        # remove rest one by one
-        ortool.delObjectVersion('ahah', 0)
-        self.assertEqual(tuple(ortool.listAll()), (('ahah', 1),))
-        ortool.delObjectVersion('ahah', 1)
-        self.assertEqual(tuple(ortool.listAll()), ())
 
-    def test_getObjectVersion(self):
+        # Empty
+        self.assertEquals(ortool.listAll(), [])
+        self.assertEquals(ortool.listDocids(), [])
+
+        # Add one
+        ortool.createRevision('123', 'DummyContent')
+        items = ortool.listAll()
+        self.assertEquals(len(items), 1)
+        self.assertEquals(items, [('123', 1),])
+        self.assertEquals(ortool.listDocids(), ['123'])
+
+        # Add another version
+        ortool.createRevision('123', 'DummyContent')
+        items = ortool.listAll()
+        # Items are sorted by implementation, but not by contract
+        items.sort() 
+        self.assertEquals(len(items), 2)
+        self.assertEquals(items, [('123', 1), ('123', 2)])
+
+        # Remove non-existent
+        self.assertRaises(KeyError, ortool.delObjectRevision, '123', 9)
+
+        # Add more
+        ortool.createRevision('ahah', 'DummyContent')
+        ortool.createRevision('ahah', 'DummyContent')
+        items = ortool.listAll()
+        items.sort()
+        self.assertEquals(len(items), 4)
+        self.assertEquals(items, [('123', 1), ('123', 2),
+                                   ('ahah', 1), ('ahah', 2)])
+        self.assertEquals(ortool.listDocids(), ['123', 'ahah'])
+
+        # Remove all versions of one
+        ortool.delObjectRevisions('123')
+        items = ortool.listAll()
+        items.sort()
+        self.assertEquals(len(items), 2)
+        self.assertEquals(items, [('ahah', 1), ('ahah', 2)])
+        self.assertEquals(ortool.listDocids(), ['ahah'])
+
+        # Remove rest one by one
+        ortool.delObjectRevision('ahah', 1)
+        self.assertEqual(tuple(ortool.listAll()), (('ahah', 2),))
+        self.assertEquals(ortool.listDocids(), ['ahah'])
+        ortool.delObjectRevision('ahah', 2)
+        self.assertEqual(tuple(ortool.listAll()), ())
+        self.assertEquals(ortool.listDocids(), [])
+
+
+    def test_ObjectVersions(self):
         ortool = self.root.portal_repository
-        ob = Dummy('foo', 'bar')
-        ortool.addObjectVersion(ob, '123', 3)
-        ob = Dummy('baz', 'moo')
-        ortool.addObjectVersion(ob, '123', 5)
-        self.assertRaises(AttributeError, ortool.getObjectVersion, '123', 99)
-        ob = ortool.getObjectVersion('123', 3)
+        ortool.createRevision('foo', 'DummyContent', 'bar')
+        ortool.createRevision('foo', 'DummyContent', 'moo')
+
+        # Check getObjectRevision
+        self.assertRaises(KeyError, ortool.getObjectRevision, 'foo', 99)
+        ob = ortool.getObjectRevision('foo', 1)
         self.assertEqual(ob.getData(), 'bar')
-        ob = ortool.getObjectVersion('123', 5)
+        ob = ortool.getObjectRevision('foo', 2)
         self.assertEqual(ob.getData(), 'moo')
 
-    def test_listVersions(self):
-        ortool = self.root.portal_repository
-        ob = Dummy('foo')
-        ortool.addObjectVersion(ob, '123', 3)
-        ob = Dummy('baz')
-        ortool.addObjectVersion(ob, '123', 5)
-        ob = Dummy('aaa')
-        ortool.addObjectVersion(ob, 'ccc', 555)
-        # list versions
-        version_infos = ortool.listVersions('123')
+        # Check listRevisions
+        version_infos = ortool.listRevisions('foo')
         version_infos.sort()
-        self.assertEqual(tuple(version_infos), (3, 5))
-        self.assertEqual(tuple(ortool.listVersions('ccc')), (555,))
-        # no such repoid
-        self.assertEqual(tuple(ortool.listVersions('notarepoid')), ())
+        self.assertEquals(version_infos, [1, 2])
+        self.assertEquals(ortool.listRevisions('notarepoid'), [])
 
-    def test_listRepoIds(self):
-        ortool = self.root.portal_repository
-        ob = Dummy('foo')
-        ortool.addObjectVersion(ob, '123', 3)
-        ob = Dummy('baz')
-        ortool.addObjectVersion(ob, '123', 5)
-        ob = Dummy('aaa')
-        ortool.addObjectVersion(ob, 'ccc', 555)
-        repoids = ortool.listRepoIds()
-        self.assertEqual(tuple(repoids), ('123', 'ccc'))
-        # now remove
-        ortool.delObjectVersion('123', 3)
-        repoids = ortool.listRepoIds()
-        repoids.sort()
-        self.assertEqual(tuple(repoids), ('123', 'ccc'))
-        ortool.delObjectVersion('123', 5)
-        self.assertEqual(tuple(ortool.listRepoIds()), ('ccc',))
-        ortool.delObjectVersion('ccc', 555)
-        self.assertEqual(tuple(ortool.listRepoIds()), ())
+        # Check listAll, listDocids
+        self.assertEquals(ortool.listAll(), [('foo', 1), ('foo', 2)])
+        self.assertEquals(ortool.listDocids(), ['foo'])
 
 
 def test_suite():

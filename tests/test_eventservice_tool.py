@@ -1,13 +1,13 @@
-"""\
-Simple test for portal_elements
+"""
+Simple test for event service
 """
 
 import Testing.ZopeTestCase.ZopeLite as Zope
 from Testing import ZopeTestCase
-ZopeTestCase.installProduct('CMFCore')
-ZopeTestCase.installProduct('CMFDefault')
-ZopeTestCase.installProduct('MailHost')
-ZopeTestCase.installProduct('CPSCore')
+ZopeTestCase.installProduct('CMFCore', quiet=1)
+ZopeTestCase.installProduct('CMFDefault', quiet=1)
+ZopeTestCase.installProduct('MailHost', quiet=1)
+ZopeTestCase.installProduct('CPSCore', quiet=1)
 import unittest
 
 from AccessControl.SecurityManagement import newSecurityManager
@@ -21,9 +21,10 @@ from Products.CPSCore.EventServiceTool import EventServiceTool
 
 class EventServiceToolTest(unittest.TestCase):
     """
-    Test portal_elements
+    Test event service
     """
 
+    # XXX: refactor this using ZopeTestCase
     def setUp(self):
         get_transaction().begin()
         self._policy = PermissiveSecurityPolicy()
@@ -63,6 +64,8 @@ class EventServiceToolTest(unittest.TestCase):
             compressed=0
         )
         self.assertEqual(len(evtool.getSubscribers()), 1)
+
+    # XXX: add more tests
 
 def test_suite():
     loader = unittest.TestLoader()
