@@ -7,6 +7,8 @@ New features:
 Bug fixes:
 ~~~~~~~~~~
 - Fix CMF security problem on searchMembers.
+- Fixed a bug where event notification at creation was done too early, before
+  the workflow insertion (thus no review_state was available).
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - README updated
