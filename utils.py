@@ -17,6 +17,18 @@
 #
 # $Id$
 """Miscellaneous utility functions.
+
+The only role-related functions that should be imported by external code
+are:
+  - mergedLocalRoles(object, withgroups=0)
+  - mergedLocalRolesWithPath(object, withgroups=0)
+  - getAllowedRolesAndUsersOfUser(user)
+  - getAllowedRolesAndUsersOfObject(object)
+
+Other utility functions:
+  - _isinstance(ob, class)
+  - makeId(s, lower=0)
+
 """
 
 from zLOG import LOG, INFO, DEBUG
@@ -24,6 +36,7 @@ import string
 
 # Local role (group) support monkey patches start here
 
+from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl.PermissionRole import rolesForPermissionOn
 from Products.CMFCore import utils
 from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
@@ -36,6 +49,7 @@ def mergedLocalRoles(object, withgroups=0):
     aclu = getattr(object, 'acl_users', None)
     if aclu is not None and hasattr(aclu, 'mergedLocalRoles'):
         return aclu.mergedLocalRoles(object, withgroups)
+    # XXX should code old implementation directly here
     return utils.old_mergedLocalRoles(object)
 
 def mergedLocalRolesWithPath(object, withgroups=0):
@@ -43,8 +57,8 @@ def mergedLocalRolesWithPath(object, withgroups=0):
     aclu = getattr(object, 'acl_users', None)
     if aclu is not None and hasattr(aclu, 'mergedLocalRolesWithPath'):
         return aclu.mergedLocalRolesWithPath(object, withgroups)
-    else:
-        return {}
+    # Default implementation:
+    return {}
 
 if not hasattr(utils, 'old_mergedLocalRoles'):
     utils.old_mergedLocalRoles = utils._mergedLocalRoles
@@ -52,6 +66,25 @@ utils.mergedLocalRoles = mergedLocalRoles
 utils._mergedLocalRoles = mergedLocalRoles
 utils.mergedLocalRolesWithPath = mergedLocalRolesWithPath
 
+def getAllowedRolesAndUsersOfObject(ob):
+    """Get the roles and users that can View this object."""
+    aclu = getattr(ob, 'acl_users', None)
+    if hasattr(aclu, '_allowedRolesAndUsers'):
+        return aclu._allowedRolesAndUsers(ob)
+    # Default implementation:
+    allowed = {}
+    for r in rolesForPermissionOn('View', ob):
+        allowed[r] = None
+    localroles = mergedLocalRoles(ob, withgroups=1)
+    for user_or_group, roles in localroles.items():
+        for role in roles:
+            if allowed.has_key(role):
+                allowed[user_or_group] = None
+    if allowed.has_key('Owner'):
+        del allowed['Owner']
+    return allowed.keys()
+
+# XXX should be calling above function.
 def _allowedRolesAndUsers(ob):
     #LOG('CPSCore utils', DEBUG, '_allowedRolesAndUsers()')
 
@@ -71,6 +104,7 @@ def _allowedRolesAndUsers(ob):
         del allowed['Owner']
     return list(allowed.keys())
 
+# XXX should be renamed to avoid confusion
 def allowedRolesAndUsers(self):
     """
     Return a list of roles, users and groups with View permission.
@@ -81,6 +115,30 @@ def allowedRolesAndUsers(self):
     return _allowedRolesAndUsers(ob)
 IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
 
+def getAllowedRolesAndUsersOfUser(user):
+    """Return the roles and groups this user has."""
+    aclu = aq_parent(aq_inner(user))
+    if hasattr(aclu, '_getAllowedRolesAndUsers'):
+        return aclu._getAllowedRolesAndUsers(user)
+    # Default implementation:
+    result = list(user.getRoles())
+    if 'Anonymous' not in result:
+        result.append('Anonymous')
+    result.append('user:%s' % user.getUserName())
+    if hasattr(aq_base(user), 'getComputedGroups'):
+        groups = user.getComputedGroups()
+    elif hasattr(aq_base(user), 'getGroups'):
+        groups = user.getGroups() + ('role:Anonymous',)
+        if 'Authenticated' in result:
+            groups = groups + ('role:Authenticated',)
+    else:
+        groups = ('role:Anonymous',)
+    for group in groups:
+        result.append('group:%s' % group)
+    return result
+
+# XXX should be calling getAllowedRolesAndUsersOfUser
+# XXX should be removed from API, instead use above function
 def _getAllowedRolesAndUsers(user):
     """Returns a list with all roles this user has + the username"""
     #LOG('CPSCore utils', DEBUG, '_getAllowedRolesAndUsers()')
@@ -99,6 +157,8 @@ def _getAllowedRolesAndUsers(user):
     # end groups
     return result
 
+# XXX should be calling getAllowedRolesAndUsersOfUser
+# XXX should be renamed to avoid confusion
 def _listAllowedRolesAndUsers(self, user):
     #LOG('CPSCore utils', DEBUG, '_listAllowedRolesAndUsers()')
     aclu = self.acl_users
@@ -113,6 +173,11 @@ if not hasattr(CatalogTool, 'old_listAllowedRolesAndUsers'):
 CatalogTool._listAllowedRolesAndUsers = _listAllowedRolesAndUsers
 
 # Local role monkey patching ends here
+
+
+#
+# Utility functions
+#
 
 def _isinstance(ob, cls):
     try:
