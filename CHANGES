@@ -3,7 +3,8 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Adding a new getLanguageRevisions() method on the StateChangeInfo workflow
+  objects from DCWorkflow through patching.
 Bug fixes:
 ~~~~~~~~~~
 -

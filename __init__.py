@@ -62,6 +62,7 @@ import ProxyBase
 
 # register CPSWorkflow
 import CPSWorkflow
+import DCWorkflowPatch
 
 
 tools = (
