@@ -397,7 +397,7 @@ class TreeCache(SimpleItemWithProperties):
         return deepcopy(self._tree) # XXX untested, probably fails
 
     security.declareProtected(View, 'getList')
-    def getList(self, prefix='', start_depth=0, stop_depth=999, filter=1):
+    def getList(self, prefix=None, start_depth=0, stop_depth=999, filter=1):
         """Return the cached tree as a list.
 
         Only return the part between start_depth and stop_depth inclusive,
@@ -420,8 +420,9 @@ class TreeCache(SimpleItemWithProperties):
                 if not ok:
                     continue
             # check prefix
-            rpath = info['rpath']
-            if rpath != prefix and not rpath.startswith(prefix+'/'):
+            if prefix is not None:
+                rpath = info['rpath']
+                if rpath != prefix and not rpath.startswith(prefix+'/'):
                     continue
             # check depth
             depth = info['depth']
