@@ -329,6 +329,8 @@ class CPSWorkflowTool(WorkflowTool):
                                           initial_behavior)
         elif initial_behavior == TRANSITION_INITIAL_CREATE:
             if proxy_type is None:
+                # XXX constructContent doesn't exist everywhere !
+                # XXX especially when creating at the root of the portal.
                 ob = container.constructContent(type_name, id, *args, **kw)
             else:
                 # Create a proxy and a document in the repository.
