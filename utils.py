@@ -204,9 +204,11 @@ def __cps_wrapper_getattr__(self, name):
     # XXX TODO: use _isinstance(ProxyBase) need to fix import mess
     if hasattr(ob, '_docid') and name not in (
         'getId', 'id', 'path', 'getPhysicalPath', 'splitPath',
-        'modified', 'uid'):
+        'modified', 'uid', 'container_path'):
         proxy = ob
         ob = ob.getContent()
+        if ob is None:
+            raise AttributeError
     elif 'portal_repository' in ob.getPhysicalPath():
         if name in ('SearchableText', 'Title'):
             raise AttributeError
@@ -215,8 +217,13 @@ def __cps_wrapper_getattr__(self, name):
         if name == 'SearchableText':
             ret = ret() + ' ' + proxy.getId()  # so we can search on id
     return ret
-
 IndexableObjectWrapper.__getattr__ = __cps_wrapper_getattr__
+
+def container_path(self):
+    """This is used to produce an index with the parent url."""
+    ob = self._IndexableObjectWrapper__ob
+    return '/'.join(ob.getPhysicalPath()[:-1])
+IndexableObjectWrapper.container_path = container_path
 
 
 LOG('CPSCore.utils', INFO, 'Patching Zope TopicIndex.clear method')
