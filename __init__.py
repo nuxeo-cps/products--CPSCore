@@ -56,6 +56,7 @@ import CPSWorkflowTool
 import TreesTool
 import CPSMembershipTool
 import OrderedFolderSupportPatch
+import CopyrightPatch
 
 from CPSWorkflowConfiguration import CPSWorkflowConfiguration
 from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
