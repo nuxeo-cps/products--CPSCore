@@ -1,5 +1,6 @@
-# (c) 2002-2003 Nuxeo SARL <http://nuxeo.com/>
-# (c) 2002-2003 Julien Jalon <mailto:jj@nuxeo.com>
+# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
+# Authors: Julien Jalon <jj@nuxeo.com>
+#          Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
