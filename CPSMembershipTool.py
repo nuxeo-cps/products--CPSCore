@@ -163,7 +163,7 @@ class CPSMembershipTool(MembershipTool):
             obj.reindexObjectSecurity()
 
     security.declareProtected(View, 'deleteLocalRoles')
-    def deleteLocalRoles(self, obj, member_ids, reindex=1):
+    def deleteLocalRoles(self, obj, member_ids, reindex=1, recursive=1):
         """ Delete local roles for members member_ids """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
@@ -176,6 +176,58 @@ class CPSMembershipTool(MembershipTool):
             obj.manage_delLocalRoles(userids=member_ids)
         if reindex:
             obj.reindexObjectSecurity()
+        if recursive:
+            ttool = getToolByName(self, 'portal_trees')
+            utool = getToolByName(self, 'portal_url')
+            portal = utool.getPortalObject()
+            # keys used in portal_trees
+            user_ids = ['user:%s' % id for id in member_ids]
+
+            # trees to look up
+            trees = []
+            # get all trees from Trees Tool underneath the given object
+            if obj is portal:
+                # check every root. Trees could cache almost anything.
+                roots = {}
+                for t in ttool.objectValues():
+                    roots[t.getRoot()] = None
+                # tree list for each root
+                trees = [getattr(ttool, r).getList() for r in roots.keys()]
+            else:
+                rpath = utool.getRelativeContentPath(obj)
+                prefix = '/'.join(rpath)
+                trees = [getattr(ttool, rpath[0]).getList(prefix=prefix)]
+
+            # list of object rpaths where deleted members had local roles
+            rpaths_with_lroles = []
+            # search all rpath with local roles given to these members
+            for tree in trees:
+                for item in tree:
+                    local_roles = item['local_roles']
+                    for user_id in user_ids:
+                        if local_roles.has_key(user_id):
+                            rpaths_with_lroles.append(item['rpath'])
+                            # one is enough
+                            break
+
+            # fetch every interesting object and call delete local roles
+            for rpath in rpaths_with_lroles:
+                subobj = portal.restrictedTraverse(rpath)
+                self.deleteLocalRoles(subobj, member_ids, reindex=0,
+                                      recursive=0)
+            # reindex by ourselves
+            if obj is portal:
+                prev = None
+                for rpath in rpaths_with_lroles:
+                    if prev is None or (
+                            prev is not None and rpath.find(prev) != 0):
+                        # only reindex highest objects
+                        # (reindexObjectSecurity is recursive)
+                        subobj = portal.restrictedTraverse(rpath)
+                        subobj.reindexObjectSecurity()
+                    prev = rpath
+            else:
+                obj.reindexObjectSecurity()
 
     security.declareProtected(View, 'setLocalGroupRoles')
     def setLocalGroupRoles(self, obj, ids, role, reindex=1):
@@ -524,11 +576,11 @@ class CPSMembershipTool(MembershipTool):
             for member_id in member_ids:
                 self.deleteMemberArea(member_id)
 
-        ## Delete members' local roles.
-        #if delete_localroles:
-        #    utool = getToolByName(self, 'portal_url', None)
-        #    self.deleteLocalRoles( utool.getPortalObject(), member_ids,
-        #                           reindex=1, recursive=1 )
+        # Delete members' local roles.
+        if delete_localroles:
+            utool = getToolByName(self, 'portal_url')
+            self.deleteLocalRoles(utool.getPortalObject(), member_ids,
+                                  reindex=1, recursive=1)
 
         return tuple(member_ids)
 

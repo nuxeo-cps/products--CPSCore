@@ -6,7 +6,9 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Implement recursive deletion of local roles, especially when deleting a
+  member (Closes #319: Roles locally assigned not deleted with the user
+  account). Needs feedback.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - in MembershipTools/deleteMembers adding default arg check_permission
