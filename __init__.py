@@ -43,7 +43,7 @@ from Products.CMFCore.CMFCorePermissions import AddPortalContent, ManagePortal
 # Don't remove.
 import AllowModules
 
-import ElementsTool
+#import ElementsTool
 import EventServiceTool
 import EventServicePatches
 import TypesToolPatches
@@ -68,7 +68,7 @@ tools = (
     EventServiceTool.EventServiceTool,
 #    LoggerTool.LoggerTool,
 #    MirrorTool.MirrorTool,
-    ElementsTool.ElementsTool,
+#    ElementsTool.ElementsTool,
     ProxyTool.ProxyTool,
     ObjectRepositoryTool.ObjectRepositoryTool,
     CPSWorkflowTool.CPSWorkflowTool,
@@ -99,13 +99,13 @@ def initialize(registrar):
     ).initialize(registrar)
 
     # Elements
-    registrar.registerClass(
-        ElementsTool.DefaultElement,
-        permission='Add a Default Element',
-        constructors=(
-            ElementsTool.ElementsTool.manage_addDefaultElement,
-        )
-    )
+    #registrar.registerClass(
+    #    ElementsTool.DefaultElement,
+    #    permission='Add a Default Element',
+    #    constructors=(
+    #        ElementsTool.ElementsTool.manage_addDefaultElement,
+    #    )
+    #)
 
     # Event Service
     registrar.registerClass(
