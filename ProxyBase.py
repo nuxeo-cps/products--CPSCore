@@ -432,7 +432,10 @@ class ProxyBase(Base):
         ob = self.getContent()
         title = ob.Title()
         if self.use_mcat and title:
-            title = self.translation_service(msgid=title, default=title)
+            translation_service = getToolByName(self, 'translation_service',
+                                                None)
+            if translation_service is not None:
+                title = translation_service(msgid=title, default=title)
         return title
 
     security.declarePublic('title_or_id')
@@ -466,11 +469,10 @@ class ProxyBase(Base):
     def _getAllMCatalogTranslation(self, msgid):
         """Return a dict of message catalog translation."""
         translation_service = getToolByName(self, 'translation_service', None)
-        Localizer = getToolByName(self, 'Localizer', None)
-        if translation_service is None or Localizer is None:
+        if translation_service is None:
             return {'en': msgid}
         ret = {}
-        for locale in Localizer.get_supported_languages():
+        for locale in translation_service.getSupportedLanguages():
             ret[locale] = translation_service(msgid=msgid,
                                               target_language=locale,
                                               default=msgid)
@@ -840,7 +842,8 @@ class LanguageSwitcher(Acquisition.Explicit):
         utool = getToolByName(self, 'portal_url')
         rpath = utool.getRelativeUrl(proxy)
         # store information by the time of the request to change the
-        # language used for viewing the current document, bypassing Localizer.
+        # language used for viewing the current document,
+        # bypassing translation_service
         if REQUEST:
             if not REQUEST.has_key('SESSION'):
                 # unrestricted traverse pass a fake REQUEST without SESSION
@@ -879,7 +882,8 @@ class LanguageViewer(Acquisition.Explicit):
         utool = getToolByName(self, 'portal_url')
         rpath = utool.getRelativeUrl(proxy)
         # store information by the time of the request to change the
-        # language used for viewing the current document, bypassing Localizer.
+        # language used for viewing the current document, bypassing
+        # translation_service
         if REQUEST is not None:
             langswitch = REQUEST.get(REQUEST_LANGUAGE_KEY, {})
             langswitch[rpath] = lang
@@ -1173,12 +1177,10 @@ class NotAProxy:
     security.declareProtected(View, 'getLanguage')
     def getLanguage(self, lang=None):
         """Get the selected language."""
-        # XXX TODO Translation Service should be used in the near future
-        Localizer = getToolByName(self, 'Localizer', None)
         lang = 'en'
-        if Localizer is not None:
-            # use the portal default language
-            lang = Localizer.get_default_language()
+        translation_service = getToolByName(self, 'translation_service', None)
+        if translation_service is not None:
+            lang = translation_service.getDefaultLanguage()
         return lang
 
     security.declareProtected(View, 'getProxyLanguages')
