@@ -445,7 +445,7 @@ class TreeCache(SimpleItemWithProperties):
         that are under the prefix (an rpath).
         If filter=1, skip unviewable entries.
 
-        Eeach node is a dictionnary containing the following information:
+        Each node is a dictionnary containing the following information:
           id
           url (do not use)
           path
@@ -458,6 +458,7 @@ class TreeCache(SimpleItemWithProperties):
           visible (0 or 1, when filter=0)
         """
         mtool = getToolByName(self, 'portal_membership')
+
         try:
             user = mtool.getAuthenticatedMember().getUser()
             allowed_roles_and_users = _getAllowedRolesAndUsers(user)
