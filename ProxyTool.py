@@ -564,13 +564,14 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     manage_listProxies = DTMLFile('zmi/proxy_list_proxies', globals())
 
     security.declareProtected(ManagePortal, 'manage_purgeBrokenProxies')
-    def manage_purgeBrokenProxies(self, REQUEST):
+    def manage_purgeBrokenProxies(self, REQUEST=None):
         """Purge the broken proxies."""
         broken = self.getBrokenProxies()
         for hubid, infos in broken:
             del self._hubid_to_info[hubid]
-        REQUEST.RESPONSE.redirect(self.absolute_url() +
-                                  '/manage_proxiesInfo?search=1'
-                                  '?manage_tabs_message=Purged.')
+        if REQUEST:
+            REQUEST.RESPONSE.redirect(self.absolute_url() +
+                                      '/manage_proxiesInfo?search=1'
+                                      '?manage_tabs_message=Purged.')
 
 InitializeClass(ProxyTool)
