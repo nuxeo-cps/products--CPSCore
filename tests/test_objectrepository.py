@@ -34,8 +34,8 @@ from dummy import DummyContent
 def constructContent(self, type_name, id, *args, **kw):
     assert type_name == 'DummyContent'
     self._setObject(id, DummyContent(id, *args, **kw))
-ObjectRepositoryTool.constructContent = constructContent
 
+constructContent_old = ObjectRepositoryTool.constructContent
 
 class ObjectRepositoryToolTests(SecurityRequestTest):
     """Test object repository ."""
@@ -47,12 +47,14 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
         self.root.id = 'root'
         root = self.root
 
+        ObjectRepositoryTool.constructContent = constructContent
         ortool = ObjectRepositoryTool()
         root._setObject('portal_repository', ortool)
 
 
-    #def tearDown( self ):
-    #    SecurityRequestTest.tearDown(self)
+    def tearDown( self ):
+        #    SecurityRequestTest.tearDown(self)
+        ObjectRepositoryTool.constructContent = constructContent_old
 
     ##########
 
