@@ -48,6 +48,8 @@
          Initial transition for checkout
        <dtml-elif "behavior == 26">
          Transition for checkin
+       <dtml-elif "behavior == 31">
+         Delete object
        <dtml-elif "behavior == 34">
          Publishing (initial transitions:
          <code><dtml-var "', '.join(clone_allowed_transitions)" html_quote></code>)

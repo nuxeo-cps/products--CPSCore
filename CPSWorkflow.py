@@ -348,9 +348,9 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                     raise WorkflowException("Cannot checkin into changed "
                                             "document %s" %
                                        '/'.join(dest_object.getPhysicalPath()))
-        if TRANSITION_BEHAVIOR_DELETE in behavior: # XXX do after transition
-            raise NotImplementedError
-            ## Check that container allows delete.
+        if TRANSITION_BEHAVIOR_DELETE in behavior:
+            pass
+            ## XXX Check that container allows delete.
             #container = aq_parent(aq_inner(ob))
             #ok, why = wftool.isBehaviorAllowedFor(container,
             #                                     TRANSITION_ALLOWSUB_DELETE,
@@ -359,8 +359,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             #    raise WorkflowException("Container=%s does not allow "
             #                            "subobject deletion (%s)" %
             #                            (container.getId(), why))
-            #container._delObject(ob.getId())
-            #raise ObjectDeleted
         #
         ###
 
@@ -385,8 +383,10 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 ob = moved_exc.getNewObject()
                 # Re-raise after transition
 
-        ### CPS: Behavior. # XXX some should be after the transition???
+        ### CPS: Behavior.
         #
+
+        do_delete = 0
 
         if TRANSITION_BEHAVIOR_MOVE in behavior:
             raise NotImplementedError
@@ -408,9 +408,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             for dest_object in dest_objects:
                 wftool.checkinObject(ob, dest_object, checkin_transition)
             # Now delete the original object.
-            container = aq_parent(aq_inner(ob))
-            container._delObject(ob.getId())
-            raise ObjectDeleted
+            do_delete = 1
 
         if TRANSITION_BEHAVIOR_FREEZE in behavior:
             # Freeze the object.
@@ -419,9 +417,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 ob.freezeProxy()
                 ob.proxyChanged()
 
-        if TRANSITION_BEHAVIOR_DELETE in behavior: # XXX do after transition
-            raise NotImplementedError
-            #XXX
+        if TRANSITION_BEHAVIOR_DELETE in behavior:
+            do_delete = 1
         #
         ###
 
@@ -464,6 +461,15 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         status[self.state_var] = new_state
         tool = aq_parent(aq_inner(self))
         tool.setStatusOf(self.id, ob, status)
+
+        ### CPS: Delete. Done after setting status, to keep history.
+        #
+        if do_delete:
+            container = aq_parent(aq_inner(ob))
+            container._delObject(ob.getId())
+            raise ObjectDeleted
+        #
+        ###
 
         # Update role to permission assignments.
         self.updateRoleMappingsFor(ob)

@@ -177,6 +177,15 @@ Initiated by WorkflowMethod
         Freeze object
       </td>
     </tr>
+    <tr>
+      <td>
+        <input type="checkbox" name="transition_behavior:int:list" value="31"
+            <dtml-if "31 in behavior">checked</dtml-if> />
+      </td>
+      <td colspan="3">
+        Delete object
+      </td>
+    </tr>
     <tr valign="top">
       <td>
         <input type="checkbox" name="transition_behavior:int:list" value="34"
