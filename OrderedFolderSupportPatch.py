@@ -34,6 +34,12 @@ from AccessControl.Permissions import manage_properties
 
 from OFS.ObjectManager import ObjectManager
 
+try:
+     import Products.OrderedFolderSupportPatch
+except ImportError:
+     pass
+else:
+     raise ImportError("OrderedFolderSupportPatch is not compatible with this version of CPS")
 
 # will be inserted into ObjectManager
 
