@@ -152,7 +152,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         else:
             # Checkout with specific languages.
-            new_language_revs = {}
             for new_lang, lang in language_map.items():
                 real_lang, rev = self.getBestRevision(proxy, lang)
                 if new_lang == real_lang:
@@ -393,23 +392,37 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             #    % (repoid, version_info))
             repotool.freezeRevision(docid, rev)
 
-    security.declarePrivate('unshareContent')
-    def unshareContent(self, proxy):
-        """Unshare content (after a copy/paste for instance).
+    def _unshareContent(self, proxy, repotool):
+        """Unshare content of a proxy.
 
-        XXX incorrect ! should create new docid.
-
-        Called from paste.
+        Puts new revisions into a new docid.
         """
+        docid = proxy.getDocid()
+        new_docid = repotool.getFreeDocid()
+        for lang, rev in proxy._getLanguageRevisions().items():
+            new_ob, new_rev = repotool.copyRevision(docid, rev, new_docid)
+            proxy.setLanguageRevision(lang, new_rev)
+        proxy.setDocid(new_docid)
+        proxy.setFromLanguageRevisions({})
+        proxy.setTag(None)
+        proxy.proxyChanged()
+
+    def _unshareContentDoRecursion(self, proxy, repotool):
+        """Unshare content, and recurse."""
         if not _isinstance(proxy, ProxyBase):
             return
+        self._unshareContent(proxy, repotool)
+        for subob in proxy.objectValues():
+            self._unshareContentDoRecursion(subob, repotool)
+
+    security.declarePrivate('unshareContentRecursive')
+    def unshareContentRecursive(self, proxy):
+        """Unshare content
+
+        Called after a copy+paste for instance. This is recursive.
+        """
         repotool = getToolByName(self, 'portal_repository')
-        docid = proxy.getDocid()
-        new_language_revs = {}
-        for lang, rev in proxy._getLanguageRevisions().items():
-            new_ob, new_rev = repotool.copyRevision(docid, rev)
-            proxy.setLanguageRevision(lang, new_rev)
-        proxy.proxyChanged()
+        self._unshareContentDoRecursion(proxy, repotool)
 
     security.declarePrivate('setSecurity')
     def setSecurity(self, proxy, skip_rpath=None):

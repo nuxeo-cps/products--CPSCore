@@ -75,6 +75,14 @@ class ProxyBase(Base):
         """Get the docid for this proxy."""
         return self._docid
 
+    security.declarePrivate('setDocid')
+    def setDocid(self, docid):
+        """Set the docid of a proxy.
+
+        (Used when proxies are unshared.)
+        """
+        self._docid = docid
+
     security.declareProtected(View, 'getDefaultLanguage')
     def getDefaultLanguage(self):
         """Get the default language for this proxy."""

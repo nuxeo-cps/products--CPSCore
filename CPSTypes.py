@@ -251,8 +251,7 @@ class TypeContainer(Base):
                 ob = self._getOb(id)
                 ob.manage_afterClone(ob)
                 # unshare content after copy
-                # XXX this must be recursive!
-                pxtool.unshareContent(ob)
+                pxtool.unshareContentRecursive(ob)
                 # notify interested parties
                 if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
                     ob.manage_afterCMFAdd(ob, self)

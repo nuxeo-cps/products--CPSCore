@@ -278,17 +278,22 @@ class ObjectRepositoryTool(UniqueObject,
         ob = self.getObjectRevision(docid, rev)
         return getattr(ob, '_cps_frozen', 0)
 
-    security.declarePrivate('copyRevision') # YYY
-    def copyRevision(self, docid, rev):
+    security.declarePrivate('copyRevision')
+    def copyRevision(self, docid, rev, new_docid=None):
         """Copy a revision of an object into a new revision.
+
+        If a new_docid is specified, create the new revision in that
+        one.
 
         Returns the newly created (unfrozen) object and its revision.
 
         May be called by ProxyTool.
         """
+        if new_docid is None:
+            new_docid = docid
         ob = self.getObjectRevision(docid, rev)
-        newrev = self.getFreeRevision(docid)
-        newid = self._get_id(docid, newrev)
+        newrev = self.getFreeRevision(new_docid)
+        newid = self._get_id(new_docid, newrev)
         newob = self.copyContent(ob, newid)
         if hasattr(newob, '_cps_frozen'):
             delattr(newob, '_cps_frozen')
