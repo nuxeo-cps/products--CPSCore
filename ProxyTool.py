@@ -404,6 +404,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if event_type in ('sys_add_object', 'sys_del_object'):
             if not isinstance(object, ProxyBase):
                 return
+            LOG('ProxyTool', DEBUG, 'Got %s for %s'
+                % (event_type, '/'.join(object.getPhysicalPath())))
             hubid = infos['hubid']
             if event_type == 'sys_add_object':
                 repoid = object.getRepoId()
