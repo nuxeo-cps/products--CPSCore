@@ -130,33 +130,6 @@ class CPSBaseFolder(CPSBaseDocument, TypeConstructor, TypeContainer):
 
     isPrincipiaFolderish = 1
 
-    security = ClassSecurityInfo()
-
-    #
-    # This allows a folderish class to have it do correct CPS creation
-    # when invokeFactory is called.
-    #
-
-    security.declarePublic('invokeFactory')
-    def invokeFactory(self, type_name, id, RESPONSE=None, *args, **kw):
-        """Create a CMF object in this folder.
-
-        A creation_transitions argument should be passed for CPS
-        object creation.
-
-        This method is public as creation security is governed
-        by the workflows allowed by the workflow tool.
-        """
-        wftool = getToolByName(self, 'portal_workflow')
-        newid = wftool.invokeFactoryFor(self, type_name, id, *args, **kw)
-        if RESPONSE is not None:
-            ob = self._getOb(newid)
-            ttool = getToolByName(self, 'portal_types')
-            info = ttool.getTypeInfo(type_name)
-            RESPONSE.redirect('%s/%s' % (ob.absolute_url(),
-                                         info.immediate_view))
-        return newid
-
     #
     # ZMI
     #
