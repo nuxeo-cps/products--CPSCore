@@ -64,20 +64,27 @@ Proxies, document repository and workflows
       document,
 
     - security information to control for instance its visibility (View)
-      and modifiability (Modify portal content) (according to the
-      workflow). The security information is the union of all the
-      settings of the proxies that point to it.
+      and modifiability (Modify portal content) (and others according to
+      the workflow). The security information is the union of all the
+      settings of the proxies that point to it. See Security synthesis
+      below.
 
-    A revision may be internally "frozen", which means that it won't
-    ever be modified again. In this state, it's not modifiable. This
-    frozen state exists for all revisions corresponding to a workflow
-    state that is frozen. This is used to ensure that a given published
-    revision, for instance, is not modified. "Freezing" a revision must
-    be understood as "mark this revision as to be lazily copied for any
-    future modification".
+    Freezing
 
-    In addition, whenever a document is created in a given language, its
-    'setLanguage' method is called to initialize the language.
+      A revision may be internally "frozen", which means that it won't
+      ever be modified again. In this state, it's not modifiable. This
+      is used to ensure that a given published revision, for instance,
+      is not modified. "Freezing" a revision must be understood as "mark
+      this revision as to be lazily copied for any future modification".
+
+      A revision becomes frozen when its proxy follows a transition with
+      the "frozen" transition flag (and all the revisions pointed by the
+      proxy are frozen at the same time).
+
+    Language
+
+      Whenever a document is created in a given language, its
+      'setLanguage' method is called to initialize the language.
 
   Document views
 
@@ -115,15 +122,15 @@ Proxies, document repository and workflows
     of the CMF object won't work, as all views will be applied to
     proxies from CMF's point of view.
 
-  Edition
+  Modifications
 
     When a document is published in a section, it keeps the same
     revision as the one in the workspace from which it has been
     published, so that there are not too many versions. But the revision
-    is marked "frozen", because by being published there is a promise to
-    the section reviewer that the document won't change without his
-    review. When the author wants to modify his document in the
-    workspace, the system must provide a new revision. This is done
+    is marked "frozen" (see above), because by being published there is
+    a promise to the section reviewer that the document won't change
+    without his review. When the author wants to modify his document in
+    the workspace, the system must provide a new revision. This is done
     automatically when needed, by using::
 
       doc = context.getEditableContent()
@@ -134,6 +141,13 @@ Proxies, document repository and workflows
 
     This way, because we advise CPS that we're about to modify a
     revision, it's possible to create a new revision when needed.
+
+    When using CPSDocument and CPSSchemas, the document is modified by
+    the internal workings of the DataModel. There's a need to get to the
+    proxy to be able to call getEditableContent() when it is determined
+    that the object really has to be modified (it has passed
+    validation), so the proxy has to be passed to the CPSDocument
+    methods doing rendering after validation and modification.
 
   Placeful workflow configuration
 
@@ -196,8 +210,7 @@ Proxies, document repository and workflows
     Specific behavior
 
       - "Freeze object" is used by all transitions going to a state
-        where the object should not be modified anymore. This may in the
-        future move to be a property of the state itself.
+        where the object should not be modified anymore.
 
       - "Publishing, with initial transitions" is used as a mechanism
         for publishing an object into another container.
@@ -207,6 +220,9 @@ Proxies, document repository and workflows
 
       - "Checkin, with allowed transitions" is used to checkin an object
         back into its original version.
+
+      - "Merge object with existing in same state" is used when in the
+        destination state there should be only one docid in a state.
 
   Publishing
 
@@ -260,6 +276,38 @@ Proxies, document repository and workflows
 
     Note that after a checkin the working document is deleted.
 
+  Global history
+
+    Because documents can now have several related versions in several
+    locations, it is useful to be able to get a global history of all
+    workflow operations that applied to all revisions of a docid. This
+    history cannot be stored in the proxies themselves because the
+    proxies may very well be deleted in the normal course of operations,
+    and we still want to keep their history.
+
+    To solve this, the worklow tool now has a getFullHistoryOf() method,
+    that returns the full history. The full history is actually stored
+    in the repository tool.
+
+  Security synthesis
+
+    A proxy has security applied to it by the workflow. This typically
+    controls visibility and modifiability. The document itself, in the
+    repository, must be protected by the same security settings. In
+    addition, there is the problem that several proxies with different
+    workflow states and thus different security settings can point to
+    the same document, so a "security synthesis" has to be done.
+
+    The security synthesis must take each proxy, find which users have
+    specific workflow permissions, merge them, and apply the result to
+    the object in the repository. This is done by
+    ProxyTool.setSecurity().
+
+    There is a small complication here, which is that zope cannot
+    directly give a permission to a user, but only permissions to roles
+    and roles to users. So the repository tool has specific roles that
+    are designed to map only to one permission.
+
   Document lifecycle
 
     This is an attempt to describe the lifecycle of a document. It
@@ -302,7 +350,10 @@ Proxies, document repository and workflows
         context.getEditableContent before doing modifications, to ensure
         that the revision used is really modifiable.
 
-        ...
+        When using CPSDocument and its renderEdit method (which is
+        called on the object, not the proxy), the proxy must be passed
+        as an additional argument because the edit method will need
+        internally to call proxy.getEditableContent.
 
       The document is submitted to a section.
 
@@ -321,6 +372,9 @@ Proxies, document repository and workflows
         of that document is allowed to exist (to ensure that the
         reviewer sees a non-editable document), the revision is marked
         "frozen". In other kinds of workflows, this wouldn't be needed.
+
+        Examining all sections could be costly, and in most cases it's
+        possible to use a cache like the TreesTool.
 
       A reviewer reviews the document
 
@@ -343,11 +397,6 @@ Proxies, document repository and workflows
 
         The submission process is the same. Now after submission, the
         section contains one version in the published state, and another
-        version in the pending state. The reviewer, when reviewing the
-        document, will be informed of that fact and may chose to reject
-        the newly submitted version (which means simply removing the
-        proxy), or publish the new version and remove the previous one.
-
-        Having two versions of the same document in the published state
-        should be avoided in a section workflow. This can be avoided by
-        skin code that checks for these cases.
+        version in the pending state. When the "accept" transition is
+        invoked, if it has a "Merge" flag, the submitted revisions will
+        be merged into the already-published proxy.
