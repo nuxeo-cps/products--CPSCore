@@ -10,7 +10,9 @@ New features:
   http://.../proxy/viewZip/attachedFile/file.zip/path/to/file/in/zip
 Bug fixes:
 ~~~~~~~~~~
--
+- In resetPassword method used more generic CMF method acl_users._doChangeUser
+  instead of member.setSecurityProfile. This has the effect that resetPassword
+  now works with LDAPUserGroupsFolder too.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Made the product rely on CPSUtil factorized methods

@@ -702,7 +702,9 @@ Mime-Version: 1.0
         email_address = member.getProperty('email')
         random.seed()
         new_password = generatePassword()
-        member.setSecurityProfile(password=new_password, domains=None)
+        user = member.getUser()
+        self.acl_users._doChangeUser(username, new_password,
+                                     user.getRoles(), user.getDomains())
         result['new_password'] = new_password
         result['reset_password_success'] = True
         try:
