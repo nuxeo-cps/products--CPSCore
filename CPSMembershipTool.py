@@ -163,7 +163,7 @@ class CPSMembershipTool(MembershipTool):
             obj.reindexObjectSecurity()
 
     security.declareProtected(View, 'deleteLocalRoles')
-    def deleteLocalRoles(self, obj, member_ids, reindex=1, recursive=1):
+    def deleteLocalRoles(self, obj, member_ids, reindex=1, recursive=0):
         """ Delete local roles for members member_ids """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
@@ -174,15 +174,23 @@ class CPSMembershipTool(MembershipTool):
                 break
         if has_proper_role or 'Manager' in my_roles or 'Owner' in my_roles:
             obj.manage_delLocalRoles(userids=member_ids)
+
+        if recursive:
+            path = '/'.join(obj.getPhysicalPath())
+            user_ids = ['user:%s' % id for id in member_ids]
+            LOG('CPSMembershipTool.deleteLocalRoles', DEBUG,
+                "Search localUsersWithRoles from %s for %s" % (path, user_ids))
+            portal_catalog = getToolByName(self, 'portal_catalog')
+            results = portal_catalog(cps_filter_sets='searchable', path=path,
+                                     localUsersWithRoles=user_ids)
+            LOG("\n\nCPSMembershipTool.deleteLocalRoles\n\n", DEBUG,
+                str([r.id for r in results]))
+            for brain in results:
+                ob = brain.getObject()
+                ob.manage_delLocalRoles(userids=member_ids)
+
         if reindex:
             obj.reindexObjectSecurity()
-        if recursive:
-            # XXX TODO
-            # portal_tree implementation was too heavy for big hierarchies
-            # so remove it, reopen #319 and prepare an implementation using the
-            # catalog and its index allowedRolesAndUsers.
-            # XXX no implementation as before, local roles are kept in place
-            pass
 
 
     security.declareProtected(View, 'setLocalGroupRoles')

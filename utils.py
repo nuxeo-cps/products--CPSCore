@@ -116,7 +116,30 @@ def allowedRolesAndUsers(self):
     #LOG('CPSCore utils', DEBUG, 'allowedRolesAndUsers()')
     ob = self._IndexableObjectWrapper__ob # Eeek, manual name mangling
     return _allowedRolesAndUsers(ob)
+
 IndexableObjectWrapper.allowedRolesAndUsers = allowedRolesAndUsers
+
+
+LOG('CPSCore.utils', DEBUG,
+    'Adding localUsersWithRoles to IndexableObjectWrapper')
+def localUsersWithRoles(self):
+    """
+    Return a list of users and groups having local roles.
+
+    Used by PortalCatalog to find which objects have roles for given users and
+    groups. Only return proxies: see how __cps_wrapper_getattr__ raises
+    AttributeError when accessing this attribute.
+    """
+    ob = self._IndexableObjectWrapper__ob
+    # XXX herve: correct me if I'm wrong but repository documents' roles already
+    # are some "merge" of proxies' roles; so this index doesn't seem relevant
+    # since it's like a copy of the allowedRolesAndUsers index.
+    local_roles = ['user:%s' % r[0] for r in ob.get_local_roles()]
+    local_roles.extend(['group:%s' % r[0] for r in ob.get_local_group_roles()])
+    return local_roles
+
+IndexableObjectWrapper.localUsersWithRoles = localUsersWithRoles
+
 
 def getAllowedRolesAndUsersOfUser(user):
     """Return the roles and groups this user has."""
@@ -191,6 +214,7 @@ def __cps_wrapper_getattr__(self, name):
         if name == 'SearchableText':
             ret = ret() + ' ' + proxy.getId()  # so we can search on id
     return ret
+
 IndexableObjectWrapper.__getattr__ = __cps_wrapper_getattr__
 
 

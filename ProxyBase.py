@@ -384,6 +384,9 @@ class ProxyBase(Base):
         if not idxs or 'allowedRolesAndUsers' in idxs:
             # XXX should use an event for that
             self._setSecurity()
+        if 'allowedRolesAndUsers' in idxs:
+            # Both must be updated
+            idxs.append('localUsersWithRoles')
         # Doesn't work if CMFCatalogAware isn't an ExtensionClass:
         #return CMFCatalogAware.reindexObject(self, idxs=idxs)
         return CMFCatalogAware.__dict__['reindexObject'](self, idxs=idxs)
