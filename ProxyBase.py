@@ -58,7 +58,7 @@ from Products.CPSCore.CPSBase import CPSBaseBTreeFolder
 DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
 PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
 CACHE_ZIP_VIEW_KEY = 'CPS_ZIP_VIEW'
-CACHE_ZIP_VIEW_TIMEOUT = 180            # time to cache in second
+CACHE_ZIP_VIEW_TIMEOUT = 7200           # time to cache in second
 
 class ProxyBase(Base):
     """Mixin class for proxy types.
@@ -1088,7 +1088,8 @@ class ViewZip(Acquisition.Explicit):
         filename = self.filepath[0]
         filepath = '/'.join(self.filepath[1:])
         key = self.absolute_url()
-        content = zip_cache[key]        # return None if timeout or not present
+        last_modified = int(self.proxy.getContent().modified())
+        content = zip_cache.get(key, min_date=last_modified)
         if content is None:
             LOG('ViewZip', DEBUG, 'extract %s from %s' % (filepath, filename))
             # XXX this is very ineficiant as str(file.data) load all the
