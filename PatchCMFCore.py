@@ -21,6 +21,30 @@ from zLOG import LOG, DEBUG, INFO, DEBUG
 
 
 #############################################################
+# Patch mergedLocalRoles to use aclu mergedLocalRoles if any
+#
+from Products.CMFCore import utils
+from utils import mergedLocalRoles
+
+LOG('PatchCMFCore.utils', INFO,
+    'CPSCore Patch mergedLocalRoles to use aclu')
+utils.mergedLocalRoles = mergedLocalRoles
+utils._mergedLocalRoles = mergedLocalRoles
+
+
+#############################################################
+# Patch TypesTool so that TypeInformation's properties are editable.
+#
+import TypesToolPatches               # XXX rename into PatchCMFCoreTypesTool
+
+
+#############################################################
+# Patching CatalogTool to handle proxies search
+#
+import PatchCatalogTool               # XXX rename into PatchCMFCoreCatalogTool
+
+
+#############################################################
 # Patching UndoTool to remove undo action
 #
 from Products.CMFCore.UndoTool import UndoTool
@@ -31,17 +55,9 @@ _actions = []
 UndoTool._actions = _actions
 
 
-
 #############################################################
-# Patching CatalogTool to handle proxies search
-#
-import PatchCatalogTool               # XXX rename into PatchCMFCoreCatalogTool
-
-
-#############################################################
-# This is a patch for CMFCore.Skinnable submitted by efge
-# to fix the bug http://www.zope.org/Collectors/CMF/198/
-#
+# This is a patch to fix http://www.zope.org/Collectors/CMF/198/
+# submitted by efge
 # WARNING this patch is not compatible with Speedpack !
 
 # this is the SkinnableObjectManager patch
