@@ -21,7 +21,13 @@
 """Backward compatibility;  see Products.CPSWorkflow.basicstackdefinitions
 """
 
-from Products.CPSWorkflow.CPSWorkflowStackDefinitions import *
+from Products.CPSWorkflow.stackdefinition import \
+     StackDefinition as WorkflowStackDefinition
+
+from Products.CPSWorkflow.basicstackdefinitions import \
+     SimpleStackDefinition as SimpleWorkflowStackDefinition
+from Products.CPSWorkflow.basicstackdefinitions import \
+     HierarchicalStackDefinition as HierarchicalWorkflowStackDefinition
 
 from warnings import warn
 
