@@ -44,7 +44,7 @@ from Products.CMFCore.utils import _getAuthenticatedUser
 from Products.CMFDefault.MembershipTool import MembershipTool
 from Products.CMFCore.MemberDataTool import MemberDataTool
 
-from Products.CPSCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
+from utils import mergedLocalRoles, mergedLocalRolesWithPath, makeId
 
 from DateTime.DateTime import DateTime
 from string import maketrans
@@ -408,27 +408,10 @@ class CPSMembershipTool(MembershipTool):
 
     security.declarePublic('getHomeFolderId')
     def getHomeFolderId(self, id, max_chars_for_id=128):
+        """Compute an home folder id for the given member id."""
         newid = id[:max_chars_for_id]
-
         # Normalize
-        newid = newid.replace(' ', '_')
-        newid = newid.replace('Æ', 'AE')
-        newid = newid.replace('æ', 'ae')
-        tr = maketrans('ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜİàáâãäåçèéêëìíîïñòóôõöøùúûüıÿ@',
-                       'AAAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy_')
-        newid = newid.translate(tr)
-        ok = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_.'
-        newid = ''.join([c for c in newid if c in ok])
-        while newid.startswith('_') or newid.startswith('.'):
-            newid = newid[1:]
-
-        while newid.endswith('_'):
-            newid = newid[:-1]
-
-        if not newid:
-            # Fallback if empty or incorrect
-            newid = str(int(DateTime())) + str(randrange(1000, 10000))
-            return newid
+        newid = makeId(newid)
 
         return newid
 
