@@ -205,6 +205,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
     meta_type = 'CPS Workflow'
     title = 'CPS Workflow Definition'
+    state_var = 'review_state'
 
     security = ClassSecurityInfo()
 
