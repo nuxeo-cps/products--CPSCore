@@ -41,15 +41,6 @@ from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 CPSSubscriberDefinition_type = 'CPS Subscriber Definition'
 CPSEventServiceTool_type = 'CPS Event Service Tool'
 
-
-def randid():
-    abs = random.randrange(1,2147483600)
-    if random.random() < 0.5:
-        return -abs
-    else:
-        return abs
-
-
 # FakeEventService is for places where no event service is found
 class FakeEventService:
     def notify(self, *args, **kw):
