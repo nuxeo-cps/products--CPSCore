@@ -22,7 +22,8 @@ import sys
 import random
 from types import TupleType
 from Globals import InitializeClass, DTMLFile
-from Acquisition import aq_base
+from cStringIO import StringIO
+from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
 from AccessControl.Permission import Permission, name_trans
 
@@ -144,6 +145,12 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
         """Delete a version of an object."""
         id = self._get_id(repoid, version_info)
         self._delObject(id)
+
+    security.declarePrivate('hasObjectVersion')
+    def hasObjectVersion(self, repoid, version_info):
+        """Test whether the repository has a given version of an object."""
+        id = self._get_id(repoid, version_info)
+        return hasattr(self, id)
 
     security.declarePrivate('getObjectVersion')
     def getObjectVersion(self, repoid, version_info):
@@ -292,6 +299,33 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
                     break
         return role
 
+    security.declarePrivate('_registerPermissionRolesFor')
+    def _registerPermissionRolesFor(self, ob):
+        """Register all special permission roles mentionned in ob."""
+        done = {}
+        lroles = ob.__ac_local_roles__ or {}
+        lroles.update(ob.__ac_local_group_roles__ or {})
+        for k, roles in lroles.items():
+            for role in roles:
+                if done.has_key(role):
+                    continue
+                done[role] = None
+                if role.startswith('permission:'):
+                    tperm = role[len('permission:'):]
+                    # Find corresponding untranslated permission name.
+                    perm = None
+                    for inhp in self.ac_inherited_permissions(1):
+                        name = inhp[0]
+                        if name.translate(name_trans) == tperm:
+                            perm = name
+                            break
+                    if perm is None:
+                        LOG('ObjectRepositoryTool', ERROR,
+                            '_registerPermissionRolesFor perm %s' % tperm)
+                        continue
+                    # Register if needed.
+                    self.getPermissionRole(perm)
+
     security.declarePrivate('setObjectSecurity')
     def setObjectSecurity(self, repoid, version_info, userperms):
         """Set the security on an object.
@@ -311,6 +345,39 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder,
         changed = set_local_roles_with_groups(ob, lroles)
         if changed:
             ob.reindexObjectSecurity()
+
+    #
+    # Staging
+    #
+
+    security.declarePrivate('exportObjectVersion')
+    def exportObjectVersion(self, repoid, version_info):
+        """Export a given version of an object into a string."""
+        ob = self.getObjectVersion(repoid, version_info)
+        if ob is None:
+            return None
+        f = StringIO()
+        ob._p_jar.exportFile(ob._p_oid, f)
+        return f.getvalue()
+
+    security.declarePrivate('importObject')
+    def importObject(self, s):
+        """Import an object from a string."""
+        # Import object.
+        f = StringIO(s)
+        where = self
+        connection = where._p_jar
+        while connection is None:
+            where = aq_parent(aq_inner(where))
+            connection = where._p_jar
+        ob = connection.importFile(f)
+        id = ob.getId()
+        if hasattr(aq_base(self), id):
+            self._delObject(id)
+        # Register special permissions roles.
+        self._registerPermissionRolesFor(ob)
+        # Set the object (this will recatalog).
+        self._setObject(id, ob)
 
     #
     # Management
