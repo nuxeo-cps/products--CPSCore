@@ -22,12 +22,15 @@
 #
 # $Id$
 
+import sys
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 from AccessControl.SecurityManagement import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl.User import nobody
 from AccessControl.User import UnrestrictedUser
 from Acquisition import aq_parent, aq_inner
+from ZODB.POSException import ConflictError
 
 from Products.CMFCore.CMFCorePermissions import View, ManagePortal
 from Products.CMFCore.CMFCorePermissions import ListPortalMembers
@@ -39,7 +42,7 @@ from Products.CMFDefault.MembershipTool import MembershipTool
 
 from Products.CPSCore.utils import mergedLocalRoles, mergedLocalRolesWithPath
 
-from zLOG import LOG, DEBUG
+from zLOG import LOG, DEBUG, ERROR
 
 # XXX : to move somewhere else
 WORKSPACES = "workspaces"
@@ -274,6 +277,54 @@ class CPSMembershipTool(MembershipTool):
         """Search the membership."""
         return MembershipTool.searchMembers(self, search_param, search_term,
                                             *args, **kw)
+
+    # Bugfix included in 1.4 branch and HEAD of CMF:
+    security.declarePrivate('wrapUser')
+    def wrapUser(self, u, wrap_anon=0):
+        """Set up the correct acquisition wrappers for a user object.
+
+        Provides an opportunity for a portal_memberdata tool to retrieve and
+        store member data independently of the user object.
+        """
+        b = getattr(u, 'aq_base', None)
+        if b is None:
+            # u isn't wrapped at all.  Wrap it in self.acl_users.
+            b = u
+            u = u.__of__(self.acl_users)
+        if (b is nobody and not wrap_anon) or hasattr(b, 'getMemberId'):
+            # This user is either not recognized by acl_users or it is
+            # already registered with something that implements the
+            # member data tool at least partially.
+            return u
+
+        # Apply any role mapping if we have it
+        if hasattr(self, 'role_map'):
+            for portal_role in self.role_map.keys():
+                if (self.role_map.get(portal_role) in u.roles and
+                        portal_role not in u.roles):
+                    u.roles.append(portal_role)
+
+        mdtool = getToolByName(self, 'portal_memberdata', None)
+        if mdtool:
+            try:
+                u = mdtool.wrapUser(u)
+
+                if not hasattr(self, 'deleteMemberArea'):
+                    # CMF 1.4. Do member area creation here.
+                    # In CMF 1.5 it's done elsewhere.
+
+                    # Check for the member area creation flag and
+                    # take appropriate (non-) action
+                    if getattr(self, 'memberareaCreationFlag', 0) != 0:
+                        if self.getHomeUrl(u.getId()) is None:
+                            self.createMemberarea(u.getId())
+
+            except ConflictError: # Bugfix
+                raise
+            except:
+                LOG('CPSCore.CPSMembershipTool', ERROR,
+                    'Error during wrapUser', error=sys.exc_info())
+        return u
 
 InitializeClass(MembershipTool)
 
