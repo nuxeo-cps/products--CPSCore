@@ -406,8 +406,11 @@ class TreeCache(SimpleItemWithProperties):
         """
         if filter:
             mtool = getToolByName(self, 'portal_membership')
-            user = mtool.getAuthenticatedMember().getUser()
-            allowed_roles_users = _getAllowedRolesAndUsers(user)
+            try:
+                user = mtool.getAuthenticatedMember().getUser()
+                allowed_roles_users = _getAllowedRolesAndUsers(user)
+            except TypeError: # XXXXX?? getUser() takes exactly 2 arguments (1 given)
+                allowed_roles_users = ['Anonymous']
         res = []
         for info in self._flat:
             # check filter
