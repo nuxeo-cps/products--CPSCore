@@ -54,24 +54,3 @@ LOG('PatchCMFCore.UndoTool', INFO,
 _actions = []
 UndoTool._actions = _actions
 
-
-#############################################################
-# This is a patch to fix http://www.zope.org/Collectors/CMF/198/
-# submitted by efge
-# WARNING this patch is not compatible with Speedpack !
-
-# this is the SkinnableObjectManager patch
-import PatchCMFCoreSkinnableObjectManager
-
-# this is the PortalObject patch
-LOG('PatchCMFCore.PortalObject', INFO,
-    'CPSCore Patching __getattr__ to fix CMFCore bug #198')
-
-from Products.CMFCore.Skinnable import SkinnableObjectManager
-from Products.CMFCore.PortalObject import PortalObjectBase
-
-PortalObjectBase.__getattr__ = SkinnableObjectManager.__getattr__
-PortalObjectBase._checkId = SkinnableObjectManager._checkId
-
-LOG('PatchCMFCore.PortalObject', DEBUG, 'Patched')
-
