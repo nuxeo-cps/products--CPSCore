@@ -33,6 +33,7 @@ from Products.CMFCore.utils import getToolByName
 
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
 from Products.NuxCPS3.ProxyBase import ProxyBase
+from Products.NuxCPS3.EventServiceTool import getEventService
 
 
 class ProxyTool(UniqueObject, SimpleItemWithProperties):
@@ -172,10 +173,15 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         (Called by ProxyBase.) XXX but should use an event
         """
-        if not isinstance(ob, ProxyBase):
-            return
         # XXX should not get directly an object... or should it?
         #LOG('setSecurity', DEBUG, '--- ob %s' % '/'.join(ob.getPhysicalPath()))
+        if not isinstance(ob, ProxyBase):
+            return
+        # XXX should be sent also by the one sending an event instead of
+        #     calling this directly
+        evtool = getEventService(self)
+        evtool.notify('sys_modify_security', ob, {})
+
         hubtool = getToolByName(self, 'portal_eventservice')
         repotool = getToolByName(self, 'portal_repository')
         # Gather versions
