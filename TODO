@@ -3,23 +3,22 @@
 
 - Packaging
    x [] move all skins into CPSDefault/skins
-     removed still available in NuxCPS3 repository
+     removed, still available in NuxCPS3 repository
    x [] remove CPSDummyDocument
-     removed still available in NuxCPS3 repository
+     removed, still available in NuxCPS3 repository
    x [] move CPSFolder.py into CPSDefault/Folder.py
      Changing 'CPS Folder' portal type into 'Folder'
    x [] remove zexp workflow
-   o update INSTALL.txt
+   x [] update INSTALL.txt
    o tests CPSCore
-      o fix _ut
+      o fix unit test asap, should pass with _ut
       o remove test with dummy doc or CPS Folder
-      o user ZTC ?
-      o find scenarii
+      o use ZTC ?
+      o find scenarii for maximum coverage
 
-# still up to date ???
+# deprecated tasks ?
 - Elements
    o CachableElement
    o patches for ZPT and Python Scripts
 - Events
   o use the new API (see notes.txt)
-
