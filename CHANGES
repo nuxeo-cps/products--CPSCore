@@ -1,12 +1,12 @@
 Requires:
 ~~~~~~~~~
--
+- WARNING: renaming API proxy.Languages -> proxy.getProxyLanguages
 New features:
 ~~~~~~~~~~~~~
 -
 Bug fixes:
 ~~~~~~~~~~
-- #451: Make 'Languages' acquisition-safe
+- #451: Make getProxyLanguages (formerly known as Languages) acquisition-safe
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- 
