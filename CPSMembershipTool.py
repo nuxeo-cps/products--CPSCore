@@ -449,7 +449,7 @@ class CPSMembershipTool(MembershipTool):
         # Delete members' home folders including all content items.
         if delete_memberareas:
             for member_id in member_ids:
-                 self.deleteMemberArea(member_id)
+                self.deleteMemberArea(member_id)
 
         ## Delete members' local roles.
         #if delete_localroles:
