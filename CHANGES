@@ -3,7 +3,8 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Made it possible for MSIE to download OpenOffice.org files in restricted
+  access areas.
 Bug fixes:
 ~~~~~~~~~~
 - Fixed the naming problem that was causing in the log file the alert 

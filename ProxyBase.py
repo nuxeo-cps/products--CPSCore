@@ -17,6 +17,7 @@
 #
 # $Id$
 
+import os.path
 from zLOG import LOG, ERROR, DEBUG, TRACE
 from ExtensionClass import Base
 from cPickle import Pickler, Unpickler
@@ -39,6 +40,7 @@ from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSCore.utils import _isinstance
+from Products.CPSCore.utils import isUserAgentMsie
 
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder
@@ -48,6 +50,7 @@ from Products.CPSCore.CPSBase import CPSBaseDocument
 KEYWORD_DOWNLOAD_FILE = 'downloadFile'
 KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
 KEYWORD_ARCHIVED_LANGUAGE = 'switchLanguage'
+DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
 
 
 class ProxyBase(Base):
@@ -647,6 +650,14 @@ class FileDownloader(Acquisition.Explicit):
             return None
         file = self.file
         if file is not None:
+            file_basename, file_suffix = os.path.splitext(self.filename)
+            # This code is here to allow MSIE, and potentially other browsers,
+            # to retrieve some files as attachements, eg. without using its
+            # plugins since those plugins may fail in some circumstances.
+            if (isUserAgentMsie(REQUEST) and
+                file_suffix in DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES):
+                RESPONSE.setHeader('Content-disposition',
+                                   'attachment; filename=%s' % self.filename)
             return file.index_html(REQUEST, RESPONSE)
         else:
             RESPONSE.setHeader('Content-Type', 'text/plain')
