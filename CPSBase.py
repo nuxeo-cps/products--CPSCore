@@ -98,7 +98,7 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
             values = self.propertyValues()
         except AttributeError, err:
             LOG('CPSBase.SearchableText', ERROR,
-                'unable to get propertyValues for obj %s,'
+                'unable to get propertyValues for obj %s, '
                 'AttributeError on %s' % (self.absolute_url(1), err))
             values = []
         strings = []
