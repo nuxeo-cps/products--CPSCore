@@ -172,6 +172,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         (Called by ProxyBase.) XXX but should use an event
         """
+        if not isinstance(ob, ProxyBase):
+            return
         # XXX should not get directly an object... or should it?
         #LOG('setSecurity', DEBUG, '--- ob %s' % '/'.join(ob.getPhysicalPath()))
         hubtool = getToolByName(self, 'portal_eventservice')
