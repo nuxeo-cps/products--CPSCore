@@ -36,7 +36,7 @@ from Products.CMFCore.PortalFolder import PortalFolder
 from Products.DCWorkflow.utils import modifyRolesForPermission
 
 from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
-from Products.NuxCPS3.CPSTypes import TypeConstructor
+from Products.NuxCPS3.CPSTypes import TypeConstructor, TypeContainer
 
 
 class NoWorkflowConfiguration:
@@ -86,7 +86,8 @@ def set_local_roles_with_groups(ob, lroles):
 
 
 # XXX we'll want a btreefolder2 here, not a folder
-class ObjectRepositoryTool(UniqueObject, PortalFolder, TypeConstructor):
+class ObjectRepositoryTool(UniqueObject, PortalFolder,
+                           TypeConstructor, TypeContainer):
     """An object repository stores objects that can be
     available in several versions.
 
@@ -148,7 +149,12 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder, TypeConstructor):
     def getObjectVersion(self, repoid, version_info):
         """Get a version of an object."""
         id = self._get_id(repoid, version_info)
-        return self._getOb(id)
+        try:
+            return self._getOb(id)
+        except AttributeError:
+            LOG('ObjectRepositoryTool', ERROR,
+                'getObjectVersion: no object %s' % repoid)
+            return None
 
     security.declarePrivate('delObject')
     def delObject(self, repoid):
@@ -323,36 +329,6 @@ class ObjectRepositoryTool(UniqueObject, PortalFolder, TypeConstructor):
 
     # This done later by using setattr because the id is variable
     #.cps_workflow_configuration = NoWorkflowConfiguration()
-
-    #
-    # Copy without security XXX move this elsewhere?
-    #
-
-    security.declarePrivate('copyContent')
-    def copyContent(self, ob, id):
-        """Copy an object without all the security checks.
-
-        The object is cloned into the repository.
-        """
-        # This code is derived from CopySupport.CopyContainer.manage_clone
-        if not ob.cb_isCopyable():
-            raise CopyError, 'Copy not supported: %s' % ob.getId()
-        try:
-            self._checkId(id)
-        except: # Huh, stupid string exceptions...
-            raise CopyError, 'Invalid id: %s' % (id,)
-        try:
-            ob._notifyOfCopyTo(self, op=0)
-        except:
-            raise CopyError, 'Clone Error: %s' % (sys.exc_info()[1],)
-        ob = ob._getCopy(self)
-        ob._setId(id)
-        self._setObject(id, ob)
-        ob = self._getOb(id)
-        ob.manage_afterClone(ob)
-        if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
-            on.manage_afterCMFAdd(ob, self)
-        return ob
 
     #
     # ZMI
