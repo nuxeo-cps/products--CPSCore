@@ -77,20 +77,17 @@ Initiated by WorkflowMethod
 </td>
 </tr>
 
+<dtml-if "_.same_type(transition_behavior, ())">
+  <dtml-call "REQUEST.set('behavior', transition_behavior)">
+<dtml-else>
+  <dtml-call "REQUEST.set('behavior', (transition_behavior,))">
+</dtml-if>
 <tr>
 <th align="left" valign="top">Transition behavior</th>
 <td>
-  <input type="radio" name="transition_behavior:int" value="0"
-      <dtml-if "transition_behavior == 0">checked</dtml-if> />
-    Normal
-</td>
-</tr>
-
-<tr>
-<th></th>
-<td>
-  <input type="radio" name="transition_behavior:int" value="1"
-      <dtml-if "transition_behavior == 1">checked</dtml-if> />
+  <input type="hidden" name="transition_behavior:tokens:default" value="" />
+  <input type="checkbox" name="transition_behavior:int:list" value="1"
+      <dtml-if "1 in behavior">checked</dtml-if> />
     Allow subobject creation
 </td>
 </tr>
@@ -98,8 +95,26 @@ Initiated by WorkflowMethod
 <tr>
 <th></th>
 <td>
-  <input type="radio" name="transition_behavior:int" value="3"
-      <dtml-if "transition_behavior == 3">checked</dtml-if> />
+  <input type="checkbox" name="transition_behavior:int:list" value="4"
+      <dtml-if "4 in behavior">checked</dtml-if> />
+    Allow subobject deletion
+</td>
+</tr>
+
+<tr>
+<th></th>
+<td>
+  <input type="checkbox" name="transition_behavior:int:list" value="5"
+      <dtml-if "5 in behavior">checked</dtml-if> />
+    Allow subobject copy
+</td>
+</tr>
+
+<tr>
+<th></th>
+<td>
+  <input type="checkbox" name="transition_behavior:int:list" value="3"
+      <dtml-if "3 in behavior">checked</dtml-if> />
     Freeze object
 </td>
 </tr>
@@ -107,8 +122,8 @@ Initiated by WorkflowMethod
 <tr>
 <th></th>
 <td>
-  <input type="radio" name="transition_behavior:int" value="2"
-      <dtml-if "transition_behavior == 2">checked</dtml-if> />
+  <input type="checkbox" name="transition_behavior:int:list" value="2"
+      <dtml-if "2 in behavior">checked</dtml-if> />
     Clone, with initial transitions
     <input type="text" name="clone_allowed_transitions:tokens"
       value="<dtml-var "' '.join(clone_allowed_transitions)" html_quote>" size="30" />
