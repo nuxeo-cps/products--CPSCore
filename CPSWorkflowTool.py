@@ -26,6 +26,8 @@ from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo, Unauthorized
 
 from Products.CMFCore.utils import getToolByName, _checkPermission
+from Products.CMFCore.CMFCorePermissions import View
+from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
@@ -412,7 +414,18 @@ class CPSWorkflowTool(WorkflowTool):
         """Get all the permissions managed by the workflows."""
         perms = {}
         for wf in self.objectValues():
-            for p in wf.getManagedPermissions():
+            if not getattr(wf, '_isAWorkflow', 0):
+                continue
+            if hasattr(aq_base(wf), 'getManagedPermissions'):
+                # CPSWorkflow
+                permissions = wf.getManagedPermissions()
+            elif hasattr(aq_base(wf), 'permissions'):
+                # DCWorkflow
+                permissions = wf.permissions
+            else:
+                # Probably a DefaultWorkflow
+                permissions = (View, ModifyPortalContent)
+            for p in permissions:
                 perms[p] = None
         return perms.keys()
 
