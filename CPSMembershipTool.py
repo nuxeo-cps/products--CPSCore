@@ -420,6 +420,28 @@ class CPSMembershipTool(MembershipTool):
 
         return newid
 
+    security.declarePublic('isIdValid')
+    def isIdValid(self, id):
+        """Return whether the given Id is valid or not.
+
+        This method essentially checks that the given Id will not make it
+        possible for a user to have the same homeFolder that another user, but
+        this method is the place to add any other desirable checks.
+        """
+        return not self.homeFolderExists(id)
+
+    security.declarePublic('homeFolderExists')
+    def homeFolderExists(self, id):
+        """"""
+        members = self.getMembersFolder()
+        if members:
+            try:
+                member_area_id = self.getHomeFolderId(id)
+                folder = members._getOb(member_area_id)
+                return 1
+            except AttributeError:
+                return 0
+
     security.declarePrivate('listActions')
     def listActions(self, info=None):
         """List actions available through the tool."""

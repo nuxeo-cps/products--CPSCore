@@ -3,7 +3,9 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Adding methods isIdValid() and homeFolderExists() to help not creating user
+  accounts which would have the same homeFolders as already existing user
+  accounts, which is a security concern.
 Bug fixes:
 ~~~~~~~~~~
 -
