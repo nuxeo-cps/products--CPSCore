@@ -1,6 +1,7 @@
 Requires:
 ~~~~~~~~~
--
+- update your custom tree tool info_method script 
+  the method should handle a doc parameter
 New features:
 ~~~~~~~~~~~~~
 -
@@ -12,3 +13,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - in MembershipTools/deleteMembers adding default arg check_permission
+- TreesTool pass doc object to the info_method
