@@ -1,4 +1,42 @@
 *******************************************
+** CPSCore V3.19.0 [R1 build 2004/12/13-08:21 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- merging ben-i18n-branch:
+  - new PatchCatalogTool: IndexableObjectWrapper and catalog_object rewrite
+  - refactoring ProxyTool.getBestRevision()
+  - new ProxyBase intermediate objects: LanguageViewer and LanguageSwitcher
+  - new ProxyBase methods: getL10nTitles, getL10nDescriptions
+  - see doc/i18n-changes-from-CPSCore-3_18_0.txt for more info
+- merging ja-stack-workflows:
+ - refactoring CPSWorflow
+   -> CPSWorkflowTransitions
+   -> CPSWorkflowStates
+   -> CPSWorkflowExpression
+ - CPSWorkflowStacks + interfaces
+ - CPSWorkflowStackDefinition + interfaces
+ - CPSWorkflowTool (API for stack workflows)
+ - CPSWorkflowTransitions (more transitions flags for stack workflows)
+ - CPSWorkflowStates (extends DCWorkflow states with behaviors)
+ - Lots more tests !
+ - see doc/StackWorkflows
+ - see DAF products for a full integration.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- WorkflowException from CMFCore.WorkflowCore is available from restricted code
+- moving constants like switchLanguage or downloadFile into utils and make
+  them available from restricted code
+- DateTimeError from DateTime.DateTime available from restricted code
+- Synced utils.makeId() with CPSDefault computeId.py.
+
+*******************************************
 ** CPSCore V3.18.0 [R1 build 2004/10/21-15:43 by ben]
 
 Requires:
