@@ -471,7 +471,7 @@ class CPSMembershipTool(MembershipTool):
                 return 0
 
     security.declarePrivate('listActions')
-    def listActions(self, info=None):
+    def listActions(self, info=None, object=None):
         """List actions available through the tool."""
         return self._actions
 
