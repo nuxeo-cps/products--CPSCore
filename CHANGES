@@ -1,16 +1,12 @@
 Requires:
 ~~~~~~~~~
-- Call portal_membership.createMemberArea() in the logged_in script to
-  create the member area if needed.
+-
 New features:
 ~~~~~~~~~~~~~
 -
 Bug fixes:
 ~~~~~~~~~~
-- Creating calendar during member area creation needs Manager privileges.
-- Make getCPSCandidateLocalRoles always return a list.
-- MemberArea creation is now CMF 1.5 compatible, and not done automatically
-  during wrapUser.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
