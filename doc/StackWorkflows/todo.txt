@@ -1,0 +1,23 @@
+$Id$
+
+ o views on stack objects (edit / view)
+   o stack.render(mode='edit')
+   o use schema / layout / widgets to render them
+
+ o stack registries
+
+ o stack def registries
+
+ o WorkflowStackDelegate
+   + class representing a member within a stack
+   + think about the substitutes
+
+ o WorkflowStackGroupDelegate
+   + think about the substitutes
+
+ o Former local roles for a given stack stored within the status of the object
+   + for the moment stored as an attribute of the ds
+
+ x Cope with anonymous access in general
+
+ x Give possibility to reset stacks

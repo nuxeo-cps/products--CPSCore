@@ -1,5 +1,8 @@
-# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
+# -*- coding: iso-8859-15 -*-
+# (C) Copyright 2002, 2003, 2004 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
+# Contributor: Julien Anguenot <ja@nuxeo.com>
+#              - Stack workflow API
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -16,7 +19,8 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Workflow Tool with CPS proxy knowledge and CPS placeful workflow support.
+"""Workflow Tool with CPS proxy knowledge, CPS placeful workflow support and
+stack workflows support.
 """
 
 from zLOG import LOG, ERROR, DEBUG, TRACE
@@ -139,9 +143,9 @@ class CPSWorkflowTool(WorkflowTool):
             if getInitialTransitions(ob, type.getId(),
                                      TRANSITION_INITIAL_CREATE):
                 allowed.append(type)
-        
+
         return allowed
-    
+
     security.declarePublic('getAllowedPublishingTransitions')
     def getAllowedPublishingTransitions(self, ob):
         """Get the list of allowed initial transitions for publishing."""
@@ -173,6 +177,7 @@ class CPSWorkflowTool(WorkflowTool):
             "getInitialTransitions container=%s type_name=%s behavior=%s "
             % ('/'.join(container.getPhysicalPath()), type_name, behavior))
         d = {}
+
         for wf_id in self.getChainFor(type_name, container=container):
             wf = self.getWorkflowById(wf_id)
             if wf is None:
@@ -751,8 +756,98 @@ class CPSWorkflowTool(WorkflowTool):
         return perms.keys()
 
     #
+    # STACK WORKFLOWS API
+    #
+
+    security.declarePublic('getStackDefinitionsFor')
+    def getStackDefinitionsFor(self, ob):
+        """Return stack definitions from the ob's current StateDefinition
+
+        The delegatees information is as follow for instance:
+           {'Pilots': <StackDefinition Instance at sxxxx >,
+            'Watchers': <StackDefinitionInstance at xxxx>,
+            'Associates': <StackDefinitionInstance at xxxx>}
+
+        The key is the name of the workflow variable.  The value is a instance
+        of one of the stack definition instances holding the stack
+        configuration. (i.e : CPSWorkflowStackDefinitions.py)
+        """
+        info = {}
+        for wf in self.getWorkflowsFor(ob):
+            state_def = wf._getWorkflowStateOf(ob)
+            if state_def is not None:
+                info.update(state_def.getDelegateesVarsInfo())
+        return info
+
+    security.declarePublic('getStackDefinitionFor')
+    def getStackDefinitionFor(self, ob, wf_var_id=''):
+        """Return the stack definition instance from ob's current
+        StateDefinition given the workflow variable id
+        """
+        if wf_var_id:
+            stackdefs = self.getStackDefinitionsFor(ob)
+            if stackdefs:
+                return stackdefs.get(wf_var_id)
+        return None
+
+    security.declarePrivate('getDelegateesDataStructures')
+    def getDelegateesDataStructures(self, ob):
+        """Return defined delegatees data structures for this ob
+
+        returned value is a dictionnary containing as keys the name of the
+        variables and as value the data structure instance storing the
+        delegatees
+        """
+        data_structs = {}
+        delegatees_info = self.getStackDefinitionsFor(ob)
+        for var_id in delegatees_info.keys():
+            for wf in self.getWorkflowsFor(ob):
+                try:
+                    ds_instance = self.getInfoFor(ob, var_id, wf_id=wf.id)
+                except (WorkflowException, KeyError,):
+                    data_structs[var_id] = None
+                else:
+                    data_structs[var_id] = ds_instance
+        return data_structs
+
+    security.declarePrivate('getDelegateesDataStructureFor')
+    def getDelegateesDataStructureFor(self, ob, stack_id):
+        """Return the delegatees data struct corresponding to the stack_id
+        """
+        return self.getDelegateesDataStructures(ob).get(stack_id)
+
+    security.declarePublic('canManageStackFor')
+    def canManageStack(self, ob, stack_id):
+        """Can the authenticated use or the user given it's member_id
+        manage the stack given its id.
+
+        You may have a hierarchy in between the stack. For instance, in the
+        'Pilots' stack the people can manage the 'Associates' and 'Observers'
+        stacks.
+        """
+        stackdef = self.getStackDefinitionFor(ob, stack_id)
+        if stackdef:
+            mtool = getToolByName(self, 'portal_membership')
+            aclu = self.acl_users
+            ds = self.getDelegateesDataStructureFor(ob, stack_id)
+            canManage = stackdef.canManageStack(ds, aclu, mtool, ob)
+            if canManage:
+                return 1
+            else:
+                stackdefs = self.getStackDefinitionsFor(ob)
+                for stackdef_id in stackdefs.keys():
+                    ostack_def = stackdefs[stackdef_id]
+                    canManage = ostack_def.canManageStack(None, aclu, mtool, ob)
+                    manager_stack_ids = ostack_def.getManagerStackIds()
+                    if (canManage and
+                        stack_id in manager_stack_ids):
+                        return 1
+        return 0
+
+    #
     # ZMI
     #
+
     manage_overview = DTMLFile('zmi/explainCPSWorkflowTool', globals())
 
     def all_meta_types(self):

@@ -1,0 +1,127 @@
+<dtml-var manage_page_header>
+<dtml-var manage_tabs>
+
+<h2>
+  Workflow Stacks
+</h2>
+
+<form action="<dtml-var absolute_url>" method="POST">
+
+<table>
+<tr>
+  <td colspan="2">
+    <hr />
+  </td>
+</tr>
+<tr>
+  <th align="left" valign="top">Add workflow variables holding delegatees</th>
+  <td align="right">
+    <small>Type&nbsp; :&nbsp; </small>
+    <select name="data_struct_type:int">
+      <dtml-in expr="getAvailableDataStructureTypes().keys()">
+          <option value="&dtml-sequence-item;">
+            <dtml-if expr="_['sequence-item'] == 201">
+              Simple Stack (No levels)
+            </dtml-if>
+            <dtml-if expr="_['sequence-item'] == 202">
+              Hierarchical Stack (Stack with Levels)
+            </dtml-if>
+          </option>
+      </dtml-in>
+    </select>
+    <br /><br />
+    <b>Common properties</b>
+    <br /><br />
+    <small>With workflow variable name :</small>
+    <input type="text"
+             name="var_id"
+             value="" />
+    <br />
+    <small>With associated local role (For hierarchical stack it's the
+    current level):</small>
+    <input type="text"
+             name="ass_local_role"
+             value="" />
+    <br />
+
+    <small>Local role above current level (-1, -2,..-n) (For hierarchical
+    stack only):
+    </small>
+    <input type="text"
+             name="up_ass_local_role"
+             value="" />
+    <br />
+
+    <small>Local role below current level (1, 2,..n) (For hierarchical
+    stack only):
+    </small>
+    <input type="text"
+             name="down_ass_local_role"
+             value="" />
+
+    <br />
+
+    <small>Ids of other stacks where people within those than can manage
+    this stack.  </small>
+    <input type="text"
+             name="manager_stack_ids:tokens"
+             value="" />
+    <br />
+    <br />
+
+    <input type="submit" name="addDelegateesWorkflowVariableInfo:method" value="Add" />
+  <td>
+</tr>
+
+<tr>
+  <td colspan="2"><hr /></td>
+</tr>
+
+<!-- /////////////////////////////////////////////////////////////////// -->
+
+<tr>
+  <th align="left" valign="top">Currently defined variables which hold delegatees</th>
+  <td>
+    <dtml-in expr="getDelegateesVarsInfo().keys()">
+      <dtml-let current_variable_id="_['sequence-item']">
+        <input type="checkbox" name="ids:list" value="<dtml-var current_variable_id>" />
+
+        <b><dtml-var current_variable_id></b><br /><br />
+        <dtml-let
+        stackdef="getDelegateesVarInfoFor(current_variable_id)">
+        <b>Type : </b>
+          <dtml-if expr="stackdef.getStackDataStructureType() == 201">
+            Simple Stack (No level)
+          </dtml-if>
+          <dtml-if expr="stackdef.getStackDataStructureType() == 202">
+            Hierarchical Stack (With levels)
+          </dtml-if>
+        <br />
+        <b>With variable id : </b><dtml-var expr="current_variable_id"><br />
+        <b>Associated local role (current_level): </b><dtml-var
+        expr="stackdef.getAssociatedLocalRole()"><br />
+        <b>Local role for users above current level (Hierarchical): </b><dtml-var
+        expr="getattr(stackdef, 'up_ass_local_role', 'Not defined')"><br />
+        <b>Local role for users below current level (Hierarchical): </b><dtml-var
+        expr="getattr(stackdef, 'down_ass_local_role', 'Not Defined')"><br
+        />
+        <b>Manager stack ids : </b><dtml-var
+        expr="getattr(stackdef, 'manager_stack_ids', 'Not Defined')"><br
+        />
+        <br />
+        </dtml-let>
+      </dtml-let>
+    </dtml-in>
+    <input type="submit" name="delDelegateesWorkflowVariablesInfo:method"
+        value="Remove selected" />
+  </td>
+</tr>
+<tr>
+  <td colspan="2"><hr /></td>
+</tr>
+
+</table>
+</form>
+<dtml-var manage_page_footer>
+
+<!-- ////////////////////////////////////////////////////////////////// -->

@@ -1,0 +1,135 @@
+<dtml-var manage_page_header>
+<dtml-var manage_tabs>
+
+<form action="<dtml-var absolute_url>" method="POST">
+<table>
+<tr>
+<th align="left">Id</th>
+<td>&dtml-id;</td>
+</tr>
+<tr>
+<th align="left">Title</th>
+<td><input type="text" name="title" value="&dtml-title;" size="50" /></td>
+</tr>
+<tr>
+<th align="left" valign="top">Description</th>
+<td><textarea name="description" rows="6" cols="35">&dtml-description;</textarea></td>
+</tr>
+<tr>
+<th align="left" valign="top">Possible Transitions</th>
+<td>
+ <dtml-in getAvailableTransitionIds sort>
+  <dtml-let checked="_['sequence-item'] in transitions and 'checked' or ' '">
+   <input type="checkbox" name="transitions:list"
+    value="&dtml-sequence-item;" &dtml-checked; /> &dtml-sequence-item;
+   <dtml-let t_title="getTransitionTitle(_['sequence-item'])">
+    <dtml-if t_title>(&dtml-t_title;)</dtml-if>
+   </dtml-let>
+  </dtml-let>
+  <br />
+ <dtml-else>
+  <em>No transitions defined.</em>
+ </dtml-in>
+ </select>
+</td>
+</tr>
+    <tr align="left">
+      <th colspan="2">
+        <strong>State behavior flags</strong>
+      </th>
+    </tr>
+    <tr>
+      <!-- STACK WORKFLOW STATE FLAGS -->
+      <td align="right">
+        <input type="checkbox" name="state_behaviors:int:list" value="101"
+            <dtml-if "101 in state_behaviors">checked</dtml-if> />
+      </td>
+      <td>
+        Push delegatees, on workflow variable
+        <input type="text" name="push_on_workflow_variable:tokens"
+          value="<dtml-var "' '.join(push_on_workflow_variable)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td align="right">
+        <input type="checkbox" name="state_behaviors:int:list" value="102"
+            <dtml-if "102 in state_behaviors">checked</dtml-if> />
+      </td>
+      <td>
+        Pop delegatees, on workflow variables
+        <input type="text" name="pop_on_workflow_variable:tokens"
+          value="<dtml-var "' '.join(pop_on_workflow_variable)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td align="right">
+        <input type="checkbox" name="state_behaviors:int:list" value="105"
+            <dtml-if "105 in state_behaviors">checked</dtml-if> />
+      </td>
+      <td>
+        Return up delegatees hierarchy, on workflow variables
+        <input type="text" name="returned_up_hierarchy_on_workflow_variable:tokens"
+          value="<dtml-var "' '.join(returned_up_hierarchy_on_workflow_variable)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td align="right">
+        <input type="checkbox" name="state_behaviors:int:list" value="103"
+            <dtml-if "103 in state_behaviors">checked</dtml-if> />
+      </td>
+      <td>
+        Increase workflow level, on workflow variables
+        <input type="text" name="workflow_up_on_workflow_variable:tokens"
+          value="<dtml-var "' '.join(workflow_up_on_workflow_variable)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td align="right">
+        <input type="checkbox" name="state_behaviors:int:list" value="104"
+            <dtml-if "104 in state_behaviors">checked</dtml-if> />
+      </td>
+      <td>
+        Decrease workflow level, on workflow variables
+        <input type="text" name="workflow_down_on_workflow_variable:tokens"
+          value="<dtml-var "' '.join(workflow_down_on_workflow_variable)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td align="right">
+        <input type="checkbox" name="state_behaviors:int:list" value="106"
+            <dtml-if "106 in state_behaviors">checked</dtml-if> />
+      </td>
+      <td>
+        Lock workflow, for workflow variables
+        <input type="text" name="workflow_lock_on_workflow_variable:tokens"
+          value="<dtml-var "' '.join(workflow_lock_on_workflow_variable)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td align="right">
+        <input type="checkbox" name="state_behaviors:int:list" value="107"
+            <dtml-if "107 in state_behaviors">checked</dtml-if> />
+      </td>
+      <td>
+        Unlock workflow, for workflow variables
+        <input type="text" name="workflow_unlock_on_workflow_variable:tokens"
+          value="<dtml-var "' '.join(workflow_unlock_on_workflow_variable)" html_quote>" size="25" />
+      </td>
+    </tr>
+    <tr>
+      <td align="right">
+        <input type="checkbox" name="state_behaviors:int:list" value="108"
+            <dtml-if "108 in state_behaviors">checked</dtml-if> />
+      </td>
+      <td>
+        Reset workflow, for workflow variables
+        <input type="text" name="workflow_reset_on_workflow_variable:tokens"
+          value="<dtml-var "' '.join(workflow_reset_on_workflow_variable)" html_quote>" size="25" />
+      </td>
+    </tr>
+<tr>
+  <td colspan="2">
+    <input type="submit" name="setProperties:method" value="Save changes" />
+  </td>
+</tr>
+</table>

@@ -1,0 +1,102 @@
+$Id$
+
+Author : Julien Anguenot <ja@nuxeo.com>
+
+Worflow stacks : Delegation / validation features for CPS3
+
+Details about the implementation
+
+Data structures :
+--------------------
+
+ - portal_stack_registry which is referencing the existing stacks to be used.
+ - Data Structure registry to register new stacks within the portal_stack_registry
+
+ - the data structures used for the stack by default
+
+    + BaseStack class
+    + SimpleStack class
+    + HierarchicalStack class
+
+   It's extensible with the portal_stack_registry tool for integration.
+
+   Possible to specify rulez about ds management in here :
+
+   + canManage()
+   + listLocalRolesMapping()
+
+Stack Definitions :
+---------------------
+
+  - Holds a given stack configuration.
+      - properties (common + specific)
+  - Holds a data structure instance
+
+  Default Stack Definition Type
+    o BaseWorkflowStackDefinition
+    o SimpleWorkflowStackDefinition
+    o HierarchicalWorkflowStackDefinition
+
+  - potal_stack_registry (cf. above)
+  - Stack Definition registry to register new stack definition
+
+  Extensible, with the portal_stack_registry tool for integration
+
+  Possible to add more information on these objects
+
+State information :
+---------------------
+
+ - State information related to stacks
+
+    + flags on the states
+
+      o push behavior
+      o pop behavion
+
+ - State definition holds stack definition declaration.
+
+Transition information :
+--------------------------
+
+ - Transition information related to stacks
+
+    + transition flags
+
+      o push on variables
+      o pop on variables
+      o returned up hierarchy on variables
+      o workflow up on variables
+      o workflow down on variables
+
+    n.b : variable above is a global workflow variable holding a stack
+    definition instance.
+
+CPSWorkflow :
+---------------
+
+ - CPSWorkflow related
+
+    + _executeTransitions()
+       cope transition flags for stacks
+    + - _checkTransitionGuard()
+         Hook for delegatees and local roles check.
+    + -  updateRoleMapping()
+
+CPSWorkflowTool :
+-------------------
+
+   +  getStackDefinitionsFor(self, ob)
+   +  getDataStructureStacks(self, ob)
+   +  getDataStructureStackFor(self, ob, wf_var_id)
+
+CPSWorkflowExpression :
+-------------------------
+
+    + CPSWorkflowExpression extended DC WF expr
+      ? Check if I really need it ?
+
+Status :
+-----------
+
+   + the stack data structure is stored within the workflow status. NOT ON THE Stack DEFINITION

@@ -9,6 +9,19 @@ New features:
   - new ProxyBase intermediate objects: LanguageViewer and LanguageSwitcher
   - new ProxyBase methodes: getL10nTitles, getL10nDescriptions
   - see doc/i18n-changes-from-CPSCore-3_18_0.txt for more info
+- merging ja-stack-workflows:
+ - refactoring CPSWorflow
+   -> CPSWorkflowTransitions
+   -> CPSWorkflowStates
+   -> CPSWorkflowExpression
+ - CPSWorkflowStacks + interfaces
+ - CPSWorkflowStackDefinition + interfaces
+ - CPSWorkflowTool (API for stack workflows)
+ - CPSWorkflowTransitions (more transitions flags for stack workflows)
+ - CPSWorkflowStates (extends DCWorkflow states with behaviors)
+ - Lots more tests !
+ - see doc/StackWorkflows
+ - see DAF products for a full integration.
 Bug fixes:
 ~~~~~~~~~~
 -

@@ -63,6 +63,10 @@
          Freeze object
        <dtml-elif "behavior == 38">
          Merge object
+       <dtml-elif "behavior == 41">
+         Push delegatees
+       <dtml-elif "behavior == 42">
+         Pop delegatees
        </dtml-if>
        <dtml-unless sequence-end>
        ;

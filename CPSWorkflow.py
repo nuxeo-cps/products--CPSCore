@@ -1,5 +1,11 @@
+# -*- coding: iso-8859-15 -*-
 # (C) Copyright 2002-2004 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
+# Contributor : Julien Anguenot <ja@nuxeo.com>
+#               - Refactoring CPS Workflow
+#               - Stack Workflow support (transition flags)
+#               - Workflow Guard enhanced
+#               - Unit tests
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -18,14 +24,17 @@
 # $Id$
 
 """Workflow extending DCWorklfow with enhanced transitions.
+It adds, as well, a stack workflow support to be able to define dynamic
+delegation / validation chains through dedicated transitions.
 """
 
 from zLOG import LOG, ERROR, DEBUG
 from cgi import escape
 from types import StringType
+
 from Acquisition import aq_parent, aq_inner
 from Globals import InitializeClass, DTMLFile
-from AccessControl import ClassSecurityInfo
+from AccessControl import ClassSecurityInfo, getSecurityManager
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import ManagePortal
@@ -34,166 +43,28 @@ from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import addWorkflowFactory
 
 from Products.DCWorkflow.DCWorkflow import DCWorkflowDefinition
-from Products.DCWorkflow.States import StateDefinition as DCWFStateDefinition
-from Products.DCWorkflow.States import States as DCWFStates
+
 from Products.DCWorkflow.Transitions \
     import TransitionDefinition as DCWFTransitionDefinition
 from Products.DCWorkflow.Transitions import Transitions as DCWFTransitions
 from Products.DCWorkflow.Transitions import TRIGGER_AUTOMATIC
 from Products.DCWorkflow.Transitions import TRIGGER_USER_ACTION
 from Products.DCWorkflow.Transitions import TRIGGER_WORKFLOW_METHOD
-from Products.DCWorkflow.Expression import StateChangeInfo
-from Products.DCWorkflow.Expression import createExprContext
+from Products.CPSCore.CPSWorkflowExpression import CPSStateChangeInfo as \
+     StateChangeInfo
+from Products.CPSCore.CPSWorkflowExpression import createExprContext
 
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.utils import _isinstance
 from Products.CPSCore.ProxyBase import ProxyBase
 
-#TRANSITION_BEHAVIOR_SUBCREATE = 1
-#TRANSITION_BEHAVIOR_CLONE = 2
-#TRANSITION_BEHAVIOR_FREEZE = 3
-#TRANSITION_BEHAVIOR_SUBDELETE = 4
-#TRANSITION_BEHAVIOR_SUBCOPY = 5
-#TRANSITION_BEHAVIOR_CREATION = 6
+#
+# Backwards compatibility with CPS3 <= 3.2.x
+# Importing transition flags from here before.
+#
 
-TRANSITION_ALLOWSUB_CREATE = 10
-TRANSITION_ALLOWSUB_DELETE = 11
-TRANSITION_ALLOWSUB_MOVE = 12 # Into this container.
-TRANSITION_ALLOWSUB_COPY = 13 # Same...
-TRANSITION_ALLOWSUB_PUBLISHING = 14
-TRANSITION_ALLOWSUB_CHECKOUT = 15
-
-TRANSITION_INITIAL_CREATE = 20
-TRANSITION_INITIAL_MOVE = 22
-TRANSITION_INITIAL_COPY = 23
-TRANSITION_INITIAL_PUBLISHING = 24
-TRANSITION_INITIAL_CHECKOUT = 25
-TRANSITION_ALLOW_CHECKIN = 26
-
-TRANSITION_BEHAVIOR_DELETE = 31
-TRANSITION_BEHAVIOR_MOVE = 32
-TRANSITION_BEHAVIOR_COPY = 33
-TRANSITION_BEHAVIOR_PUBLISHING = 34
-TRANSITION_BEHAVIOR_CHECKOUT = 35
-TRANSITION_BEHAVIOR_CHECKIN = 36
-TRANSITION_BEHAVIOR_FREEZE = 37
-TRANSITION_BEHAVIOR_MERGE = 38
-
-
-trigger_export_dict = {
-    TRIGGER_AUTOMATIC: 'automatic',
-    TRIGGER_USER_ACTION: 'user_action',
-    TRIGGER_WORKFLOW_METHOD: 'workflow_method',
-    }
-#trigger_import_dict = {}
-#for k,v in trigger_export_dict.items():
-#    trigger_import_dict[v] = k
-
-behavior_export_dict = {
-    TRANSITION_ALLOWSUB_CREATE: 'allow_sub_create',
-    TRANSITION_ALLOWSUB_DELETE: 'allow_sub_delete',
-    TRANSITION_ALLOWSUB_MOVE: 'allow_sub_delete',
-    TRANSITION_ALLOWSUB_COPY: 'allow_sub_copy',
-    TRANSITION_ALLOWSUB_PUBLISHING: 'allow_sub_publishing',
-    TRANSITION_ALLOWSUB_CHECKOUT: 'allow_sub_checkout',
-
-    TRANSITION_INITIAL_CREATE: 'initial_create',
-    TRANSITION_INITIAL_MOVE: 'initial_move',
-    TRANSITION_INITIAL_COPY: 'initial_copy',
-    TRANSITION_INITIAL_PUBLISHING: 'initial_clone',
-    TRANSITION_INITIAL_CHECKOUT: 'initial_checkout',
-    TRANSITION_ALLOW_CHECKIN: 'allow_checkin',
-
-    TRANSITION_BEHAVIOR_DELETE: 'behavior_delete',
-    TRANSITION_BEHAVIOR_MOVE: 'behavior_move',
-    TRANSITION_BEHAVIOR_COPY: 'behavior_copy',
-    TRANSITION_BEHAVIOR_PUBLISHING: 'behavior_clone',
-    TRANSITION_BEHAVIOR_CHECKOUT: 'behavior_checkout',
-    TRANSITION_BEHAVIOR_CHECKIN: 'behavior_checkin',
-    TRANSITION_BEHAVIOR_FREEZE: 'behavior_freeze',
-    TRANSITION_BEHAVIOR_MERGE: 'behavior_merge',
-    }
-
-class CPSStateDefinition(DCWFStateDefinition):
-    meta_type = 'CPS Workflow State'
-
-
-class CPSStates(DCWFStates):
-    meta_type = 'CPS Workflow States'
-
-    all_meta_types = ({'name':CPSStateDefinition.meta_type,
-                       'action':'addState',
-                       },)
-
-    def addState(self, id, REQUEST=None):
-        """Add a new state to the workflow."""
-        sdef = CPSStateDefinition(id)
-        self._setObject(id, sdef)
-        if REQUEST is not None:
-            return self.manage_main(REQUEST, 'State added.')
-
-
-class CPSTransitionDefinition(DCWFTransitionDefinition):
-    meta_type = 'CPS Workflow Transition'
-
-    transition_behavior = ()
-    clone_allowed_transitions = []
-    checkout_allowed_initial_transitions = []
-    checkin_allowed_transitions = []
-
-    _properties_form = DTMLFile('zmi/workflow_transition_properties',
-                                globals())
-
-    def setProperties(self, title, new_state_id,
-                      transition_behavior=None,
-                      clone_allowed_transitions=None,
-                      checkout_allowed_initial_transitions=None,
-                      checkin_allowed_transitions=None,
-                      REQUEST=None, **kw):
-        """Set the properties."""
-        if transition_behavior is not None:
-            self.transition_behavior = tuple(transition_behavior)
-        if clone_allowed_transitions is not None:
-            self.clone_allowed_transitions = clone_allowed_transitions
-        if checkout_allowed_initial_transitions is not None:
-            self.checkout_allowed_initial_transitions = \
-                checkout_allowed_initial_transitions
-        if checkin_allowed_transitions is not None:
-            self.checkin_allowed_transitions = checkin_allowed_transitions
-        # Now call original method.
-        if REQUEST is not None:
-            kw.update(REQUEST.form)
-        prkw = {}
-        for n in ('trigger_type', 'script_name', 'after_script_name',
-                  'actbox_name', 'actbox_url', 'actbox_category',
-                  'props', 'description'):
-            if kw.has_key(n):
-                prkw[n] = kw[n]
-        return DCWFTransitionDefinition.setProperties(self,
-                                                      title, new_state_id,
-                                                      REQUEST=REQUEST,
-                                                      **prkw)
-
-    def getAvailableTransitionIds(self):
-        return self.getWorkflow().transitions.keys()
-
-
-class CPSTransitions(DCWFTransitions):
-    meta_type = 'CPS Workflow Transitions'
-
-    all_meta_types = ({'name':CPSTransitionDefinition.meta_type,
-                       'action':'addTransition',
-                       },)
-
-    def addTransition(self, id, REQUEST=None):
-        """Add a new transition to the workflow."""
-        tdef = CPSTransitionDefinition(id)
-        self._setObject(id, tdef)
-        if REQUEST is not None:
-            return self.manage_main(REQUEST, 'Transition added.')
-
-    _manage_transitions = DTMLFile('zmi/workflow_transitions', globals())
-
+from Products.CPSCore.CPSWorkflowTransitions import *
+from Products.CPSCore.CPSWorkflowStates import *
 
 class CPSWorkflowDefinition(DCWorkflowDefinition):
     """A Workflow implementation with enhanced transitions.
@@ -234,14 +105,153 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         """
         pass
 
-    security.declarePrivate('updateRoleMappingsFor')
-    def updateRoleMappingsFor(self, ob):
+    security.declarePrivate('updateDelegateesLocalRolesFor')
+    def updateDelegateesLocalRolesFor(self, ob, **kw):
+        """Update local roles for delegatees that are within workflow stacks
+        """
+        changed = 0
+
+        current_wf_var_id = kw.get('current_wf_var_id', '')
+        wftool = aq_parent(aq_inner(self))
+        stackdefs = wftool.getStackDefinitionsFor(ob)
+        mtool = getToolByName(self, 'portal_membership')
+
+        #
+        # Let's ask the stack definition for the list of local roles
+        #
+
+        for stackdef in stackdefs.keys():
+
+            # Update only the variable on wich the transition just applied
+            if not stackdef == current_wf_var_id:
+                continue
+
+            ds = wftool.getInfoFor(ob, stackdef, self.id)
+            former_mapping = stackdefs[stackdef].getFormerLocalRolesMapping(ds)
+            mapping = stackdefs[stackdef].listLocalRoles(ds)
+
+            #
+            # First remove associated local roles to the ones who are not
+            # supposed to have any
+            #
+
+            for id in former_mapping.keys():
+                if id not in mapping.keys():
+                    changed = 1
+                    old_local_roles = former_mapping[id]
+                    for old_local_role in old_local_roles:
+                        if not id.startswith('group:'):
+                            mtool.deleteLocalRoles(ob,
+                                                   member_ids=[id],
+                                                   member_role=old_local_role,
+                                                   recursive=1)
+                    else:
+                        group_id = id[len('group:'):]
+                        mtool.deleteLocalGroupRoles(ob,
+                                                    ids=[group_id],
+                                                    role=old_local_role)
+            #
+            # Add local roles to member / groups within the mapping
+            #
+
+            for id in mapping.keys():
+                changed = 1
+                local_roles = mapping[id]
+                for local_role in local_roles:
+                    if not id.startswith('group:'):
+                        try:
+                            mtool.setLocalRoles(ob,
+                                                member_ids=[id],
+                                                member_role=local_role)
+                        except KeyError:
+                            pass
+                    else:
+                        try:
+                            group_id = id[len('group:'):]
+                            mtool.setLocalGroupRoles(ob,
+                                                     ids=[group_id],
+                                                     role=local_role)
+                        except KeyError:
+                            pass
+
+            #
+            # Removing local roles for member / group (s) that have been
+            # updated
+            #
+
+            for k in former_mapping.keys():
+                if k in mapping.keys():
+                    for old_local_role in former_mapping[k]:
+                        if old_local_role not in mapping[k]:
+                            changed = 1
+                            if not k.startswith('group:'):
+                                mtool.deleteLocalRoles(
+                                    ob,
+                                    member_ids=[k],
+                                    member_role=old_local_role,
+                                    recursive=1)
+                            else:
+                                group_id = k[len('group:'):]
+                                mtool.deleteLocalGroupRoles(
+                                    ob,
+                                    ids=[group_id],
+                                    role=old_local_role)
+        return changed
+
+    def updateRoleMappingsFor(self, ob, **kw):
         """Change the object permissions according to the current state.
+
+        Change the local roles of the people eventually within workflow
+        stacks. (CPS)
 
         Returns True if some change on an object was done.
         """
-        return DCWorkflowDefinition.updateRoleMappingsFor(self, ob)
-        # XXX also send event
+
+        # Update permissions according to the current state
+        changed = DCWorkflowDefinition.updateRoleMappingsFor(self, ob)
+
+        # Update Local roles according the workflow stack definitions
+        delegatees_changed = self.updateDelegateesLocalRolesFor(ob, **kw)
+
+        return (changed and delegatees_changed)
+
+    def _checkStackGuards(self, t, ob):
+        """Check the stack workflow transition guards on the transition for ob
+
+        If one of them allowed the user to manage the stack it means the user
+        is allowed to follow the transition
+        """
+
+        wftool = aq_parent(aq_inner(self))
+        _interested_behaviors = t.getAvailableStackWorkflowTransitionFlags()
+
+        # Check if stack workflow flags are defined on the transition
+        if not _interested_behaviors:
+            return 0
+
+        #
+        # Now check each interesting behaviors on this transition We will check
+        # if the current authenticated user can manage one of the stack related
+        # to the behavior
+        #
+
+        for behavior in _interested_behaviors:
+            var_ids = t.getStackWorkflowVariablesForBehavior(behavior)
+            for var_id in var_ids:
+                if wftool.canManageStack(ob, var_id):
+                    return 1
+
+        return 0
+
+    def _checkTransitionGuard(self, t, ob):
+        """Check the transition guard
+
+        DC workflow + stack def checks
+        """
+        guard = t.guard
+        return (guard is None or
+                guard.check(getSecurityManager(), self, ob) or
+                self._checkStackGuards(t, ob))
 
     def _executeTransition(self, ob, tdef=None, kwargs=None):
         """Put the object in a new state, following transition tdef.
@@ -249,11 +259,19 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         Can be called at creation, when there is no current workflow
         state.
         """
+
         sci = None
         econtext = None
         moved_exc = None
-
         utool = getToolByName(self, 'portal_url') # CPS
+        wftool = aq_parent(aq_inner(self))
+
+        #
+        # Ask the tool about stack definition instances. They will be
+        # responsible for taking care about the actions to take
+        # XXX change the name of this method
+        #
+        delegatees = wftool.getDelegateesDataStructures(ob)
 
         # Figure out the old and new states.
         old_sdef = self._getWorkflowStateOf(ob)
@@ -281,12 +299,12 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             raise WorkflowException, (
                 'Destination state undefined: ' + new_state)
 
+
         ### CPS: Behavior sanity checks.
         #
         behavior = tdef.transition_behavior
         LOG('CPSWorkflow', DEBUG, 'Behavior in wf %s, trans %s: %s'
             % (self.getId(), tdef.getId(), behavior))
-        wftool = aq_parent(aq_inner(self))
         kwargs = kwargs.copy() # Because we'll modify it.
 
         if TRANSITION_BEHAVIOR_MOVE in behavior:
@@ -407,7 +425,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             script = self.scripts[tdef.script_name]
             # Pass lots of info to the script in a single parameter.
             sci = StateChangeInfo(
-                ob, self, former_status, tdef, old_sdef, new_sdef, kwargs)
+                ob, self, former_status, tdef, old_sdef, new_sdef, delegatees, kwargs, )
             try:
                 script(sci)  # May throw an exception.
             except ObjectMoved, moved_exc:
@@ -445,6 +463,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             # Freeze the object.
             if _isinstance(ob, ProxyBase):
                 # XXX use an event?
+
                 ob.freezeProxy()
                 ob.proxyChanged()
 
@@ -461,10 +480,577 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 res = ('ObjectMoved', utool.getRelativeUrl(dest_ob))
                 moved_exc = ObjectMoved(dest_ob, res)
                 ob = dest_ob
-        #
-        ###
 
+        #################################################
+        #              Stack workflows cases
+        ##################################################
+
+        if TRANSITION_BEHAVIOR_PUSH_DELEGATEES in behavior:
+
+            LOG("::CPSWorkflow._executeTansition() :: "
+                "FLAG : TRANSITION_BEHAVIOR_PUSH_DELEGATEES",
+                DEBUG,
+                str(kwargs))
+
+            #
+            # Get the stack definitions from the transition definition
+            # The workflow variable id is the stackdef id.
+            #
+
+            sdef_behaviors = new_sdef.state_behaviors
+            push_allowed_on_variables = new_sdef.push_on_workflow_variable
+
+            #
+            # First check if the state allows the behavior
+            # Raise an exception if not allowed
+            #
+
+            if STATE_BEHAVIOR_PUSH_DELEGATEES not in sdef_behaviors:
+                raise WorkflowException(
+                    "State behavior not allowed for '%s' on '%s'" %(
+                    STATE_BEHAVIOR_PUSH_DELEGATEES,
+                    new_sdef.getId(),
+                    ))
+
+            wf_vars = tdef.push_on_workflow_variable
+
+            #
+            # Raise an exception if not variables are associated to the
+            # transition flag. Mostly for debuging right now. It's anyway a
+            # problem of configuration
+            #
+
+            if not wf_vars:
+                raise WorkflowException(
+                    "Transition %s needs associated variables to execute on" %(
+                    TRANSITION_BEHAVIOR_PUSH_DELEGATEES,
+                    ))
+
+            for wf_var in wf_vars:
+
+                #
+                # Filter on the working workflow variable It's necessarly since
+                # the transition can be allowed on several wf variable id
+                #
+
+                current_wf_var_id = kwargs.get('current_wf_var_id', '')
+                if current_wf_var_id != wf_var:
+                    continue
+
+                #
+                # Check here if the behavior is allowed by the state for this
+                # given worfklow variable id
+                #
+
+                if wf_var not in push_allowed_on_variables:
+                    raise WorkflowException(
+                        "State %s dosen't allow '%s' on var '%s'" %(
+                        new_sdef.getId(),
+                        STATE_BEHAVIOR_PUSH_DELEGATEES,
+                        wf_var,
+                        ))
+
+                stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
+                if stackdef is not None:
+                    ds = delegatees.get(wf_var)
+                    delegatees[wf_var] = stackdef.push(ds, **kwargs)
+
+        if TRANSITION_BEHAVIOR_POP_DELEGATEES in behavior:
+
+            LOG("::CPSWorkflow._executeTansition() :: "
+                "FLAG : TRANSITION_BEHAVIOR_POP_DELEGATEES",
+                DEBUG,
+                str(kwargs))
+
+            #
+            # Get the stack definitions from the transition definition
+            # The workflow variable id is the stackdef id.
+            #
+
+
+            sdef_behaviors = new_sdef.state_behaviors
+            pop_allowed_on_variables = new_sdef.pop_on_workflow_variable
+
+            #
+            # First check if the state allows the behavior
+            # Raise an exception if not allowed
+            #
+
+            if STATE_BEHAVIOR_POP_DELEGATEES not in sdef_behaviors:
+                raise WorkflowException(
+                    "State behavior not allowed for '%s' on '%s'" %(
+                    STATE_BEHAVIOR_POP_DELEGATEES,
+                    new_sdef.getId(),
+                    ))
+
+            wf_vars = tdef.pop_on_workflow_variable
+
+            #
+            # Raise an exception if not variables are associated to the
+            # transition flag. Mostly for debuging right now. It's anyway a
+            # problem of configuration
+            #
+
+            if not wf_vars:
+                raise WorkflowException(
+                    "Transition %s needs associated variables to execute on" %(
+                    TRANSITION_BEHAVIOR_POP_DELEGATEES,
+                    ))
+
+            for wf_var in wf_vars:
+
+                #
+                # Filter on the working workflow variable It's necessarly since
+                # the transition can be allowed on several wf variable id
+                #
+
+                current_wf_var_id = kwargs.get('current_wf_var_id', '')
+                if current_wf_var_id != wf_var:
+                    continue
+
+                #
+                # Check here if the behavior is allowed by the state for this
+                # given worfklow variable id
+                #
+
+                if wf_var not in pop_allowed_on_variables:
+                    raise WorkflowException(
+                        "State %s dosen't allow '%s' on var '%s'" %(
+                        new_sdef.getId(),
+                        STATE_BEHAVIOR_POP_DELEGATEES,
+                        wf_var,
+                        ))
+
+                stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
+                if stackdef is not None:
+                    ds = delegatees.get(wf_var)
+                    delegatees[wf_var] = stackdef.pop(ds, **kwargs)
+
+        if TRANSITION_BEHAVIOR_RETURN_UP_DELEGATEES_HIERARCHY in behavior:
+
+            LOG("::CPSWorkflow._executeTansition() :: "
+                "FLAG : TRANSITION_BEHAVIOR_RETURN_UP_DELEGATEES_HIERARCHY",
+                DEBUG,
+                str(kwargs))
+
+            #
+            # Get the stack definitions from the transition definition
+            # The workflow variable id is the stackdef id.
+            #
+
+            sdef_behaviors = new_sdef.state_behaviors
+            return_vars = new_sdef.returned_up_hierarchy_on_workflow_variable
+
+            #
+            # First check if the state allows the behavior
+            # Raise an exception if not allowed
+            #
+
+            if STATE_BEHAVIOR_RETURNED_UP_HIERARCHY not in sdef_behaviors:
+                raise WorkflowException(
+                    "State behavior not allowed for '%s' on '%s'" %(
+                    STATE_BEHAVIOR_RETURNED_UP_HIERARCHY,
+                    new_sdef.getId(),
+                    ))
+
+            wf_vars = tdef.workflow_down_on_workflow_variable
+
+            #
+            # Raise an exception if not variables are associated to the
+            # transition flag. Mostly for debuging right now. It's anyway a
+            # problem of configuration
+            #
+
+            if not wf_vars:
+                raise WorkflowException(
+                    "Transition %s needs associated variables to execute on" %(
+                    TRANSITION_BEHAVIOR_RETURN_UP_DELEGATEES_HIERARCHY,
+                    ))
+
+            for wf_var in wf_vars:
+
+                #
+                # Filter on the working workflow variable It's necessarly since
+                # the transition can be allowed on several wf variable id
+                #
+
+                current_wf_var_id = kwargs.get('current_wf_var_id', '')
+                if current_wf_var_id != wf_var:
+                    continue
+
+                #
+                # Check here if the behavior is allowed by the state for this
+                # given worfklow variable id
+                #
+
+                if wf_var not in return_vars:
+                    raise WorkflowException(
+                        "State %s dosen't allow '%s' on var '%s'" %(
+                        new_sdef.getId(),
+                        STATE_BEHAVIOR_RETURNED_UP_HIERARCHY,
+                        wf_var,
+                        ))
+
+                stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
+                if stackdef is not None:
+                    ds = delegatees.get(wf_var)
+                    delegatees[wf_var] = stackdef.returnedUpDirection(ds, **kwargs)
+
+        if TRANSITION_BEHAVIOR_WORKFLOW_UP in behavior:
+
+            LOG("::CPSWorkflow._executeTansition() :: "
+                "FLAG : TRANSITION_BEHAVIOR_WORKFLOW_UP",
+                DEBUG,
+                str(kwargs))
+
+            #
+            # Get the stack definitions from the transition definition
+            # The workflow variable id is the stackdef id.
+            #
+
+            sdef_behaviors = new_sdef.state_behaviors
+            up_vars = new_sdef.workflow_up_on_workflow_variable
+
+            #
+            # First check if the state allows the behavior
+            # Raise an exception if not allowed
+            #
+
+            if STATE_BEHAVIOR_WORKFLOW_UP not in sdef_behaviors:
+                raise WorkflowException(
+                    "State behavior not allowed for '%s' on '%s'" %(
+                    STATE_BEHAVIOR_WORKFLOW_UP,
+                    new_sdef.getId(),
+                    ))
+
+            wf_vars = tdef.workflow_up_on_workflow_variable
+
+            #
+            # Raise an exception if not variables are associated to the
+            # transition flag. Mostly for debuging right now. It's anyway a
+            # problem of configuration
+            #
+
+            if not wf_vars:
+                raise WorkflowException(
+                    "Transition %s needs associated variables to execute on" %(
+                    TRANSITION_BEHAVIOR_WORKFLOW_UP,
+                    ))
+
+            for wf_var in wf_vars:
+
+                #
+                # Filter on the working workflow variable It's necessarly since
+                # the transition can be allowed on several wf variable id
+                #
+
+                current_wf_var_id = kwargs.get('current_wf_var_id', '')
+                if current_wf_var_id != wf_var:
+                    continue
+
+                #
+                # Check here if the behavior is allowed by the state for this
+                # given worfklow variable id
+                #
+
+                if wf_var not in up_vars:
+                    raise WorkflowException(
+                        "State %s dosen't allow '%s' on var '%s'" %(
+                        new_sdef.getId(),
+                        STATE_BEHAVIOR_WORKFLOW_UP,
+                        wf_var,
+                        ))
+
+                stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
+                if stackdef is not None:
+                    ds = delegatees.get(wf_var)
+                    delegatees[wf_var] = stackdef.doIncLevel(ds)
+
+        if TRANSITION_BEHAVIOR_WORKFLOW_DOWN in behavior:
+
+            LOG("::CPSWorkflow._executeTansition() :: "
+                "FLAG : TRANSITION_BEHAVIOR_WORKFLOW_DOWN",
+                DEBUG,
+                str(kwargs))
+
+            #
+            # Get the stack definitions from the transition definition
+            # The workflow variable id is the stackdef id.
+            #
+
+            sdef_behaviors = new_sdef.state_behaviors
+            down_vars = new_sdef.workflow_down_on_workflow_variable
+
+            #
+            # First check if the state allows the behavior
+            # Raise an exception if not allowed
+            #
+
+            if STATE_BEHAVIOR_WORKFLOW_DOWN not in sdef_behaviors:
+                raise WorkflowException(
+                    "State behavior not allowed for '%s' on '%s'" %(
+                    STATE_BEHAVIOR_WORKFLOW_DOWN,
+                    new_sdef.getId(),
+                    ))
+
+            wf_vars = tdef.workflow_down_on_workflow_variable
+
+            #
+            # Raise an exception if not variables are associated to the
+            # transition flag. Mostly for debuging right now. It's anyway a
+            # problem of configuration
+            #
+
+            if not wf_vars:
+                raise WorkflowException(
+                    "Transition %s needs associated variables to execute on" %(
+                    TRANSITION_BEHAVIOR_WORKFLOW_DOWN,
+                    ))
+
+            for wf_var in wf_vars:
+
+                #
+                # Filter on the working workflow variable It's necessarly since
+                # the transition can be allowed on several wf variable id
+                #
+
+                current_wf_var_id = kwargs.get('current_wf_var_id', '')
+                if current_wf_var_id != wf_var:
+                    continue
+
+                #
+                # Check here if the behavior is allowed by the state for this
+                # given worfklow variable id
+                #
+
+                if wf_var not in down_vars:
+                    raise WorkflowException(
+                        "State %s dosen't allow '%s' on var '%s'" %(
+                        new_sdef.getId(),
+                        STATE_BEHAVIOR_WORKFLOW_DOWN,
+                        wf_var,
+                        ))
+
+                stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
+                if stackdef is not None:
+                    ds = delegatees.get(wf_var)
+                    delegatees[wf_var] = stackdef.doDecLevel(ds)
+
+        if TRANSITION_BEHAVIOR_WORKFLOW_LOCK in behavior:
+
+            LOG("::CPSWorkflow._executeTansition() :: "
+                "FLAG : TRANSITION_BEHAVIOR_WORKFLOW_LOCK",
+                DEBUG,
+                str(kwargs))
+
+            #
+            # Get the stack definitions from the transition definition
+            # The workflow variable id is the stackdef id.
+            #
+
+            sdef_behaviors = new_sdef.state_behaviors
+            lock_vars = new_sdef.workflow_lock_on_workflow_variable
+
+            #
+            # First check if the state allows the behavior
+            # Raise an exception if not allowed
+            #
+
+            if STATE_BEHAVIOR_WORKFLOW_LOCK not in sdef_behaviors:
+                raise WorkflowException(
+                    "State behavior not allowed for '%s' on '%s'" %(
+                    STATE_BEHAVIOR_WORKFLOW_LOCK,
+                    new_sdef.getId(),
+                    ))
+
+            wf_vars = tdef.workflow_down_on_workflow_variable
+
+            #
+            # Raise an exception if not variables are associated to the
+            # transition flag. Mostly for debuging right now. It's anyway a
+            # problem of configuration
+            #
+
+            if not wf_vars:
+                raise WorkflowException(
+                    "Transition %s needs associated variables to execute on" %(
+                    TRANSITION_BEHAVIOR_WORKFLOW_LOCK,
+                    ))
+
+            for wf_var in wf_vars:
+
+                #
+                # Filter on the working workflow variable It's necessarly since
+                # the transition can be allowed on several wf variable id
+                #
+
+                current_wf_var_id = kwargs.get('current_wf_var_id', '')
+                if current_wf_var_id != wf_var:
+                    continue
+
+                #
+                # Check here if the behavior is allowed by the state for this
+                # given worfklow variable id
+                #
+
+                if wf_var not in lock_vars:
+                    raise WorkflowException(
+                        "State %s dosen't allow '%s' on var '%s'" %(
+                        new_sdef.getId(),
+                        STATE_BEHAVIOR_WORKFLOW_LOCK,
+                        wf_var,
+                        ))
+
+                stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
+                if stackdef is not None:
+                    stackdef.doLockStack()
+
+        if TRANSITION_BEHAVIOR_WORKFLOW_UNLOCK in behavior:
+
+            LOG("::CPSWorkflow._executeTansition() :: "
+                "FLAG : TRANSITION_BEHAVIOR_WORKFLOW_UNLOCK",
+                DEBUG,
+                str(kwargs))
+
+            #
+            # Get the stack definitions from the transition definition
+            # The workflow variable id is the stackdef id.
+            #
+
+            sdef_behaviors = new_sdef.state_behaviors
+            unlock_vars = new_sdef.workflow_unlock_on_workflow_variable
+
+            #
+            # First check if the state allows the behavior
+            # Raise an exception if not allowed
+            #
+
+            if STATE_BEHAVIOR_WORKFLOW_UNLOCK not in sdef_behaviors:
+                raise WorkflowException(
+                    "State behavior not allowed for '%s' on '%s'" %(
+                    STATE_BEHAVIOR_WORKFLOW_UNLOCK,
+                    new_sdef.getId(),
+                    ))
+
+            wf_vars = tdef.workflow_down_on_workflow_variable
+
+            #
+            # Raise an exception if not variables are associated to the
+            # transition flag. Mostly for debuging right now. It's anyway a
+            # problem of configuration
+            #
+
+            if not wf_vars:
+                raise WorkflowException(
+                    "Transition %s needs associated variables to execute on" %(
+                    TRANSITION_BEHAVIOR_WORKFLOW_UNLOCK,
+                    ))
+
+            for wf_var in wf_vars:
+
+                #
+                # Filter on the working workflow variable It's necessarly since
+                # the transition can be allowed on several wf variable id
+                #
+
+                current_wf_var_id = kwargs.get('current_wf_var_id', '')
+                if current_wf_var_id != wf_var:
+                    continue
+
+                #
+                # Check here if the behavior is allowed by the state for this
+                # given worfklow variable id
+                #
+
+                if wf_var not in unlock_vars:
+                    raise WorkflowException(
+                        "State %s dosen't allow '%s' on var '%s'" %(
+                        new_sdef.getId(),
+                        STATE_BEHAVIOR_WORKFLOW_UNLOCK,
+                        wf_var,
+                        ))
+
+                stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
+                if stackdef is not None:
+                    stackdef.doUnLockStack()
+
+        if TRANSITION_BEHAVIOR_WORKFLOW_RESET in behavior:
+
+            LOG("::CPSWorkflow._executeTansition() :: "
+                "FLAG : TRANSITION_BEHAVIOR_WORKFLOW_RESET",
+                DEBUG,
+                str(kwargs))
+
+            #
+            # Get the stack definitions from the transition definition
+            # The workflow variable id is the stackdef id.
+            #
+
+            sdef_behaviors = new_sdef.state_behaviors
+            reset_vars = new_sdef.workflow_reset_on_workflow_variable
+
+            #
+            # First check if the state allows the behavior
+            # Raise an exception if not allowed
+            #
+
+            if STATE_BEHAVIOR_WORKFLOW_RESET not in sdef_behaviors:
+                raise WorkflowException(
+                    "State behavior not allowed for '%s' on '%s'" %(
+                    STATE_BEHAVIOR_WORKFLOW_RESET,
+                    new_sdef.getId(),
+                    ))
+
+            wf_vars = tdef.workflow_reset_on_workflow_variable
+
+            #
+            # Raise an exception if not variables are associated to the
+            # transition flag. Mostly for debuging right now. It's anyway a
+            # problem of configuration
+            #
+
+            if not wf_vars:
+                raise WorkflowException(
+                    "Transition %s needs associated variables to execute on" %(
+                    TRANSITION_BEHAVIOR_WORKFLOW_RESET,
+                    ))
+
+            for wf_var in wf_vars:
+
+                #
+                # Filter on the working workflow variable It's necessarly since
+                # the transition can be allowed on several wf variable id
+                #
+
+                current_wf_var_id = kwargs.get('current_wf_var_id', '')
+                if current_wf_var_id != wf_var:
+                    continue
+
+                #
+                # Check here if the behavior is allowed by the state for this
+                # given worfklow variable id
+                #
+
+                if wf_var not in reset_vars:
+                    raise WorkflowException(
+                        "State %s dosen't allow '%s' on var '%s'" %(
+                        new_sdef.getId(),
+                        STATE_BEHAVIOR_WORKFLOW_RESET,
+                        wf_var,
+                        ))
+
+                stackdef = new_sdef.getDelegateesVarInfoFor(wf_var)
+                if stackdef is not None:
+                    stack = stackdef.resetStack()
+                    delegatees[wf_var] = stackdef.resetStack(ds, **kwargs)
+
+        #######################################################################
+        #######################################################################
+
+        #
         # Update variables.
+        #
+
         state_values = new_sdef.var_values
         if state_values is None:
             state_values = {}
@@ -482,9 +1068,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 value = state_values[id]
             elif tdef_exprs.has_key(id):
                 expr = tdef_exprs[id]
-            elif not vdef.update_always and former_status.has_key(id):
-                # Preserve former value
-                value = former_status[id]
             else:
                 if vdef.default_expr is not None:
                     expr = vdef.default_expr
@@ -497,9 +1080,10 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                     if sci is None:
                         sci = StateChangeInfo(
                             ob, self, former_status, tdef,
-                            old_sdef, new_sdef, kwargs)
+                            old_sdef, new_sdef, delegatees, kwargs)
                     econtext = createExprContext(sci)
                 value = expr(econtext)
+
             status[id] = value
 
         # Update state.
@@ -520,14 +1104,16 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         ###
 
         # Update role to permission assignments.
-        self.updateRoleMappingsFor(ob)
+        kw = {}
+        kw['current_wf_var_id'] = kwargs.get('current_wf_var_id', '')
+        self.updateRoleMappingsFor(ob, **kw)
 
         # Execute the "after" script.
         if tdef is not None and tdef.after_script_name:
             script = self.scripts[tdef.after_script_name]
             # Pass lots of info to the script in a single parameter.
             sci = StateChangeInfo(
-                ob, self, status, tdef, old_sdef, new_sdef, kwargs)
+                ob, self, status, tdef, old_sdef, new_sdef, delegatees, kwargs)
             script(sci)  # May throw an exception.
 
         ### CPS: Event notification. This has to be done after all the
@@ -761,7 +1347,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         nindent = indent+'  '
         res = ['']
         for behavior in tdef.transition_behavior:
-            type = behavior_export_dict.get(behavior, behavior)
+            type = transition_behavior_export_dict.get(behavior, behavior)
             kwargs = {'type': type}
             if behavior == TRANSITION_BEHAVIOR_PUBLISHING:
                 kwargs['transitions'] = ' '.join(
