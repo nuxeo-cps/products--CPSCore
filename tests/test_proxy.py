@@ -39,6 +39,13 @@ class PlacefulProxy(ProxyBase, Folder):
         self.id = id
         ProxyBase.__init__(self, **kw)
 
+
+def sortinfos(infos):
+    tosort = [(i['rpath'], i) for i in infos]
+    tosort.sort()
+    return [t[1] for t in tosort]
+
+
 class ProxyBaseTest(unittest.TestCase):
 
     def test_basic_api(self):
@@ -154,11 +161,6 @@ class ProxyToolTest(SecurityRequestTest):
         #self.assertEqual(ptool.getMatchedObject(123, 'en'), 'ob_456_78')
         #self.assertEqual(ptool.getMatchedObject(123, 'fr'), 'ob_456_33')
 
-    def sortinfos(self, infos):
-        tosort = [(i['rpath'], i) for i in infos]
-        tosort.sort()
-        return [t[1] for t in tosort]
-
     def test_getProxyInfosFromDocid(self):
         ptool = self.root.portal_proxies
         proxy1 = PlacefulProxy('foo', docid='456',
@@ -170,7 +172,7 @@ class ProxyToolTest(SecurityRequestTest):
         ptool._addProxy(proxy1, '/foo')
         ptool._addProxy(proxy2, '/bar')
         infos = ptool.getProxyInfosFromDocid('456')
-        infos = self.sortinfos(infos)
+        infos = sortinfos(infos)
         self.assertEquals(infos,
             [{'visible': 1, 'rpath': '/bar', 'object': proxy2,
               'language_revs': {'fr': 33, 'en': 4}},
