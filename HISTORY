@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.16.2 [R1 build 2004/07/30-09:53 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- OrderedFolderSupportPatch and the way the patch is done was a problem with the latest version of Zope.2.7 and the refresh facility
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.16.1 [R1 build 2004/07/28-09:32 by anguenot]
 
 Requires:

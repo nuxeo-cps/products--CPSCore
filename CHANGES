@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- OrderedFolderSupportPatch and the way the patch is done was a problem with the latest version of Zope.2.7 and the refresh facility
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
