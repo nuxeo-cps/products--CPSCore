@@ -394,9 +394,9 @@ class TreeCache(SimpleItemWithProperties):
         - description
         Other keys are ignored
         """
-        if ( 'title' in locale_keys and
-             info.has_key('l10n_titles') and
-             info['l10n_titles'].has_key(locale) ):
+        if ('title' in locale_keys
+            and info.has_key('l10n_titles')
+            and info['l10n_titles'].has_key(locale)):
             info['title'] = info['l10n_titles'][locale]
             if info['title']:
                 title_or_id = info['title']
@@ -408,9 +408,9 @@ class TreeCache(SimpleItemWithProperties):
                 info['short_title'] = truncateText(title_or_id)
 
         # XXX: make this part generic (any key instead of description)
-        if ( 'description' in locale_keys and
-             info.has_key('l10n_descriptions') and
-             info['l10n_descriptions'].has_key(locale) ):
+        if ('description' in locale_keys
+            and info.has_key('l10n_descriptions')
+            and info['l10n_descriptions'].has_key(locale)):
             info['description'] = info['l10n_descriptions'][locale]
 
         return info
@@ -559,8 +559,8 @@ class TreeCache(SimpleItemWithProperties):
 
         # Check locale
         if locale_keys is not None:
-            res = [ self._localize(info, locale_keys, locale_lang)
-                    for info in res ]
+            res = [self._localize(info, locale_keys, locale_lang)
+                    for info in res]
         return res
 
     #
