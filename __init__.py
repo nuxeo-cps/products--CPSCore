@@ -42,11 +42,11 @@ from Products.CMFCore.CatalogTool import IndexableObjectWrapper, \
 
 LOG('CPSCore.utils', INFO, 'Patching CMF local role support')
 
-def mergedLocalRoles(object, withgroups=0):
+def mergedLocalRoles(object, withgroups=0, withpath=0):
     LOG('CPSCore utils', DEBUG, 'mergedLocalRoles()')
     aclu = object.acl_users
     if hasattr(aclu, 'mergedLocalRoles'):
-        return aclu.mergedLocalRoles(object, withgroups)
+        return aclu.mergedLocalRoles(object, withgroups, withpath)
     return utils.old_mergedLocalRoles(object)
 
 if not hasattr(utils, 'old_mergedLocalRoles'):
