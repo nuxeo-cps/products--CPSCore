@@ -402,7 +402,13 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         that they have implicitly been modified.
         """
         if event_type in ('sys_add_object', 'sys_del_object'):
-            if not isinstance(object, ProxyBase):
+            try:
+                isproxy = isinstance(object, ProxyBase)
+            except TypeError:
+                # In python 2.1 isinstance() raises TypeError
+                # instead of returning 0 for ExtensionClasses.
+                isproxy = 0
+            if not isproxy:
                 return
             LOG('ProxyTool', DEBUG, 'Got %s for %s'
                 % (event_type, '/'.join(object.getPhysicalPath())))
