@@ -113,7 +113,7 @@ for class_ in (Item, ObjectManager, CMFCatalogAware):
 #
 # OrderedFolderSupportPatch
 #
-import Products.OrderedFolderSupportPatch # ensure it does its patches
+import OrderedFolderSupportPatch # ensure it does its patches
 
 def move_object_to_position(self, *args, **kw):
     res = self.cps_old_move_object_to_position(*args, **kw)
