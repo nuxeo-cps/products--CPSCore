@@ -143,7 +143,8 @@ class TreeCache(SimpleItemWithProperties):
         ttool = getToolByName(self, 'portal_types')
         for ti in ttool.listTypeInfo():
             id = ti.getId()
-            if id not in ('CPS Proxy Folder', 'CPS Proxy Document', 'CPS Proxy Folderish Document',):
+            if id not in ('CPS Proxy Folder', 'CPS Proxy Document', 
+                          'CPS Proxy Folderish Document',):
                 res.append(id)
         res.sort()
         return res
@@ -452,7 +453,8 @@ class TreeCache(SimpleItemWithProperties):
         try:
             user = mtool.getAuthenticatedMember().getUser()
             allowed_roles_and_users = _getAllowedRolesAndUsers(user)
-        except TypeError: # XXXXX?? getUser() takes exactly 2 arguments (1 given)
+        except TypeError: 
+            # XXX?? getUser() takes exactly 2 arguments (1 given)
             allowed_roles_and_users = ['Anonymous', 'group:role:Anonymous']
         res = []
         for info in self._flat:

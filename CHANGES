@@ -1,12 +1,15 @@
 ZODB Requires:
 ~~~~~~~~~~~~~~
 -
+
 New features:
 ~~~~~~~~~~~~~
 -
+
 Bug fixes:
 ~~~~~~~~~~
 - P2 #202 Join broken, cannot register any longer.
+
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Cosmetic cleanup.

@@ -348,7 +348,8 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 raise WorkflowException("Missing initial_transition for "
                                         "checkout transition=%s" %
                                         tdef.getId())
-            if initial_transition not in tdef.checkout_allowed_initial_transitions:
+            if initial_transition not in \
+                    tdef.checkout_allowed_initial_transitions:
                 raise WorkflowException("Incorrect initial_transition %s, "
                                         "allowed=%s"
                                         % (initial_transition,
@@ -714,31 +715,30 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     #
 
     def _varExprsToXML(self, var_exprs, indent=''):
-        nindent = indent+'  '
+        nindent = indent + '  '
         if var_exprs is None:
-            return indent+'<variables></variables>'
+            return indent + '<variables></variables>'
         contents = 'XXXTODO'
-        return indent+_renderXMLTag('variables', contents=contents)
+        return indent + _renderXMLTag('variables', contents=contents)
 
     def _permissionsToXML(self, permissions, indent=''):
-        nindent = indent+'  '
+        nindent = indent + '  '
         res = ['']
         for permission in permissions:
-            res.append(nindent+_renderXMLTag('permission',
-                                             contents=permission))
+            res.append(nindent + _renderXMLTag('permission',
+                                               contents=permission))
         res.append(indent)
         contents = '\n'.join(res)
-        return indent+_renderXMLTag('permissions', contents=contents)
+        return indent + _renderXMLTag('permissions', contents=contents)
 
     def _rolesToXML(self, roles, indent=''):
         nindent = indent+'  '
         res = ['']
         for role in roles:
-            res.append(nindent+_renderXMLTag('role',
-                                             contents=role))
+            res.append(nindent + _renderXMLTag('role', contents=role))
         res.append(indent)
         contents = '\n'.join(res)
-        return indent+_renderXMLTag('roles', contents=contents)
+        return indent + _renderXMLTag('roles', contents=contents)
 
     def _guardToXML(self, guard, indent=''):
         if guard is None:
@@ -749,7 +749,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         res.append(self._rolesToXML(guard.roles, indent=nindent))
         res.append(indent)
         contents = '\n'.join(res)
-        return indent+_renderXMLTag('guard', contents=contents)
+        return indent + _renderXMLTag('guard', contents=contents)
 
     def _behaviorsToXML(self, tdef, indent=''):
         nindent = indent+'  '
@@ -766,10 +766,10 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             elif behavior == TRANSITION_BEHAVIOR_CHECKIN:
                 kwargs['transitions'] = ' '.join(
                     tdef.checkin_allowed_transitions)
-            res.append(nindent+_renderXMLTag('behavior', **kwargs))
+            res.append(nindent + _renderXMLTag('behavior', **kwargs))
         res.append(indent)
         behaviors = '\n'.join(res)
-        return indent+_renderXMLTag('behaviors', contents=behaviors)
+        return indent + _renderXMLTag('behaviors', contents=behaviors)
 
     def _transitionToXML(self, tid, indent=''):
         nindent = indent+'  '
@@ -781,7 +781,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         guard = self._guardToXML(tdef.guard, indent=nindent)
         var_exprs = self._varExprsToXML(tdef.var_exprs, indent=nindent)
         contents = '\n'+behaviors+'\n'+guard+'\n'+var_exprs+'\n'+indent
-        return indent+_renderXMLTag(
+        return indent + _renderXMLTag(
             'transition',
             id=tid,
             title=tdef.title,
@@ -793,8 +793,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             actionCategory=tdef.actbox_category,
             beforeScript=tdef.script_name,
             afterScript=tdef.after_script_name,
-            contents=contents,
-            )
+            contents=contents)
 
     def _transitionsToXML(self, indent=''):
         nindent = indent+'  '
@@ -803,20 +802,17 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
             res.append(self._transitionToXML(tid, indent=nindent))
         res.append(indent)
         contents = '\n'.join(res)
-        return indent+_renderXMLTag('transitions', contents=contents)
+        return indent + _renderXMLTag('transitions', contents=contents)
 
     def toXML(self, indent=''):
         """Serialize the workflow to XML.
 
         Returns an XML string, without header.
         """
-        nindent = indent+'  '
-        contents = '\n'+self._transitionsToXML(indent=nindent)+'\n'+indent
-        return _renderXMLTag('workflow',
-                             id=self.getId(),
-                             title=self.title,
-                             contents=contents,
-                             )
+        nindent = indent + '  '
+        contents = '\n' + self._transitionsToXML(indent=nindent) + '\n' + indent
+        return _renderXMLTag('workflow', id=self.getId(),
+                             title=self.title, contents=contents)
 
     #
     # ZMI

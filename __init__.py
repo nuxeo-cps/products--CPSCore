@@ -93,9 +93,9 @@ fti = (ProxyBase.factory_type_information +
 def initialize(registrar):
     cmfutils.ToolInit(
         'CPS Tools',
-        tools = tools,
-        product_name = 'CPSCore',
-        icon = 'tool.gif',
+        tools=tools,
+        product_name='CPSCore',
+        icon='tool.gif',
     ).initialize(registrar)
 
     # Elements
@@ -135,8 +135,8 @@ def initialize(registrar):
     # CPS Content and Folder objects
     cmfutils.ContentInit(
         'CPS Default Documents',
-        content_types = contentClasses,
-        permission = AddPortalContent,
-        extra_constructors = contentConstructors,
-        fti = fti,
-        ).initialize(registrar)
+        content_types=contentClasses,
+        permission=AddPortalContent,
+        extra_constructors=contentConstructors,
+        fti=fti,
+    ).initialize(registrar)

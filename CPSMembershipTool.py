@@ -35,8 +35,6 @@ from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import mergedLocalRoles
 from Products.CMFDefault.MembershipTool import MembershipTool
-from Products.NuxUserGroups.LocalRolesWithGroups import \
-     manage_setLocalGroupRoles, manage_delLocalGroupRoles
 
 from zLOG import LOG, DEBUG
 
@@ -59,35 +57,32 @@ class CPSMembershipTool(MembershipTool):
     # Actions for CPS
     #
     _actions = [
-      AI( id='login'
-        , title='Login'
-        , description='Click here to Login'
-        , action=Expression(text='string:${portal_url}/login_form')
-        , permissions=(View,)
-        , category='user'
-        , condition=Expression(text='not: member')
-        , visible=1
-        )
-    , AI( id='logout'
-        , title='Log out'
-        , description='Click here to logout'
-        , action=Expression(text='string:${portal_url}/logout')
-        , permissions=(View,)
-        , category='user'
-        , condition=Expression(text='member')
-        , visible=1
-        )
-    , AI( id='mystuff'
-        , title='My stuff'
-        , description='Goto your home folder'
-        , action=Expression(text='string:${portal/portal_membership'
-                               + '/getHomeUrl}/folder_contents')
-        , permissions=(View,)
-        , category='user'
-        , condition=Expression( text='python: member and '
-                              + 'portal.portal_membership.getHomeFolder()')
-        , visible=1
-        )
+      AI(id='login',
+         title='Login',
+         description='Click here to Login',
+         action=Expression(text='string:${portal_url}/login_form'),
+         permissions=(View,),
+         category='user',
+         condition=Expression(text='not: member'),
+         visible=1),
+      AI(id='logout',
+         title='Log out',
+         description='Click here to logout',
+         action=Expression(text='string:${portal_url}/logout'),
+         permissions=(View,),
+         category='user',
+         condition=Expression(text='member'),
+         visible=1),
+      AI(id='mystuff',
+         title='My stuff',
+         description='Goto your home folder',
+         action=Expression(text='string:${portal/portal_membership'
+                           + '/getHomeUrl}/folder_contents'),
+         permissions=(View,),
+         category='user',
+         condition=Expression(text='python: member and '
+                              + 'portal.portal_membership.getHomeFolder()'),
+         visible=1)
     ]
 
     meta_type = 'CPS Membership Tool'
@@ -114,21 +109,21 @@ class CPSMembershipTool(MembershipTool):
             return tuple(member_roles)
 
     security.declareProtected(View, 'setLocalRoles')
-    def setLocalRoles( self, obj, member_ids, member_role, reindex=1 ):
+    def setLocalRoles(self, obj, member_ids, member_role, reindex=1):
         """ Set local roles on an item """
         member = self.getAuthenticatedMember()
-        my_roles = member.getRolesInContext( obj )
+        my_roles = member.getRolesInContext(obj)
 
         if 'Manager' in my_roles or \
                'WorkspaceManager' in my_roles or \
                'SectionManager' in my_roles or \
                member_role in my_roles:
             for member_id in member_ids:
-                roles = list(obj.get_local_roles_for_userid( userid=member_id ))
+                roles = list(obj.get_local_roles_for_userid(userid=member_id))
 
                 if member_role not in roles:
-                    roles.append( member_role )
-                    obj.manage_setLocalRoles( member_id, roles )
+                    roles.append(member_role)
+                    obj.manage_setLocalRoles(member_id, roles)
 
         if reindex:
             # It is assumed that all objects have the method
@@ -137,15 +132,15 @@ class CPSMembershipTool(MembershipTool):
             obj.reindexObjectSecurity()
 
     security.declareProtected(View, 'deleteLocalRoles')
-    def deleteLocalRoles( self, obj, member_ids, reindex=1 ):
+    def deleteLocalRoles(self, obj, member_ids, reindex=1):
         """ Delete local roles for members member_ids """
         member = self.getAuthenticatedMember()
-        my_roles = member.getRolesInContext( obj )
+        my_roles = member.getRolesInContext(obj)
 
         if 'Manager' in my_roles or 'Owner' in my_roles or \
                'WorkspaceManager' in my_roles or \
                'SectionManager' in my_roles:
-            obj.manage_delLocalRoles( userids=member_ids )
+            obj.manage_delLocalRoles(userids=member_ids)
 
         if reindex:
             obj.reindexObjectSecurity()
