@@ -1,17 +1,12 @@
 Requires:
 ~~~~~~~~~
-- WARNING: renaming API proxy.Languages -> proxy.getProxyLanguages
-- CPSWorkflow
+-
 New features:
 ~~~~~~~~~~~~~
 -
 Bug fixes:
 ~~~~~~~~~~
-- #451: Make getProxyLanguages (formerly known as Languages) acquisition-safe
-- fix malformed action URI on portal registration
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- More unit tests.
-- Workflows moved to CPSWorkflow. Still keeping the compatiblity for a while
-- Added BTreeFolder2 based proxy types for folder and folderish document
-- Use new CPSWorkflow naming
+-
