@@ -86,6 +86,20 @@ class CPSMembershipTool(MembershipTool):
         """Return aquisition roles"""
         return mergedLocalRoles(object, withgroups, withpath)
 
+    security.declareProtected(View, 'getCandidateLocalRoles')
+    def getCPSCandidateLocalRoles( self, obj ):
+        """ What local roles according to the context ? """
+        member = self.getAuthenticatedMember()
+
+        if 'WorkspacesManager' or 'SectionManager' \
+               in member.getRolesInContext(obj):
+            return self.getPortalRoles()
+        else:
+            member_roles = list(member.getRolesInContext(obj))
+            del member_roles[member_roles.index( 'Member')]
+
+        return tuple( member_roles )
+
     security.declareProtected(View, 'setLocalGroupRoles')
     def setLocalGroupRoles(self, obj, ids, role, reindex=1):
         """Set local group roles on an item."""
@@ -143,7 +157,7 @@ class CPSMembershipTool(MembershipTool):
             # TODO set workspace properties ? title ..
             f = getattr(members, member_id)
             # Grant ownership to Member
-            try: 
+            try:
                 f.changeOwnership(user)
             except AttributeError:
                 pass  # Zope 2.1.x compatibility
