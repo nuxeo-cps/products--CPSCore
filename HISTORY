@@ -1,4 +1,32 @@
 *******************************************
+** CPSCore V3.2.0 [R1 build 2003-10/31-17:35 by anguenot]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Fix CMF security problem on searchMembers.
+- Fixed a bug where event notification at creation was done too early, before
+  the workflow insertion (thus no review_state was available).
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- README updated
+- TreesTool: minor spelling mistake that has been hanging around for too
+  long...
+- Better ProxyTool Management tab to debug and fix the proxies.
+- New methods to query the proxy tool about archived revisions of a
+  docid and to revert a proxy to older revisions.
+- getCPSCustomCSS method within the ProxyFolder class for the custom CSS
+  feature
+- Added portal_type to the info returned by the Trees Tool.
+- Removing the restriction on folderish objects in the Trees Tool. It can
+  now cache info about non-folderish ones.
+
+*******************************************
 ** CPSCore V3.1.1 [R1 build 2003-10/18-10:27 by anguenot]
 
 ZODB Requires:
