@@ -21,7 +21,7 @@ Allow standard modules to be imported from restricted code.
 """
 # (see lib/python/Products/PythonScripts/module_access_example.py)
 
-from AccessControl import allow_type # allow_module, allow_class
+from AccessControl import allow_type, allow_class
 from AccessControl import ModuleSecurityInfo
 
 ModuleSecurityInfo('re').declarePublic('compile', 'findall',
@@ -35,3 +35,9 @@ ModuleSecurityInfo('urllib').declarePublic('urlencode')
 ModuleSecurityInfo('cgi').declarePublic('escape')
 ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG', 'INFO')
 ModuleSecurityInfo('AccessControl').declarePublic('Unauthorized')
+try:
+    from mx import Tidy
+    allow_class(Tidy)
+    ModuleSecurityInfo('mx').declarePublic('Tidy')
+except ImportError:
+    pass
