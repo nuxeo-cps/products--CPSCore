@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.0.2 [R1 build 2003-09/09-16:01 by anguenot]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- P2 #71: basebox_menu should display authorized workspaces
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- sf code cleaning
+- ed code cleaning debuging
+*******************************************
 ** CPSCore V3.0.1 [R1 build 2003-08/18-08:39 by anguenot]
 
 ZODB Requires:
