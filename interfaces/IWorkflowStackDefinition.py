@@ -78,17 +78,14 @@ class IWorkflowStackDefinition(Interface.Base):
     def isLocked():
         """Is the stack locked
         """
-        return sekf._isLocked
 
     def doLockStack():
         """Lock the stack
         """
-        self._isLocked = 1
 
     def doUnLockStack():
         """UnLock stack
         """
-        self._isLocked = 0
 
     def getManagerStackIds():
         """Returns the ids of other stacks for which the people within those
