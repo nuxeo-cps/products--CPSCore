@@ -27,6 +27,8 @@ from Globals import InitializeClass, DTMLFile
 from OFS.PropertyManager import PropertyManager
 
 from Products.CMFCore.CMFCorePermissions import AddPortalMember
+from Products.CMFCore.ActionInformation import ActionInformation
+from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import getToolByName
 from Products.CMFDefault.RegistrationTool import RegistrationTool
 
@@ -42,6 +44,20 @@ class CPSRegistrationTool(RegistrationTool, PropertyManager):
     _properties = (
         {'id': 'allowed_member_id_pattern', 'type': 'string', 'mode': 'w',
          'label': "Allowed member id pattern"},
+    )
+
+    _actions = (
+        ActionInformation(
+            id='join',
+            title='Join',
+            description='Click here to Join',
+            action=Expression( text='string: ${portal_url}/join_form'),
+            permissions=(AddPortalMember,),
+            category='user',
+            condition=Expression('python:'
+                'portal.portal_properties.enable_portal_joining and not member'),
+            visible=1
+        ),
     )
 
     manage_options = (PropertyManager.manage_options +
