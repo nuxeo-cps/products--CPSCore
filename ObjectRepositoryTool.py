@@ -387,8 +387,8 @@ class ObjectRepositoryTool(UniqueObject,
             roles = [self.getPermissionRole(perm) for perm in perms]
             lroles[user] = roles
         changed = setLocalRolesWithGroups(ob, lroles)
-        if changed:
-            ob.reindexObjectSecurity()
+        ##if changed:
+        ##    ob.reindexObjectSecurity()
         return changed
 
     #

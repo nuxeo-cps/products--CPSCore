@@ -106,7 +106,7 @@ def manage_beforeDelete(self, *args, **kw):
     self.cps_old_manage_beforeDelete(*args, **kw)
     notify(self, 'sys_del_object', self, *args, **kw)
 
-for class_ in (Item, ObjectManager, CMFCatalogAware):
+for class_ in (Item, ObjectManager):
     patch_action(class_, manage_afterAdd)
     patch_action(class_, manage_beforeDelete)
 
@@ -195,7 +195,7 @@ def manage_clone(self, ob, id, REQUEST=None):
     # Clone an object.
     ob = self.cps_old_manage_clone(ob, id, REQUEST=REQUEST)
     if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
-        # XXX: should it be 
+        # XXX: should it be
         # ob.manage_afterCMFAdd(self) ???
         ob.manage_afterCMFAdd(ob, self)
     return self
@@ -203,4 +203,3 @@ def manage_clone(self, ob, id, REQUEST=None):
 patch_action(CopyContainer, manage_clone)
 
 # XXX _importObjectFromFile
-

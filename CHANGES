@@ -17,3 +17,4 @@ New internal features:
 - ProxyBase and ProxyTool use translation_service instead of Localizer
 - Moved CPSCore.utils.manageCPSLanguage into CPSDefault.utils
 - Factorized code from CPSCore.utils to the method CPSUtil.id.generateId.
+- Don't index repository objects anymore
