@@ -35,6 +35,7 @@ import CPSWorkflowTool
 from CPSWorkflowConfiguration import CPSWorkflowConfiguration
 from CPSWorkflowConfiguration import addCPSWorkflowConfiguration
 
+import ProxyBase
 import CPSFolder
 import CPSDummyDocument
 
@@ -55,14 +56,19 @@ tools = (
 
 contentClasses = (CPSFolder.CPSFolder,
                   CPSDummyDocument.CPSDummyDocument,
+                  ProxyBase.ProxyFolder,
+                  ProxyBase.ProxyDocument,
                   )
 
 contentConstructors = (CPSFolder.addCPSFolder,
                        CPSDummyDocument.addCPSDummyDocument,
+                       ProxyBase.addProxyFolder,
+                       ProxyBase.addProxyDocument,
                        )
 
 fti = (CPSFolder.factory_type_information +
        CPSDummyDocument.factory_type_information +
+       ProxyBase.factory_type_information +
        ())
 
 registerDirectory('skins', globals())

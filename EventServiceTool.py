@@ -263,7 +263,7 @@ class EventServiceTool(UniqueObject, Folder):
             location = '/'.join(object_or_location)
         else:
             location = '/'.join(object_or_location.getPhysicalPath())
-        rlocation = self.get_rlocation(location)
+        rlocation = self._get_rlocation(location)
         if rlocation is None:
             LOG('EventServiceTool', ERROR,
                 'Hub: getHubId for bad location %s' % location)

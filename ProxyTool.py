@@ -80,7 +80,7 @@ class ProxyTool(UniqueObject, Folder):
         if lang is None:
             # XXX get preferred language here - abstract the negociation
             # XXX use Localizer methods
-            lang = 'en'
+            lang = '*'
         # Find version
         if version_infos.has_key(lang):
             version_info = version_infos[lang]

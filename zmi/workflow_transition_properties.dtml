@@ -94,7 +94,7 @@ Initiated by WorkflowMethod
     Clone,
     with allowed creation transitions
     <input type="text" name="clone_allowed_transitions:tokens"
-      value="&dtml-clone_allowed_transitions;" size="30" />
+      value="<dtml-var "' '.join(clone_allowed_transitions)" html_quote>" size="30" />
 </td>
 </tr>
 

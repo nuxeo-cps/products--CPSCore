@@ -22,14 +22,31 @@ import random
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 
-from OFS.Folder import Folder
-
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.PortalFolder import PortalFolder
+
+from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
+
+
+class NoWorkflowConfiguration:
+    """Class for a workflow configuration object that denies
+    all workflows."""
+
+    security = ClassSecurityInfo()
+
+    security.declarePrivate('getPlacefulChainFor')
+    def getPlacefulChainFor(self, portal_type):
+        """No workflow chain is allowed."""
+        return ()
+
+InitializeClass(NoWorkflowConfiguration)
+
+
 
 # XXX we'll want a btreefolder2 here, not a folder
-class ObjectRepository(UniqueObject, Folder):
+class ObjectRepository(UniqueObject, PortalFolder):
     """An object repository stores objects that can be
     available in several versions.
 
@@ -42,6 +59,7 @@ class ObjectRepository(UniqueObject, Folder):
 
     id = 'portal_repository'
     meta_type = 'CPS Repository Tool'
+    portal_type = meta_type
 
     security = ClassSecurityInfo()
 
@@ -53,26 +71,33 @@ class ObjectRepository(UniqueObject, Folder):
     #
 
     security.declarePrivate('invokeFactory')
-    def invokeFactory(self, type_name, repoid=None, version_info=None,
+    def invokeFactory(self, type_name, id=None,
+                      repoid=None, version_info=None,
                       *args, **kw):
         """Create an object with repoid and version in the repository.
 
-        Returns the used repoid.
+        If repoid is None, a new one is generated
+        if version_info is None, 1 is used.
+        Returns the used repoid and version.
         """
+        # Argument id is ignored, it's for compatibility with CMF.
         if version_info is None:
-            return ValueError('version_info must not be None')
+            version_info = 1
         if repoid is None:
             while 1:
                 repoid = str(random.randrange(1,2147483600))
                 id = self._get_id(repoid, version_info)
-                if not self.has_key(id):
+                if not hasattr(self, id):
                     break
         else:
             id = self._get_id(repoid, version_info)
+            if hasattr(self, id):
+                raise ValueError('A document with repoid=%s and version=%s '
+                                 'already exists' % (repoid, version_info))
         ttool = getToolByName(self, 'portal_types')
-        ttool.constructContent(type_name, id, *args, **kw)
+        ttool.constructContent(type_name, self, id, *args, **kw)
         # XXX constructContent may in the future return a new id!
-        return repoid
+        return (repoid, version_info)
 
     # XXX used for what?
     security.declarePrivate('addObjectVersion')
@@ -149,6 +174,13 @@ class ObjectRepository(UniqueObject, Folder):
         return version_infos
 
     #
+    # Forbid any workflow
+    #
+
+    # This done later by using setattr because the id is variable
+    #.cps_workflow_configuration = NoWorkflowConfiguration()
+
+    #
     # Misc
     #
 
@@ -172,7 +204,15 @@ class ObjectRepository(UniqueObject, Folder):
     # ZMI
     #
 
-    manage_options = Folder.manage_options
+    manage_options = PortalFolder.manage_options
 
 
 InitializeClass(ObjectRepository)
+
+
+# Create a workflow configuration object that denies any workflow
+setattr(ObjectRepository, CPSWorkflowConfig_id,
+        NoWorkflowConfiguration())
+# security.declarePrivate(...)
+setattr(ObjectRepository, CPSWorkflowConfig_id+'__roles__', ())
+

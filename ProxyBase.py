@@ -19,11 +19,15 @@
 
 from zLOG import LOG, ERROR, DEBUG
 from ExtensionClass import Base
+from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import AccessContentsInformation
+
+from Products.NuxCPS3.CPSBase import CPSBaseDocument
+from Products.NuxCPS3.CPSBase import CPSBaseFolder
 
 
 class ProxyBase(Base):
@@ -100,4 +104,91 @@ class ProxyBase(Base):
         """No searchable text."""
         return ''
 
+    #
+    # ZMI
+    #
+
+    _properties = (
+        {'id':'RepoId', 'type':'string', 'mode':''},
+        {'id':'VersionInfos', 'type':'string', 'mode':''},
+        )
+    RepoId = ComputedAttribute(getRepoId, 1)
+    VersionInfos = ComputedAttribute(getVersionInfos, 1)
+
 InitializeClass(ProxyBase)
+
+
+factory_type_information = (
+    {'id': 'CPS Proxy Folder',
+     'description': 'A proxy to a folder.',
+     'title': '',
+     'content_icon': 'folder_icon.gif',
+     'product': 'NuxCPS3',
+     'meta_type': 'CPS Proxy Folder',
+     'factory': 'addProxyFolder',
+     'immediate_view': '',
+     'filter_content_types': 1,
+     'allowed_content_types': (),
+     'actions': (),
+     },
+    {'id': 'CPS Proxy Document',
+     'description': 'A proxy to a document.',
+     'title': '',
+     'content_icon': 'document_icon.gif',
+     'product': 'NuxCPS3',
+     'meta_type': 'CPS Proxy Document',
+     'factory': 'addProxyDocument',
+     'immediate_view': '',
+     'filter_content_types': 1,
+     'allowed_content_types': (),
+     'actions': (),
+     },
+    )
+
+class ProxyFolder(ProxyBase, CPSBaseFolder):
+    """A proxy folder is a folder whose data is indirected to a document
+    in a repository."""
+
+    meta_type = 'CPS Proxy Folder'
+    # portal_type will be set to the target's portal_type after creation
+
+    def __init__(self, id, repoid=None, version_infos=None):
+        CPSBaseFolder.__init__(self, id)
+        ProxyBase.__init__(self, repoid, version_infos)
+
+InitializeClass(ProxyFolder)
+
+
+class ProxyDocument(ProxyBase, CPSBaseDocument):
+    """A proxy document is a document whose data is indirected to a document
+    in a repository."""
+
+    meta_type = 'CPS Proxy Document'
+    # portal_type will be set to the target's portal_type after creation
+
+    def __init__(self, id, repoid=None, version_infos=None):
+        CPSBaseDocument.__init__(self, id)
+        ProxyBase.__init__(self, repoid, version_infos)
+
+InitializeClass(ProxyDocument)
+
+
+def addProxyFolder(container, id, repoid=None, version_infos=None,
+                   REQUEST=None):
+    """Add a proxy folder."""
+    # container is a dispatcher when called from ZMI
+    ob = ProxyFolder(id, repoid=repoid, version_infos=version_infos)
+    id = ob.getId()
+    container._setObject(id, ob)
+    if REQUEST is not None:
+        REQUEST.RESPONSE.redirect(container.absolute_url()+'/manage_main')
+
+def addProxyDocument(container, id, repoid=None, version_infos=None,
+                     REQUEST=None):
+    """Add a proxy document."""
+    # container is a dispatcher when called from ZMI
+    ob = ProxyDocument(id, repoid=repoid, version_infos=version_infos)
+    id = ob.getId()
+    container._setObject(id, ob)
+    if REQUEST is not None:
+        REQUEST.RESPONSE.redirect(container.absolute_url()+'/manage_main')

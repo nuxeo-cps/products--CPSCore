@@ -29,9 +29,8 @@ from Products.CMFCore.utils import getToolByName, _checkPermission
 from Products.CMFCore.CMFCorePermissions import AddPortalContent
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
-from Products.NuxCPS3.CPSWorkflowConfiguration import CPSWorkflowConfiguration_id
-from Products.NuxCPS3.ProxyFolder import ProxyFolder
-from Products.NuxCPS3.ProxyDocument import ProxyDocument
+
+CPSWorkflowConfig_id = '.cps_workflow_configuration'
 
 
 class CPSWorkflowTool(WorkflowTool):
@@ -110,9 +109,12 @@ class CPSWorkflowTool(WorkflowTool):
                     "Workflow %s cannot create %s using transition '%s'" %
                     (wf_id, type_name, transition))
         # Find out if we must create a normal document or a proxy.
+        # XXX determine what's the best to parametrize this
         proxy_type = None
         ttool = getToolByName(self, 'portal_types')
         for ti in ttool.listTypeInfo():
+            if ti.getId() != type_name:
+                continue
             proxy_type = ti.getActionById('isproxytype', None)
             if proxy_type is not None:
                 break
@@ -120,23 +122,25 @@ class CPSWorkflowTool(WorkflowTool):
             # Use a proxy.
             # Create the real document in the object repository
             if proxy_type == 'folder':
-                class_ = ProxyFolder
+                proxy_type = 'CPS Proxy Folder'
             else:
-                class_ = ProxyDocument
+                proxy_type = 'CPS Proxy Document'
             repo = getToolByName(self, 'portal_repository')
-            version_info = 1
-            repoid = repo.invokeFactory(type_name, repoid=None,
-                                        version_info=version_info,
-                                        *args, **kw)
+            repoid, version_info = repo.invokeFactory(type_name, repoid=None,
+                                                      version_info=None,
+                                                      *args, **kw)
             # Create the proxy to that document
             version_infos = {'*': version_info}
-            proxy = class_(id, repoid=repoid, version_infos=version_infos)
-            container._setObject(id, proxy)
-            ob = container._getOb(id)
+            container.invokeFactoryCMF(proxy_type, id, repoid=repoid,
+                                       version_infos=version_infos)
+            ob = container[id]
+            # Set the correct portal_type for the proxy
+            ob._setPortalTypeName(type_name)
+            ob.reindexObject(idxs=['portal_type', 'Type'])
         else:
             # Use a normal document.
             # Note: this calls wf.notifyCreated()!
-            container.invokeFactory(type_name, id, *args, **kw)
+            container.invokeFactoryCMF(type_name, id, *args, **kw)
             # XXX should get new id effectively used! CMFCore bug!
             ob = container[id]
         # Do creation transitions for all workflows.
@@ -185,7 +189,7 @@ class CPSWorkflowTool(WorkflowTool):
                 'getChainFor: no container for ob %s' % (ob,))
             return ()
         # Find placeful workflow configuration object.
-        wfconf = getattr(container, CPSWorkflowConfiguration_id, None)
+        wfconf = getattr(container, CPSWorkflowConfig_id, None)
         if wfconf is not None:
             chain = wfconf.getPlacefulChainFor(pt)
             if chain is not None:

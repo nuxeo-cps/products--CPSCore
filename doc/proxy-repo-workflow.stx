@@ -63,11 +63,13 @@ Proxies, document repository and workflows
 
     The proxy object ('here' in ZPT) must be used for:
 
-    - absolute_url
+    - absolute_url(),
 
-    - getId
+    - getId(),
 
-    - breadcrumb computations
+    - objectIds(), objectValues(), objectItems(),
+
+    - breadcrumb computations.
 
     The document repository object (tal:define="doc here/getObject")
     must be used for:

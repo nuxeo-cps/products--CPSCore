@@ -30,7 +30,7 @@ from OFS.SimpleItem import SimpleItem
 from Products.NuxCPS3.CPSWorkflow import CPSWorkflowDefinition
 from Products.NuxCPS3.CPSWorkflow import TRIGGER_CREATION
 from Products.NuxCPS3.CPSWorkflowConfiguration import addCPSWorkflowConfiguration
-from Products.NuxCPS3.CPSWorkflowConfiguration import CPSWorkflowConfiguration_id
+from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
 
 
 class Dummy(SimpleItem):
@@ -175,7 +175,7 @@ class WorkflowToolTests(SecurityRequestTest):
         f2 = f.f2
         # setup placeful workflows
         addCPSWorkflowConfiguration(f)
-        config = getattr(f, CPSWorkflowConfiguration_id)
+        config = getattr(f, CPSWorkflowConfig_id)
         config.setChain('Dummy Content', ('wf',))
         # check placeful
         dummy = f.dummy
@@ -183,7 +183,7 @@ class WorkflowToolTests(SecurityRequestTest):
         self.assertEqual(tuple(chain), ('wf',))
         # add new sub folder
         addCPSWorkflowConfiguration(f2)
-        config2 = getattr(f2, CPSWorkflowConfiguration_id)
+        config2 = getattr(f2, CPSWorkflowConfig_id)
         config2.setChain('Dummy Content', ('wf2',))
         # check inheritance order
         chain = wft.getChainFor('Dummy Content', f2)

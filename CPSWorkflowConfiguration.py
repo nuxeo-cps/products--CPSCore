@@ -36,9 +36,8 @@ from Products.CMFCore.WorkflowTool import WorkflowTool
 
 from CPSWorkflowPermissions import ManageWorkflows
 
+from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
 
-CPSWorkflowConfiguration_meta_type = 'CPS Workflow Configuration'
-CPSWorkflowConfiguration_id = '.cps_workflow_configuration'
 
 class CPSWorkflowConfiguration(SimpleItem):
     """Workflow Configuration.
@@ -47,8 +46,8 @@ class CPSWorkflowConfiguration(SimpleItem):
     chain are to be used for what portal_type.
     """
 
-    id = CPSWorkflowConfiguration_id
-    meta_type = CPSWorkflowConfiguration_meta_type
+    id = CPSWorkflowConfig_id
+    meta_type = 'CPS Workflow Configuration'
     portal_type = None
 
     security = ClassSecurityInfo()
@@ -85,7 +84,7 @@ class CPSWorkflowConfiguration(SimpleItem):
         # Ask above.
         parent = aq_parent(aq_inner(aq_parent(aq_inner(self))))
         try:
-            higher_conf = parent.aq_acquire(CPSWorkflowConfiguration_id,
+            higher_conf = parent.aq_acquire(CPSWorkflowConfig_id,
                                             containment=1)
         except AttributeError:
             # Nothing placeful found.

@@ -64,7 +64,7 @@ class CPSTransitionDefinition(DCWFTransitionDefinition):
     meta_type = 'CPS Workflow Transition'
 
     transition_behavior = TRANSITION_BEHAVIOR_NORMAL
-    clone_allowed_transitions = ''
+    clone_allowed_transitions = []
     checkout_original_transition_id = ' '
 
     _properties_form = DTMLFile('zmi/workflow_transition_properties',
@@ -113,7 +113,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     """A Workflow implementation with proxy support.
 
     Features:
-    - Creation transitions (those from the uncreated_ state)
+    - Creation transitions
     - Extended transition description
     """
 
