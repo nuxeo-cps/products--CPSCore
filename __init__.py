@@ -100,15 +100,15 @@ def _getAllowedRolesAndUsers(user):
     # end groups
     return result
 
-if not hasattr(CatalogTool, 'old_listAllowedRolesAndUsers'):
-    CatalogTool.old_getAllowedRolesAndUsers = CatalogTool._listAllowedRolesAndUsers
-    
 def _listAllowedRolesAndUsers(self, user):
     LOG('CPSCore utils', DEBUG, '_listAllowedRolesAndUsers()')
     aclu = self.acl_users
     if hasattr(aclu, '_getAllowedRolesAndUsers'):
         return aclu._getAllowedRolesAndUsers(user)
     return CatalogTool.old_listAllowedRolesAndUsers(self, user)
+
+if not hasattr(CatalogTool, 'old_listAllowedRolesAndUsers'):
+    CatalogTool.old_AllowedRolesAndUsers = CatalogTool._listAllowedRolesAndUsers
 
 CatalogTool._listAllowedRolesAndUsers = _listAllowedRolesAndUsers
 
