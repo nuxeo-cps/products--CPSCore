@@ -420,8 +420,8 @@ class CPSMembershipTool(MembershipTool):
 
         return newid
 
-    security.declarePublic('isIdValid')
-    def isIdValid(self, id):
+    security.declarePublic('isUserIdValid')
+    def isUserIdValid(self, id):
         """Return whether the given Id is valid or not.
 
         This method essentially checks that the given Id will not make it
