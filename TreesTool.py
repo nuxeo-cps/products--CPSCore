@@ -51,10 +51,11 @@ class TreesTool(UniqueObject, Folder):
 
     security.declarePrivate('notify_tree')
     def notify_tree(self, event_type, object, infos):
-        if event_type not in ('sys_add_cmf_object',
-                              'sys_order_object',
+        if event_type not in ('sys_add_cmf_object', # XXX ugh clean this up
                               'sys_del_object',
+                              'sys_modify_object',
                               'sys_modify_security',
+                              'sys_order_object',
                               'modify_object'):
             return
         LOG('TreesTool', DEBUG, 'Got %s for %s'
@@ -152,7 +153,8 @@ class TreeCache(SimpleItemWithProperties):
     security.declarePrivate('notify_tree')
     def notify_tree(self, event_type, object, infos):
         """Hook called when the tree changes."""
-        LOG('Tree.notify_tree', DEBUG, 'Event %s' % event_type)
+        LOG('Tree.notify_tree', DEBUG, 'Event %s for %s'
+            % (event_type, '/'.join(object.getPhysicalPath())))
         hubtool = getToolByName(self, 'portal_eventservice')
         urltool = getToolByName(self, 'portal_url')
         portal = urltool.getPortalObject()
