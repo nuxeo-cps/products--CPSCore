@@ -410,22 +410,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 self.delProxy(hubid)
             # Refresh security
             self.setSecurity(object)
-        elif event_type == 'modify_object':
-            if isinstance(object, ProxyBase):
-                return
-            # If an object in the repo is modified, notify all proxies
-            # XXX urgh, the event should be received by the repo
-            repotool = getToolByName(self, 'portal_repository')
-            evtool = getToolByName(self, 'portal_eventservice')
-            hubtool = evtool
-            portal = aq_parent(aq_inner(self))
-            id = object.getId()
-            repoid, version_info = repotool.getRepoIdAndVersionFromId(id)
-            if repoid is not None:
-                infos = self.getMatchingProxies(repoid, version_info)
-                for hubid in infos.keys():
-                    ob = portal.restrictedTraverse(hubtool.getLocation(hubid, relative=1))
-                    evtool.notify('modify_object', ob, {})
 
     #
     # ZMI
