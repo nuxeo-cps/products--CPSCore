@@ -531,7 +531,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         rlocation = hubtool._get_rlocation(location)
         hubid = hubtool._register(rlocation) # XXX may log error if already
         self.addProxy(hubid, ob.getRepoId(), ob.getVersionInfos())
-        for subob in ob.objectIds():
+        for subob in ob.objectValues():
             self._recurse_rebuild(subob, hubtool=hubtool)
 
     security.declareProtected(ManagePortal, 'rebuildProxies')
