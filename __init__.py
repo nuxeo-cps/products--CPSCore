@@ -102,7 +102,7 @@ def _getAllowedRolesAndUsers(user):
     # end groups
     return result
 
-def _listAllowedRolesAndUsers(user):
+def _listAllowedRolesAndUsers(self, user):
     LOG('CPSCore utils', -199, '_listAllowedRolesAndUsers()')
     aclu = self.acl_users
     if hasattr(aclu, '_getAllowedRolesAndUsers'):
