@@ -19,7 +19,7 @@
 """Workflow Tool with CPS proxy knowledge and CPS placeful workflow support.
 """
 
-from zLOG import LOG, ERROR, DEBUG
+from zLOG import LOG, ERROR, DEBUG, TRACE
 from types import StringType
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass, DTMLFile
@@ -548,17 +548,17 @@ class CPSWorkflowTool(WorkflowTool):
             drpath = info['rpath']
             if drpath != container_rpath+dob.getId():
                 # Proxy not in the dest container.
-                LOG('_checkObjectMergeable', DEBUG,
+                LOG('_checkObjectMergeable', TRACE,
                     '  Not in dest: %s' % drpath)
                 continue
             if info[state_var] != new_state:
                 # Proxy not in the correct state.
-                LOG('_checkObjectMergeable', DEBUG,
+                LOG('_checkObjectMergeable', TRACE,
                     '  Bad state=%s: %s' % (info[state_var], drpath))
                 continue
             if drpath == rpath:
                 # Skip ourselves.
-                LOG('_checkObjectMergeable', DEBUG,
+                LOG('_checkObjectMergeable', TRACE,
                     '  Ourselves: %s' % drpath)
                 continue
             # Get the first one that matches.
@@ -601,12 +601,12 @@ class CPSWorkflowTool(WorkflowTool):
                 raise WorkflowException('No workflows found.')
             found = 0
             for wf in wfs:
-                LOG('_doActionFor', DEBUG, ' testing wf %s' % wf.getId())
+                LOG('_doActionFor', TRACE, ' testing wf %s' % wf.getId())
                 if wf.isActionSupported(ob, action):
-                    LOG('_doActionFor', DEBUG, ' found!')
+                    LOG('_doActionFor', TRACE, ' found!')
                     found = 1
                     break
-                LOG('_doActionFor', DEBUG, ' not found')
+                LOG('_doActionFor', TRACE, ' not found')
             if not found:
                 raise WorkflowException(
                     'No workflow provides the "%s" action.' % action)
