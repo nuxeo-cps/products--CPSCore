@@ -321,7 +321,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     # XXX was def getProxiesFromId(self, id):
     security.declarePublic('getProxiesFromObjectId')
-    def getProxiesFromObjectId(self, id):
+    def getProxiesFromObjectId(self, id, proxy_rpath_prefix=None):
         """Get the proxy infos from an object id (gotten from the catalog).
 
         Returns a list of dictionnaries with:
@@ -347,6 +347,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
         res = []
         for rpath in rpaths:
+            if proxy_rpath_prefix and not rpath.startswith(proxy_rpath_prefix):
+                continue
             docid2, language_revs = self._rpath_to_infos[rpath]
             try:
                 # XXX costly if search
