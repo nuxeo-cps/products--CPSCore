@@ -630,7 +630,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         if isinstance(ob, StringType):
             rpath = ob
             if not rpath or rpath.find('..') >= 0 or rpath.startswith('/'):
-                raise Unauthorized(rpath)
+                raise WorkflowException("Unauthorized rpath %s" % rpath)
             portal = getToolByName(self, 'portal_url').getPortalObject()
             ob = portal.unrestrictedTraverse(rpath) # XXX unrestricted ?
         return ob
