@@ -146,6 +146,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             self._hubid_to_info[hubid] = (repoid, version_infos)
             # XXX should store it in the object too ?
             # XXX should send event
+            #       (both are done by caller in ProxyBase)
         return repotool.getObjectVersion(repoid, version_info), lang, version_info
 
     security.declarePrivate('getMatchingProxies')
@@ -467,14 +468,18 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             LOG('ProxyTool', DEBUG, 'Got %s for %s'
                 % (event_type, '/'.join(object.getPhysicalPath())))
             hubid = infos['hubid']
+            dodel = 0
             if event_type == 'sys_add_object':
                 repoid = object.getRepoId()
                 version_infos = object.getVersionInfos()
                 self.addProxy(hubid, repoid, version_infos)
             elif event_type == 'sys_del_object':
-                self.delProxy(hubid)
+                dodel = 1
             # Refresh security
             self.setSecurity(object)
+            if dodel:
+                # Must be done last...
+                self.delProxy(hubid)
             LOG('ProxyTool', DEBUG, '  ... done')
 
     #
