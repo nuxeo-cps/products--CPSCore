@@ -1,4 +1,4 @@
-# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2004 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,10 +16,21 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Workflow permissions
+"""CPS core permissions.
+
+  - 'Manage workflows' is the permission needed to edit cps workflow
+    configuration objects.
+
+  - 'View archived revisions' is the permissions (on a proxy) needed to
+    get the View permission on archived revisions otherwise not
+    accessible.
+
 """
 
 from Products.CMFCore.CMFCorePermissions import setDefaultRoles
 
 ManageWorkflows = 'Manage workflows'
 setDefaultRoles(ManageWorkflows, ('Manager',))
+
+ViewArchivedRevisions = 'View archived revisions'
+setDefaultRoles(ViewArchivedRevisions, ('Manager',))

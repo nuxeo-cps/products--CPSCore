@@ -31,7 +31,7 @@ from OFS.SimpleItem import SimpleItem
 
 from Products.CMFCore.utils import getToolByName
 
-from CPSWorkflowPermissions import ManageWorkflows
+from CPSCorePermissions import ManageWorkflows
 
 from Products.CPSCore.CPSWorkflowTool import CPSWorkflowConfig_id
 
