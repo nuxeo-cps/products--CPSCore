@@ -61,7 +61,7 @@ CPS 3 - Architecture
   Event Service
 
     Zope 3 a un Event Service complet où les événements synchrones
-    peuvent se voir apposer un veto par certains aures services. Ici on
+    peuvent se voir apposer un veto par certains autres services. Ici on
     utilise une version simplifiée, qui est plutôt apparentée à un
     centre de notification.
 
