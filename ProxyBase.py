@@ -257,8 +257,10 @@ class ProxyBase(Base):
                  '__ac_local_group_roles__',
                  # proxy definition
                  '_docid',
-                 '_tag',
+                 '_default_language',
                  '_language_revs',
+                 '_from_language_revs',
+                 '_tag',
                  # dublin core
                  'title',
                  'description',
@@ -288,8 +290,10 @@ class ProxyBase(Base):
             if k.startswith('_') and k.endswith('_Permission'):
                 stuff[k] = v
                 continue
-            LOG('Proxybase', DEBUG, 'serialize of %s found unknown %s=%s'
+            LOG('ProxyBase', DEBUG,
+                'Warning: serialize of %s found unknown %s=%s'
                 % (self.getId(), k, v))
+            stuff[k] = v # Serialize it anyway
         # now serialize stuff
         f = StringIO()
         p = Pickler(f, 1)
