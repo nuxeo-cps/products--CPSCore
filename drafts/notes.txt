@@ -66,7 +66,7 @@ actions:
 """
 unique ids:
 
- - repid: gives an id to a set of versions for one document. it's unique
+ - repoid: gives an id to a set of versions for one document. it's unique
    to a versionned object repository.
    if there are several repositories, ... XXX ?
 
