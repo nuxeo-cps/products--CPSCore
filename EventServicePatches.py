@@ -149,6 +149,8 @@ def manage_clone(self, ob, id, REQUEST=None):
     # Clone an object.
     ob = self.cps_old_manage_clone(ob, id, REQUEST=REQUEST)
     if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
+        # XXX: should it be 
+        # ob.manage_afterCMFAdd(self) ???
         ob.manage_afterCMFAdd(ob, self)
     return self
 

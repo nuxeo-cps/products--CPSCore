@@ -104,7 +104,7 @@ class ElementsMapping:
         mapping = self._mapping
         if mapping.has_key(name):
             return mapping[name]
-        elif not self._appending.has_key(name) and\
+        elif not self._appending.has_key(name) and \
                 name in self._default_keys:
             self._appending[name] = None
             self._default_setter(self, name)
@@ -170,7 +170,8 @@ class ElementsMapping:
         return base_keys
 
     def appendElement(self, name, value):
-        """Append an element to element named 'name'
+        """Append an element to element named 'name'.
+
         Turn element 'name' into a sequence element.
         If default setter does not set this element,
         [] is always the basis of this sequence element.
@@ -225,6 +226,7 @@ class ElementsMapping:
 
 InitializeClass(ElementsMapping)
 
+
 class CallElement:
 
     _isCallElement = 1
@@ -244,6 +246,7 @@ class CallElement:
 
     def __call__(self):
         return self._callIt()
+
 
 class ActionCallElement(CallElement):
 

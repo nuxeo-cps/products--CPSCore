@@ -167,7 +167,7 @@ class ElementsTool(UniqueObject, OFS.Folder.Folder):
     security.declareProtected(ViewManagementScreens,
         'manage_addDefaultElement')
     def manage_addDefaultElement(self, name, from_element, method_name,
-                                  description='', cmf_action=0, REQUEST=None):
+                                 description='', cmf_action=0, REQUEST=None):
         """Add a default element to elements mapping
 
         Virtually:

@@ -143,11 +143,11 @@ class CPSBaseFolder(TypeConstructor, TypeContainer, CPSBaseDocument):
 InitializeClass(CPSBaseFolder)
 
 
-def CPSBase_adder(container, ob, REQUEST=None):
+def CPSBase_adder(container, object, REQUEST=None):
     """Adds a just constructed object to its container."""
     # When called from the ZMI, container is a dispatcher.
-    id = ob.getId()
-    container._setObject(id, ob)
+    id = object.getId()
+    container._setObject(id, object)
     if REQUEST is not None:
         url = container.absolute_url()
         REQUEST.RESPONSE.redirect('%s/manage_main' % url)
