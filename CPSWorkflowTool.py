@@ -425,7 +425,11 @@ class CPSWorkflowTool(WorkflowTool):
     def all_meta_types(self):
         return ({'name': 'CPS Workflow',
                  'action': 'manage_addWorkflowForm',
-                 'permission': ManagePortal},)
+                 'permission': ManagePortal},
+                {'name': 'Workflow',
+                 'action': 'manage_addWorkflowForm',
+                 'permission': ManagePortal},
+                )
 
 
 
