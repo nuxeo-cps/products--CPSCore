@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- #451: Make 'Languages' acquisition-safe
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
