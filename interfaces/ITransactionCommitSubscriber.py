@@ -30,10 +30,6 @@ class ITransactionCommitSubscriber(Interface.Base):
     """Transaction commit subscriber interface
     """
 
-    def register():
-        """Register self as before transaction commit subscriber
-        """
-
     def commit(transaction):
         """Execute what's need to be done before the first transaction
         commit phase
@@ -43,10 +39,4 @@ class ITransactionCommitSubscriber(Interface.Base):
         """Code to be executed when the transaction is aborded
 
         Should never fail !!
-        """
-
-    def push(ob, **kw):
-        """Add an object within the subscriber queue.
-
-        **kw has to be handled within a subscriber dedicated data structure
         """

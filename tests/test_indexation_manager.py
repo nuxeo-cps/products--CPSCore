@@ -37,8 +37,7 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEqual(IndexationManager._queue, [])
 
     def test_registration(self):
-        IndexationManager.register()
-        self.assertEqual(IndexationManager._transaction_done, False)
+        self.assertEqual(IndexationManager._transaction_done, True)
         self.assertEqual(IndexationManager._queue, [])
     
         # Register Dummy
@@ -55,8 +54,7 @@ class IndexationManagerTest(unittest.TestCase):
     
     def test_transaction(self):
         get_transaction().begin()
-        IndexationManager.register()
-    
+
         # Schedule dummy
         dummy = Dummy('dummy')
     
@@ -68,7 +66,6 @@ class IndexationManagerTest(unittest.TestCase):
     
     def test_transaction_aborting(self):
         get_transaction().begin()
-        IndexationManager.register()
     
         # Schedule dummy
         dummy = Dummy('dummy')

@@ -25,10 +25,31 @@ The Transaction extensions are defined within PatchZODB.
 
 from zLOG import LOG, DEBUG
 
-# Extends ZODB Transaction to support before commit subscribers
-import PatchZODB
-
+from Interface.Verify import verifyObject, DoesNotImplement
 from Products.CPSCore.interfaces import ITransactionCommitSubscriber
+
+class TCSubscribersRegistry:
+    """Pre-commit Transaction susbcribers registry
+    """
+
+    def __init__(self):
+        self._before_commit_subscribers = []
+
+    def register(self, subscriber):
+        """Register a new before commit subscriber
+        """
+        try:
+            verifyObject(ITransactionCommitSubscriber, subscriber)
+        except DoesNotImplement:
+            LOG("registerBeforeCommitSubscriber()", INFO,
+                "Cannot register %s : Check implementation" %repr(subscriber))
+            raise
+        if subscriber not in self._before_commit_subscribers:
+            LOG("ZODB.Transaction.register()", DEBUG, repr(subscriber))
+            self._before_commit_subscribers.append(subscriber)
+
+    def getSubscribers(self):
+        return self._before_commit_subscribers
 
 class BaseTCSubscriber:
     """Base transaction subscriber class
@@ -38,22 +59,10 @@ class BaseTCSubscriber:
         ITransactionCommitSubscriber,
         )
 
-    def __init__(self):
-        self._queue = []
-        self._transaction_done = True
-
-    def register(self):
-        get_transaction().registerBeforeCommitSubscriber(self)
-        self._transaction_done = False
-
     def commit(self, transaction):
         raise NotImplementedError
 
     def abort(self, transaction):
-        self._queue = []
-        self._transaction_done = True
-
-    def push(self, ob, **kw):
         raise NotImplementedError
 
 class IndexationManagerTCSubscriber(BaseTCSubscriber):
@@ -68,68 +77,83 @@ class IndexationManagerTCSubscriber(BaseTCSubscriber):
         ITransactionCommitSubscriber,
         )
 
+    def __init__(self):
+        self._queue = []
+        self._transaction_done = True
+
     def _getObjectsInQueue(self):
         return [x['object'] for x in self._queue]
 
     def commit(self, transaction):
+        ##LOG("IndexationManager.comit()" , DEBUG, "START")
         for struct in self._queue:
-            if struct['with_security']:
+            LOG("Schedule for reindexation", DEBUG, str(struct))
+            if struct['with_security'] and struct['reindex']:
                 try:
-                    reindex_self = 1
-                    if struct['reindex']:
-                        reindex_self = 0
-                    struct['object']._reindexObjectSecurity(reindex_self)
+                    struct['object']._reindexObjectSecurity(reindex_self=0)
+                    struct['object']._reindexObject()
                 except AttributeError:
                     pass
-            if struct['reindex']:
+            elif (not struct['with_security']) and struct['reindex']:
                 try:
                     struct['object']._reindexObject(idxs=struct['idxs'])
+                except AttributeError:
+                    pass
+            elif struct['with_security'] and (not struct['reindex']):
+                try:
+                    struct['object']._reindexObjectSecurity(reindex_self=1)
                 except AttributeError:
                     pass
         self._queue = []
         self._transaction_done = True
 
-    def push(self, ob, idxs=[], with_security=0, **kw):
+    def abort(self, transaction):
+        self._queue = []
+        self._transaction_done = True
+
+    def push(self, ob, idxs=None, with_security=0, **kw):
         """Add / update an object to reindex within the queue
 
         Cope with security reindexation as well.
         """
 
+        ##LOG("IndexationManager.push()" , DEBUG, repr(ob))
+
         _objects = self._getObjectsInQueue()
 
         if ob not in _objects:
-
             struct = {
                 'object':ob,
                 'idxs' : idxs,
                 'with_security':with_security,
                 }
-
-            if not with_security:
-                struct['reindex'] = 1
-            else:
-                struct['reindex'] = 0
-
+            struct['reindex'] = idxs is not None and True or False
+            ##LOG("Struct---------", DEBUG, str(struct))
             self._queue.append(struct)
         else:
             struct = self._queue[_objects.index(ob)]
 
-            if idxs:
-                struct['reindex'] = 1
-            for idx in idxs:
-                if idx not in struct['idxs']:
-                    struct['idxs'].append(idx)
+            if not struct['reindex']:
+                struct['reindex'] = idxs is not None and True or False
 
-            if with_security and not struct['with_security']:
-                struct['with_security'] = 1
-                struct['idxs'].append('allowedRolesAndUsers')
+            if struct['idxs'] and idxs is not None:
+                for idx in idxs:
+                    if idx not in struct['idxs']:
+                        struct['idxs'].append(idx)
+            elif idxs == []:
+                struct['idxs'] = []
 
-            #self._queue.append(old_struct)
-
+            if with_security:
+                struct['with_security'] = with_security
+            ##LOG("Struct---------", DEBUG, str(struct))
 
 ###################################################
 # Register Subscribers
 ###################################################
 
+TCRegistry = TCSubscribersRegistry()
+
+# Indexation Manager
 IndexationManager = IndexationManagerTCSubscriber()
-IndexationManager.register()
+
+TCRegistry.register(IndexationManager)

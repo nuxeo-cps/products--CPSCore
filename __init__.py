@@ -64,6 +64,7 @@ import CPSRegistrationTool
 import OrderedFolderSupportPatch
 import CopyrightPatch
 
+import PatchZODB
 import TransactionCommitSubscribers
 
 import ProxyBase
