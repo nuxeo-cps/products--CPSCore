@@ -35,7 +35,7 @@ from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
-from Products.CPSCore.cpsutils import _isinstance
+from Products.CPSCore.utils import _isinstance
 
 from Products.NuxUserGroups.CatalogToolWithGroups import mergedLocalRoles
 from Products.CPSCore.ProxyBase import ProxyBase

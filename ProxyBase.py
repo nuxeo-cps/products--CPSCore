@@ -34,7 +34,7 @@ from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.CMFCorePermissions import ViewManagementScreens
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
-from Products.CPSCore.cpsutils import _isinstance
+from Products.CPSCore.utils import _isinstance
 
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder

@@ -33,7 +33,7 @@ from Products.CMFCore.CMFCorePermissions import ManagePortal
 from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
-from Products.CPSCore.cpsutils import _isinstance
+from Products.CPSCore.utils import _isinstance
 
 from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolderishDocument
 from Products.CPSCore.CPSWorkflow import TRANSITION_ALLOWSUB_CREATE

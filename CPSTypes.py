@@ -34,7 +34,7 @@ from OFS.CopySupport import CopyError, _cb_decode, sanity_check
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
-from Products.CPSCore.cpsutils import _isinstance
+from Products.CPSCore.utils import _isinstance
 try:
     from Products.CPSDocument.FlexibleTypeInformation import FlexibleTypeInformation
 except ImportError:

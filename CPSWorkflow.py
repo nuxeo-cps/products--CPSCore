@@ -41,7 +41,7 @@ from Products.DCWorkflow.Expression import StateChangeInfo
 from Products.DCWorkflow.Expression import createExprContext
 
 from Products.CPSCore.EventServiceTool import getEventService
-from Products.CPSCore.cpsutils import _isinstance
+from Products.CPSCore.utils import _isinstance
 from Products.CPSCore.ProxyBase import ProxyBase
 
 #TRANSITION_BEHAVIOR_SUBCREATE = 1
