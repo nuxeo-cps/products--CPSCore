@@ -1,4 +1,4 @@
-# (C) Copyright 2002 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
 # Authors: Julien Jalon <jj@nuxeo.com>
 #          Florent Guillaume <fg@nuxeo.com>
 #

@@ -1,4 +1,4 @@
-# (C) Copyright 2002 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -97,26 +97,29 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """
         return self._hubid_to_info.items()
 
-    security.declarePrivate('getMatchedObject')
-    def getMatchedObject(self, hubid, lang=None):
+    security.declarePrivate('getContent')
+    def getContent(self, hubid, lang=None, editable=0):
+        # XXX should this take a hubid or a proxy as argument?
         """Get the object best matched by a given proxy.
 
         Returns an object, or None if there is no match.
         If lang is not passed, takes into account the user language.
+
+        If editable, the returned content must be an unfrozen version,
+        so a cloning and a version upgrade may happen behind the scene.
+
+        (Called by ProxyBase.)
         """
-        repotool = getToolByName(self, 'portal_repository', None)
-        if repotool is None:
-            LOG('ProxyTool', ERROR, 'No portal_repository found')
-            return None
+        repotool = getToolByName(self, 'portal_repository')
         if not self._hubid_to_info.has_key(hubid):
             LOG('ProxyTool', ERROR, 'Getting unknown hubid %s' % hubid)
             return None
-        (repoid, version_infos) = self._hubid_to_info[hubid]
+        repoid, version_infos = self._hubid_to_info[hubid]
         if lang is None:
             # XXX get preferred language here - abstract the negociation
             # XXX use Localizer methods
             lang = '*'
-        # Find version
+        # Find version to use.
         if version_infos.has_key(lang):
             version_info = version_infos[lang]
         elif version_infos.has_key('*'):
@@ -124,6 +127,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         else:
             LOG('ProxyTool', DEBUG, 'Found no matching version for hubid %s, repoid %s, lang %s, infos %s' % (hubid, repoid, pref_lang, version_infos))
             return None
+        if editable:
+            version_info = repotool.getUnfrozenVersion(repoid, version_info)
         return repotool.getObjectVersion(repoid, version_info)
 
     security.declarePrivate('getMatchingProxies')
@@ -142,11 +147,28 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                     infos.setdefault(hubid, []).append(lang)
         return infos
 
+    security.declarePrivate('freezeProxy')
+    def freezeProxy(self, hubid):
+        """Freeze a proxy.
+
+        (Called by ProxyBase.)
+        """
+        LOG('ProxyTool', DEBUG, 'Freezeing hubid=%s' % hubid)
+        if not self._hubid_to_info.has_key(hubid):
+            LOG('ProxyTool', ERROR, 'Getting unknown hubid %s' % hubid)
+            raise ValueError(hubid)
+        repoid, version_infos = self._hubid_to_info[hubid]
+        repotool = getToolByName(self, 'portal_repository')
+        for lang, version_info in version_infos.items():
+            LOG('ProxyTool', DEBUG, ' Freezeing repoid=%s v=%s'
+                % (repoid, version_info))
+            repotool.freezeVersion(repoid, version_info)
+
     security.declarePrivate('setSecurity')
     def setSecurity(self, secinfo):
         """Apply the security to the matching objects."""
         LOG('ProxyTool', ERROR, 'setSecurity not implemented')
-        return
+        raise NotImplementedError # XXX
 
     #
     # Internal

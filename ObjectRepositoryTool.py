@@ -1,4 +1,4 @@
-# (C) Copyright 2002 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -18,17 +18,22 @@
 # $Id$
 
 from zLOG import LOG, ERROR, DEBUG
+import sys
 import random
 from Globals import InitializeClass
 from Acquisition import aq_base
 from AccessControl import ClassSecurityInfo
 
+from OFS.CopySupport import CopyError
+
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
+from Products.DCWorkflow.utils import modifyRolesForPermission
 
 from Products.NuxCPS3.CPSWorkflowTool import CPSWorkflowConfig_id
 
@@ -82,6 +87,8 @@ class ObjectRepository(UniqueObject, PortalFolder):
         If repoid is None, a new one is generated
         If version_info is None, 1 is used.
         Returns the used repoid and version.
+
+        (Called by the proxy tool.)
         """
         if version_info is None:
             version_info = 1
@@ -173,6 +180,63 @@ class ObjectRepository(UniqueObject, PortalFolder):
             version_infos.append(version_info)
         return version_infos
 
+    security.declarePrivate('freezeVersion')
+    def freezeVersion(self, repoid, version_info):
+        """Freeze a version of a document.
+
+        Any modification to a frozen version should be forbidden by the
+        rest of the system.
+
+        There's no way to unfreeze a version without cloning it.
+
+        (Called by ProxyTool.)
+        """
+        ob = self.getObjectVersion(repoid, version_info)
+        # Don't write to ZODB if already frozen.
+        if not getattr(aq_base(ob), '_cps_frozen', 0):
+            ob._cps_frozen = 1
+            # Unacquire modification permission.
+            modifyRolesForPermission(ob, ModifyPortalContent, ('Manager',))
+
+    security.declarePrivate('isVersionFrozen')
+    def isVersionFrozen(self, repoid, version_info):
+        """Is a version frozen?"""
+        ob = self.getObjectVersion(repoid, version_info)
+        return not not ob._cps_frozen
+
+    security.declarePrivate('copyVersion')
+    def copyVersion(self, repoid, version_info):
+        """Copy a version of an object into a new version.
+
+        Return the newly created (unfrozen) version.
+        """
+        ob = self.getObjectVersion(repoid, version_info)
+        newv = version_info + 1
+        while 1:
+            # Find a free version
+            newid = self._get_id(repoid, newv)
+            if not hasattr(self, newid):
+                break
+            newv += 1
+        self.copyContent(ob, newid)
+        ob._cps_frozen = 0
+        # Reset (acquire) modification permission.
+        modifyRolesForPermission(ob, ModifyPortalContent, [])
+        # XXX add some info to the history
+        return newv
+
+    security.declarePrivate('getUnfrozenVersion')
+    def getUnfrozenVersion(self, repoid, version_info):
+        """Return the version of an unfrozen version of an object.
+
+        (Called by the proxy tool.)
+        """
+        ob = self.getObjectVersion(repoid, version_info)
+        if not getattr(aq_base(ob), '_cps_frozen', 0):
+            return version_info
+        newv = self.copyVersion(repoid, version_info)
+        return newv
+
     #
     # Misc
     #
@@ -229,7 +293,6 @@ class ObjectRepository(UniqueObject, PortalFolder):
     def constructContent(self, type_name, id, *args, **kw):
         """Construct an CMFish object without all the security checks.
 
-        Returns the object's id.
         The object is constructed in the repository.
         """
         ttool = getToolByName(self, 'portal_types')
@@ -249,7 +312,29 @@ class ObjectRepository(UniqueObject, PortalFolder):
                              (type_name, id, ob.getId()))
         ob._setPortalTypeName(type_name)
         ob.reindexObject(idxs=['portal_type', 'Type'])
-        return id
+
+    security.declarePrivate('copyContent')
+    def copyContent(self, ob, id):
+        """Copy an object without all the security checks.
+
+        The object is cloned into the repository.
+        """
+        if not ob.cb_isCopyable():
+            raise CopyError, 'Copy not supported: %s' % ob.getId()
+        try:
+            self._checkId(id)
+        except: # Huh, stupid string exceptions...
+            raise CopyError, 'Invalid id: %s' % (id,)
+        try:
+            ob._notifyOfCopyTo(self, op=0)
+        except:
+            raise CopyError, 'Clone Error: %s' % (sys.exc_info()[1],)
+        ob = ob._getCopy(self)
+        ob._setId(id)
+        self._setObject(id, ob)
+        ob = self._getOb(id)
+        ob.manage_afterClone(ob)
+        return ob
 
     #
     # ZMI

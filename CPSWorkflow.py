@@ -1,4 +1,4 @@
-# (C) Copyright 2002 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -45,6 +45,7 @@ TRIGGER_CREATION = 10
 TRANSITION_BEHAVIOR_NORMAL = 0
 TRANSITION_BEHAVIOR_SUBCREATE = 1
 TRANSITION_BEHAVIOR_CLONE = 2
+TRANSITION_BEHAVIOR_FREEZE = 3
 
 
 class CPSStateDefinition(DCWFStateDefinition):
@@ -53,6 +54,10 @@ class CPSStateDefinition(DCWFStateDefinition):
 
 class CPSStates(DCWFStates):
     meta_type = 'CPS Workflow States'
+
+    all_meta_types = ({'name':CPSStateDefinition.meta_type,
+                       'action':'addState',
+                       },)
 
     def addState(self, id, REQUEST=None):
         """Add a new state to the workflow."""
@@ -104,6 +109,10 @@ class CPSTransitionDefinition(DCWFTransitionDefinition):
 
 class CPSTransitions(DCWFTransitions):
     meta_type = 'CPS Workflow Transitions'
+
+    all_meta_types = ({'name':CPSTransitionDefinition.meta_type,
+                       'action':'addTransition',
+                       },)
 
     def addTransition(self, id, REQUEST=None):
         """Add a new transition to the workflow."""
@@ -203,7 +212,7 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
 
         # Figure out the old and new states.
         old_sdef = self._getWorkflowStateOf(ob)
-        ### CPS modification
+        ### CPS: Allow creation transitions to have no old state.
         #
         if old_sdef is not None:
             old_state = old_sdef.getId()
@@ -212,8 +221,10 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         #
         ###
         if tdef is None:
-            new_state = self.initial_state
-            former_status = {}
+            # CPS: tdef is never None for CPSWorkflow
+            raise WorkflowException('No transition!')
+            #new_state = self.initial_state
+            #former_status = {}
         else:
             new_state = tdef.new_state_id
             if not new_state:
@@ -224,6 +235,27 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
         if new_sdef is None:
             raise WorkflowException, (
                 'Destination state undefined: ' + new_state)
+
+        ### CPS: Behavior.
+        #
+        LOG('CPSWorkflow', DEBUG, 'Behavior in wf %s, trans %s: %s'
+            % (self.getId(), tdef.getId(), tdef.transition_behavior))
+        if tdef.transition_behavior == TRANSITION_BEHAVIOR_CLONE:
+            # Clone the object.
+            clone_data = kwargs.get('clone_data')
+            if clone_data is None:
+                raise WorkflowException('Missing clone_data for clone '
+                                        'transition %s' % tdef.getid())
+            wftool = aq_parent(aq_inner(self))
+            portal = aq_parent(aq_inner(wftool))
+            for container_path, creation_transitions in clone_data.items():
+                container = portal.restrictedTraverse(container_path)
+                wftool.cloneObject(ob, container, creation_transitions)
+        elif tdef.transition_behavior == TRANSITION_BEHAVIOR_FREEZE:
+            # Freeze the object.
+            ob.freezeProxy()
+        #
+        ###
 
         # Execute the "before" script.
         if tdef is not None and tdef.script_name:

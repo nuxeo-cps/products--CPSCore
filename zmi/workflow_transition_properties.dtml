@@ -98,6 +98,15 @@ Initiated by WorkflowMethod
 <tr>
 <th></th>
 <td>
+  <input type="radio" name="transition_behavior:int" value="3"
+      <dtml-if "transition_behavior == 3">checked</dtml-if> />
+    Freeze object
+</td>
+</tr>
+
+<tr>
+<th></th>
+<td>
   <input type="radio" name="transition_behavior:int" value="2"
       <dtml-if "transition_behavior == 2">checked</dtml-if> />
     Clone, with initial transitions

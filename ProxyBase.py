@@ -1,4 +1,4 @@
-# (C) Copyright 2002 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@ from AccessControl import ClassSecurityInfo
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import AccessContentsInformation
+from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
 
 from Products.NuxCPS3.CPSBase import CPSBaseFolder
 from Products.NuxCPS3.CPSBase import CPSBaseDocument
@@ -42,6 +43,10 @@ class ProxyBase(Base):
     def __init__(self, repoid, version_infos):
         self._repoid = repoid
         self._version_infos = version_infos
+
+    #
+    # API
+    #
 
     security.declarePrivate('setVersionInfos')
     def setVersionInfos(self, version_infos):
@@ -65,21 +70,50 @@ class ProxyBase(Base):
 
     security.declareProtected(AccessContentsInformation, 'getContent')
     def getContent(self, lang=None):
-        """Return the content object referred to by this proxy."""
+        """Return the content object referred to by this proxy.
+
+        The returned object may depend on the current language.
+        """
+        return self._getContent(lang=lang)
+
+    security.declareProtected(ModifyPortalContent, 'getEditableContent')
+    def getEditableContent(self, lang=None):
+        """Return the editable content object referred to by this proxy.
+
+        The returned object may depend on the current language.
+        """
+        return self._getContent(lang=lang, editable=1)
+
+    def _getContent(self, lang=None, editable=0):
+        """Get the content object, maybe editable."""
         pxtool = getToolByName(self, 'portal_proxies', None)
         if pxtool is None:
-            LOG('ProxyBase', DEBUG, 'No portal_proxies found')
+            LOG('ProxyBase', ERROR, 'No portal_proxies found')
             return None
         hubtool = getToolByName(self, 'portal_eventservice', None)
         if hubtool is None:
-            LOG('ProxyBase', DEBUG, 'No portal_eventservice found')
+            LOG('ProxyBase', ERROR, 'No portal_eventservice found')
             return None
         hubid = hubtool.getHubId(self)
         if hubid is None:
-            LOG('ProxyBase', ERROR,
-                'No hubid found for %s' % '/'.join(self.getPhysicalPath()))
+            LOG('ProxyBase', ERROR, 'No hubid found for proxy object %s'
+                % '/'.join(self.getPhysicalPath()))
             return None
-        return pxtool.getMatchedObject(hubid, lang=lang)
+        return pxtool.getContent(hubid, lang=lang, editable=editable)
+
+    security.declarePrivate('freezeProxy')
+    def freezeProxy(self):
+        """Freeze the proxy.
+
+        Any modification to a frozen version should be forbidden by the
+        rest of the system.
+
+        (Called by CPSWorkflow.)
+        """
+        hubtool = getToolByName(self, 'portal_eventservice')
+        hubid = hubtool.getHubId(self)
+        pxtool = getToolByName(self, 'portal_proxies')
+        pxtool.freezeProxy(hubid)
 
     #
     # Helpers

@@ -29,6 +29,8 @@
      <dtml-elif "transition_behavior == 2">
        Clone; Allowed transitions:
        <code><dtml-var "', '.join(clone_allowed_transitions)" html_quote></code>
+     <dtml-elif "transition_behavior == 3">
+       Freeze object
      </dtml-if>
      <br />
    </dtml-if>

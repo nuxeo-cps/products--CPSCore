@@ -1,4 +1,4 @@
-# (C) Copyright 2002 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -98,6 +98,29 @@ class CPSWorkflowTool(WorkflowTool):
             creation_transitions[wf_id] = transitions
         return creation_transitions
 
+    def _getAllCreationTransitions(self, container, type_name,
+                                   creation_transitions):
+        """Get all the creation transitions that will be used."""
+        allowed = self.getCreationTransitions(container, type_name)
+        all_transitions = {}
+        for wf_id, transitions in allowed.items():
+            if not creation_transitions.has_key(wf_id):
+                if not transitions:
+                    raise WorkflowException(
+                        "Workflow %s does not allow creation of %s"
+                        % (wf_id, type_name))
+                # Use first default if nothing specified
+                # XXX parametrize this default ?
+                transition = transitions[0]
+            else:
+                transition = creation_transitions.get(wf_id)
+                if transition not in transitions:
+                    raise WorkflowException(
+                        "Workflow %s cannot create %s using transition %s"
+                        % (wf_id, type_name, transition))
+            all_transitions[wf_id] = transition
+        return all_transitions
+
     security.declarePublic('invokeFactoryFor')
     def invokeFactoryFor(self, container, type_name, id,
                          creation_transitions={},
@@ -115,6 +138,45 @@ class CPSWorkflowTool(WorkflowTool):
         LOG('invokeFactoryFor', DEBUG, 'Called with container=%s type_name=%s '
             'id=%s creation_transitions=%s' % (container.getId(), type_name,
                                                id, creation_transitions))
+        ob = self._createObject(container, id,
+                                creation_transitions=creation_transitions,
+                                do_clone=0, type_name=type_name,
+                                *args, **kw)
+        return ob.getId()
+
+    security.declarePrivate('cloneObject')
+    def cloneObject(self, ob, container, creation_transitions):
+        """Clone ob into container according to some creation transitions.
+
+        (Called by a CPS workflow during clone transition.)
+        """
+        LOG('cloneObject', DEBUG, 'Called with ob=%s container=%s '
+            'creation_transitions=%s' % (ob.getId(), container.getId(),
+                                         creation_transitions))
+        # Find a new id...
+        base_container = aq_base(container)
+        id = ob.getId()
+        if hasattr(base_container, id):
+            # Collision, find a free one.
+            i = 0
+            while 1:
+                i += 1
+                try_id = '%s_%d' % (id, i)
+                if not hasattr(base_container, try_id):
+                    id = try_id
+                    break
+        new_ob = self._createObject(container, id,
+                                    creation_transitions=creation_transitions,
+                                    do_clone=1, old_ob=ob)
+        return
+
+    def _createObject(self, container, id, creation_transitions={},
+                      do_clone=0, type_name=None, old_ob=None,
+                      *args, **kw):
+        """Create an object in a container, maybe by cloning."""
+        LOG('_createObject', DEBUG, 'Called with container=%s id=%s '
+            'creation_transitions=%s' % (container.getId(), id,
+                                         creation_transitions))
         # Check that the workflows of the container allow subobject creation.
         ok, why = self.isCreationAllowedIn(container, get_details=1)
         if not ok:
@@ -125,25 +187,12 @@ class CPSWorkflowTool(WorkflowTool):
             raise WorkflowException("Container %s does not allow "
                                     "subobject creation (%s)" %
                                     (container.getId(), details))
+        # Find type to create.
+        if do_clone:
+            type_name = old_ob.getPortalTypeName()
         # Find the transitions to use.
-        allowed = self.getCreationTransitions(container, type_name)
-        use_transitions = {}
-        for wf_id, transitions in allowed.items():
-            if not creation_transitions.has_key(wf_id):
-                if not transitions:
-                    raise WorkflowException(
-                        "Workflow %s does not allow creation of %s"
-                        % (wf_id, type_name))
-                # Use first default if nothing specified
-                # XXX parametrize this default ?
-                transition = transitions[0]
-            else:
-                transition = creation_transitions.get(wf_id)
-                if transition not in transitions:
-                    raise WorkflowException(
-                        "Workflow %s cannot create %s using transition %s"
-                        % (wf_id, type_name, transition))
-            use_transitions[wf_id] = transition
+        all_transitions = self._getAllCreationTransitions(container, type_name,
+                                                          creation_transitions)
         # Find out if we must create a normal document or a proxy.
         # XXX determine what's the best way to parametrize this
         proxy_type = None
@@ -154,31 +203,37 @@ class CPSWorkflowTool(WorkflowTool):
             proxy_type = ti.getActionById('isproxytype', None)
             if proxy_type is not None:
                 break
-        # Creation.
-        if proxy_type is not None:
-            # Create a proxy and a document in the repository.
-            pxtool = getToolByName(self, 'portal_proxies')
-            ob = pxtool.createProxy(proxy_type, container, type_name, id,
-                                    *args, **kw)
+        # Creation or cloning.
+        if do_clone:
+            container.manage_clone(old_ob, id)
+            ob = container._getOb(id)
         else:
-            # Create a normal CMF document.
-            # Note: this calls wf.notifyCreated() for all wf!
-            container.invokeFactoryCMF(type_name, id, *args, **kw)
-            # XXX should get new id effectively used! CMFCore bug!
-            ob = container[id]
+            if proxy_type is not None:
+                # Create a proxy and a document in the repository.
+                pxtool = getToolByName(self, 'portal_proxies')
+                ob = pxtool.createProxy(proxy_type, container, type_name, id,
+                                        *args, **kw)
+            else:
+                # Create a normal CMF document.
+                # Note: this calls wf.notifyCreated() for all wf!
+                container.invokeFactoryCMF(type_name, id, *args, **kw)
+                # XXX should get new id effectively used! CMFCore bug!
+                ob = container[id]
         # Do creation transitions for all workflows.
         reindex = 0
-        for wf_id, transition in use_transitions.items():
+        for wf_id, transition in all_transitions.items():
             wf = self.getWorkflowById(wf_id)
             wf.notifyCreated(ob, creation_transition=transition)
             reindex = 1
         if reindex:
             self._reindexWorkflowVariables(ob)
-        return id
+        return ob.getId()
+
 
     security.declarePublic('getCloneAllowedTransitions')
     def getCloneAllowedTransitions(self, ob, tid):
         """Get the list of allowed initial transitions for clone."""
+        # XXX rethink this in the presence of chains with several wfs.
         res = []
         wf_ids = self.getChainFor(ob)
         for wf_id in wf_ids:
