@@ -299,6 +299,27 @@ class CPSMembershipTool(MembershipTool):
                                      member_id=member_id,
                                      member_folder=member_folder)
 
+    # Overloaded to do folder access through getattr.
+    security.declarePublic('getHomeFolder')
+    def getHomeFolder(self, id=None, verifyPermission=0):
+        """Return a member's home folder object, or None."""
+        if id is None:
+            member = self.getAuthenticatedMember()
+            if not hasattr(member, 'getMemberId'):
+                return None
+            id = member.getMemberId()
+        members = self.getMembersFolder()
+        if members:
+            try:
+                folder = getattr(members, id)
+                if verifyPermission and not _checkPermission('View', folder):
+                    # Don't return the folder if the user can't get to it.
+                    return None
+                return folder
+            except AttributeError:
+                pass
+        return None
+
     security.declarePrivate('listActions')
     def listActions(self, info=None):
         """List actions available through the tool."""
