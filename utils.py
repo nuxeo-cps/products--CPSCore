@@ -43,6 +43,7 @@ from AccessControl.PermissionRole import rolesForPermissionOn
 from Products import CMFCore
 from DateTime.DateTime import DateTime
 from random import randrange
+from types import ListType
 import re
 
 #
@@ -223,6 +224,7 @@ def isUserAgentMsie(request):
     if user_agent.find('MSIE') != -1:
         return 1
     else:
+        
         return 0
 
 def resetSessionLanguageSelection(request):
@@ -231,3 +233,47 @@ def resetSessionLanguageSelection(request):
         del request.SESSION[SESSION_LANGUAGE_KEY]
     except KeyError:
         pass
+
+def manageCPSLanguage(context, **kw):
+    """@summary: Manage available a languages in a CPS portal with Localizer"""
+
+    action = kw.get('action')
+    languages = kw.get('languages')
+    lang = kw.get('language')
+    catalogs = context.Localizer.objectValues()
+    catalogs.append(context.Localizer)
+    portal = context.portal_url.getPortalObject()
+
+    if not isinstance(languages, ListType):
+        languages = [languages]
+
+    if languages is None and action in ('add', 'delete'):
+        psm = 'psm_language_error_select_at_least_one_item'
+
+    elif action == 'add':
+        # Make languages available in Localizer
+        for lang in languages:
+            for catalog in catalogs:
+                catalog.manage_addLanguage(lang)
+
+        # XXX needs a tools to register po files for domains
+        # Update Localizer/default only !
+        i18n_method = getattr(portal,'i18n Updater')
+        i18n_method()
+        psm = 'psm_language_added'
+
+    elif action == 'delete':
+        # Make unavailable languages in Localizer
+        for catalog in catalogs:
+            catalog.manage_delLanguages(languages)
+        psm = 'psm_language_deleted'
+
+    elif action == 'chooseDefault':
+        for catalog in catalogs:
+            catalog.manage_changeDefaultLang(lang)
+        psm = 'psm_default_language_set'
+
+    else:
+        psm = ''
+
+    return psm
