@@ -248,10 +248,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 'getContent editable, rev=%s -> %s' % (rev, newrev))
 
             if newrev != rev:
-                # XXX what do we do if there's a tag?
-                # XXX - forbid it ?
-                # XXX - inc tag ?
-
                 proxy.setLanguageRevision(lang, newrev)
                 proxy.proxyChanged()
 
