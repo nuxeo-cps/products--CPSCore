@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- fix P1 #368: Republishing a folderishdocument does not update subdocuments.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
