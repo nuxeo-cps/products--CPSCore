@@ -6,8 +6,9 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Fix CMF security problem on searchMembers.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - README updated
-- TreesTool : minor spelling mistake that has been hanging around for too long...
+- TreesTool: minor spelling mistake that has been hanging around for too
+  long...
