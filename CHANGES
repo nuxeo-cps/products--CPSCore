@@ -7,7 +7,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Creating calendar during member area creation needs Manager privileges.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - MemberArea creation is now CMF 1.5 compatible, and not done automatically
