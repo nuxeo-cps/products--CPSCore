@@ -1,5 +1,6 @@
+# -*- coding: iso-8859-15 -*-
 # (C) Copyright 2004 Nuxeo SARL <http://nuxeo.com>
-# Authors: Marc-Aurèle Darche <mad@nuxeo.com>
+# Authors: Marc-Aurèle Darche <madarche@nuxeo.com>
 #          Hervé Cauwelier <hc@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
