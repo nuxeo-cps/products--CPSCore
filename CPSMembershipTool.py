@@ -280,7 +280,7 @@ class CPSMembershipTool(MembershipTool):
 
         # Create member area.
         members.invokeFactory(self.memberfolder_portal_type, member_id)
-        f = getattr(members, member_id)
+        f = members._getOb(member_id)
         # TODO set workspace properties ? title ..
         f.changeOwnership(member)
         f.manage_setLocalRoles(member_id, list(self.memberfolder_roles))
@@ -324,7 +324,7 @@ class CPSMembershipTool(MembershipTool):
                                      member_id=member_id,
                                      member_folder=member_folder)
 
-    # Overloaded to do folder access through getattr.
+    # Overloaded to do folder access through _getOb.
     security.declarePublic('getHomeFolder')
     def getHomeFolder(self, id=None, verifyPermission=0):
         """Return a member's home folder object, or None."""
@@ -336,7 +336,7 @@ class CPSMembershipTool(MembershipTool):
         members = self.getMembersFolder()
         if members:
             try:
-                folder = getattr(members, id)
+                folder = members._getOb(id)
                 if verifyPermission and not _checkPermission('View', folder):
                     # Don't return the folder if the user can't get to it.
                     return None
