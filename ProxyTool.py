@@ -32,11 +32,11 @@ from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import _checkPermission
+from Products.CMFCore.utils import mergedLocalRoles
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
 from Products.CPSCore.utils import _isinstance
-from Products.CPSCore.utils import mergedLocalRoles
 from Products.CPSCore.ProxyBase import ProxyBase
 from Products.CPSCore.EventServiceTool import getEventService
 
