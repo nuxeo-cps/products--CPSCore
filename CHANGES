@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Correctly reindex the language after setting it on a newly created object.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
