@@ -215,21 +215,23 @@ class EventServiceTool(UniqueObject, Folder):
         portal = aq_parent(aq_inner(self))
         for ev_type in (event_type, '*'):
             event_def = notification_dict.get(ev_type)
-            if event_def is not None:
-                for me_type in (object.meta_type, '*'):
-                    type_def = event_def.get(me_type)
-                    if type_def is not None:
-                        not_def = type_def.get('synchronous')
-                        if not_def is not None:
-                            for sub_def in not_def:
-                                subscriber_id = sub_def['subscriber']
-                                action = sub_def['action']
-                                subscriber = getattr(
-                                    portal, subscriber_id, None
-                                )
-                                if subscriber is not None:
-                                    meth = getattr(subscriber, action)
-                                    meth(event_type, object, infos)
+            if event_def is None:
+                continue
+            for me_type in (object.meta_type, '*'):
+                type_def = event_def.get(me_type)
+                if type_def is None:
+                    continue
+                not_def = type_def.get('synchronous')
+                if not_def is None:
+                    continue
+                for sub_def in not_def:
+                    subscriber_id = sub_def['subscriber']
+                    subscriber = getattr(portal, subscriber_id, None)
+                    if subscriber is None:
+                        continue
+                    action = sub_def['action']
+                    meth = getattr(subscriber, action)
+                    meth(event_type, object, infos)
 
     #
     # ObjectHub API
@@ -331,7 +333,10 @@ class EventServiceTool(UniqueObject, Folder):
         return index
 
     def _objecthub_notify(self, event_type, object, infos):
-        """Treat an event from the object hub's point of view."""
+        """Treat an event from the object hub's point of view.
+
+        Returns the hubid of the impacted object.
+        """
         location = '/'.join(object.getPhysicalPath())
         rlocation = self._get_rlocation(location)
         if rlocation is None:
