@@ -145,7 +145,7 @@ Proxies, document repository and workflows
     can be created and worked upon easily by the members.
 
     To create a placeful workflow configuration, a 'CPS Workflow
-    Configuration' object must be crated in the ZMI. It's then possible
+    Configuration' object must be created in the ZMI. It's then possible
     to define for each portal type what workflow it has to follow.
 
     When a workflow is configured in a folder, it applies to the folder
