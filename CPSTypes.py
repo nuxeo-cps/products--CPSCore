@@ -35,13 +35,6 @@ from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 from Products.CPSCore.utils import _isinstance
-try:
-    from Products.CPSDocument.FlexibleTypeInformation \
-        import FlexibleTypeInformation
-except ImportError:
-    LOG('CPSCore', INFO, 'No CPSDocument found, ignoring type.')
-    class FlexibleTypeInformation:
-        pass
 
 
 class TypeConstructor(Base):
@@ -101,10 +94,6 @@ class TypeConstructor(Base):
         constr = aq_base(constr).__of__(self)
         return constr(self, id, *args, **kw)
 
-    def _constructInstance_flexti(self, ti, id, *args, **kw):
-        container = self
-        return ti._constructInstance(container, id, *args, **kw)
-
     security.declarePrivate('constructContent')
     def constructContent(self, type_name, id, final_type_name=None,
                          *args, **kw):
@@ -118,12 +107,13 @@ class TypeConstructor(Base):
         ti = ttool.getTypeInfo(type_name)
         if ti is None:
             raise ValueError('No type information for %s' % type_name)
-        if _isinstance(ti, FactoryTypeInformation):
+        if hasattr(aq_base(ti), '_constructInstance'):
+            # New API for CPS.
+            ob = ti._constructInstance(self, id, *args, **kw)
+        elif _isinstance(ti, FactoryTypeInformation):
             ob = self._constructInstance_fti(ti, id, *args, **kw)
         elif _isinstance(ti, ScriptableTypeInformation):
             ob = self._constructInstance_sti(ti, id, *args, **kw)
-        elif _isinstance(ti, FlexibleTypeInformation):
-            ob = self._constructInstance_flexti(ti, id, *args, **kw)
         else:
             raise ValueError('Unknown type information class for %s' %
                              type_name)
@@ -246,7 +236,7 @@ class TypeContainer(Base):
                 ob._notifyOfCopyTo(self, op=0)
                 ob = ob._getCopy(self)
                 id = self._get_id(orig_id)
-                result.append({'id': orig_id, 'new_id':id})
+                result.append({'id': orig_id, 'new_id': id})
                 ob._setId(id)
                 self._setObject(id, ob)
                 ob = self._getOb(id)
