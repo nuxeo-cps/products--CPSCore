@@ -268,8 +268,8 @@ class ActionCallElement(CallElement):
         if callable(meth):
             result = call_meth(meth, self._elements)
             evtool = getEventService(object)
-            evtool.notify(self._method_name, object, None)
+            evtool.notify(self._method_name, object, {})
             return result
         else:
-            evtool.notify(self._method_name, object, None)
+            evtool.notify(self._method_name, object, {})
             return meth
