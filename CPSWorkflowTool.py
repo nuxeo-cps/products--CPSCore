@@ -26,7 +26,6 @@ from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo, Unauthorized
 
 from Products.CMFCore.utils import getToolByName, _checkPermission
-from Products.CMFCore.CMFCorePermissions import AddPortalContent
 from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFCore.WorkflowTool import WorkflowTool
 
@@ -61,6 +60,26 @@ class CPSWorkflowTool(WorkflowTool):
     # API
     #
 
+    security.declarePublic('isCreationAllowedIn')
+    def isCreationAllowedIn(self, container, get_details=0):
+        """Is the creation of a subobject allowed in the container? """
+        wf_ids = self.getChainFor(container)
+        for wf_id in wf_ids:
+            wf = self.getWorkflowById(wf_id)
+            if not hasattr(aq_base(wf), 'isCreationAllowedIn'):
+                # Not a CPS workflow.
+                continue
+            ok, why = wf.isCreationAllowedIn(container, get_details=1)
+            if not ok:
+                if get_details:
+                    return 0, '%s, %s' % (wf_id, why)
+                else:
+                    return 0
+        if get_details:
+            return 1, ''
+        else:
+            return 1
+
     security.declarePublic('getCreationTransitions')
     def getCreationTransitions(self, container, type_name):
         """Get the possible creation transitions in a container.
@@ -73,8 +92,8 @@ class CPSWorkflowTool(WorkflowTool):
         for wf_id in wf_ids:
             wf = self.getWorkflowById(wf_id)
             if not hasattr(aq_base(wf), 'getCreationTransitions'):
-                raise WorkflowException('Workflow %s for %s is not '
-                                        'a CPS workflow.' % (type_name, wf_id))
+                # Not a CPS workflow.
+                continue
             transitions = wf.getCreationTransitions(container)
             creation_transitions[wf_id] = transitions
         return creation_transitions
@@ -90,15 +109,24 @@ class CPSWorkflowTool(WorkflowTool):
         object's workflows.
 
         The object created will be a proxy to a real object if the type
-        type_name has an action of id 'isproxytype' and whose value may
-        be 'document' or 'folder'.
+        type_name has an action of id 'isproxytype' and of action
+        'folder' or 'document'.
         """
-        if not _checkPermission(AddPortalContent, container): # XXX ?
-            raise Unauthorized
-        # XXX Check that the wf of the container allows subobject creation
+        LOG('invokeFactoryFor', DEBUG, 'Called with container=%s type_name=%s '
+            'id=%s creation_transitions=%s' % (container.getId(), type_name,
+                                               id, creation_transitions))
+        # Check that the workflows of the container allow subobject creation.
+        ok, why = self.isCreationAllowedIn(container, get_details=1)
+        if not ok:
+            if why:
+                details = 'not allowed by workflow %s' % why
+            else:
+                details = 'no workflow'
+            raise WorkflowException("Container %s does not allow "
+                                    "subobject creation (%s)" %
+                                    (container.getId(), details))
         # Find the transitions to use.
         allowed = self.getCreationTransitions(container, type_name)
-        LOG('invokeFactoryFor', DEBUG, 'allowed=%s' % (allowed,))
         use_transitions = {}
         for wf_id, transitions in allowed.items():
             if not creation_transitions.has_key(wf_id):
@@ -116,7 +144,6 @@ class CPSWorkflowTool(WorkflowTool):
                         "Workflow %s cannot create %s using transition %s"
                         % (wf_id, type_name, transition))
             use_transitions[wf_id] = transition
-        LOG('invokeFactoryFor', DEBUG, 'use_transitions=%s' % (use_transitions,))
         # Find out if we must create a normal document or a proxy.
         # XXX determine what's the best to parametrize this
         proxy_type = None
@@ -134,7 +161,7 @@ class CPSWorkflowTool(WorkflowTool):
                                     *args, **kw)
         else:
             # Create a normal CMF document.
-            # Note: this calls wf.notifyCreated()!
+            # Note: this calls wf.notifyCreated() for all wf!
             container.invokeFactoryCMF(type_name, id, *args, **kw)
             # XXX should get new id effectively used! CMFCore bug!
             ob = container[id]
@@ -148,6 +175,20 @@ class CPSWorkflowTool(WorkflowTool):
             self._reindexWorkflowVariables(ob)
         return id
 
+    security.declarePublic('getCloneAllowedTransitions')
+    def getCloneAllowedTransitions(self, ob, tid):
+        """Get the list of allowed initial transitions for clone."""
+        res = []
+        wf_ids = self.getChainFor(ob)
+        for wf_id in wf_ids:
+            wf = self.getWorkflowById(wf_id)
+            if not hasattr(aq_base(wf), 'getCloneAllowedTransitions'):
+                # Not a CPS workflow.
+                continue
+            allowed = wf.getCloneAllowedTransitions(ob, tid)
+            res.extend([t for t in allowed if t not in res])
+        return res
+
     #
     # Misc
     #
@@ -157,14 +198,17 @@ class CPSWorkflowTool(WorkflowTool):
         """Return the chain that applies to the given object.
 
         The first argument is either an object or a portal type name.
-        Takes into account placeful workflow definitions.
+        Takes into account placeful workflow definitions, by starting
+        looking for them at the object itself, or in the container
+        if provided.
         """
         if isinstance(ob, StringType):
             pt = ob
         elif hasattr(aq_base(ob), '_getPortalTypeName'):
             pt = ob._getPortalTypeName()
             if container is None:
-                container = aq_parent(aq_inner(ob))
+                #container = aq_parent(aq_inner(ob))
+                container = ob
         else:
             pt = None
         if pt is None:

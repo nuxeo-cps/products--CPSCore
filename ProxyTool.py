@@ -22,6 +22,7 @@
 from zLOG import LOG, ERROR, DEBUG
 from Globals import InitializeClass
 from Globals import PersistentMapping
+from Acquisition import aq_base
 from AccessControl import ClassSecurityInfo
 
 from Products.CMFCore.utils import UniqueObject
@@ -58,6 +59,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         Returns the created proxy object.
         Does not insert the proxy into any workflow.
         """
+        LOG('createProxy', DEBUG, 'Called with proxy_type=%s container=%s '
+            'type_name=%s id=%s' % (proxy_type, container.getId(),
+                                    type_name, id))
         if proxy_type == 'folder':
             proxy_type_name = 'CPS Proxy Folder'
         else:
@@ -71,8 +75,12 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # The proxy is a normal CMF object except that we change its
         # portal_type after construction.
         version_infos = {'*': version_info}
-        container.invokeFactoryCMF(proxy_type_name, id,
-                                   repoid=repoid, version_infos=version_infos)
+        # Note: this calls wf.notifyCreated() for all wf!
+        if hasattr(aq_base(container), 'invokeFactoryCMF'):
+            meth = container.invokeFactoryCMF
+        else:
+            meth = container.invokeFactory
+        meth(proxy_type_name, id, repoid=repoid, version_infos=version_infos)
         # XXX should get new id effectively used! CMFCore bug!
         ob = container[id]
         # Set the correct portal_type for the proxy

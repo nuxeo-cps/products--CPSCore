@@ -19,15 +19,16 @@
    Trigger: <dtml-var expr="(trigger_type == 0 and 'Automatic') or
                             (trigger_type == 1 and 'User action') or
                             (trigger_type == 2 and 'WorkflowMethod') or
-                            (trigger_type == 10 and 'Creation transition')
+                            (trigger_type == 10 and 'Initial transition')
                            ">
    <br />
    <dtml-if transition_behavior>
      Behavior:
      <dtml-if "transition_behavior == 1">
-       Clone; Allowed creation transitions:
+       Allow subobject creation
+     <dtml-elif "transition_behavior == 2">
+       Clone; Allowed transitions:
        <code><dtml-var "', '.join(clone_allowed_transitions)" html_quote></code>
-     <dtml-elif "0">
      </dtml-if>
      <br />
    </dtml-if>

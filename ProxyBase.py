@@ -26,8 +26,8 @@ from AccessControl import ClassSecurityInfo
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCorePermissions import AccessContentsInformation
 
-from Products.NuxCPS3.CPSBase import CPSBaseDocument
 from Products.NuxCPS3.CPSBase import CPSBaseFolder
+from Products.NuxCPS3.CPSBase import CPSBaseDocument
 
 
 class ProxyBase(Base):

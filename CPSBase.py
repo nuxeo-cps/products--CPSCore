@@ -29,8 +29,9 @@ from OFS.ObjectManager import ObjectManager
 from OFS.PropertyManager import PropertyManager
 from OFS.FindSupport import FindSupport
 
-from Products.CMFCore.CMFCorePermissions import View, ModifyPortalContent
-
+from Products.CMFCore.CMFCorePermissions import View, AddPortalContent
+from Products.CMFCore.CMFCorePermissions import ModifyPortalContent
+from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.PortalContent import PortalContent
@@ -114,6 +115,37 @@ class CPSBaseFolder(CPSBaseDocument):
     meta_type = 'CPS Base Folder'
 
     isPrincipiaFolderish = 1
+
+    security = ClassSecurityInfo()
+
+    #
+    # This allows a folderish class to have it do correct CPS creation
+    # when invokeFactory is called.
+    #
+
+    security.declareProtected(AddPortalContent, 'invokeFactory')
+    def invokeFactory(self, type_name, id, RESPONSE=None, *args, **kw):
+        """Create a CMF object in this folder.
+
+        A creation_transitions argument should be passed for CPS
+        object creation.
+        Creation is governed by the workflows allowed by the workflow tool.
+        """
+        wftool = getToolByName(self, 'portal_workflow')
+        newid = wftool.invokeFactoryFor(self, type_name, id, *args, **kw)
+        if RESPONSE is not None:
+            ob = self[newid]
+            ttool = getToolByName(self, 'portal_types')
+            info = ttool.getTypeInfo(type_name)
+            RESPONSE.redirect('%s/%s' % (ob.absolute_url(),
+                                         info.immediate_view))
+        return newid
+
+    security.declarePrivate('invokeFactoryCMF')
+    def invokeFactoryCMF(self, type_name, id, RESPONSE=None, *args, **kw):
+        """Original CMF factory invocation."""
+        return PortalFolder.invokeFactory(self, type_name, id,
+                                          RESPONSE=RESPONSE, *args, **kw)
 
     #
     # ZMI

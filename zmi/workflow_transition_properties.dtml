@@ -38,7 +38,27 @@
 </tr>
 
 <tr>
-<th align="left">Trigger type</th>
+<th align="left">Transition type</th>
+<td>
+<dtml-let checked="trigger_type==1 and 'checked' or ' '">
+<input type="radio" name="trigger_type" value="1" &dtml-checked; />
+Initiated by user action
+</dtml-let>
+</td>
+</tr>
+
+<tr>
+<th></th>
+<td>
+<dtml-let checked="trigger_type==10 and 'checked' or ' '">
+<input type="radio" name="trigger_type" value="10" &dtml-checked; />
+Initial transition
+</dtml-let>
+</td>
+</tr>
+
+<tr>
+<th></th>
 <td>
 <dtml-let checked="trigger_type==0 and 'checked' or ' '">
 <input type="radio" name="trigger_type" value="0" &dtml-checked; />
@@ -50,31 +70,11 @@ Automatic
 <tr>
 <th></th>
 <td>
-<dtml-let checked="trigger_type==10 and 'checked' or ' '">
-<input type="radio" name="trigger_type" value="10" &dtml-checked; />
-Creation transition
-</dtml-let>
-</tr>
-</tr>
-
-<tr>
-<th></th>
-<td>
-<dtml-let checked="trigger_type==1 and 'checked' or ' '">
-<input type="radio" name="trigger_type" value="1" &dtml-checked; />
-Initiated by user action
-</dtml-let>
-</tr>
-</tr>
-
-<tr>
-<th></th>
-<td>
 <dtml-let checked="trigger_type==2 and 'checked' or ' '">
 <input type="radio" name="trigger_type" value="2" &dtml-checked; />
 Initiated by WorkflowMethod
 </dtml-let>
-</tr>
+</td>
 </tr>
 
 <tr>
@@ -91,8 +91,16 @@ Initiated by WorkflowMethod
 <td>
   <input type="radio" name="transition_behavior:int" value="1"
       <dtml-if "transition_behavior == 1">checked</dtml-if> />
-    Clone,
-    with allowed creation transitions
+    Allow subobject creation
+</td>
+</tr>
+
+<tr>
+<th></th>
+<td>
+  <input type="radio" name="transition_behavior:int" value="2"
+      <dtml-if "transition_behavior == 2">checked</dtml-if> />
+    Clone, with initial transitions
     <input type="text" name="clone_allowed_transitions:tokens"
       value="<dtml-var "' '.join(clone_allowed_transitions)" html_quote>" size="30" />
 </td>

@@ -39,10 +39,12 @@ from Products.DCWorkflow.States import States as DCWFStates
 from Products.DCWorkflow.Transitions import TransitionDefinition as DCWFTransitionDefinition
 from Products.DCWorkflow.Transitions import Transitions as DCWFTransitions
 
-
+from Products.DCWorkflow.DCWorkflow import TRIGGER_USER_ACTION
 TRIGGER_CREATION = 10
 
 TRANSITION_BEHAVIOR_NORMAL = 0
+TRANSITION_BEHAVIOR_SUBCREATE = 1
+TRANSITION_BEHAVIOR_CLONE = 2
 
 
 class CPSStateDefinition(DCWFStateDefinition):
@@ -167,36 +169,6 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 "Unauthorized transition %s" % creation_transition)
             raise Unauthorized
         self._changeStateOf(ob, tdef)
-
-    security.declarePrivate('listObjectActions')
-    def listObjectActions(self, info):
-        """List the actions made available to the user through a UI.
-
-        Lists all transitions TRIGGER_USER_ACTION and ... XXX
-        """
-        ob = info.content
-        sdef = self._getWorkflowStateOf(ob)
-        if sdef is None:
-            return None
-        res = []
-        for tid in sdef.transitions:
-            tdef = self.transitions.get(tid, None)
-            if tdef is None:
-                continue
-            if tdef.trigger_type != TRIGGER_USER_ACTION:
-                continue
-            if not tdef.actbox_name:
-                continue
-            if self._checkTransitionGuard(tdef, ob):
-                res.append((tid, {
-                    'id': tid,
-                    'name': tdef.actbox_name % info,
-                    'url': tdef.actbox_url % info,
-                    'permissions': (),  # Predetermined.
-                    'category': tdef.actbox_category}))
-        res.sort()
-        return [val for id, val in res]
-
 
     # XXX update this
     from Products.DCWorkflow.utils import modifyRolesForPermission
@@ -328,9 +300,40 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
     # API
     #
 
+    security.declarePrivate('isCreationAllowedIn')
+    def isCreationAllowedIn(self, ob, get_details=0):
+        """Is the creation of subobjects allowed?"""
+        sdef = self._getWorkflowStateOf(ob)
+        if sdef is None:
+            if get_details:
+                return 0, 'no state'
+            else:
+                return 0
+        res = []
+        for tid in sdef.transitions:
+            tdef = self.transitions.get(tid, None)
+            if tdef is None:
+                continue
+            if tdef.transition_behavior != TRANSITION_BEHAVIOR_SUBCREATE:
+                continue
+            if not self._checkTransitionGuard(tdef, ob):
+                continue
+            if get_details:
+                return 1, ''
+            else:
+                return 1
+        if get_details:
+            return 0, 'state %s has no subcreate transition' % sdef.getId()
+        else:
+            return 0
+
     security.declarePrivate('getCreationTransitions')
     def getCreationTransitions(self, container):
-        """Get the possible creation transitions."""
+        """Get the possible creation transitions according to this
+        workflow.
+
+        The container is the context in which the guard is evaluated.
+        """
         res = []
         for tdef in self.transitions.values():
             if tdef.trigger_type != TRIGGER_CREATION:
@@ -339,6 +342,24 @@ class CPSWorkflowDefinition(DCWorkflowDefinition):
                 continue
             res.append(tdef.getId())
         res.sort()
+        return res
+
+    def getCloneAllowedTransitions(self, ob, tid):
+        """Get the list of allowed initial transitions for clone."""
+        sdef = self._getWorkflowStateOf(ob)
+        if sdef is None:
+            return []
+        res = []
+        for tid in sdef.transitions:
+            tdef = self.transitions.get(tid, None)
+            if tdef is None:
+                continue
+            if tdef.transition_behavior != TRANSITION_BEHAVIOR_CLONE:
+                continue
+            if not self._checkTransitionGuard(tdef, ob):
+                continue
+            allowed = tdef.clone_allowed_transitions
+            res.extend([t for t in allowed if t not in res])
         return res
 
 
