@@ -169,7 +169,11 @@ _translation_table = string.maketrans(
 _ok_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_.'
 
 # TODO: this assumes we're using latin-1
-# TODO: similar code is duplicated in other places (
+# TODO: similar code is duplicated in other places
+# (./CPSDefault/skins/cps_default/computeId.py,
+# ./CPSForum/skins/forum_default/forum_create.py, ./CPSSchemas/BasicWidgets.py,
+# ./CPSWebMail/Attachment.py...)
+
 def makeId(s, lower=0):
     "Make id from string"
     id = s.translate(_translation_table)
