@@ -6,7 +6,10 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- In FileDownloader, using the edit() if the considered document is a
+  CPSDocument. We must method since this method does important things such as
+  setting dirty flags on modified fields.
+
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Small details changed in zmi/repo_repoInfo.dtml.

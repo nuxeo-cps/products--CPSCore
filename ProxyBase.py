@@ -672,7 +672,16 @@ class FileDownloader(Acquisition.Explicit):
             raise 'BadRequest', "Cannot PUT with state != 2"
         document = self.proxy.getEditableContent()
         file = getattr(document, self.attrname)
-        return file.PUT(REQUEST, RESPONSE)
+        response = file.PUT(REQUEST, RESPONSE)
+        # If the considered document is a CPSDocument we must use the edit()
+        # method since this method does important things such as setting dirty
+        # flags on modified fields.
+        # XXX: Note that using edit() modifies the file attribute twice.
+        # We shouldn't use the file.PUT() method but it is helpful to get the
+        # needed response object.
+        if _isinstance(document, CPSDocumentMixin):
+            document.edit({self.attrname: file})
+        return response
 
     security.declareProtected(ModifyPortalContent, 'LOCK')
     def LOCK(self, REQUEST, RESPONSE):
