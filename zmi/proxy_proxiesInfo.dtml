@@ -28,6 +28,14 @@
 
   </dtml-let>
 
+<dtml-elif "REQUEST.has_key('rebuild')">
+
+  <dtml-call "rebuildProxies()">
+
+  <p class="form-text">
+    Proxies are rebuilt.
+  </p>
+
 <dtml-else>
 
   <form action="<dtml-var name="URL0">">
@@ -43,6 +51,18 @@
 
   </form>
 
+  <form action="<dtml-var name="URL0">">
+
+  <p class="form-text">
+  You can rebuild all the proxies information from scratch (may be long).
+  </p>
+
+  <p class="form-element">
+  <input type="hidden" name="rebuild" value="yes" />
+  <input class="form-element" type="submit" value="Rebuild proxies" />
+  </p>
+
+  </form>
 </dtml-if>
 
 

@@ -54,6 +54,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     security = ClassSecurityInfo()
 
     def __init__(self):
+        self._clear()
+
+    def _clear(self):
         self._hubid_to_info = PersistentMapping()
 
     #
@@ -515,6 +518,31 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             except (AttributeError, KeyError):
                 broken.append((hubid, info))
         return broken
+
+    def _recurse_rebuild(self, ob, hubtool=None):
+        """Rebuild all proxies recursively."""
+        try:
+            isproxy = isinstance(ob, ProxyBase)
+        except TypeError:
+            isproxy = 0
+        if not isproxy:
+            return
+        location = '/'.join(ob.getPhysicalPath())
+        rlocation = hubtool._get_rlocation(location)
+        hubid = hubtool._register(rlocation) # XXX may log error if already
+        self.addProxy(hubid, ob.getRepoId(), ob.getVersionInfos())
+        for subob in ob.objectIds():
+            self._recurse_rebuild(subob, hubtool=hubtool)
+
+    security.declareProtected(ManagePortal, 'rebuildProxies')
+    def rebuildProxies(self):
+        """Rebuild all proxies."""
+        hubtool = getToolByName(self, 'portal_eventservice')
+        portal = aq_parent(aq_inner(self))
+        self._clear()
+        # Use as roots all the subobs (1st level) of the portal.
+        for ob in portal.objectValues():
+            self._recurse_rebuild(ob, hubtool=hubtool)
 
     #
     # ZMI
