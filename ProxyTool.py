@@ -115,8 +115,11 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """
         proxy = proxy_ # prevent name collision in **kw
         lang = lang_
+        language_revs = proxy._getLanguageRevisions()
         LOG('ProxyTool', DEBUG, "createRevision lang=%s for %s" %
             ('/'.join(proxy.getPhysicalPath()), lang))
+        if language_revs.has_key(lang):
+            raise ValueError('Language revision %s already exists' % lang)
         repotool = getToolByName(self, 'portal_repository')
         docid = proxy.getDocid()
         type_name = proxy.getPortalTypeName()
@@ -128,8 +131,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         proxy.proxyChanged()
         LOG('ProxyTool', DEBUG, "  created rev=%s" % rev)
         return rev
-
-
 
 
     security.declarePrivate('checkoutRevisions')
@@ -166,6 +167,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 new_proxy.setLanguageRevision(new_lang, new_rev)
 
         new_proxy.proxyChanged()
+
 
     security.declarePrivate('checkinRevisions')
     def checkinRevisions(self, proxy, dest_proxy):
