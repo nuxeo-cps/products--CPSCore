@@ -1,4 +1,31 @@
 *******************************************
+** CPSCore V3.14.0 [R1 build 2004/06/14-09:02 by ben]
+
+Requires:
+~~~~~~~~~
+- The index localUsersWithRoles (type KeywordIndex) would be added by
+  CPSDefault's cpsupdate if not done manually.
+New features:
+~~~~~~~~~~~~~
+- You can delete local roles for given member ids at the bottom of the
+  Configuration tab in portal_membership. Use with care, remember the Undo tab
+  ;-)
+Bug fixes:
+~~~~~~~~~~
+- Now the 'homeless' attribute of a member is taken into account through a
+  direct query to the members directory.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- add a new method to IndexableObjectWrapper: localUsersWithRoles, 
+  which returns users having a role on the object _but_ without any merge.
+- add a new index/method container_path to IndexableObjectWrapper,
+  this enable searching for children
+- deleting an account will not delete local roles assigned to this user 
+  in the datafs, for now this is too costly and not done by default,
+  a zmi management screen to prune invalid local roles is planned.
+- More complete makeId and use it instead of redefining one.
+
+*******************************************
 ** CPSCore V3.13.0 [R1 build 2004/05/27-15:19 by madarche]
 
 Requires:
