@@ -18,7 +18,7 @@
 #
 # $Id$
 
-from zLOG import LOG, INFO
+from zLOG import LOG, INFO, DEBUG
 
 #
 # Monkey patching starts here
