@@ -63,6 +63,8 @@ ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
 ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
     'KEYWORD_VIEW_LANGUAGE')
 ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+    'KEYWORD_VIEW_ZIP')
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
     'SESSION_LANGUAGE_KEY')
 ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
     'REQUEST_LANGUAGE_KEY')
