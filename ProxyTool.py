@@ -219,7 +219,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
           - Use the first language found in tricky situations (fallback).
         """
         # TODO Translation Service should be used instead
-        Localizer = getToolByName(self, 'Localizer')
+        Localizer = getToolByName(self, 'Localizer', None)
         if lang is None and Localizer is not None:
             # Find the user-preferred language.
             lang = Localizer.get_selected_language()
