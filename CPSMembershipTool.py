@@ -77,3 +77,12 @@ InitializeClass(MembershipTool)
 
     
     
+def addCPSMembershipTool(dispatcher, **kw):
+    """
+    add a membership tool
+    """
+    mt = CPSMembershipTool(**kw)
+    id = mt.getId()
+    container = dispatcher.Destination()
+    container._setObject(id, mt)
+    mt = container._getOb(id)
