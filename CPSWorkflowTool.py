@@ -179,16 +179,7 @@ class CPSWorkflowTool(WorkflowTool):
                 # Not a CPS workflow.
                 continue
             for t in wf.getInitialTransitions(container, behavior):
-                d[t] =  getattr(getattr(wf.transitions, t), 'new_state_id')
-
-        if len(d) > 1:
-            container_state = self.getInfoFor(container, 'state', '')
-            container_review_state = self.getInfoFor(container, 'review_state', '')
-            LOG('CPSWT states', DEBUG, "<'"+container_state+"','"+container_review_state+"'>")
-            LOG('CPSWT transitions', DEBUG, str(d))
-            for t in d.keys():
-                if d[t] not in (container_state, container_review_state):
-                    d.pop(t)
+                d[t] =  None
 
         transitions = d.keys()
         transitions.sort()
@@ -241,8 +232,23 @@ class CPSWorkflowTool(WorkflowTool):
             if len(crtrans) == 1:
                 initial_transition = crtrans[0]
             elif len(crtrans) > 1:
-                raise WorkflowException(
-                    "More than one initial transition available "+str(crtrans))
+                container_state = self.getInfoFor(container, 'state', '')
+                container_review_state = self.getInfoFor(container, 'review_state', '')
+                for wf_id in self.getChainFor(type_name, container=container):
+                    wf = self.getWorkflowById(wf_id)
+                    if wf is None:
+                        # Incorrect workflow name in chain.
+                        continue
+                    if not hasattr(aq_base(wf), 'getInitialTransitions'):
+                        # Not a CPS workflow.
+                        continue
+                    for t in crtrans:
+                        new_state = getattr(getattr(wf.transitions, t), 'new_state_id')
+                        if new_state not in (container_state, container_review_state):
+                            crtrans.remove(t)
+                if len(crtrans) > 1:
+                    raise WorkflowException(
+                        "More than one initial transition available "+str(crtrans))
             else:
                 raise WorkflowException(
                     "No initial_transition to create %s (type_name=%s) in %s"
