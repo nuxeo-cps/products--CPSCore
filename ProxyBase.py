@@ -63,9 +63,9 @@ class ProxyBase(Base):
         """Return the repoid for this proxy."""
         return self._repoid
 
-    security.declareProtected(AccessContentsInformation, 'getObject')
-    def getObject(self, lang=None):
-        """Return the object referred to by this proxy."""
+    security.declareProtected(AccessContentsInformation, 'getContent')
+    def getContent(self, lang=None):
+        """Return the content object referred to by this proxy."""
         pxtool = getToolByName(self, 'portal_proxies', None)
         if pxtool is None:
             LOG('ProxyBase', DEBUG, 'No portal_proxies found')
@@ -88,7 +88,7 @@ class ProxyBase(Base):
     security.declarePublic('Title')
     def Title(self):
         """The object's title."""
-        ob = self.getObject()
+        ob = self.getContent()
         if ob is not None:
             return ob.Title()
         else:

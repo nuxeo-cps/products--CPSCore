@@ -145,7 +145,7 @@ class CPSWorkflowTool(WorkflowTool):
                         % (wf_id, type_name, transition))
             use_transitions[wf_id] = transition
         # Find out if we must create a normal document or a proxy.
-        # XXX determine what's the best to parametrize this
+        # XXX determine what's the best way to parametrize this
         proxy_type = None
         ttool = getToolByName(self, 'portal_types')
         for ti in ttool.listTypeInfo():
@@ -154,6 +154,7 @@ class CPSWorkflowTool(WorkflowTool):
             proxy_type = ti.getActionById('isproxytype', None)
             if proxy_type is not None:
                 break
+        # Creation.
         if proxy_type is not None:
             # Create a proxy and a document in the repository.
             pxtool = getToolByName(self, 'portal_proxies')

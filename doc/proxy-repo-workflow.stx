@@ -71,7 +71,7 @@ Proxies, document repository and workflows
 
     - breadcrumb computations.
 
-    The document repository object (tal:define="doc here/getObject")
+    The document repository object (tal:define="doc here/getContent")
     must be used for:
 
     - any method (edit(), getProperty()),
