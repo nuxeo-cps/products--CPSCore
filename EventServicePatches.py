@@ -40,7 +40,7 @@ def patch_action(class_, func):
         setattr(class_, old_action, old)
         ok = 'Done.'
     setattr(class_, action, func)
-    LOG('EventService', TRACE, ('patching %s.%s... %s' %
+    LOG('EventService', TRACE, ('Patching %s.%s... %s' %
                                (class_.__name__, action, ok)))
 
 #
