@@ -4,7 +4,9 @@ Requires:
   CPSDefault's cpsupdate if not done manually.
 New features:
 ~~~~~~~~~~~~~
--
+- You can delete local roles for given member ids at the bottom of the
+  Configuration tab in portal_membership. Use with care, remember the Undo tab
+  ;-)
 Bug fixes:
 ~~~~~~~~~~
 - Now the 'homeless' attribute of a member is taken into account through a
@@ -16,3 +18,4 @@ New internal features:
 - deleting an account will not delete local roles assigned to this user 
   in the datafs, for now this is too costly and not done by default,
   a zmi management screen to prune invalid local roles is planned.
+- More complete makeId and use it instead of redefining one.
