@@ -3,10 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- #119: IndexableObjectWrapper add the proxy id to SearchableText
+  to enable full text search on proxy id
 Bug fixes:
 ~~~~~~~~~~
--
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
