@@ -26,3 +26,5 @@ New internal features:
 - Removed deprecated _isinstance, now use normal python isinstance.
 - new proxybase method isDefaultLanguage used by catalog index
 - Before transaction commit subscribers on ZODB.Transaction
+- Moved some code from CPSMembershipTool to CPSDefault.MembershipTool. This code
+  was too high-level for CPSCore.

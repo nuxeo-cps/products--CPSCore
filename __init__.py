@@ -59,7 +59,6 @@ import PatchCMFCatalogAware
 import ProxyTool
 import ObjectRepositoryTool
 import TreesTool
-import CPSMembershipTool
 import CPSRegistrationTool
 import OrderedFolderSupportPatch
 import CopyrightPatch
@@ -74,7 +73,6 @@ tools = (
     ProxyTool.ProxyTool,
     ObjectRepositoryTool.ObjectRepositoryTool,
     TreesTool.TreesTool,
-    CPSMembershipTool.CPSMembershipTool,
     CPSRegistrationTool.CPSRegistrationTool,
 )
 
@@ -90,7 +88,6 @@ contentConstructors = (ProxyBase.addProxyFolder,
                        ProxyBase.addProxyFolderishDocument,
                        ProxyBase.addProxyBTreeFolder,
                        ProxyBase.addProxyBTreeFolderishDocument,
-                       CPSMembershipTool.addCPSMembershipTool,
                        CPSRegistrationTool.addCPSRegistrationTool,
                        )
 
