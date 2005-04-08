@@ -8,7 +8,7 @@ DCWorkflow
 # CMF ---------------------
 # they are not strictly all required 
 # but all cmf products are centralized here
-CMFCore > 1.5.0
+CMFCore >= 1.5.0
 CMFActionIcons
 CMFCalendar
 CMFDefault
