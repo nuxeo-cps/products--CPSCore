@@ -6,10 +6,16 @@ BTreeFolder2
 DCWorkflow
 
 # CMF ---------------------
-CMFCore > 1.4.2
-CMFDefault > 1.4.2
-CMFTopic
+# they are not strictly all required 
+# but all cmf products are centralized here
+CMFCore > 1.5.0
+CMFActionIcons
 CMFCalendar
+CMFDefault
+CMFQuickInstallerTool
+CMFSetup
+CMFTopic
+CMFUid
 
 # CPS ---------------------
 CPSUtil >= 0.5.0
