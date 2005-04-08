@@ -1,4 +1,38 @@
 *******************************************
+** CPSCore V3.22.0 [R1 build 2005/04/08-16:11 by ben]
+
+Requires:
+~~~~~~~~~
+- TranslationService > 0.7.0
+- CPSCompat >= 0.1.0
+New features:
+~~~~~~~~~~~~~
+- Added (optional) l10n support to TreesTool getList() method
+- Added intermediate object viewZip to proxybase to access zipped content
+  stored in a file object has document attribute, path is
+  http://.../proxy/viewZip/attachedFile/file.zip/path/to/file/in/zip
+- Indexation optimization
+Bug fixes:
+~~~~~~~~~~
+- In resetPassword method used more generic CMF method acl_users._doChangeUser
+  instead of member.setSecurityProfile. This has the effect that resetPassword
+  now works with LDAPUserGroupsFolder too.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Made the product rely on CPSUtil factorized methods
+- CPS < 3.3 backward compatibility for TreesTool.
+- ProxyBase and ProxyTool use translation_service instead of Localizer
+- Moved CPSCore.utils.manageCPSLanguage into CPSDefault.utils
+- Factorized code from CPSCore.utils to the method CPSUtil.id.generateId.
+- Don't index repository objects anymore
+- Use CPSCompat for Zope/CMF forward-compatibility monkey-patching.
+- Removed deprecated _isinstance, now use normal python isinstance.
+- new proxybase method isDefaultLanguage used by catalog index
+- Before transaction commit subscribers on ZODB.Transaction
+- Moved some code from CPSMembershipTool to CPSDefault.MembershipTool. This code
+  was too high-level for CPSCore.
+
+*******************************************
 ** CPSCore V3.21.2 [R1 build 2005/03/07-15:56 by madarche]
 
 Requires:
