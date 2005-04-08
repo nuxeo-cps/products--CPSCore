@@ -33,12 +33,10 @@ This code uses if possible the following methods on the user folder:
   - getAllowedRolesAndUsersOfUser
 """
 
-import re
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl.PermissionRole import rolesForPermissionOn
 from Products import CMFCore
 from random import randrange
-from types import ListType
 from warnings import warn
 from Products.CPSUtil.id import generateId
 

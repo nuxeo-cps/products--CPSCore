@@ -25,12 +25,7 @@
 # $Id$
 
 import sys
-import socket
-import random
-import sha
 from types import StringType
-from time import time
-from smtplib import SMTPException
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
@@ -42,7 +37,6 @@ from AccessControl.User import UnrestrictedUser
 from Acquisition import aq_base, aq_parent, aq_inner
 from ZODB.POSException import ConflictError
 
-from Products.MailHost.MailHost import MailHostError
 from Products.CMFCore.permissions import View, ManagePortal
 from Products.CMFCore.permissions import ListPortalMembers
 from AccessControl.Permissions import manage_users as ManageUsers
