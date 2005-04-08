@@ -54,7 +54,8 @@ from Products.CPSCore.CPSBase import CPSBaseFolder
 from Products.CPSCore.CPSBase import CPSBaseDocument
 from Products.CPSCore.CPSBase import CPSBaseBTreeFolder
 
-from Products.CPSCore.TransactionCommitSubscribers import IndexationManager
+from Products.CPSCore.IndexationManager import get_indexation_manager
+
 
 DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
 PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
@@ -407,9 +408,9 @@ class ProxyBase(Base):
     def reindexObject(self, idxs=[]):
         """Schedule object for reindexation
         """
-        IndexationManager.push(self, idxs=idxs)
+        get_indexation_manager().push(self, idxs=idxs)
 
-    def _reindexObjectSecurity(self, reindex_self=1):
+    def _reindexObjectSecurity(self, skip_self=False):
         """Called to security-related indexes."""
         LOG('ProxyBase', DEBUG, "reindex security for %s"
             % '/'.join(self.getPhysicalPath()))
@@ -420,13 +421,15 @@ class ProxyBase(Base):
         # (The notification for the object repo is done by the repo.)
         evtool = getEventService(self)
         evtool.notify('sys_modify_security', self, {})
+        # Method definition is monkey-patched by PatchCMFCatalogAware
+        # to add the second argument.
         return CMFCatalogAware.__dict__['reindexObjectSecurity'](self,
-                                                                 reindex_self)
+                                                                 skip_self)
 
 
     # overloaded
     def reindexObjectSecurity(self):
-        IndexationManager.push(self, with_security=1)
+        get_indexation_manager().push(self, with_security=1)
 
     # XXX also call _setSecurity from:
     #  manage_role

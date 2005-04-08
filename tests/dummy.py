@@ -53,13 +53,13 @@ class Dummy(SimpleItem):
     def reindexObject(self, idxs=[]):
         pass
 
-    def reindexObjectSecurity(self):
+    def reindexObjectSecurity(self, skip_self=False):
         pass
 
     def _reindexObject(self, idxs=[]):
         pass
 
-    def _reindexObjectSecurity(self):
+    def _reindexObjectSecurity(self, skip_self=False):
         pass
 
 class DummyTypeInfo(Dummy):

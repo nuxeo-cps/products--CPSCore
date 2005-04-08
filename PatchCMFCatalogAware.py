@@ -53,20 +53,23 @@ def manage_beforeDelete(self, *args, **kw):
     notify(self, 'sys_del_object', self, *args, **kw)
 
 
-def reindexObjectSecurity(self, reindex_self=1):
-    """
-        Reindex security-related indexes on the object
-        (and its descendants).
+def reindexObjectSecurity(self, skip_self=False):
+    """Reindex security-related indexes on the object (and its descendants).
 
-        Add an optional argument ro reindex self or not since it's
-        useless to reindex it in here like during creation time since we
-        could use the first reindexObject by adding the allowedRolesAndUsers.
-
+    An optional argument skip_self can be passed, since it's useless to
+    reindex the object itself if it has already been fully indexed.
     """
+
     catalog = getToolByName(self, 'portal_catalog', None)
     if catalog is not None:
         path = '/'.join(self.getPhysicalPath())
-        for brain in catalog.searchResults(path=path):
+        try:
+            brains = catalog.unrestrictedSearchResults(path=path)
+        except AttributeError:
+            # BBB: Old CMF
+            brains = catalog.searchResults(path=path)
+        for brain in brains:
+            # XXX getObject is wrong, may raise in recent Zopes
             ob = brain.getObject()
             if ob is None:
                 # Ignore old references to deleted objects.
@@ -77,7 +80,7 @@ def reindexObjectSecurity(self, reindex_self=1):
             if s is None: ob._p_deactivate()
         # Reindex the object itself, as the PathIndex only gave us
         # the descendants.
-        if reindex_self:
+        if not skip_self:
             catalog.reindexObject(self, idxs=['allowedRolesAndUsers'],
                                   update_metadata=0)
 

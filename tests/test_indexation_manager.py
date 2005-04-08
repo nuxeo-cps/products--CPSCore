@@ -20,69 +20,184 @@
 """Tests for the Indexation Manager
 """
 
-import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
+from OFS.SimpleItem import SimpleItem
 
-from Acquisition import aq_parent, aq_inner, aq_base
-from OFS.Folder import Folder
+from Products.CPSCore.IndexationManager import IndexationManager
+from Products.CPSCore.IndexationManager import get_indexation_manager
 
-from dummy import Dummy
+class FakeTransaction:
+    def beforeCommitHook(self, hook):
+        pass
 
-from Products.CPSCore.TransactionCommitSubscribers import IndexationManager
+class Dummy:
+    def __init__(self, id):
+        self.id = id
+        self.log = []
+
+    def getLog(self):
+        # get and clear log
+        log = self.log
+        self.log = []
+        return log
+
+    def _reindexObject(self, idxs=[]):
+        self.log.append('idxs %s %r' % (self.id, idxs))
+
+    def _reindexObjectSecurity(self, skip_self=False):
+        self.log.append('secu %s %r' % (self.id, skip_self))
+
 
 class IndexationManagerTest(unittest.TestCase):
 
-    def test_fixtures(self):
-        self.assertEqual(IndexationManager._transaction_done, True)
-        self.assertEqual(IndexationManager._queue, [])
+    def get_stuff(self):
+        return IndexationManager(FakeTransaction()), Dummy('dummy')
 
-    def test_registration(self):
-        self.assertEqual(IndexationManager._transaction_done, True)
-        self.assertEqual(IndexationManager._queue, [])
-    
-        # Register Dummy
-        dummy = Dummy('dummy')
-    
-        IndexationManager.push(dummy)
-        self.assert_(dummy in IndexationManager._getObjectsInQueue())
-        self.assert_(len(IndexationManager._queue) == 1)
-    
-        # Try to register dummy twice but no way
-        IndexationManager.push(dummy)
-        self.assert_(dummy in IndexationManager._getObjectsInQueue())
-        self.assert_(len(IndexationManager._queue) == 1)
-    
+    def test_simple(self):
+        mgr, dummy = self.get_stuff()
+
+        # Push it, reindexation not done yet.
+        mgr.push(dummy, idxs=[])
+        self.assertEquals(dummy.getLog(), [])
+
+        # Manager is called (by commit), check reindexation is done.
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+
+        # Object is gone from queue after that.
+        mgr()
+        self.assertEquals(dummy.getLog(), [])
+
+    def test_several_times_1(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=['a'])
+        mgr.push(dummy, idxs=['b'])
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['a', 'b']"])
+
+    def test_several_times_2(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=[])
+        mgr.push(dummy, idxs=['foo'])
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+
+    def test_several_times_3(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=['foo'])
+        mgr.push(dummy, idxs=[])
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+
+    def test_several_times_4(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=['foo'])
+        mgr.push(dummy, idxs=None)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['foo']"])
+
+    def test_several_times_5(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=None)
+        mgr.push(dummy, idxs=['foo'])
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['foo']"])
+
+    def test_several_times_6(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=None)
+        mgr.push(dummy, idxs=[])
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+
+    def test_several_times_7(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=[])
+        mgr.push(dummy, idxs=None)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+
+    def test_several_secu_1(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=['foo'])
+        mgr.push(dummy, with_security=True)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['foo']",
+                                           "secu dummy False"])
+
+    def test_several_secu_2(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=[])
+        mgr.push(dummy, with_security=True)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy []",
+                                           "secu dummy True"])
+
+    def test_several_secu_3(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=['allowedRolesAndUsers'])
+        mgr.push(dummy, idxs=['foo'])
+        mgr.push(dummy, with_security=True)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(),
+                          ["idxs dummy ['allowedRolesAndUsers', 'foo']",
+                           "secu dummy True"])
+
+    def test_synchronous(self):
+        mgr, dummy = self.get_stuff()
+        self.assertEquals(dummy.getLog(), [])
+        mgr.push(dummy, idxs=['a'])
+        self.assertEquals(dummy.getLog(), [])
+        mgr.setSynchonous(True)
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['a']"])
+        mgr.push(dummy, idxs=['b'])
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['b']"])
+        mgr.push(dummy, idxs=['c'])
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['c']"])
+        mgr.setSynchonous(False)
+        mgr.push(dummy, idxs=['d'])
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['d']"])
+
+class TransactionIndexationManagerTest(unittest.TestCase):
+
+    # These really test the beforeCommitHook
+
     def test_transaction(self):
         get_transaction().begin()
-
-        # Schedule dummy
+        mgr = get_indexation_manager()
         dummy = Dummy('dummy')
-    
-        IndexationManager.push(dummy)
+        mgr.push(dummy, idxs=['bar'])
+        self.assertEquals(dummy.getLog(), [])
         get_transaction().commit()
-    
-        # Test the reinit
-        self.test_fixtures()
-    
+        self.assertEquals(dummy.getLog(), ["idxs dummy ['bar']"])
+
     def test_transaction_aborting(self):
         get_transaction().begin()
-    
-        # Schedule dummy
+        mgr = get_indexation_manager()
         dummy = Dummy('dummy')
-    
-        IndexationManager.push(dummy)
-    
-        # Abort
+        mgr.push(dummy, idxs=['bar'])
+        self.assertEquals(dummy.getLog(), [])
         get_transaction().abort()
-    
-        # test the reinit
-        self.test_fixtures()
-        
+        self.assertEquals(dummy.getLog(), [])
+
+
 def test_suite():
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
-    suite.addTest(loader.loadTestsFromTestCase(IndexationManagerTest))
-    return suite
+    return unittest.TestSuite((
+        unittest.makeSuite(IndexationManagerTest),
+        unittest.makeSuite(TransactionIndexationManagerTest),
+        ))
 
 if __name__ == '__main__':
     unittest.TextTestRunner().run(test_suite())

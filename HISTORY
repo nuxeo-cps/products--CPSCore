@@ -11,7 +11,8 @@ New features:
 - Added intermediate object viewZip to proxybase to access zipped content
   stored in a file object has document attribute, path is
   http://.../proxy/viewZip/attachedFile/file.zip/path/to/file/in/zip
-- Indexation optimization
+- Indexation optimization: modified objects are reindexed only once
+  at the end of a transaction.
 Bug fixes:
 ~~~~~~~~~~
 - In resetPassword method used more generic CMF method acl_users._doChangeUser
