@@ -23,7 +23,7 @@
 The Transaction extensions are defined within PatchZODB.
 """
 
-from zLOG import LOG, DEBUG
+from zLOG import LOG, DEBUG, INFO
 
 from Interface.Verify import verifyObject, DoesNotImplement
 from Products.CPSCore.interfaces import ITransactionCommitSubscriber
