@@ -125,7 +125,7 @@ class TypeConstructor(Base):
         ob._setPortalTypeName(final_type_name)
         ##ob.reindexObject(idxs=['portal_type', 'Type'])
         # XXX should notify something
-        return ob
+        return ob.getId()
 
 InitializeClass(TypeConstructor)
 

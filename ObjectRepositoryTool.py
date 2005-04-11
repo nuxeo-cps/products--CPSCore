@@ -161,7 +161,8 @@ class ObjectRepositoryTool(UniqueObject,
         """
         rev = self.getFreeRevision(docid_)
         id = self._getId(docid_, rev)
-        ob = self.constructContent(type_name_, id, *args, **kw)
+        self.constructContent(type_name_, id, *args, **kw)
+        ob = self.get(id)
         evtool = getEventService(self)
         evtool.notify('sys_add_cmf_object', ob, {})
         # XXX or call ob.manage_afterCMFAdd(ob, self) ? recurse ?
