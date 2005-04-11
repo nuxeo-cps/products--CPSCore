@@ -1,4 +1,21 @@
 *******************************************
+** CPSCore V3.23.0 [R1 build 2005/04/11-08:41 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Indexation optimization done using beforeCommitHook.
+
+
+*******************************************
 ** CPSCore V3.22.0 [R1 build 2005/04/08-16:11 by ben]
 
 Requires:
