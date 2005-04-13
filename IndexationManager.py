@@ -117,6 +117,17 @@ class IndexationManager:
 
     def process(self, ob, idxs, secu):
         """Process an object, to reindex it."""
+        # The object may have been removed from its container since,
+        # even if the value we have is still wrapped.
+        # Re-acquire it from the root
+        # FIXME: do better, by treating also indexObject/unindexObject
+        root = ob.getPhysicalRoot()
+        path = ob.getPhysicalPath()
+        old_ob = ob
+        ob = root.unrestrictedTraverse(path, None)
+        if ob is None:
+            LOG("IndexationManager", DEBUG, "Object %r disappeared" % old_ob)
+            return
         if idxs is not None:
             LOG("IndexationManager", DEBUG, "reindexObject %r idxs=%r"
                 % (ob, idxs))
