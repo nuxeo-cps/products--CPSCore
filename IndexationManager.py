@@ -104,27 +104,27 @@ class IndexationManager:
         Does the actual indexing work.
         """
 
-        LOG("IndexationManager" , DEBUG, "__call__")
+        LOG("IndexationManager", DEBUG, "__call__")
 
         while self._queue:
             info = self._queue.pop(0)
             del self._infos[info['id']]
 
-            LOG("IndexationManager" , DEBUG, "__call__ processing %r" % info)
+            LOG("IndexationManager", DEBUG, "__call__ processing %r" % info)
             self.process(info['object'], info['idxs'], info['secu'])
 
-        LOG("IndexationManager" , DEBUG, "__call__ done")
+        LOG("IndexationManager", DEBUG, "__call__ done")
 
     def process(self, ob, idxs, secu):
         """Process an object, to reindex it."""
         if idxs is not None:
-            LOG("IndexationManager" , DEBUG, "reindexObject %r idxs=%r"
+            LOG("IndexationManager", DEBUG, "reindexObject %r idxs=%r"
                 % (ob, idxs))
             ob._reindexObject(idxs=idxs)
         if secu:
             skip_self = (idxs == [] or
                          (idxs and 'allowedRolesAndUsers' in idxs))
-            LOG("IndexationManager" , DEBUG,
+            LOG("IndexationManager", DEBUG,
                 "reindexObjectSecurity %r skip=%s" % (ob, skip_self))
             ob._reindexObjectSecurity(skip_self=skip_self)
 
