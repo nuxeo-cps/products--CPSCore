@@ -8,6 +8,7 @@ Bug fixes:
 ~~~~~~~~~~
 - #591: Fixed interactions between renames and indexation manager that
   provoked spurious indexing of deleted objects
+- #251: Incorrect tree upgrade in some cases.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - #571: Use standard ordered folder support.

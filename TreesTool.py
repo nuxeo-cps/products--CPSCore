@@ -151,25 +151,12 @@ class TreeCache(SimpleItemWithProperties):
         """Upgrade from the old format."""
         LOG('TreeCache._upgrade', DEBUG, 'Upgrading tree %s' % self.getId())
 
-        flat = self._flat
-
-        self._clear()
-        portal = getToolByName(self, 'portal_url').getPortalObject()
-        for info in flat:
-            rpath = info['rpath']
-            ob = portal.unrestrictedTraverse(rpath, None)
-            if ob is None:
-                continue
-            if info.has_key('url'):
-                del info['url']
-            if info.has_key('path'):
-                del info['path']
-            self._infos[rpath] = info
-            self.updateChildrenInfo(ob)
-
         delattr(self, '_tree')
         delattr(self, '_pointers')
         delattr(self, '_flat')
+
+        self._clear()
+        self.rebuild()
 
     security.declareProtected(ViewManagementScreens, 'all_type_names')
     def all_type_names(self):

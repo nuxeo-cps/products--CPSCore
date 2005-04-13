@@ -209,6 +209,32 @@ class TreeCacheTest(SecurityRequestTest):
         self.assertEquals([d['depth'] for d in l],
                           [0, 1, 1])
 
+    def test_upgrade(self):
+        # Test upgrade of an old-style tree
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
+        cache = cmf.cache
+
+        # Setup old data
+        cache._tree = [] # dummy
+        cache._pointers = [] # dummy
+        cache._flat = [
+            {'rpath': 'root/foo',
+             'children': ['recompute_this'],
+             'depth': 0,
+             'allowed_roles_and_users': ['Manager'],
+             },
+            # missing info for 'root/foo/bar'
+            ]
+
+        cache._maybeUpgrade()
+        l = cache.getList(filter=False)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo', 'root/foo/bar'])
+        self.assertEquals([d['depth'] for d in l],
+                          [0, 1])
+
     def test_event_sys_add_cmf_object(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
