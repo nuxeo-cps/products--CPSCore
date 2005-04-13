@@ -104,6 +104,8 @@ class IndexationManager:
         Does the actual indexing work.
         """
 
+        # FIXME: at this point _TXN_MGR_ATTRIBUTE should be removed
+
         LOG("IndexationManager", DEBUG, "__call__")
 
         while self._queue:
