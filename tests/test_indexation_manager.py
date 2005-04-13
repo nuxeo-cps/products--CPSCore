@@ -30,6 +30,12 @@ class FakeTransaction:
     def beforeCommitHook(self, hook):
         pass
 
+class FakeRoot:
+    def unrestrictedTraverse(self, path, default):
+        dummy, ob = path
+        assert dummy == ''
+        return ob
+
 class Dummy:
     def __init__(self, id):
         self.id = id
@@ -40,6 +46,12 @@ class Dummy:
         log = self.log
         self.log = []
         return log
+
+    def getPhysicalRoot(self):
+        return FakeRoot()
+
+    def getPhysicalPath(self):
+        return ('', self)
 
     def _reindexObject(self, idxs=[]):
         self.log.append('idxs %s %r' % (self.id, idxs))
