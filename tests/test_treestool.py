@@ -26,6 +26,7 @@ import unittest
 from Acquisition import aq_parent, aq_inner
 from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
+from OFS.OrderedFolder import OrderedFolder
 
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
@@ -37,7 +38,7 @@ class DummyTreeCache(SimpleItem):
     def notify_tree(self, event_type, ob, infos):
         self.notified = self.notified + 1
 
-class DummyObject(Folder):
+class DummyObject(OrderedFolder):
     portal_type = 'ThePortalType'
     meta_type = 'TheMetaType'
     def __init__(self, id=None, path=None, title=''):
