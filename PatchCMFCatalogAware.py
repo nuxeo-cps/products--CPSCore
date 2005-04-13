@@ -39,7 +39,7 @@ def manage_afterAdd(self, *args, **kw):
     """
     notify(self, 'sys_add_object', self, *args, **kw)
     if not 'portal_repository' in self.getPhysicalPath():
-        self.cps_old_manage_afterAdd(*args, **kw)
+        self._cps_old_manage_afterAdd(*args, **kw)
 
 def manage_beforeDelete(self, *args, **kw):
     """manage_beforeDelete patched for
@@ -49,7 +49,7 @@ def manage_beforeDelete(self, *args, **kw):
 
     """
     if not 'portal_repository' in self.getPhysicalPath():
-        self.cps_old_manage_beforeDelete(*args, **kw)
+        self._cps_old_manage_beforeDelete(*args, **kw)
     notify(self, 'sys_del_object', self, *args, **kw)
 
 

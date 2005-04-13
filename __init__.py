@@ -60,7 +60,7 @@ import ProxyTool
 import ObjectRepositoryTool
 import TreesTool
 import CPSRegistrationTool
-import OrderedFolderSupportPatch
+import PatchOFSFolder
 import CopyrightPatch
 
 import ProxyBase

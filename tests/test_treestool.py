@@ -322,7 +322,7 @@ class TreeCacheTest(SecurityRequestTest):
                            'root/foo/baz'])
 
         # Reorder children
-        cmf.root.foo.move_object_down('bar')
+        cmf.root.foo.moveObjectsDown('bar')
         cache.notify_tree('sys_order_object', cmf.root.foo, {})
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],

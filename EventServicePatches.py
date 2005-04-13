@@ -32,7 +32,7 @@ def notify(context, event_type, object, *args, **kw):
 
 def patch_action(class_, func):
     action = func.__name__
-    old_action = 'cps_old_%s' % action
+    old_action = '_cps_old_%s' % action
     if hasattr(class_, old_action):
         ok = "Already patched."
     else:
@@ -51,6 +51,8 @@ import sys
 from ZODB.POSException import ConflictError
 from OFS.ObjectManager import BeforeDeleteException
 from OFS.ObjectManager import ObjectManager
+from OFS.CopySupport import CopyContainer
+from OFS.OrderSupport import OrderSupport
 from OFS.SimpleItem import Item
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
@@ -99,11 +101,11 @@ ObjectManager._delObject = OFS_delObject
 def manage_afterAdd(self, *args, **kw):
     """manage_afterAdd patched for event service notification."""
     notify(self, 'sys_add_object', self, *args, **kw)
-    self.cps_old_manage_afterAdd(*args, **kw)
+    self._cps_old_manage_afterAdd(*args, **kw)
 
 def manage_beforeDelete(self, *args, **kw):
     """manage_beforeDelete patched for event service notification."""
-    self.cps_old_manage_beforeDelete(*args, **kw)
+    self._cps_old_manage_beforeDelete(*args, **kw)
     notify(self, 'sys_del_object', self, *args, **kw)
 
 for class_ in (Item, ObjectManager):
@@ -111,16 +113,16 @@ for class_ in (Item, ObjectManager):
     patch_action(class_, manage_beforeDelete)
 
 #
-# OrderedFolderSupportPatch
+# Ordered Folder
 #
-import OrderedFolderSupportPatch # ensure it does its patches
+import PatchOFSFolder # ensure it does its patches
 
-def move_object_to_position(self, *args, **kw):
-    res = self.cps_old_move_object_to_position(*args, **kw)
+def moveObjectsByDelta(self, *args, **kw):
+    res = self._cps_old_moveObjectsByDelta(*args, **kw)
     notify(self, 'sys_order_object', self, *args, **kw)
     return res
 
-patch_action(ObjectManager, move_object_to_position)
+patch_action(OrderSupport, moveObjectsByDelta)
 
 #
 # Generators of CMF Add events
@@ -134,19 +136,21 @@ def manage_afterCMFAdd(self, item, container):
 
 CMFCatalogAware.manage_afterCMFAdd = manage_afterCMFAdd
 
-# manage_renameObject
+# manage_renameObject, defined in CopySupport and redefined
+# (with inheritedAttribute for old one) in OrderSupport...
+
 def manage_renameObject(self, id, new_id, REQUEST=None):
-    res = self.cps_old_manage_renameObject(id, new_id, REQUEST=REQUEST)
+    res = self._cps_old_manage_renameObject(id, new_id, REQUEST=REQUEST)
     ob = self._getOb(new_id)
     if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
         ob.manage_afterCMFAdd(ob, self)
     return res
 
-patch_action(ObjectManager, manage_renameObject)
+patch_action(CopyContainer, manage_renameObject)
+OrderSupport._old_manage_renameObject = CopyContainer.manage_renameObject
 
 # manage_pasteObjects
 
-from OFS.CopySupport import CopyContainer
 from OFS.CopySupport import CopyError, eNoData, eInvalid, _cb_decode
 from OFS.CopySupport import cookie_path
 
@@ -165,7 +169,7 @@ def manage_pasteObjects(self, cb_copy_data=None, REQUEST=None):
     except: raise CopyError, eInvalid
     op = dcp[0]
     # --- call
-    result = self.cps_old_manage_pasteObjects(cb_copy_data=cp)
+    result = self._cps_old_manage_pasteObjects(cb_copy_data=cp)
     # --- send events
     for idchange in result:
         new_id = idchange['new_id']
@@ -193,7 +197,7 @@ patch_action(CopyContainer, manage_pasteObjects)
 
 def manage_clone(self, ob, id, REQUEST=None):
     # Clone an object.
-    ob = self.cps_old_manage_clone(ob, id, REQUEST=REQUEST)
+    ob = self._cps_old_manage_clone(ob, id, REQUEST=REQUEST)
     if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
         # XXX: should it be
         # ob.manage_afterCMFAdd(self) ???
