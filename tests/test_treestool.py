@@ -135,6 +135,8 @@ class TreeCacheTest(SecurityRequestTest):
         self.assert_(cache._isCandidate(ob, plen))
         ob = DummyObject(path='/cmf/root/bar')
         self.failIf(cache._isCandidate(ob, plen))
+        ob = DummyObject(path='/cmf/root/foobared')
+        self.failIf(cache._isCandidate(ob, plen))
         # We'll never be notified outside of the portal anyway
         #ob = DummyObject(path='/moo/root/foo/bar')
         #self.failIf(cache._isCandidate(ob, plen))

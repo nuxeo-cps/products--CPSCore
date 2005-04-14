@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- #594: Information leaks between tree caches.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

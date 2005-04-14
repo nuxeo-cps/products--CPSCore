@@ -232,7 +232,7 @@ class TreeCache(SimpleItemWithProperties):
         if not root:
             return True
         rpath = '/'.join(ob.getPhysicalPath()[plen:])
-        ok = rpath.startswith(root)
+        ok = (rpath+'/').startswith(root+'/')
         #LOG('Tree', DEBUG, ' Returns ok=%s' % ok)
         return ok
 
