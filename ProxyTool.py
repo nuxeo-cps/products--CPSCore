@@ -144,8 +144,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             ob, rev = repotool.createRevision(docid, type_name, *args, **kw)
         if hasattr(aq_base(ob), 'setLanguage'):
             ob.setLanguage(lang)
-            ##ob.reindexObject(idxs=['Language'])
         proxy.setLanguageRevision(lang, rev)
+        # Notify proxy of change (and so reindex)
         proxy.proxyChanged()
         #LOG('ProxyTool', TRACE, "  created rev=%s" % rev)
         return rev

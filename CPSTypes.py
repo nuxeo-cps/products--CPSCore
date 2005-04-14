@@ -98,7 +98,7 @@ class TypeConstructor(Base):
                          *args, **kw):
         """Construct an CMFish object without all the security checks.
 
-        Do not insert into any workflow.
+        Does not insert into any workflow, but indexes it.
 
         Returns the object.
         """
@@ -123,7 +123,8 @@ class TypeConstructor(Base):
         if final_type_name is None:
             final_type_name = type_name
         ob._setPortalTypeName(final_type_name)
-        ##ob.reindexObject(idxs=['portal_type', 'Type'])
+        # Object has been constructed without indexing, index it now.
+        ob.reindexObject()
         # XXX should notify something
         return ob.getId()
 
@@ -161,6 +162,7 @@ class TypeContainer(Base):
         self._setObject(id, ob)
         ob = self._getOb(id)
         ob.manage_afterClone(ob)
+        # After clone, object was indexed
         if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
             ob.manage_afterCMFAdd(ob, self)
         return ob

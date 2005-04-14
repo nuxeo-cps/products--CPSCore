@@ -35,6 +35,7 @@ import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
 from OFS.Image import File
+from OFS.Traversable import Traversable
 from webdav.WriteLockInterface import WriteLockInterface
 
 from Products.CMFCore.utils import getToolByName
@@ -211,6 +212,7 @@ class ProxyBase(Base):
     security.declarePrivate('proxyChanged')
     def proxyChanged(self):
         """Do necessary notifications after a proxy was changed."""
+        self.reindexObject()
         pxtool = getToolByName(self, 'portal_proxies')
         utool = getToolByName(self, 'portal_url')
         rpath = utool.getRelativeUrl(self)
@@ -389,7 +391,6 @@ class ProxyBase(Base):
         for subob in ob.objectValues():
             self._setSecurityRecursive(subob, pxtool=pxtool)
 
-
     def _reindexObject(self, idxs=[]):
         """Called to reindex when the object has changed."""
         LOG('ProxyBase', DEBUG, "reindex idxs=%s for %s"
@@ -410,6 +411,12 @@ class ProxyBase(Base):
         """
         get_indexation_manager().push(self, idxs=idxs)
 
+    # overloaded
+    def indexObject(self):
+        """Schedule object for indexing.
+        """
+        get_indexation_manager().push(self, idxs=[])
+
     def _reindexObjectSecurity(self, skip_self=False):
         """Called to security-related indexes."""
         LOG('ProxyBase', DEBUG, "reindex security for %s"
@@ -426,10 +433,9 @@ class ProxyBase(Base):
         return CMFCatalogAware.__dict__['reindexObjectSecurity'](self,
                                                                  skip_self)
 
-
     # overloaded
     def reindexObjectSecurity(self):
-        get_indexation_manager().push(self, with_security=1)
+        get_indexation_manager().push(self, with_security=True)
 
     # XXX also call _setSecurity from:
     #  manage_role
@@ -918,6 +924,11 @@ class LanguageViewer(Acquisition.Explicit):
         # Return the proxy in the context of the container
         container = aq_parent(aq_inner(proxy))
         return proxy.__of__(container)
+
+    # Needed by brain.getObject in Zope >= 2.7.6
+    getPhysicalRoot = Acquisition.Acquired
+    unrestrictedTraverse = Traversable.unrestrictedTraverse
+    restrictedTraverse = Traversable.restrictedTraverse
 
 InitializeClass(LanguageViewer)
 
