@@ -144,7 +144,7 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
     if 'portal_repository' in object.getPhysicalPath():
         return
 
-    LOG('CatalogToolPatch.catalog_object', DEBUG, 'index uid %s  obj %s' % (
+    LOG('PatchCatalogTool.catalog_object', TRACE, 'index uid %s  obj %s' % (
         uid, object))
     wf = getattr(self, 'portal_workflow', None)
     if wf is not None:
@@ -176,12 +176,12 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
                                             language)
             w = IndexableObjectWrapper(vars, proxy, language,
                                        is_default_proxy=is_default_proxy)
-            LOG('CatalogToolPatch.catalog_object', DEBUG,
+            LOG('PatchCatalogTool.catalog_object', TRACE,
                 'index uid locale %s' % uid)
             ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
 
 CatalogTool.catalog_object = cat_catalog_object
-LOG('CatalogToolPatch', TRACE, "Patching CMF CatalogTool.catalog_object")
+LOG('PatchCatalogTool', TRACE, "Patching CMF CatalogTool.catalog_object")
 
 
 def cat_unindexObject(self, object):
@@ -201,7 +201,7 @@ def cat_unindexObject(self, object):
             self.uncatalog_object(uid)
 
 CatalogTool.unindexObject = cat_unindexObject
-LOG('CatalogToolPatch', TRACE, "Patching CMF CatalogTool.unindexObject")
+LOG('PatchCatalogTool', TRACE, "Patching CMF CatalogTool.unindexObject")
 
 
 def cat_listAllowedRolesAndUsers(self, user):
@@ -209,7 +209,7 @@ def cat_listAllowedRolesAndUsers(self, user):
     return getAllowedRolesAndUsersOfUser(user)
 
 CatalogTool._listAllowedRolesAndUsers = cat_listAllowedRolesAndUsers
-LOG('CatalogToolPatch', TRACE,
+LOG('PatchCatalogTool', TRACE,
     "Patching CMF CatalogTool._listAllowedRolesAndUsers")
 
 
@@ -288,7 +288,7 @@ def cat_searchResults(self, REQUEST=None, **kw):
 
 CatalogTool.searchResults = cat_searchResults
 CatalogTool.__call__ = cat_searchResults
-LOG('CatalogToolPatch', TRACE,
+LOG('PatchCatalogTool', TRACE,
     "Patching CMF CatalogTool.searchResults and __call__")
 
 
@@ -298,7 +298,7 @@ def topicindex_clear(self):
     for fid, filteredSet in self.filteredSets.items():
         filteredSet.clear()
 TopicIndex.clear = topicindex_clear
-LOG('CatalogToolPatch', TRACE, "Patching Zope TopicIndex.clear method")
+LOG('PatchCatalogTool', TRACE, "Patching Zope TopicIndex.clear method")
 
 
 
