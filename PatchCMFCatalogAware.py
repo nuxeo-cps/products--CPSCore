@@ -69,8 +69,7 @@ def reindexObjectSecurity(self, skip_self=False):
             # BBB: Old CMF
             brains = catalog.searchResults(path=path)
         for brain in brains:
-            # XXX getObject is wrong, may raise in recent Zopes
-            ob = brain.getObject()
+            ob = self.unrestrictedTraverse(brain.getPath(), None)
             if ob is None:
                 # Ignore old references to deleted objects.
                 continue
