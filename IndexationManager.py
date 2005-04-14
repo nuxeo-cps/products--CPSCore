@@ -64,7 +64,8 @@ class IndexationManager:
             self.process(ob, idxs, with_security)
             return
 
-        LOG("IndexationManager", DEBUG, "queue object %r" % ob)
+        LOG("IndexationManager", DEBUG, "queue object %r idxs=%s secu=%s"
+            % (ob, idxs, with_security))
 
         i = id(aq_base(ob)) # XXX should use security manager too
         info = self._infos.get(i)
@@ -96,7 +97,7 @@ class IndexationManager:
             # Update secu
             info['secu'] = info['secu'] or with_security
 
-        LOG("IndexationManager", DEBUG, "queue info %r" % info)
+        LOG("IndexationManager", DEBUG, "info %r" % info)
 
     def __call__(self):
         """Called when transaction commits.
