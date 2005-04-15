@@ -167,12 +167,17 @@ def _isinstance(ob, cls):
         # instead of returning 0 for ExtensionClasses.
         return 0
 
-def resetSessionLanguageSelection(request):
+def resetSessionLanguageSelection(REQUEST):
     """Clear documents language selection done by switchLanguage"""
-    try:
-        del request.SESSION[SESSION_LANGUAGE_KEY]
-    except KeyError:
-        pass
+    if getattr(REQUEST, 'SESSION', None) is not None:
+        if SESSION_LANGUAGE_KEY in REQUEST.SESSION:
+            del REQUEST.SESSION[SESSION_LANGUAGE_KEY]
+
+def resetRequestLanguageSelection(REQUEST):
+    """Clear documents language selection done by viewLanguage"""
+    if getattr(REQUEST, 'other', None) is not None:
+        if REQUEST_LANGUAGE_KEY in REQUEST.other:
+            del REQUEST.other[REQUEST_LANGUAGE_KEY]
 
 def makeId(s, max_chars=80, lower=0, portal_type=None):
     warn("The method, "
