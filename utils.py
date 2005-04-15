@@ -167,6 +167,7 @@ def _isinstance(ob, cls):
         # instead of returning 0 for ExtensionClasses.
         return 0
 
+# Note: this code must be kept in sync with ProxyTool.getBestRevision
 def resetSessionLanguageSelection(REQUEST):
     """Clear documents language selection done by switchLanguage"""
     if getattr(REQUEST, 'SESSION', None) is not None:
