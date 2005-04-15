@@ -6,10 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- #594: Information leaks between tree caches.
-- #598: Bad indexation of workspaces and sections roots.
-- Made LanguageViewer and reindexObjectSecurity compatible with
-  Zope 2.7.6's brain.getObject.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- proxy.proxyChanged now always reindexes.
+-
