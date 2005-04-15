@@ -219,6 +219,21 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         all.sort() # Sort by rpath.
         return all
 
+    # Needed by unit tests
+    security.declarePrivate('resetLanguageSwitches')
+    def resetLanguageSwitches(self, request=True, session=False):
+        """Reset request or session language switches."""
+        REQUEST = getattr(self, 'REQUEST', None)
+        if REQUEST is None:
+            return
+        if request:
+            if REQUEST_LANGUAGE_KEY in REQUEST.other:
+                del REQUEST.other[REQUEST_LANGUAGE_KEY]
+        if session:
+            if REQUEST.has_key('SESSION'):
+                if SESSION_LANGUAGE_KEY in REQUEST.SESSION:
+                    del REQUEST.SESSION[SESSION_LANGUAGE_KEY]
+
     security.declarePrivate('getBestRevision')
     def getBestRevision(self, proxy, lang=None):
         """Get the best language and revision for a proxy.
