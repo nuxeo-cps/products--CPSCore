@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- fix #600 for ProxyTool: session ids generated without apparent reason
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Added utils.resetRequestLanguageSelection for unit tests.
