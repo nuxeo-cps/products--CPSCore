@@ -264,7 +264,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                     # 1.2/ check SESSION
                     if switcher is None and REQUEST.has_key('SESSION'):
                         check += ' SESSION'
-                        switcher = REQUEST.SESSION.get(SESSION_LANGUAGE_KEY)
+                        SESSION = REQUEST.SESSION
+                        if SESSION.has_key(SESSION_LANGUAGE_KEY):
+                            switcher = SESSION[SESSION_LANGUAGE_KEY]
                     if switcher is not None:
                         utool = getToolByName(self, 'portal_url')
                         rpath = utool.getRelativeUrl(proxy)
