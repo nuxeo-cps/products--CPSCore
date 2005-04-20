@@ -11,3 +11,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Added utils.resetRequestLanguageSelection for unit tests.
+- tests for #607 : Deleting an event suscriber in ZMI is inefficient
