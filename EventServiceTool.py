@@ -147,15 +147,13 @@ class SubscriberDef(SimpleItemWithProperties):
         """Force Event service tool to refresh its notification dict.
         """
         SimpleItemWithProperties.manage_afterAdd(self, item, container)
-        if aq_base(self) is aq_base(item):
-            self._refresh()
+        self._refresh()
 
     def manage_beforeDelete(self, item, container):
         """Force Event service tool to refresh its notification dict.
         """
         SimpleItemWithProperties.manage_beforeDelete(self, item, container)
-        if aq_base(self) is aq_base(item):
-            self._refresh(exclude_id=item.getId())
+        self._refresh(exclude_id=self.getId())
 
 InitializeClass(SubscriberDef)
 

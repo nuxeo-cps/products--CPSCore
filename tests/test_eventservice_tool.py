@@ -69,6 +69,57 @@ class EventServiceToolTest(unittest.TestCase):
         )
         self.assertEqual(len(evtool.getSubscribers()), 1)
 
+    def test_2_delsubscriber(self):
+        self._make_tool()
+        portal = self.root.testsite
+        evtool = portal.portal_eventservice
+
+        # Subscriber 1
+        id = evtool.manage_addSubscriber(
+            subscriber='portal_subscriber',
+            action='action',
+            meta_type="*",
+            event_type="*",
+            notification_type="asynchronous",
+            compressed=0,
+            activated=1,
+            )
+
+        self.assert_(id)
+        internal_subscribers = evtool._notification_dict['*']['*'][
+            'asynchronous']
+        self.assertEqual(len(evtool.getSubscribers()), 1)
+        self.assertEqual(len(internal_subscribers),1)
+
+        # Subscriber 2
+        id2 = evtool.manage_addSubscriber(
+            subscriber='portal_subscriber2',
+            action='action',
+            meta_type="*",
+            event_type="*",
+            notification_type="asynchronous",
+            compressed=0,
+            activated=1,
+            )
+
+        self.assert_(id2)
+        self.assertEqual(len(evtool.getSubscribers()), 2)
+        internal_subscribers = evtool._notification_dict['*']['*'][
+            'asynchronous']
+        self.assertEqual(len(internal_subscribers), 2)
+    
+        # Delete the subscriber 1
+        evtool.manage_delObjects([id])
+        internal_subscribers = evtool._notification_dict['*']['*'][
+            'asynchronous']
+        self.assertEqual(len(evtool.getSubscribers()), 1)
+        self.assertEqual(len(internal_subscribers),1)
+
+        # Delete the subscriber 2
+        evtool.manage_delObjects([id2])
+        self.assertEqual(len(evtool.getSubscribers()), 0)
+        self.assertEqual(evtool._notification_dict,{})
+
     # XXX: add more tests
 
 def test_suite():
