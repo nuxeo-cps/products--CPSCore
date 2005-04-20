@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Add the possibility to enabled / disabled a subscriber.
 Bug fixes:
 ~~~~~~~~~~
 - fix #600 for ProxyTool: session ids generated without apparent reason
