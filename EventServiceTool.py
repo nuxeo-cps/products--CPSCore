@@ -336,6 +336,7 @@ class EventServiceTool(UniqueObject, Folder):
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(
                 '%s/manage_editSubscribersForm' % (self.absolute_url(),))
-
+            return
+        return id
 
 InitializeClass(EventServiceTool)
