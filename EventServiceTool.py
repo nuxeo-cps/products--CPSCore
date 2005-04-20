@@ -101,11 +101,18 @@ class SubscriberDef(SimpleItemWithProperties):
             'type': 'boolean',
             'mode': 'w',
             'label': 'Compressed',
-        },
+        }, {
+            'id': 'activated',
+            'type': 'boolean',
+            'mode': 'w',
+            'label': 'Activated ?',
+       },
     )
 
+    activated = True
+
     def __init__(self, id, subscriber, action, meta_type, event_type,
-                 notification_type, compressed):
+                 notification_type, compressed, activated=1):
         self.id = id
         self.subscriber = subscriber
         self.action = action
@@ -113,6 +120,7 @@ class SubscriberDef(SimpleItemWithProperties):
         self.event_type = event_type
         self.notification_type = notification_type
         self.compressed = compressed
+        self.activated = activated
 
     def _refresh(self, exclude_id=None):
         parent = aq_parent(aq_inner(self))
@@ -219,6 +227,8 @@ class EventServiceTool(UniqueObject, Folder):
                     if not_def is None:
                         continue
                     for sub_def in not_def:
+                        if not sub_def['activated']:
+                            continue
                         subscriber_id = sub_def['subscriber']
                         subscriber = getattr(portal, subscriber_id, None)
                         if subscriber is None:
@@ -276,6 +286,7 @@ class EventServiceTool(UniqueObject, Folder):
                     'subscriber': sub_def.subscriber,
                     'action': 'notify_%s' % (sub_def.action, ),
                     'compressed': sub_def.compressed,
+                    'activated' : sub_def.activated,
                 })
         self._notification_dict = notification_dict
 
@@ -304,6 +315,7 @@ class EventServiceTool(UniqueObject, Folder):
     security.declareProtected(ViewManagementScreens, 'manage_addSubscriber')
     def manage_addSubscriber(self, subscriber, action, meta_type,
                              event_type, notification_type, compressed=0,
+                             activated=1,
                              REQUEST=None):
         """Add a subscriber definition."""
         if isinstance(event_type, StringType):
@@ -317,7 +329,7 @@ class EventServiceTool(UniqueObject, Folder):
                 break
         subscriber_obj = SubscriberDef(id, subscriber, action, meta_type,
                                        event_type, notification_type,
-                                       compressed)
+                                       compressed, activated)
         self._setObject(id, subscriber_obj)
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(

@@ -98,7 +98,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
             meta_type="type1",
             event_type="an_event",
             notification_type="synchronous",
-            compressed=0
+            compressed=0,
+            activated=1,
         )
         object = Class1()
         object2 = Class2()
@@ -127,7 +128,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
             meta_type="type1",
             event_type="*",
             notification_type="synchronous",
-            compressed=0
+            compressed=0,
+            activated=1,
         )
         object = Class1()
         object2 = Class2()
@@ -153,7 +155,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
             meta_type="*",
             event_type="an_event",
             notification_type="synchronous",
-            compressed=0
+            compressed=0,
+            activated=1,
         )
         object = Class1()
         object2 = Class2()
@@ -179,7 +182,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
             meta_type="*",
             event_type="*",
             notification_type="synchronous",
-            compressed=0
+            compressed=0,
+            activated=1,
         )
         object = Class1()
         object2 = Class2()
@@ -209,7 +213,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
             meta_type="*",
             event_type="an_event",
             notification_type="synchronous",
-            compressed=0
+            compressed=0,
+            activated=1,
         )
         tool.manage_addSubscriber(
             subscriber=subscriber.getId(),
@@ -217,7 +222,8 @@ class SynchronousNotificationsTest(unittest.TestCase):
             meta_type="*",
             event_type="an_event",
             notification_type="synchronous",
-            compressed=0
+            compressed=0,
+            activated=1,
         )
 
         object = Class1()
@@ -234,6 +240,33 @@ class SynchronousNotificationsTest(unittest.TestCase):
 
         # Check that the other subscriber was notified.
         self.assertEqual(subscriber.notified, 2)
+
+    def test_notification_status(self):
+        # Test that our subscriber is notified.
+        # Don't filter.
+        self.makeInfrastructure()
+        tool = self.tool
+        subscriber = self.subscriber
+        tool.manage_addSubscriber(
+            subscriber=subscriber.getId(),
+            action='action',
+            meta_type="*",
+            event_type="*",
+            notification_type="synchronous",
+            compressed=0,
+            activated=0,
+        )
+        object = Class1()
+        object2 = Class2()
+
+        tool.notify('an_other_event', object, {})
+        self.assertEqual(subscriber.notified, 0)
+        tool.notify('an_other_event', object2, {})
+        self.assertEqual(subscriber.notified, 0)
+        tool.notify('an_event', object, {})
+        self.assertEqual(subscriber.notified, 0)
+        tool.notify('an_event', object2, {})
+        self.assertEqual(subscriber.notified, 0)
 
 
 def test_suite():

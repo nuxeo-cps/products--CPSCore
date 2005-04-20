@@ -64,7 +64,8 @@ class EventServiceToolTest(unittest.TestCase):
             meta_type="*",
             event_type="*",
             notification_type="asynchronous",
-            compressed=0
+            compressed=0,
+            activated=1,
         )
         self.assertEqual(len(evtool.getSubscribers()), 1)
 

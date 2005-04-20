@@ -37,13 +37,18 @@ function toggleSelect() {
 <tr class="list-header">
   <td>
   </td>
-  <td width="30%" align="left"><div class="list-item"><a 
+  <td align="left"><div class="list-item"><a 
    href="./manage_main?skey=subscriber<dtml-if 
    "rkey == ''">&rkey=subscriber</dtml-if>"
    onMouseOver="window.status='Sort objects by subscriber'; return true"
    onMouseOut="window.status=''; return true"><dtml-if 
    "skey == 'subscriber' or rkey == 'subscriber'"
    ><strong>Subscriber</strong><dtml-else>Subscriber</dtml-if></a></div>
+  </td>
+  <td align="left">
+    <div class="list-item">
+      <strong>Status</strong>
+    </div>
   </td>
   <td width="15%" align="left"><div class="list-item"><a 
    href="./manage_main?skey=action<dtml-if 
@@ -114,14 +119,21 @@ function toggleSelect() {
   </dtml-if>
   </div>
   </td>
-
+  <td valign="top">
+    <div class="list-item">
+      <dtml-if activated>
+        Enabled
+      <dtml-else>
+        Disabled
+      </dtml-if>
+    </div>
+  </td>
   <dtml-with sequence-key>
   <td valign="middle">
   <div class="list-item">
   <dtml-var action>
   </div>
   </td>
-
   <td valign="middle">
   <div class="list-item">
   <dtml-var meta_type_>
@@ -199,6 +211,9 @@ There are currently no subscribers in <em>&dtml-title_or_id;</em>
         Subscriber
       </th>
       <th align="left">
+        Enabled
+      </th>
+      <th align="left">
         Action
       </th>
       <th align="left">
@@ -217,6 +232,9 @@ There are currently no subscribers in <em>&dtml-title_or_id;</em>
     <tr>
       <td>
         <input type="string" name="subscriber">
+      </td>
+      <td>
+        <input type="checkbox" name="activated" checked="checked">
       </td>
       <td>
         <input type="string" name="action">
