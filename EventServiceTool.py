@@ -112,7 +112,7 @@ class SubscriberDef(SimpleItemWithProperties):
     activated = True
 
     def __init__(self, id, subscriber, action, meta_type, event_type,
-                 notification_type, compressed, activated=1):
+                 notification_type, compressed, activated):
         self.id = id
         self.subscriber = subscriber
         self.action = action
@@ -315,7 +315,7 @@ class EventServiceTool(UniqueObject, Folder):
     security.declareProtected(ViewManagementScreens, 'manage_addSubscriber')
     def manage_addSubscriber(self, subscriber, action, meta_type,
                              event_type, notification_type, compressed=0,
-                             activated=1,
+                             activated=0,
                              REQUEST=None):
         """Add a subscriber definition."""
         if isinstance(event_type, StringType):
