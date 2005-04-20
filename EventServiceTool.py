@@ -227,7 +227,9 @@ class EventServiceTool(UniqueObject, Folder):
                     if not_def is None:
                         continue
                     for sub_def in not_def:
-                        if not sub_def['activated']:
+                        # XXX before first refresh with prop
+                        # the dict doesn't have the prop yet
+                        if not sub_def.get('activated', 1):
                             continue
                         subscriber_id = sub_def['subscriber']
                         subscriber = getattr(portal, subscriber_id, None)
