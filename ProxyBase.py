@@ -1144,6 +1144,13 @@ class ViewZip(Acquisition.Explicit):
                 content = 0
             # cache for next access
             zip_cache[key] = content
+        # set mime type
+        registry = getToolByName(self, 'mimetypes_registry', None)
+        if registry is not None:
+            mimetype = registry.lookupExtension(
+                os.path.basename(filepath.lower()))
+            if mimetype:
+                RESPONSE.setHeader('Content-Type', mimetype.normalized())
         # render content keeping original html base
         RESPONSE.setBase(None)
         return content
