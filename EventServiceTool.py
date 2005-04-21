@@ -127,6 +127,20 @@ class SubscriberDef(SimpleItemWithProperties):
         if parent is not None and parent.meta_type == CPSEventServiceTool_type:
             parent._refresh_notification_dict(exclude_id=exclude_id)
 
+    def enable(self):
+        """Enable the subscriber
+        """
+        if not self.activated:
+            self.activated = 1
+            self._refresh()
+
+    def disable(self):
+        """Disable the subscriber
+        """
+        if self.activated:
+            self.activated = 0
+            self._refresh()
+
     def manage_changeProperties(self, REQUEST=None, **kw):
         """Change Subscriber definition properties and force Event service
         tool to refresh its notification dict.
@@ -312,6 +326,14 @@ class EventServiceTool(UniqueObject, Folder):
         """Return subscriber definitions."""
         return self.objectValues(CPSSubscriberDefinition_type)
 
+    security.declareProtected(ViewManagementScreens, 'getSubscriberByName')
+    def getSubscriberByName(self, name, default=None):
+        """ Return a subscriber given it's name """
+        for subscriber in self.getSubscribers():
+            if subscriber.subscriber == name:
+                return subscriber
+        return default
+    
     security.declareProtected(ViewManagementScreens, 'manage_addSubscriber')
     def manage_addSubscriber(self, subscriber, action, meta_type,
                              event_type, notification_type, compressed=0,

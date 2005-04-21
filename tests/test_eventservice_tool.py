@@ -120,6 +120,56 @@ class EventServiceToolTest(unittest.TestCase):
         self.assertEqual(len(evtool.getSubscribers()), 0)
         self.assertEqual(evtool._notification_dict,{})
 
+    def test_2_geSubscriberByName(self):
+        self._make_tool()
+        portal = self.root.testsite
+        evtool = portal.portal_eventservice
+
+        # Subscriber 1
+        id = evtool.manage_addSubscriber(
+            subscriber='portal_subscriber',
+            action='action',
+            meta_type="*",
+            event_type="*",
+            notification_type="asynchronous",
+            compressed=0,
+            activated=1,
+            )
+
+        # Subscriber 2
+        id2 = evtool.manage_addSubscriber(
+            subscriber='portal_subscriber2',
+            action='action',
+            meta_type="*",
+            event_type="*",
+            notification_type="asynchronous",
+            compressed=0,
+            activated=1,
+            )
+
+        # Test sub1
+        sub1 = evtool.getSubscriberByName('portal_subscriber')
+        self.assert_(sub1)
+        self.assertEqual(sub1.getId(), id)
+
+        # Test sub2
+        sub2 = evtool.getSubscriberByName('portal_subscriber2')
+        self.assert_(sub2)
+        self.assertEqual(sub2.getId(), id2)
+
+        # Test a non existent one
+        subx = evtool.getSubscriberByName('portal_subscriber3')
+        self.assertEqual(subx, None)
+
+        # Test a non existent one with default returned value
+        class Klass:
+            pass
+
+        instance = Klass() 
+        subx = evtool.getSubscriberByName('portal_subscriber3', instance)
+        self.assertEqual(subx, instance)
+        
+                         
     # XXX: add more tests
 
 def test_suite():

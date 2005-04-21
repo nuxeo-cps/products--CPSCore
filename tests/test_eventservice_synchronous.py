@@ -268,6 +268,69 @@ class SynchronousNotificationsTest(unittest.TestCase):
         tool.notify('an_event', object2, {})
         self.assertEqual(subscriber.notified, 0)
 
+    def test_enable_subscriber(self):
+        # Test that our subscriber can be enable even if it was disable
+        # at registration time
+        self.makeInfrastructure()
+        tool = self.tool
+        subscriber = self.subscriber
+        id = tool.manage_addSubscriber(
+            subscriber=subscriber.getId(),
+            action='action',
+            meta_type="type1",
+            event_type="an_event",
+            notification_type="synchronous",
+            compressed=0,
+            activated=0,
+            )
+        object = Class1()
+
+        tool.notify('an_event', object, {})
+        self.assertEqual(subscriber.notified, 0)
+
+        # Enable
+        isubscriber = tool[id]
+        isubscriber.enable()
+        tool.notify('an_event', object, {})
+        self.assertEqual(subscriber.notified, 1)
+
+        # Disable
+        isubscriber = tool[id]
+        isubscriber.disable()
+        tool.notify('an_event', object, {})
+        self.assertEqual(subscriber.notified, 1)
+
+    def test_disable_subscriber(self):
+        # Test that our subscriber can be disable even if it was
+        # disable at registration time
+        self.makeInfrastructure()
+        tool = self.tool
+        subscriber = self.subscriber
+        id = tool.manage_addSubscriber(
+            subscriber=subscriber.getId(),
+            action='action',
+            meta_type="type1",
+            event_type="an_event",
+            notification_type="synchronous",
+            compressed=0,
+            activated=1,
+            )
+        object = Class1()
+
+        tool.notify('an_event', object, {})
+        self.assertEqual(subscriber.notified, 1)
+
+        # Disable
+        isubscriber = tool[id]
+        isubscriber.disable()
+        tool.notify('an_event', object, {})
+        self.assertEqual(subscriber.notified, 1)
+
+        # Enable
+        isubscriber = tool[id]
+        isubscriber.enable()
+        tool.notify('an_event', object, {})
+        self.assertEqual(subscriber.notified, 2)
 
 def test_suite():
     return unittest.TestSuite((
