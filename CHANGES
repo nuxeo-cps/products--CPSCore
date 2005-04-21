@@ -8,6 +8,9 @@ Bug fixes:
 ~~~~~~~~~~
 - fix #600 for ProxyTool: session ids generated without apparent reason
 - fix: ViewZip may return content with invalid mime type
+- fix: don't reindex an object twice while reindexing all the indexes
+and the security
+
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Added utils.resetRequestLanguageSelection for unit tests.
