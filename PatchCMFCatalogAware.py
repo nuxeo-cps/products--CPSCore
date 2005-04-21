@@ -24,6 +24,8 @@ and add event service notifications
 
 from zLOG import LOG, DEBUG
 
+from Acquisition import aq_base
+
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
@@ -69,11 +71,16 @@ def reindexObjectSecurity(self, skip_self=False):
             # BBB: Old CMF
             brains = catalog.searchResults(path=path)
         for brain in brains:
-            ob = self.unrestrictedTraverse(brain.getPath(), None)
+            brain_path = brain.getPath()
+            # self is treated at the end
+            if brain_path == path:
+                continue
+            ob = self.unrestrictedTraverse(brain_path, None)
             if ob is None:
                 # Ignore old references to deleted objects.
                 continue
             s = getattr(ob, '_p_changed', 0)
+
             catalog.reindexObject(ob, idxs=['allowedRolesAndUsers'],
                                   update_metadata=0)
             if s is None: ob._p_deactivate()
