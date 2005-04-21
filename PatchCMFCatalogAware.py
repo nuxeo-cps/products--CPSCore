@@ -24,8 +24,6 @@ and add event service notifications
 
 from zLOG import LOG, DEBUG
 
-from Acquisition import aq_base
-
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
