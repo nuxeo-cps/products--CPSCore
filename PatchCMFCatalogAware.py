@@ -19,12 +19,11 @@
 """Patch the CMFCore.CMFCatalogAware
 
 The idea in here is to prevent the repository objects to be indexed
-and add event service notifications
-"""
+and add event service notifications 
+""" 
 
 from zLOG import LOG, DEBUG
 
-from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 # XXX those patch can't be there as manage_XXXs are already defined over there
@@ -52,45 +51,7 @@ def manage_beforeDelete(self, *args, **kw):
         self._cps_old_manage_beforeDelete(*args, **kw)
     notify(self, 'sys_del_object', self, *args, **kw)
 
-
-def reindexObjectSecurity(self, skip_self=False):
-    """Reindex security-related indexes on the object (and its descendants).
-
-    An optional argument skip_self can be passed, since it's useless to
-    reindex the object itself if it has already been fully indexed.
-    """
-
-    catalog = getToolByName(self, 'portal_catalog', None)
-    if catalog is not None:
-        path = '/'.join(self.getPhysicalPath())
-        try:
-            brains = catalog.unrestrictedSearchResults(path=path)
-        except AttributeError:
-            # BBB: Old CMF
-            brains = catalog.searchResults(path=path)
-        for brain in brains:
-            brain_path = brain.getPath()
-            # self is treated at the end
-            if brain_path == path:
-                continue
-            ob = self.unrestrictedTraverse(brain_path, None)
-            if ob is None:
-                # Ignore old references to deleted objects.
-                continue
-            s = getattr(ob, '_p_changed', 0)
-
-            catalog.reindexObject(ob, idxs=['allowedRolesAndUsers'],
-                                  update_metadata=0)
-            if s is None: ob._p_deactivate()
-        # Reindex the object itself, as the PathIndex only gave us
-        # the descendants.
-        if not skip_self:
-            catalog.reindexObject(self, idxs=['allowedRolesAndUsers'],
-                                  update_metadata=0)
-
-
 patch_action(CMFCatalogAware, manage_afterAdd)
 patch_action(CMFCatalogAware, manage_beforeDelete)
-CMFCatalogAware.reindexObjectSecurity = reindexObjectSecurity
 
 LOG('PatchCMFCatalogAware', DEBUG, 'Patched')

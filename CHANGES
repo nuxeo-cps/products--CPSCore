@@ -1,6 +1,6 @@
 Requires:
 ~~~~~~~~~
--
+- CPSCompat > 0.2.0
 New features:
 ~~~~~~~~~~~~~
 - Add the possibility to enabled / disabled a subscriber.
@@ -15,3 +15,4 @@ New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Added utils.resetRequestLanguageSelection for unit tests.
 - tests for #607 : Deleting an event suscriber in ZMI is inefficient
+- reindexObjectSecurity() patch moved to CPSCompat
