@@ -26,9 +26,7 @@ Asynchronous by default.
 from zLOG import LOG, DEBUG
 from Acquisition import aq_base
 
-
 _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
-
 
 class IndexationManager:
     """Holds data about reindexings to be done."""
@@ -67,7 +65,10 @@ class IndexationManager:
         LOG("IndexationManager", DEBUG, "queue object %r idxs=%s secu=%s"
             % (ob, idxs, with_security))
 
-        i = id(aq_base(ob)) # XXX should use security manager too
+        # Compute a key for ob. id() is not enough when cut and paste
+        # <id_of_ob, rpath>
+        rpath = '/'.join(ob.getPhysicalPath())[1:]
+        i = (id(aq_base(ob)), rpath) # XXX should use security manager too
         info = self._infos.get(i)
         if info is None:
             info = {

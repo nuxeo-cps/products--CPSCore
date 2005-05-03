@@ -10,6 +10,7 @@ Bug fixes:
 - fix: ViewZip may return content with invalid mime type
 - fix: don't reindex an object twice while reindexing all the indexes
 and the security
+- fix : IndexationManager wasn't reindexing cut and pasted objects
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~

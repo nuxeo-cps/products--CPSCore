@@ -20,6 +20,7 @@
 """Tests for the Indexation Manager
 """
 
+import random
 import unittest
 from OFS.SimpleItem import SimpleItem
 
@@ -31,12 +32,36 @@ class FakeTransaction:
         pass
 
 class FakeRoot:
+
+    __objects__ = {}
+
+    def generateId(self):
+        id = random.randrange(1000000)
+        while id in self.__objects__.keys():
+            id = random.randrange(1000000)
+        return id
+
     def unrestrictedTraverse(self, path, default):
-        dummy, ob = path
+        dummy, id = path
         assert dummy == ''
+        return self.getDummy(int(id))
+
+    def addDummy(self):
+        id = self.generateId()
+        ob = Dummy(id)
+        self.__objects__[id] = ob
         return ob
 
+    def getDummy(self, id):
+        return self.__objects__.get(id)
+
+    def clear(self):
+        self.__objects__ = {}
+
+root = FakeRoot()
+
 class Dummy:
+
     def __init__(self, id):
         self.id = id
         self.log = []
@@ -48,10 +73,10 @@ class Dummy:
         return log
 
     def getPhysicalRoot(self):
-        return FakeRoot()
+        return root
 
     def getPhysicalPath(self):
-        return ('', self)
+        return ('', str(self.id))
 
     def _reindexObject(self, idxs=[]):
         self.log.append('idxs %s %r' % (self.id, idxs))
@@ -59,11 +84,10 @@ class Dummy:
     def _reindexObjectSecurity(self, skip_self=False):
         self.log.append('secu %s %r' % (self.id, skip_self))
 
-
 class IndexationManagerTest(unittest.TestCase):
 
     def get_stuff(self):
-        return IndexationManager(FakeTransaction()), Dummy('dummy')
+        return IndexationManager(FakeTransaction()), root.addDummy()
 
     def test_simple(self):
         mgr, dummy = self.get_stuff()
@@ -74,11 +98,13 @@ class IndexationManagerTest(unittest.TestCase):
 
         # Manager is called (by commit), check reindexation is done.
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+        self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
 
         # Object is gone from queue after that.
         mgr()
         self.assertEquals(dummy.getLog(), [])
+
+        root.clear()
 
     def test_several_times_1(self):
         mgr, dummy = self.get_stuff()
@@ -86,7 +112,8 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=['b'])
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['a', 'b']"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['a', 'b']"%dummy.id])
+        root.clear()
 
     def test_several_times_2(self):
         mgr, dummy = self.get_stuff()
@@ -94,7 +121,8 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=['foo'])
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+        self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
+        root.clear()
 
     def test_several_times_3(self):
         mgr, dummy = self.get_stuff()
@@ -102,7 +130,8 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=[])
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+        self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
+        root.clear()
 
     def test_several_times_4(self):
         mgr, dummy = self.get_stuff()
@@ -110,7 +139,8 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=None)
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['foo']"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['foo']"%dummy.id])
+        root.clear()
 
     def test_several_times_5(self):
         mgr, dummy = self.get_stuff()
@@ -118,7 +148,8 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=['foo'])
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['foo']"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['foo']"%dummy.id])
+        root.clear()
 
     def test_several_times_6(self):
         mgr, dummy = self.get_stuff()
@@ -126,7 +157,8 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=[])
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+        self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
+        root.clear()
 
     def test_several_times_7(self):
         mgr, dummy = self.get_stuff()
@@ -134,7 +166,8 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=None)
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy []"])
+        self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
+        root.clear()
 
     def test_several_secu_1(self):
         mgr, dummy = self.get_stuff()
@@ -142,8 +175,9 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, with_security=True)
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['foo']",
-                                           "secu dummy False"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['foo']"%dummy.id,
+                                           "secu %s False"%dummy.id])
+        root.clear()
 
     def test_several_secu_2(self):
         mgr, dummy = self.get_stuff()
@@ -151,8 +185,9 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, with_security=True)
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy []",
-                                           "secu dummy True"])
+        self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id,
+                                           "secu %s True"%dummy.id])
+        root.clear()
 
     def test_several_secu_3(self):
         mgr, dummy = self.get_stuff()
@@ -162,8 +197,9 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(),
-                          ["idxs dummy ['allowedRolesAndUsers', 'foo']",
-                           "secu dummy True"])
+                          ["idxs %s ['allowedRolesAndUsers', 'foo']"%dummy.id,
+                           "secu %s True"%dummy.id])
+        root.clear()
 
     def test_synchronous(self):
         mgr, dummy = self.get_stuff()
@@ -171,16 +207,17 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=['a'])
         self.assertEquals(dummy.getLog(), [])
         mgr.setSynchonous(True)
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['a']"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['a']"%dummy.id])
         mgr.push(dummy, idxs=['b'])
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['b']"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['b']"%dummy.id])
         mgr.push(dummy, idxs=['c'])
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['c']"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['c']"%dummy.id])
         mgr.setSynchonous(False)
         mgr.push(dummy, idxs=['d'])
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['d']"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['d']"%dummy.id])
+        root.clear()
 
 class TransactionIndexationManagerTest(unittest.TestCase):
 
@@ -189,21 +226,22 @@ class TransactionIndexationManagerTest(unittest.TestCase):
     def test_transaction(self):
         get_transaction().begin()
         mgr = get_indexation_manager()
-        dummy = Dummy('dummy')
+        dummy = root.addDummy()
         mgr.push(dummy, idxs=['bar'])
         self.assertEquals(dummy.getLog(), [])
         get_transaction().commit()
-        self.assertEquals(dummy.getLog(), ["idxs dummy ['bar']"])
+        self.assertEquals(dummy.getLog(), ["idxs %s ['bar']"%dummy.id])
+        root.clear()
 
     def test_transaction_aborting(self):
         get_transaction().begin()
         mgr = get_indexation_manager()
-        dummy = Dummy('dummy')
+        dummy = root.addDummy()
         mgr.push(dummy, idxs=['bar'])
         self.assertEquals(dummy.getLog(), [])
         get_transaction().abort()
         self.assertEquals(dummy.getLog(), [])
-
+        root.clear()
 
 def test_suite():
     return unittest.TestSuite((
