@@ -32,9 +32,10 @@ from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner, aq_base
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+from AccessControl.Permissions import manage_properties
 from ZODB.POSException import ConflictError
 
-from OFS.Folder import Folder
+from OFS.OrderedFolder import OrderedFolder
 
 from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
@@ -172,7 +173,7 @@ class SubscriberDef(SimpleItemWithProperties):
 InitializeClass(SubscriberDef)
 
 
-class EventServiceTool(UniqueObject, Folder):
+class EventServiceTool(UniqueObject, OrderedFolder):
     """Event service is used to dispatch notifications to subscribers.
     """
 
@@ -304,6 +305,12 @@ class EventServiceTool(UniqueObject, Folder):
                 })
         self._notification_dict = notification_dict
 
+    security.declareProtected(manage_properties, 'moveObjectsByDelta')
+    def moveObjectsByDelta(self, ids, delta, subset_ids=None):
+        res = OrderedFolder.moveObjectsByDelta(self, ids, delta, subset_ids)
+        self._refresh_notification_dict()
+        return res
+
     #
     # ZMI
     #
@@ -312,7 +319,7 @@ class EventServiceTool(UniqueObject, Folder):
             'label': 'Subscribers',
             'action': 'manage_editSubscribersForm',
         },
-        ) + Folder.manage_options[1:]
+        ) + OrderedFolder.manage_options[1:]
 
 
     security.declareProtected(ViewManagementScreens, 'manage_editSubscribersForm')
@@ -333,7 +340,7 @@ class EventServiceTool(UniqueObject, Folder):
             if subscriber.subscriber == name:
                 return subscriber
         return default
-    
+
     security.declareProtected(ViewManagementScreens, 'manage_addSubscriber')
     def manage_addSubscriber(self, subscriber, action, meta_type,
                              event_type, notification_type, compressed=0,

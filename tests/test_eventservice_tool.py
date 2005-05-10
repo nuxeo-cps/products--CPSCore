@@ -69,7 +69,7 @@ class EventServiceToolTest(unittest.TestCase):
         )
         self.assertEqual(len(evtool.getSubscribers()), 1)
 
-    def test_2_delsubscriber(self):
+    def test_2_del_subscriber(self):
         self._make_tool()
         portal = self.root.testsite
         evtool = portal.portal_eventservice
@@ -107,7 +107,7 @@ class EventServiceToolTest(unittest.TestCase):
         internal_subscribers = evtool._notification_dict['*']['*'][
             'asynchronous']
         self.assertEqual(len(internal_subscribers), 2)
-    
+
         # Delete the subscriber 1
         evtool.manage_delObjects([id])
         internal_subscribers = evtool._notification_dict['*']['*'][
@@ -120,7 +120,7 @@ class EventServiceToolTest(unittest.TestCase):
         self.assertEqual(len(evtool.getSubscribers()), 0)
         self.assertEqual(evtool._notification_dict,{})
 
-    def test_2_geSubscriberByName(self):
+    def test_2_getSubscriberByName(self):
         self._make_tool()
         portal = self.root.testsite
         evtool = portal.portal_eventservice
@@ -165,11 +165,52 @@ class EventServiceToolTest(unittest.TestCase):
         class Klass:
             pass
 
-        instance = Klass() 
+        instance = Klass()
         subx = evtool.getSubscriberByName('portal_subscriber3', instance)
         self.assertEqual(subx, instance)
-        
-                         
+
+    def test_order_subscribers(self):
+        # XXX: assuming events are distributed in the order given by
+        # getSubscribers() method
+        self._make_tool()
+        portal = self.root.testsite
+        evtool = portal.portal_eventservice
+
+        # Subscriber 1
+        id = evtool.manage_addSubscriber(
+            subscriber='portal_subscriber1',
+            action='action',
+            meta_type="*",
+            event_type="*",
+            notification_type="asynchronous",
+            compressed=0,
+            activated=1,
+            )
+
+        # Subscriber 2
+        id2 = evtool.manage_addSubscriber(
+            subscriber='portal_subscriber2',
+            action='action',
+            meta_type="*",
+            event_type="*",
+            notification_type="asynchronous",
+            compressed=0,
+            activated=1,
+            )
+
+        subs_names = [x.subscriber for x in evtool.getSubscribers()]
+        self.assertEqual(subs_names, ['portal_subscriber1',
+                                      'portal_subscriber2'])
+
+        # moving portal_subscriber2 on top
+        subs = evtool.getSubscriberByName('portal_subscriber2')
+        subs_id = subs.getId()
+        evtool.moveObjectsToTop(ids=(subs_id,))
+
+        subs_names = [x.subscriber for x in evtool.getSubscribers()]
+        self.assertEqual(subs_names, ['portal_subscriber2',
+                                      'portal_subscriber1'])
+
     # XXX: add more tests
 
 def test_suite():

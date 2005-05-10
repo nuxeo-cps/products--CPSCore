@@ -4,6 +4,8 @@ Requires:
 New features:
 ~~~~~~~~~~~~~
 - Add the possibility to enabled / disabled a subscriber.
+- Add the possibility to control the order in which events are distributed to
+  subscribers.
 Bug fixes:
 ~~~~~~~~~~
 - fix #600 for ProxyTool: session ids generated without apparent reason
