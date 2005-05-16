@@ -1,6 +1,7 @@
 Requires:
 ~~~~~~~~~
 - CPSCompat > 0.2.0
+- CPSWorkflow > 0.4.2
 New features:
 ~~~~~~~~~~~~~
 - Add the possibility to enabled / disabled a subscriber.
