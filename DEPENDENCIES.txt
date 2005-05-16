@@ -19,5 +19,5 @@ CMFUid
 
 # CPS ---------------------
 CPSUtil >= 0.5.0
-CPSWorkflow
+CPSWorkflow > 0.4.2
 CPSCompat > 0.2.0
