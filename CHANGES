@@ -1,22 +1,12 @@
 Requires:
 ~~~~~~~~~
-- CPSCompat > 0.2.0
-- CPSWorkflow > 0.4.2
+-
 New features:
 ~~~~~~~~~~~~~
-- Add the possibility to enabled / disabled a subscriber.
-- Add the possibility to control the order in which events are distributed to
-  subscribers.
+-
 Bug fixes:
 ~~~~~~~~~~
-- fix #600 for ProxyTool: session ids generated without apparent reason
-- fix: ViewZip may return content with invalid mime type
-- fix: don't reindex an object twice while reindexing all the indexes
-and the security
-- fix : IndexationManager wasn't reindexing cut and pasted objects
-
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Added utils.resetRequestLanguageSelection for unit tests.
-- tests for #607 : Deleting an event suscriber in ZMI is inefficient
-- reindexObjectSecurity() patch moved to CPSCompat
+-
