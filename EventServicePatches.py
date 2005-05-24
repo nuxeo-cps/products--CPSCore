@@ -112,6 +112,18 @@ for class_ in (Item, ObjectManager):
     patch_action(class_, manage_afterAdd)
     patch_action(class_, manage_beforeDelete)
 
+# Special fix for CMFDefault.File and Image:
+from Products.CMFCore.PortalContent import PortalContent
+from Products.CMFDefault.File import File
+from Products.CMFDefault.Image import Image
+def File_manage_beforeDelete(self, item, container):
+    """Both of my parents have a beforeDelete method"""
+    PortalContent._cps_old_manage_beforeDelete(self, item, container)
+# We don't use patch_action because we specifically do not want to
+# set or call _cps_old_<action>
+File.manage_beforeDelete = File_manage_beforeDelete
+Image.manage_beforeDelete = File_manage_beforeDelete
+
 #
 # Ordered Folder
 #
