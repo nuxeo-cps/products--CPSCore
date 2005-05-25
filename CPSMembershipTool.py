@@ -98,13 +98,16 @@ class CPSMembershipTool(MembershipTool):
 
     meta_type = 'CPS Membership Tool'
 
-    membersfolder_id = 'workspaces/members'
-    memberfolder_portal_type = 'Workspace'
-    memberfolder_roles = ('Owner', 'WorkspaceManager')
+    # XXX AT: Since there is now a membership tool in CPSDefault, these
+    # variables could be initialized with more 'standard' values here, and
+    # overloaded with CPS specific values in CPSDefault/MembershipTool.py
+    membersfolder_id = 'workspaces/members' # Members
+    memberfolder_portal_type = 'Workspace' # Folder
+    memberfolder_roles = ('Owner', 'WorkspaceManager') # Owner
 
     # XXX this is slightly better than what was done before (hardcoded roles
     # in each method) as this one centralises the allowed roles declaration
-    # and thus makes it possible to easily monkry-patch it. Would nethertheless
+    # and thus makes it possible to easily monkey-patch it. Would nethertheless
     # be more elegant to provide an API for changing roles that can manage
     # local roles (with proper permissions on methods of this API)
     roles_managing_local_roles = ('WorkspaceManager', 'SectionManager')
@@ -381,30 +384,22 @@ class CPSMembershipTool(MembershipTool):
 
         self._createMemberContent(member, member_id, member_area)
 
+        self._notifyMemberAreaCreated(member, member_id, member_area)
+
     security.declarePublic('createMemberarea')
     createMemberarea = createMemberArea
 
     # Can be overloaded by subclasses.
+    security.declarePrivate('_createMemberContentAsManager')
     def _createMemberContentAsManager(self, member, member_id, member_folder):
         """Create the content of the member area.
 
         Executed with Manager privileges.
         """
-        # Member is in fact a user object, it's not wrapped in the
-        # memberdata tool.
-        portal_cpscalendar = getToolByName(self, 'portal_cpscalendar', None)
-        if portal_cpscalendar:
-            create_calendar = getattr(portal_cpscalendar, 'create_member_calendar', 1)
-            if create_calendar:
-                try:
-                    portal_cpscalendar.createMemberCalendar(member_id)
-                # If the Calendar portal types has been removed, we will
-                # get a ValueError exception here.
-                except ValueError:
-                    pass
-
+        pass
 
     # Can be overloaded by subclasses.
+    security.declarePrivate('_createMemberContent')
     def _createMemberContent(self, member, member_id, member_folder):
         """Create the content of the member area."""
         # Member is in fact a user object, it's not wrapped in the
@@ -415,6 +410,12 @@ class CPSMembershipTool(MembershipTool):
                                      member_id=member_id,
                                      member_folder=member_folder)
 
+    # Can be overloaded by subclasses.
+    security.declarePrivate('_notifyMemberAreaCreated')
+    def _notifyMemberAreaCreated(self, member, member_id, member_folder):
+        """Perform special actions after member area has been created
+        """
+        pass
 
     security.declarePublic('isHomeless')
     def isHomeless(self, member=None):
