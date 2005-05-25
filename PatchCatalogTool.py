@@ -35,6 +35,8 @@ from Products.CPSCore.ProxyBase import ProxyBase, KEYWORD_SWITCH_LANGUAGE, \
      KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY
 from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 
+import App.version_txt
+ZopeVersion = App.version_txt.getZopeVersion()
 
 class IndexableObjectWrapper:
     """This is a CPS adaptation of
@@ -136,7 +138,7 @@ class IndexableObjectWrapper:
 
 
 ### Patching CatalogTool methods
-def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
+def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=None):
     """Wraps the object with workflow and accessibility
     information just before cataloging."""
 
@@ -178,7 +180,10 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1):
                                        is_default_proxy=is_default_proxy)
             LOG('PatchCatalogTool.catalog_object', TRACE,
                 'index uid locale %s' % uid)
-            ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
+            if ZopeVersion[0:1] == (2,8):
+                ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, pghandler)
+            else:
+                ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
 
 CatalogTool.catalog_object = cat_catalog_object
 LOG('PatchCatalogTool', TRACE, "Patching CMF CatalogTool.catalog_object")
