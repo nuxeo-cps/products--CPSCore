@@ -180,7 +180,7 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=
                                        is_default_proxy=is_default_proxy)
             LOG('PatchCatalogTool.catalog_object', TRACE,
                 'index uid locale %s' % uid)
-            if ZopeVersion[0:1] == (2,8):
+            if ZopeVersion[0:2] == (2,8):
                 ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, pghandler)
             else:
                 ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
