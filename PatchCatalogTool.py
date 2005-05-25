@@ -178,6 +178,8 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=
             LOG('PatchCatalogTool.catalog_object', TRACE,
                 'index uid locale %s' % uid)
             if pghandler is not None:
+	        # pghandler is a new keyword parameter introduced in
+		# Zope2.8. We do this check to keep 2.7 compatibility:
                 ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, pghandler)
             else:
                 ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
