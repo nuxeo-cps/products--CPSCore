@@ -35,9 +35,6 @@ from Products.CPSCore.ProxyBase import ProxyBase, KEYWORD_SWITCH_LANGUAGE, \
      KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY
 from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 
-import App.version_txt
-ZopeVersion = App.version_txt.getZopeVersion()
-
 class IndexableObjectWrapper:
     """This is a CPS adaptation of
     CMFCore.CatalogTool.IndexableObjectWrapper"""
@@ -180,7 +177,7 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=
                                        is_default_proxy=is_default_proxy)
             LOG('PatchCatalogTool.catalog_object', TRACE,
                 'index uid locale %s' % uid)
-            if ZopeVersion[0:2] == (2,8):
+            if pghandler is not None:
                 ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, pghandler)
             else:
                 ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
