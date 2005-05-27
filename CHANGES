@@ -11,6 +11,7 @@ New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Personal calendar is not created anymore by the CPSCore membership tool, but
   by the CPSDefault membership tool.
-- A new method has been added to the membership tool to perform actions just
-  after member area has been created (does not do anything in CPSCore but sets
-  title in overloaded method in CPSDefault)
+- A new method _notifyMemberAreaCreated has been added to the membership
+  tool to perform actions just after member area has been created (does
+  not do anything in CPSCore but sets title in overloaded method in
+  CPSDefault)
