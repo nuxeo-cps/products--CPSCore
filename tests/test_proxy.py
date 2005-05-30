@@ -92,6 +92,9 @@ class ProxyBaseTest(unittest.TestCase):
 
         # Can't test serializeProxy
 
+    def test_proxy_presence(self):
+        proxy = ProxyBase()
+        self.assert_(proxy)
 
 class ProxyToolTest(SecurityRequestTest):
     """Test CPS Proxy Tool."""

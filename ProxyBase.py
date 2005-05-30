@@ -1451,6 +1451,14 @@ class ProxyBTreeFolder(ProxyBase, CPSBaseBTreeFolder):
         CPSBaseBTreeFolder.__init__(self, id)
         ProxyBase.__init__(self, **kw)
 
+    def __nonzero__(self):
+        """Return True because proxy exists
+
+        BTree behavior checks __len__ method, that returns True only if BTree
+        is not empty ; here we only want to check that the proxy btree exists.
+        """
+        return True
+
     def getCPSCustomCSS(self):
         """
         Return the cps custom CSS from this folder

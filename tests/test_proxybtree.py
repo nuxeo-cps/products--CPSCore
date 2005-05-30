@@ -35,6 +35,11 @@ class ProxyBTreeFolderTest(BTreeFolder2Tests):
     def testCheckId(self):
         self.assertEqual(self.f._checkId('xyz'), None)
 
+    def test_proxy_presence(self):
+        # XXX: test if proxy exists, using __nonzero__ method
+        proxy = ProxyBTreeFolder('truc')
+        self.assert_(proxy)
+
     # skip base testWrapped test
     def testWrapped(self):
         pass
@@ -50,6 +55,11 @@ class ProxyBTreeFolderishDocumentTest(BTreeFolder2Tests):
 
     def testCheckId(self):
         self.assertEqual(self.f._checkId('xyz'), None)
+
+    def test_proxy_presence(self):
+        # XXX: test if proxy exists, using __nonzero__ method
+        proxy = ProxyBTreeFolderishDocument('tt')
+        self.assert_(proxy)
 
     # skip base testWrapped test
     def testWrapped(self):
