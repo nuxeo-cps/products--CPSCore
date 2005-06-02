@@ -1,4 +1,26 @@
 *******************************************
+** CPSCore V3.27.0 [R1 build 2005/06/02-09:30 by fguillaume]
+** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 22058
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- The test 'if proxy' returned False on BTree proxies if they did not have any
+  objects instead of testing the proxy existence.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Personal calendar is not created anymore by the CPSCore membership tool, but
+  by the CPSDefault membership tool.
+- A new method _notifyMemberAreaCreated has been added to the membership
+  tool to perform actions just after member area has been created (does
+  not do anything in CPSCore but sets title in overloaded method in
+  CPSDefault)
+
+*******************************************
 ** CPSCore V3.26.0 [R1 build 2005/05/16-13:33 by anahide]
 ** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 21594
 Requires:

@@ -6,13 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- The test 'if proxy' returned False on BTree proxies if they did not have any
-  objects instead of testing the proxy existence.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Personal calendar is not created anymore by the CPSCore membership tool, but
-  by the CPSDefault membership tool.
-- A new method _notifyMemberAreaCreated has been added to the membership
-  tool to perform actions just after member area has been created (does
-  not do anything in CPSCore but sets title in overloaded method in
-  CPSDefault)
+-
