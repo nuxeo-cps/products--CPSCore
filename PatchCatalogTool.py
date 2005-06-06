@@ -25,6 +25,7 @@ from Products.ZCatalog.ZCatalog import ZCatalog
 from Products.CMFCore.interfaces.portal_catalog import \
      IndexableObjectWrapper as IIndexableObjectWrapper
 from Products.CMFCore.CatalogTool import CatalogTool
+from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 from Products.CMFCore.utils import getToolByName, _getAuthenticatedUser, \
      _checkPermission
 from Products.CMFCore.permissions import AccessInactivePortalContent
@@ -34,6 +35,14 @@ from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject, \
 from Products.CPSCore.ProxyBase import ProxyBase, KEYWORD_SWITCH_LANGUAGE, \
      KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY
 from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
+
+
+# We're monkey patching CMFCatalogAware here because it's
+# really related to cataloging
+
+if 'localUsersWithRoles' not in CMFCatalogAware._cmf_security_indexes:
+    CMFCatalogAware._cmf_security_indexes += ('localUsersWithRoles',)
+
 
 class IndexableObjectWrapper:
     """This is a CPS adaptation of

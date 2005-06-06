@@ -26,6 +26,9 @@ from zLOG import LOG, DEBUG
 
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
+# Note: a patch about CMFCatalogAware is also made in PatchCatalogTool.py
+
+
 # XXX those patch can't be there as manage_XXXs are already defined over there
 from Products.CPSCore.EventServicePatches import patch_action, notify
 
