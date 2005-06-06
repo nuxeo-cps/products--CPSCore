@@ -171,7 +171,7 @@ def _isinstance(ob, cls):
 def resetSessionLanguageSelection(REQUEST):
     """Clear documents language selection done by switchLanguage"""
     if getattr(REQUEST, 'SESSION', None) is not None:
-        if SESSION_LANGUAGE_KEY in REQUEST.SESSION:
+        if REQUEST.SESSION.has_key(SESSION_LANGUAGE_KEY):
             del REQUEST.SESSION[SESSION_LANGUAGE_KEY]
 
 def resetRequestLanguageSelection(REQUEST):
