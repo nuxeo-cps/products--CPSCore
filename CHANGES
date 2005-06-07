@@ -3,7 +3,8 @@ Requires:
 - CPSCompat > 0.3.1
 New features:
 ~~~~~~~~~~~~~
--
+- added API and zmi UI to the CPSMembershipTool to purge the locaroles of
+  deleted users
 Bug fixes:
 ~~~~~~~~~~
 - Fixed missing reindexing of localUsersWithRoles by reindexObjectSecurity.

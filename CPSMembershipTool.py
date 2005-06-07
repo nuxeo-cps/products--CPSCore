@@ -25,6 +25,11 @@
 # $Id$
 
 import sys
+
+# python sets from 2.3 onward
+try: set
+except NameError: from sets import Set as set
+
 from types import StringType
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
@@ -93,10 +98,26 @@ class CPSMembershipTool(MembershipTool):
          category='user',
          condition=Expression(text='python: member and '
                               + 'portal.portal_membership.getHomeFolder()'),
-         visible=1)
+         visible=1),
+      AI(id='mystuff',
+         title='My stuff',
+         description='Goto your home folder',
+         action=Expression(text='string:${portal/portal_membership'
+                           + '/getHomeUrl}/folder_contents'),
+         permissions=(View,),
+         category='user',
+         condition=Expression(text='python: member and '
+                              + 'portal.portal_membership.getHomeFolder()'),
+         visible=1),
     ]
 
     meta_type = 'CPS Membership Tool'
+
+    _properties = (
+        {'id': 'pending_members', 'type': 'lines', 'mode': 'w',
+         'label': 'Recently deleted members'},
+        )
+    pending_members = ()
 
     # XXX AT: Since there is now a membership tool in CPSDefault, these
     # variables could be initialized with more 'standard' values here, and
@@ -534,7 +555,9 @@ class CPSMembershipTool(MembershipTool):
                       delete_localroles=0, check_permission=1):
         """Delete members specified by member_ids.
 
-        XXX does not call local roles deletion by default.
+        XXX does not call local roles deletion by default but stores their
+        ids in the pending_members property. Use purgeDeletedMembersLocalRoles()
+        to delete them
         """
 
         # Delete members in acl_users.
@@ -576,8 +599,39 @@ class CPSMembershipTool(MembershipTool):
             utool = getToolByName(self, 'portal_url')
             self.deleteLocalRoles(utool.getPortalObject(), member_ids,
                                   reindex=1, recursive=1)
+        # Or stores their ids in the pending_members property for a
+        # delayed purge
+        else:
+            already_pending =  set(self.getProperty('pending_members'))
+            self.pending_members = tuple(already_pending.union(member_ids))
 
         return tuple(member_ids)
+
+    security.declareProtected(ManageUsers, 'purgeDeletedMembersLocalRoles')
+    def purgeDeletedMembersLocalRoles(self):
+        """Trigger the purge of localroles of member_ids stored in
+        pending_members
+
+        return the list of ids that where cleaned
+
+        WARNING: This can take a while (security reindexing)
+        """
+        # Remove duplicates
+        pending_members = set(self.getProperty('pending_members'))
+
+        # Filter out the member_ids that correspond to actual members
+        member_ids = self.listMemberIds()
+        pending_members = [id for id in pending_members if id not in member_ids]
+
+        # Purge
+        utool = getToolByName(self, 'portal_url')
+        self.deleteLocalRoles(utool.getPortalObject(), pending_members,
+                reindex=1, recursive=1)
+
+        # Updating the pending_members property
+        self.pending_members = ()
+
+        return pending_members
 
     #
     #   ZMI interface methods
@@ -599,6 +653,22 @@ class CPSMembershipTool(MembershipTool):
             message = 'Ids %s cleaned.' % member_ids
         else:
             message = 'No id given.'
+
+        if REQUEST is not None:
+            REQUEST.RESPONSE.redirect(self.absolute_url() +
+                                      '/manage_mapRoles' +
+                                      '?manage_tabs_message=%s' % message)
+
+    security.declareProtected(ManagePortal, 'manage_purgeLocalRoles')
+    def manage_purgeLocalRoles(self, REQUEST=None):
+        """Call 'purgeDeletedMembersLocalRoles' to clean localroles for ids
+        stored in the pending_members property
+        """
+        ids = self.purgeDeletedMembersLocalRoles()
+        if ids:
+            message = "Ids %s cleaned." % ids
+        else:
+            message = "No member id to clean"
 
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(self.absolute_url() +
