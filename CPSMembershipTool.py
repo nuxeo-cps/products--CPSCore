@@ -475,11 +475,11 @@ class CPSMembershipTool(MembershipTool):
             try:
                 member_area_id = self.getHomeFolderId(id)
                 folder = members._getOb(member_area_id)
-                if verifyPermission and not _checkPermission('View', folder):
+                if verifyPermission and not _checkPermission(View, folder):
                     # Don't return the folder if the user can't get to it.
                     return None
                 return folder
-            except AttributeError:
+            except (AttributeError, TypeError, KeyError):
                 pass
         return None
 
