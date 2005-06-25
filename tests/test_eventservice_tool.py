@@ -69,6 +69,22 @@ class EventServiceToolTest(unittest.TestCase):
         )
         self.assertEqual(len(evtool.getSubscribers()), 1)
 
+    def test_11_add_subscriber_without_activation_specified(self):
+        self._make_tool()
+        portal = self.root.testsite
+        evtool = portal.portal_eventservice
+        evtool.manage_addSubscriber(
+            subscriber='portal_subscriber',
+            action='action',
+            meta_type="*",
+            event_type="*",
+            notification_type="asynchronous",
+            compressed=0,
+        )
+        self.assertEqual(len(evtool.getSubscribers()), 1)
+        sub = evtool.getSubscriberByName('portal_subscriber')
+        self.assert_(sub.activated)
+
     def test_2_del_subscriber(self):
         self._make_tool()
         portal = self.root.testsite

@@ -344,7 +344,7 @@ class EventServiceTool(UniqueObject, OrderedFolder):
     security.declareProtected(ViewManagementScreens, 'manage_addSubscriber')
     def manage_addSubscriber(self, subscriber, action, meta_type,
                              event_type, notification_type, compressed=0,
-                             activated=0,
+                             activated=1,
                              REQUEST=None):
         """Add a subscriber definition."""
         if isinstance(event_type, StringType):
