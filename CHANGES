@@ -9,6 +9,7 @@ Bug fixes:
 ~~~~~~~~~~
 - Fixed missing reindexing of localUsersWithRoles by reindexObjectSecurity.
 - Fixed computing of home folder when members folder is a btree.
+- BBB : subscriber activated by default when no activation status specified
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
