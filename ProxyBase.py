@@ -58,7 +58,6 @@ from Products.CPSCore.CPSBase import CPSBaseBTreeFolder
 from Products.CPSCore.IndexationManager import get_indexation_manager
 
 
-DOWNLOAD_AS_ATTACHMENT_FILES_SUFFIXES = ('.sxw', '.sxc')
 PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
 CACHE_ZIP_VIEW_KEY = 'CPS_ZIP_VIEW'
 CACHE_ZIP_VIEW_TIMEOUT = 7200           # time to cache in second
