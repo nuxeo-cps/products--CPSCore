@@ -926,8 +926,8 @@ class LanguageViewer(Acquisition.Explicit):
 
     # Needed by brain.getObject in Zope >= 2.7.6
     getPhysicalRoot = Acquisition.Acquired
-    unrestrictedTraverse = Traversable.unrestrictedTraverse
-    restrictedTraverse = Traversable.restrictedTraverse
+    unrestrictedTraverse = Traversable.unrestrictedTraverse.im_func
+    restrictedTraverse = Traversable.restrictedTraverse.im_func
 
 InitializeClass(LanguageViewer)
 

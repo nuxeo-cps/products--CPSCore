@@ -9,7 +9,9 @@ Bug fixes:
 ~~~~~~~~~~
 - Fixed missing reindexing of localUsersWithRoles by reindexObjectSecurity.
 - Fixed computing of home folder when members folder is a btree.
-- BBB : subscriber activated by default when no activation status specified
+- BBB: subscriber activated by default when no activation status specified.
+- #783: Made LanguageViewer work with Zope 2 trunk, allowing correct catalog
+  searches.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
