@@ -122,10 +122,12 @@ class TreeCache(SimpleItemWithProperties):
          'label': 'Title'},
         {'id': 'root', 'type': 'string', 'mode': 'w',
          'label': 'Root'},
-        {'id': 'type_names', 'type': 'multiple selection', 'mode': 'w',
-         'select_variable': 'all_type_names', 'label': 'Portal Types'},
+        {'id': 'type_names', 'type': 'lines', 'mode': 'w',
+         'label': 'Portal Types'},
         {'id': 'meta_types', 'type': 'lines', 'mode': 'w',
          'label': 'Meta Types'},
+        {'id': 'excluded_rpaths', 'type': 'lines', 'mode': 'w',
+         'label': 'Excluded rpaths'},
         {'id': 'info_method', 'type': 'string', 'mode': 'w',
          'label': 'Info Method'},
         )
@@ -133,6 +135,7 @@ class TreeCache(SimpleItemWithProperties):
     root = ''
     type_names = ()
     meta_types = ()
+    excluded_rpaths = ()
     info_method = ''
 
     def __init__(self, id, **kw):
@@ -218,23 +221,27 @@ class TreeCache(SimpleItemWithProperties):
 
     def _isCandidate(self, ob, plen):
         """Return True if the object should be cached."""
-        #LOG('Tree', DEBUG, 'Is %s candidate?' % ob.getId())
-        bob = aq_base(ob)
-        if self.meta_types and getattr(bob, 'meta_type', None) not in self.meta_types:
-            #LOG('Tree', DEBUG, ' No, mt=%s' % getattr(bob, 'meta_type', None))
-            return False
-        type_names = self.type_names or [] # Stupid, may be ''.
-        if getattr(bob, 'portal_type', None) not in type_names:
-            #LOG('Tree', DEBUG,
-            #    ' No, pt=%s' % getattr(bob, 'portal_type', None))
-            return False
+        # Check under root
         root = self.getRoot()
         if not root:
-            return True
-        rpath = '/'.join(ob.getPhysicalPath()[plen:])
-        ok = (rpath+'/').startswith(root+'/')
-        #LOG('Tree', DEBUG, ' Returns ok=%s' % ok)
-        return ok
+            return False
+        rpath_slash = '/'.join(ob.getPhysicalPath()[plen:])+'/'
+        if not rpath_slash.startswith(root+'/'):
+            return False
+        # Check excluded rpaths
+        for excluded_rpath in self.excluded_rpaths:
+            if rpath_slash.startswith(excluded_rpath+'/'):
+                return False
+        # Check types
+        bob = aq_base(ob)
+        if (self.meta_types and
+            getattr(bob, 'meta_type', None) not in self.meta_types):
+            return False
+        type_names = self.type_names or ()
+        if getattr(bob, 'portal_type', None) not in type_names:
+            return False
+
+        return True
 
     security.declarePrivate('getNodeInfo')
     def getNodeInfo(self, ob, plen):

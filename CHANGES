@@ -5,6 +5,8 @@ New features:
 ~~~~~~~~~~~~~
 - added API and zmi UI to the CPSMembershipTool to purge the locaroles of
   deleted users
+- The Trees Tool can be configured to skip some paths. Useful for folders
+  like workspaces/members that have a huge number of children
 Bug fixes:
 ~~~~~~~~~~
 - Fixed missing reindexing of localUsersWithRoles by reindexObjectSecurity.

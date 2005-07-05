@@ -121,6 +121,8 @@ class TreeCacheTest(SecurityRequestTest):
             root='root/foo',
             type_names=('ThePortalType',),
             meta_types=('TheMetaType',),
+            excluded_rpaths=('root/foo/members',
+                             'root/foo/lots'),
             )
         return cache
 
@@ -148,6 +150,20 @@ class TreeCacheTest(SecurityRequestTest):
         ob.meta_type = 'Hehe'
         self.failIf(cache._isCandidate(ob, plen))
 
+        # Test excluded rpaths
+        ob = DummyObject(path='/cmf/root/foo/members/me')
+        self.failIf(cache._isCandidate(ob, plen))
+        ob = DummyObject(path='/cmf/root/foo/members/me/sub/subsub')
+        self.failIf(cache._isCandidate(ob, plen))
+        ob = DummyObject(path='/cmf/root/foo/lots/stuff')
+        self.failIf(cache._isCandidate(ob, plen))
+        ob = DummyObject(path='/cmf/root/foo/membership')
+        self.assert_(cache._isCandidate(ob, plen))
+
+        # Test border cases
+        cache.root = ''
+        ob = DummyObject(path='/cmf/root/foo')
+        self.failIf(cache._isCandidate(ob, plen))
 
     def test_getRoot(self):
         cache = self.makeOne()
