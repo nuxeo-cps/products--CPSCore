@@ -31,6 +31,7 @@ from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+from AccessControl.PermissionRole import rolesForPermissionOn
 import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
@@ -42,6 +43,7 @@ from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.permissions import View
 from Products.CMFCore.permissions import ModifyPortalContent
 from Products.CMFCore.permissions import ViewManagementScreens
+from Products.CPSCore.CPSCorePermissions import ViewArchivedRevisions
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import TimeoutCache, getCache
@@ -204,9 +206,21 @@ class ProxyBase(Base):
 
     security.declarePrivate('_getContent')
     def _getContent(self, lang=None, rev=None, editable=0):
-        """Get the content object, maybe editable."""
+        """Get the content object, maybe editable.
+
+        Returns an object acquisition-wrapped under the proxy itself,
+        so that security is correctly inferred.
+        """
         pxtool = getToolByName(self, 'portal_proxies')
-        return pxtool.getContent(self, lang=lang, rev=rev, editable=editable)
+        ob = pxtool.getContent(self, lang=lang, rev=rev, editable=editable)
+        # Rewrapping plays havoc with absolute_url, but that's not a
+        # problem as nobody should ever get the absolute_url of an
+        # object in the repository. In the previous implementation
+        # anyway you got URLs containing portal_repository/ which is bad
+        # too.
+        if ob is None:
+            return None
+        return aq_base(ob).__of__(self)
 
     security.declarePrivate('proxyChanged')
     def proxyChanged(self):
@@ -216,7 +230,6 @@ class ProxyBase(Base):
         utool = getToolByName(self, 'portal_url')
         rpath = utool.getRelativeUrl(self)
         pxtool._modifyProxy(self, rpath) # XXX or directly event ?
-        pxtool.setSecurity(self)
         evtool = getEventService(self)
         evtool.notify('sys_modify_object', self, {})
 
@@ -224,6 +237,7 @@ class ProxyBase(Base):
         """Transparent traversal of the proxy to the real subobjects.
 
         Used for skins that don't take proxies enough into account.
+        Returns an object wrapped in the acquisition context of the proxy.
 
         Parses URL revision switch of the form:
           mydoc/archivedRevision/n/...
@@ -265,9 +279,6 @@ class ProxyBase(Base):
                 res = ob[name]
             except (KeyError, IndexError, TypeError, AttributeError):
                 raise KeyError, name
-        if hasattr(res, '__of__'):
-            # XXX Maybe incorrect if complex wrapping.
-            res = aq_base(res).__of__(self)
         return res
 
     #
@@ -375,28 +386,10 @@ class ProxyBase(Base):
     # Security
     #
 
-    def _setSecurity(self):
-        """Propagate security changes made on the proxy."""
-        pxtool = getToolByName(self, 'portal_proxies')
-        pxtool.setSecurity(self)
-
-    def _setSecurityRecursive(self, ob, pxtool=None):
-        """Propagate security changes made on the proxy."""
-        if not isinstance(ob, ProxyBase):
-            return
-        if pxtool is None:
-            pxtool = getToolByName(self, 'portal_proxies')
-        pxtool.setSecurity(ob)
-        for subob in ob.objectValues():
-            self._setSecurityRecursive(subob, pxtool=pxtool)
-
     def _reindexObject(self, idxs=[]):
         """Called to reindex when the object has changed."""
         LOG('ProxyBase', DEBUG, "reindex idxs=%s for %s"
             % (idxs, '/'.join(self.getPhysicalPath())))
-        if not idxs or 'allowedRolesAndUsers' in idxs:
-            # XXX should use an event for that
-            self._setSecurity()
         if 'allowedRolesAndUsers' in idxs:
             # Both must be updated
             idxs.append('localUsersWithRoles')
@@ -420,8 +413,6 @@ class ProxyBase(Base):
         """Called to security-related indexes."""
         LOG('ProxyBase', DEBUG, "reindex security for %s"
             % '/'.join(self.getPhysicalPath()))
-        # XXX should use an event for that
-        self._setSecurityRecursive(self)
         # Notify that this proxy's security has changed.
         # Listeners will have to recurse if necessary.
         # (The notification for the object repo is done by the repo.)
@@ -435,11 +426,6 @@ class ProxyBase(Base):
     # overloaded
     def reindexObjectSecurity(self):
         get_indexation_manager().push(self, with_security=True)
-
-    # XXX also call _setSecurity from:
-    #  manage_role
-    #  manage_acquiredPermissions
-    #  manage_changePermissions
 
     #
     # Helpers
@@ -995,7 +981,7 @@ class VirtualProxy(ProxyBase, CPSBaseDocument):
     """
 
     security = ClassSecurityInfo()
-    security.declareObjectPublic()
+    security.declareObjectProtected(ViewArchivedRevisions)
 
     # Never modifiable.
     _Modify_portal_content_Permission = ()
@@ -1021,7 +1007,9 @@ class VirtualProxy(ProxyBase, CPSBaseDocument):
             raise ValueError("Cannot specify lang for a virtual proxy")
         if rev is not None:
             raise ValueError("Cannot specify rev for a virtual proxy")
-        return self._ob
+        # Wrap in the virtual proxy, which is wrapped in the real proxy,
+        # to get proper security context.
+        return aq_base(self._ob).__of__(self)
 
     security.declareProtected(View, 'getLanguage')
     def getLanguage(self, lang=None):

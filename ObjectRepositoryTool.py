@@ -58,38 +58,6 @@ class NoWorkflowConfiguration:
 InitializeClass(NoWorkflowConfiguration)
 
 
-def setLocalRolesWithGroups(ob, lroles):
-    """Set all the local roles and group local roles.
-
-    Returns True if something was changed.
-    """
-    # XXX move this to NuxUserGroups
-    #LOG('obrep', DEBUG, 'setlocal: ob=%s lroles=%s'
-    #    % ('/'.join(ob.getPhysicalPath()), lroles,))
-    udict = {}
-    gdict = {}
-    for k, roles in lroles.items():
-        if k.startswith('user:'):
-            uid = k[5:]
-            udict[uid] = list(roles)
-        elif k.startswith('group:'):
-            gid = k[6:]
-            gdict[gid] = list(roles)
-    changed = 0
-    uroles = getattr(ob, '__ac_local_roles__', None) or {}
-    groles = getattr(ob, '__ac_local_group_roles__', None) or {}
-    if uroles != udict:
-        #LOG('obrep', DEBUG, ' set udict=%s' % (udict,))
-        ob.__ac_local_roles__ = udict
-        changed = 1
-    if groles != gdict:
-        #LOG('obrep', DEBUG, ' set gdict=%s' % (gdict,))
-        ob.__ac_local_group_roles__ = gdict
-        changed = 1
-    #LOG('obrep', DEBUG, ' changed=%s' % changed)
-    return changed
-
-
 class ObjectRepositoryTool(UniqueObject,
                            BTreeFolder2, PortalFolder,
                            TypeConstructor, TypeContainer):
@@ -322,76 +290,6 @@ class ObjectRepositoryTool(UniqueObject,
             return ob, rev
         return self.copyRevision(docid, rev)
 
-    security.declarePrivate('getPermissionRole')
-    def getPermissionRole(self, perm):
-        """Get a special role mapping only to a permission.
-
-        Register it if it doesn't exist yet.
-        """
-        role = 'permission:' + perm.translate(name_trans)
-        if role not in self.__ac_roles__:
-            # Register the role and add its permission.
-            self._addRole(role)
-            for inhp in self.ac_inherited_permissions(1):
-                name, data = inhp[:2]
-                if name == perm:
-                    p = Permission(name, data, self)
-                    # Set permission to unacquire, and to Manager.
-                    p.setRoles(('Manager', role))
-                    break
-        return role
-
-    security.declarePrivate('_registerPermissionRolesFor')
-    def _registerPermissionRolesFor(self, ob):
-        """Register all special permission roles mentionned in ob."""
-        done = {}
-        lroles = getattr(ob, '__ac_local_roles__', None) or {}
-        lroles.update(getattr(ob, '__ac_local_group_roles__', None) or {})
-        for k, roles in lroles.items():
-            for role in roles:
-                if done.has_key(role):
-                    continue
-                done[role] = None
-                if role.startswith('permission:'):
-                    tperm = role[len('permission:'):]
-                    # Find corresponding untranslated permission name.
-                    perm = None
-                    for inhp in self.ac_inherited_permissions(1):
-                        name = inhp[0]
-                        if name.translate(name_trans) == tperm:
-                            perm = name
-                            break
-                    if perm is None:
-                        LOG('ObjectRepositoryTool', ERROR,
-                            '_registerPermissionRolesFor perm %s' % tperm)
-                        continue
-                    # Register if needed.
-                    self.getPermissionRole(perm)
-
-    security.declarePrivate('setRevisionSecurity')
-    def setRevisionSecurity(self, docid, rev, userperms):
-        """Set the security on an object.
-
-        userperms is a dict of {user: [sequence of permissions]}
-        user is user:uid or group:gid
-
-        Returns True if security was changed.
-
-        (Called by ProxyTool.)
-        """
-        LOG('ObjectRepositoryTool', TRACE,
-            'setRevisionSecurity docid=%s rev=%s perms=%s' %
-            (docid, rev, userperms))
-        ob = self.getObjectRevision(docid, rev)
-        lroles = {}
-        for user, perms in userperms.items():
-            roles = [self.getPermissionRole(perm) for perm in perms]
-            lroles[user] = roles
-        changed = setLocalRolesWithGroups(ob, lroles)
-        ##if changed:
-        ##    ob.reindexObjectSecurity()
-        return changed
-
     #
     # Staging
     #
@@ -415,8 +313,6 @@ class ObjectRepositoryTool(UniqueObject,
             where = aq_parent(aq_inner(where))
             connection = where._p_jar
         ob = connection.importFile(f)
-        # Register special permissions roles.
-        self._registerPermissionRolesFor(ob)
         # Set the object (this will recatalog).
         id = ob.getId()
         if self.hasObject(id):

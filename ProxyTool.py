@@ -607,100 +607,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repotool = getToolByName(self, 'portal_repository')
         self._unshareContentDoRecursion(proxy, repotool)
 
-    # XXX NOTE, the object may not be in the indexes yet...
-    # XXX _createObject -> _insertWorkflow -> _reindexWorkflowVariables
-    # XXX -> reindex() -> setSecurity
-    # XXX The CMF Add event is only sent after that...
-
-    security.declarePrivate('_setSecurityOnDocid')
-    def _setSecurityOnDocid(self, docid, skip_rpath=None):
-        """Set security to all revisions for a docid.
-
-        Also applies security to the archived revisions.
-
-        If skip_rpath, don't take that rpath into account (used when a
-        deletion is processed).
-
-        Returns the number of revisions whose security was changed.
-        """
-        portal = aq_parent(aq_inner(self))
-        repotool = getToolByName(self, 'portal_repository')
-        allperms = self._getRelevantPermissions()
-
-        all_revs = repotool.listRevisions(docid)
-
-        # Collect base security on pointed revisions,
-        # and collect archivers.
-        archivers_d = {}
-        rev_userperms = {}
-        for rev in all_revs:
-            userperms = {}
-            rev_userperms[rev] = userperms
-            rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
-            for rpath in rpaths:
-                if rpath == skip_rpath:
-                    continue
-                ob = portal.unrestrictedTraverse(rpath)
-                merged = mergedLocalRoles(ob, withgroups=1).items()
-                #LOG('_setSecurity', DEBUG, ' rpath=%s merged=%s' %
-                #    (rpath, merged))
-                for perm in allperms:
-                    proles = rolesForPermissionOn(perm, ob)
-                    for user, lroles in merged:
-                        for lr in lroles:
-                            if lr in proles:
-                                if perm == ViewArchivedRevisions:
-                                    archivers_d[user] = None
-                                else:
-                                    perms = userperms.setdefault(user, [])
-                                    if perm not in perms:
-                                        perms.append(perm)
-
-        # Update security for archivers, and apply it.
-        change_count = 0
-        archivers = archivers_d.keys()
-        for rev in all_revs:
-            # Update security for archivers.
-            userperms = rev_userperms[rev]
-            for user in archivers:
-                perms = userperms.setdefault(user, [])
-                if View not in perms:
-                    perms.append(View)
-            # Apply security.
-            changed = repotool.setRevisionSecurity(docid, rev, userperms)
-            if changed:
-                change_count += 1
-
-        return change_count
-
-    security.declarePrivate('setSecurity')
-    def setSecurity(self, proxy, skip_rpath=None):
-        """Reapply correct security info to the revisions of a proxy.
-
-        If skip_rpath, don't take that rpath into account (used when a
-        deletion is processed).
-
-        (Called by ProxyBase and self.) XXX but should use an event
-        """
-        # XXX should not get directly an object... or should it?
-
-        if not isinstance(proxy, ProxyBase):
-            return
-
-        self._setSecurityOnDocid(proxy.getDocid(), skip_rpath=skip_rpath)
-
-    def _getRelevantPermissions(self):
-        """Get permissions relevant to security info discovery.
-
-        Returns all the permissions managed by all the workflows,
-        and also 'View archived revisions'.
-        """
-        wftool = getToolByName(self, 'portal_workflow')
-        perms = list(wftool.getManagedPermissions())
-        if ViewArchivedRevisions not in perms:
-            perms.append(ViewArchivedRevisions)
-        return perms
-
     #
     # XXX
     # This does object construction like TypesTool but without security
@@ -863,15 +769,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 elif event_type == 'sys_modify_object':
                     self._modifyProxy(object, rpath)
                 elif event_type == 'sys_del_object':
-                    dodel = 1
-                # Refresh security on the revisions.
-                if dodel:
-                    skip_rpath = rpath
-                else:
-                    skip_rpath = None
-                self.setSecurity(object, skip_rpath=skip_rpath)
-                if dodel:
-                    # Must be done last...
                     self._delProxy(rpath)
                 #LOG('ProxyTool', DEBUG, '  ... done')
             else:
@@ -960,45 +857,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         # Use as roots all the subobs (1st level) of the portal.
         for ob in portal.objectValues():
             self._recurse_rebuild(ob, utool)
-
-    security.declareProtected(ManagePortal, 'rebuildRepositorySecurity')
-    def rebuildRepositorySecurity(self, base_rpath=''):
-        """Rebuild security info on all repo objects.
-
-        If base_rpath is not None, do only objects impacted by proxies
-        under that rpath.
-
-        Return the number of docids impacted and the number
-        of revisions that changed.
-        """
-        LOG('rebuildRepositorySecurity', DEBUG, 'Starting')
-
-        # Find all docids in repo pointed by relevant proxies.
-        if base_rpath:
-            base_rpath_slash = base_rpath + '/'
-        else:
-            base_rpath_slash = ''
-        docids_d = {}
-        rpaths = [] # for debug
-        for rpath, infos in self._rpath_to_infos.items():
-            if rpath == base_rpath or rpath.startswith(base_rpath_slash):
-                rpaths.append(rpath) # for debug
-                docid, language_revs = infos
-                docids_d[docid] = None
-        docids = docids_d.keys()
-
-        LOG('rebuildRepositorySecurity', DEBUG,
-            " Impacted objects under '%s': %d proxies, %d docids"
-            % (base_rpath, len(rpaths), len(docids)))
-
-        # Update security on the docids.
-        change_count = 0
-        for docid in docids:
-            change_count += self._setSecurityOnDocid(docid)
-
-        LOG('rebuildRepositorySecurity', DEBUG,
-            'Done (%d docids, %d revs changed)' % (len(docids), change_count))
-        return (len(docids), change_count)
 
     #
     # ZMI

@@ -20,21 +20,51 @@
 """Tests for the proxies and the proxy tool.
 """
 
-import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
-
+from Testing.ZopeTestCase import ZopeTestCase
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
+from AccessControl import Unauthorized
+from AccessControl import getSecurityManager
+from AccessControl.PermissionRole import rolesForPermissionOn
+from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
 
 from Products.CPSCore.ProxyTool import ProxyTool
-from Products.CPSCore.ProxyBase import ProxyBase, ProxyDocument
+from Products.CPSCore.ProxyBase import ProxyBase
 
-from dummy import DummyRepo, DummyPortalUrl, DummyWorkflowTool, DummyRoot
+from dummy import DummyPortalUrl, DummyWorkflowTool, DummyRoot
 
+from Products.CMFCore.permissions import View
+from Products.CPSCore.CPSCorePermissions import ViewArchivedRevisions
+ViewAR = ViewArchivedRevisions
+
+
+class DummyProxyTool(Folder):
+    def __init__(self):
+        self.proxies = {}
+
+    def _findRev(self, proxy, rev):
+        if rev is not None:
+            return rev
+        lang = proxy.getDefaultLanguage()
+        return proxy._getLanguageRevisions()[lang]
+
+    def getContentByRevision(self, docid, rev):
+        id = 'ob_%s_%s' % (docid, rev)
+        if id not in self.objectIds():
+            doc = SimpleItem(id)
+            doc._setId(id)
+            doc.portal_type = 'Some Type'
+            self._setObject(id, doc)
+        return self._getOb(id)
+
+    def getContent(self, proxy, rev=None, **kw):
+        docid = proxy.getDocid()
+        rev = self._findRev(proxy, rev)
+        return self.getContentByRevision(docid, rev)
 
 class PlacefulProxy(ProxyBase, Folder):
-
     def __init__(self, id, **kw):
         self.id = id
         ProxyBase.__init__(self, **kw)
@@ -46,7 +76,14 @@ def sortinfos(infos):
     return [t[1] for t in tosort]
 
 
-class ProxyBaseTest(unittest.TestCase):
+class ProxyBaseTest(ZopeTestCase):
+
+    def afterSetUp(self):
+        ZopeTestCase.afterSetUp(self)
+        # Use the ZopeTestCase folder as root, as we need to have
+        # acl_user in context.
+        self.folder._setObject('portal_proxies', DummyProxyTool())
+        self.folder.docs = Folder('docs')
 
     def test_basic_api(self):
         proxy = ProxyBase()
@@ -85,8 +122,8 @@ class ProxyBaseTest(unittest.TestCase):
 
         # Most other APIs just indirect to the proxy tool:
         # Can't test getLanguage, getRevision, getContent, getEditableContent,
-        # proxyChanged, __getitem__, freezeProxy, _setSecurity,
-        # _setSecurityRecursive, reindexObject, reindexObjectSecurity, Title,
+        # proxyChanged, __getitem__, freezeProxy
+        # reindexObject, reindexObjectSecurity, Title,
         # title_or_id, SearchableText, Type, revertToRevisions without a
         # portal_proxies.
 
@@ -96,17 +133,75 @@ class ProxyBaseTest(unittest.TestCase):
         proxy = ProxyBase()
         self.assert_(proxy)
 
-class ProxyToolTest(SecurityRequestTest):
+    def test_security(self):
+        pxtool = self.folder.portal_proxies
+        docs = self.folder.docs
+        user = getSecurityManager().getUser()
+        docs.proxy1 = PlacefulProxy('proxy1', docid='d',
+                                    default_language='en',
+                                    language_revs={'en': 1, 'fr': 2})
+        proxy1 = docs.proxy1
+        doc = proxy1.getContent()
+        self.assertEquals(doc.getId(), 'ob_d_1')
+
+        proxy1.manage_permission(View, ['Winner'])
+        self.assert_('Winner' in rolesForPermissionOn(View, proxy1))
+        self.assert_('Winner' in rolesForPermissionOn(View, doc))
+        self.failIf(user.has_role('Winner', proxy1))
+        self.failIf(user.has_role('Winner', doc))
+
+        proxy1.manage_setLocalRoles('test_user_1_', ['Winner'])
+        self.assert_('Winner' in rolesForPermissionOn(View, proxy1))
+        self.assert_('Winner' in rolesForPermissionOn(View, doc))
+        self.assert_(user.has_role('Winner', proxy1))
+        self.assert_(user.has_role('Winner', doc))
+
+    def test_security_archive(self):
+        pxtool = self.folder.portal_proxies
+        docs = self.folder.docs
+        user = getSecurityManager().getUser()
+        docs.proxy1 = PlacefulProxy('proxy1', docid='d',
+                                    default_language='en',
+                                    language_revs={'en': 1, 'fr': 2})
+        proxy1 = docs.proxy1
+        self.assertEquals('/'.join(proxy1.getPhysicalPath()),
+                          '/test_folder_1_/docs/proxy1')
+
+        # Without permission, no access to archive
+        proxy1.manage_permission(View, ['Winner'])
+        proxy1.manage_permission(ViewAR, ['Winner'])
+        self.assert_('Winner' in rolesForPermissionOn(View, proxy1))
+        self.assert_('Winner' in rolesForPermissionOn(ViewAR, proxy1))
+        self.failIf(user.has_role('Winner', proxy1))
+        self.assertRaises(Unauthorized, proxy1.restrictedTraverse,
+                          'archivedRevision/2')
+
+        # With appropriate permission, get the archive
+        proxy1.manage_setLocalRoles('test_user_1_', ['Winner'])
+        self.assert_('Winner' in rolesForPermissionOn(View, proxy1))
+        self.assert_('Winner' in rolesForPermissionOn(ViewAR, proxy1))
+        self.assert_(user.has_role('Winner', proxy1))
+        arch = proxy1.restrictedTraverse('archivedRevision/2')
+        self.assert_('Winner' in rolesForPermissionOn(View, arch))
+        self.assert_(user.has_role('Winner', arch))
+        self.assertEquals('/'.join(arch.getPhysicalPath()),
+                          '/test_folder_1_/docs/proxy1/archivedRevision/2')
+        # The archive can be dereferenced like a normal proxy
+        doc = arch.getContent()
+        self.assertEquals(doc.getId(), 'ob_d_2')
+        self.assert_('Winner' in rolesForPermissionOn(View, doc))
+        self.assert_(user.has_role('Winner', doc))
+
+class ProxyToolTest(ZopeTestCase):
     """Test CPS Proxy Tool."""
 
-    def setUp(self):
-        SecurityRequestTest.setUp(self)
+    def afterSetUp(self):
+        ZopeTestCase.afterSetUp(self)
 
         self.root = DummyRoot()
         root = self.root
 
         root._setObject('portal_proxies', ProxyTool())
-        root._setObject('portal_repository', DummyRepo())
         root._setObject('portal_url', DummyPortalUrl())
         root._setObject('portal_workflow', DummyWorkflowTool())
 
@@ -176,83 +271,15 @@ class ProxyToolTest(SecurityRequestTest):
         ptool._addProxy(proxy2, '/bar')
         infos = ptool.getProxyInfosFromDocid('456')
         infos = sortinfos(infos)
+        # XXX check 'visible' values, using a proper user folder
+        # in the acquisition context.
         self.assertEquals(infos,
-            [{'visible': 1, 'rpath': '/bar', 'object': proxy2,
+            [{'visible': None, 'rpath': '/bar', 'object': proxy2,
               'language_revs': {'fr': 33, 'en': 4}},
-             {'visible': 1, 'rpath': '/foo', 'object': proxy1,
+             {'visible': None, 'rpath': '/foo', 'object': proxy1,
               'language_revs': {'fr': 33, 'en': 78}}])
 
         self.assertRaises(KeyError, ptool.getProxyInfosFromDocid, 'blah')
-
-
-    def XXX_FIXME_testSecuritySynthesis(self):
-        root = self.root
-        ptool = root.portal_proxies
-        repo = root.portal_repository
-        docs = root.docs
-
-        proxy1 = ProxyDocument('proxy1',
-                               docid='d', language_revs={'en': 1, 'fr': 2})
-        proxy2 = ProxyDocument('proxy2',
-                               docid='d', language_revs={'en': 3, 'fr': 2})
-        proxy3 = ProxyDocument('proxy3',
-                               docid='d', language_revs={'en': 3})
-        docs.proxy1 = proxy1
-        docs.proxy2 = proxy2
-        docs.proxy3 = proxy3
-        proxy1 = docs.proxy1
-        proxy2 = docs.proxy2
-        proxy3 = docs.proxy3
-        ptool._addProxy(proxy1, 'docs/proxy1')
-        ptool._addProxy(proxy2, 'docs/proxy2')
-        ptool._addProxy(proxy3, 'docs/proxy3')
-
-        l = ptool.listProxies()
-        l.sort()
-        self.assertEquals(l, [('docs/proxy1', ('d', {'en': 1, 'fr': 2})),
-                              ('docs/proxy2', ('d', {'en': 3, 'fr': 2})),
-                              ('docs/proxy3', ('d', {'en': 3})),
-                              ])
-
-        repo._testClearSecurity()
-
-        proxy1.manage_permission('View', ['Reviewer'])
-        proxy1.manage_setLocalRoles('foo', ['Reviewer'])
-        ptool.setSecurity(proxy1)
-        self.assertEquals(repo._testGetSecurity(),
-                          {'d.1': {'foo': ['View']},
-                           'd.2': {'foo': ['View']}})
-
-        proxy2.manage_permission('Modify', ['Reader'])
-        proxy2.manage_setLocalRoles('bar', ['Reader'])
-        ptool.setSecurity(proxy2)
-        self.assertEquals(repo._testGetSecurity(),
-                          {'d.1': {'foo': ['View']},
-                           'd.2': {'foo': ['View'], 'bar': ['Modify']},
-                           'd.3': {'bar': ['Modify']}})
-
-        proxy3.manage_permission('DoStuff', ['Reviewer'])
-        proxy3.manage_setLocalRoles('foo', ['Reviewer'])
-        ptool.setSecurity(proxy3)
-        self.assertEquals(repo._testGetSecurity(),
-                          {'d.1': {'foo': ['View']},
-                           'd.2': {'foo': ['View'], 'bar': ['Modify']},
-                           'd.3': {'foo': ['DoStuff'], 'bar': ['Modify']}})
-
-        proxy2.manage_permission('Modify', [])
-        proxy2.manage_setLocalRoles('bar', ['Reader'])
-        ptool.setSecurity(proxy2)
-        self.assertEquals(repo._testGetSecurity(),
-                          {'d.1': {'foo': ['View']},
-                           'd.2': {'foo': ['View']},
-                           'd.3': {'foo': ['DoStuff']}})
-
-        proxy1.manage_permission('Modify', ['Reviewer'])
-        ptool.setSecurity(proxy1)
-        self.assertEquals(repo._testGetSecurity(),
-                          {'d.1': {'foo': ['View', 'Modify']},
-                           'd.2': {'foo': ['View', 'Modify']},
-                           'd.3': {'foo': ['DoStuff']}})
 
 
 def test_suite():
