@@ -52,8 +52,8 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
         root._setObject('portal_repository', ortool)
 
 
-    def tearDown( self ):
-        #    SecurityRequestTest.tearDown(self)
+    def tearDown(self):
+        SecurityRequestTest.tearDown(self)
         ObjectRepositoryTool.constructContent = constructContent_old
 
     ##########
