@@ -17,5 +17,5 @@ Bug fixes:
   searches.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Security synthesis has been removed, security on the repository is now
-  much more efficient.
+- #413: Security synthesis has been removed, security on the repository
+  is now much more efficient.
