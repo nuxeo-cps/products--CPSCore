@@ -1,6 +1,7 @@
 Requires:
 ~~~~~~~~~
 - CPSCompat > 0.3.1
+- You must upgrade using upgrade_334_335, see the release notes.
 New features:
 ~~~~~~~~~~~~~
 - added API and zmi UI to the CPSMembershipTool to purge the locaroles of
@@ -16,4 +17,5 @@ Bug fixes:
   searches.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Security synthesis has been removed, security on the repository is now
+  much more efficient.
