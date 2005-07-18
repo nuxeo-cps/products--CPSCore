@@ -15,6 +15,7 @@ Bug fixes:
 - BBB: subscriber activated by default when no activation status specified.
 - #783: Made LanguageViewer work with Zope 2 trunk, allowing correct catalog
   searches.
+- Removed duplicated 'mystuff' action from portal_membership
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - #413: Security synthesis has been removed, security on the repository

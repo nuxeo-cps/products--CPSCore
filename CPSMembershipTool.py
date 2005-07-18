@@ -99,16 +99,6 @@ class CPSMembershipTool(MembershipTool):
          condition=Expression(text='python: member and '
                               + 'portal.portal_membership.getHomeFolder()'),
          visible=1),
-      AI(id='mystuff',
-         title='My stuff',
-         description='Goto your home folder',
-         action=Expression(text='string:${portal/portal_membership'
-                           + '/getHomeUrl}/folder_contents'),
-         permissions=(View,),
-         category='user',
-         condition=Expression(text='python: member and '
-                              + 'portal.portal_membership.getHomeFolder()'),
-         visible=1),
     ]
 
     meta_type = 'CPS Membership Tool'
