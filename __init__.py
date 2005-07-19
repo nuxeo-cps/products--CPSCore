@@ -62,6 +62,7 @@ import TreesTool
 import CPSRegistrationTool
 import PatchOFSFolder
 import CopyrightPatch
+import URLTool
 
 import ProxyBase
 
@@ -71,6 +72,7 @@ tools = (
     ObjectRepositoryTool.ObjectRepositoryTool,
     TreesTool.TreesTool,
     CPSRegistrationTool.CPSRegistrationTool,
+    URLTool.URLTool,
 )
 
 contentClasses = (ProxyBase.ProxyFolder,

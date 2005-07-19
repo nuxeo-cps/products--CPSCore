@@ -1,0 +1,47 @@
+Virtual Hosting
+
+This document explains how to deal with inside-out virtual hosting when
+building urls to objects, including breadcrumbs urls.
+
+Related tickets:
+- http://svn.nuxeo.org/trac/pub/ticket/436: "getBaseUrl.py doesn't work as
+  expected behind Apache virtual hosts"
+- http://svn.nuxeo.org/trac/pub/ticket/654: "Subsites and virtual hosting"
+
+This could be fixed using proper methods (portal_url methods) to get proper
+paths (relative or not) to objects.
+
+More "complicated" case:
+- virtual url: http://www.site.com/foo/bar/my-folder/my-file
+- relative path to cps portal: cps/workspaces/my-folder/my-file
+
+e.g rewrite rule is:
+RewriteRule ^/foo/bar(.*)$
+http://localhost:20000/VirtualHostBase/http/%{SERVER_NAME}:80/cps/workspaces/VirtualHostRoot/_vh_foo/_vh_bar/$1
+[L,P]
+
+
+OFS.Traversable methods:
+- absolute_url(self, relative=0):
+  'http://www.site.com/foo/bar/my-folder/my-file' if relative==0
+  'my-folder/my-file' if relative==1
+- absolute_url_path(self): '/foo/bar/my-folder/my-file'
+- virtual_url_path(self): 'my-folder/my-file'
+- getPhysicalPath(self): ('', 'cps', 'workspaces', 'my-folder', 'my-file'),
+
+CMF URLTool methods:
+- getPortalPath(self): '/cps'
+- getRelativeContentPath(self, content): ('workspaces', 'my-folder', 'my-file')
+- getRelativeContentURL(self, content): 'workspaces/my-folder/my-file'
+
+CPS URLTool adds new methods:
+- getBaseURL(self): /foo/bar
+- getVirtualRootPhysicalPath(self): ('', 'cps', 'workspaces')
+- getVirtualHostPhysicalPath(self): ('', 'foo', 'bar')
+
+- getAbsoluteURLFromRelativeURL(self, relative_url):
+  returns 'http://www.site.com/foo/bar/my-folder/my-file' when given
+  relative_url 'workspaces/my-folder/my-file'
+- getBreadCrumbs(self, context=None, only_parents=0):
+  returns parents, omitting objects that are hidden by virtual hosting, and
+  with portal as greater parent.

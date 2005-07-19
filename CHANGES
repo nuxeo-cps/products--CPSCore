@@ -8,6 +8,10 @@ New features:
   deleted users
 - The Trees Tool can be configured to skip some paths. Useful for folders
   like workspaces/members that have a huge number of children
+- Added a new URLTool to have methods dealing with virtual hosting: now able to
+  get the base url (portal absolute url path), get an object absolute url from
+  its relative url, and get its breadcrumbs without objects hidden with the
+  virtual hosting.
 Bug fixes:
 ~~~~~~~~~~
 - Fixed missing reindexing of localUsersWithRoles by reindexObjectSecurity.
