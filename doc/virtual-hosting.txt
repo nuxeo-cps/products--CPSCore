@@ -1,4 +1,6 @@
+===============
 Virtual Hosting
+===============
 
 This document explains how to deal with inside-out virtual hosting when
 building urls to objects, including breadcrumbs urls.
@@ -8,25 +10,58 @@ Related tickets:
   expected behind Apache virtual hosts"
 - http://svn.nuxeo.org/trac/pub/ticket/654: "Subsites and virtual hosting"
 
-This could be fixed using proper methods (portal_url methods) to get proper
-paths (relative or not) to objects.
+These tickets are fixed by using proper methods (portal_url methods) to
+get proper paths (relative or not) to objects.
 
-More "complicated" case:
+General case of virtual hosting
+===============================
+
+The most complex case need of virtual hosting is the case where part of
+the portal is hidden in the URL, and part of the URL is completely virtual:
 - virtual url: http://www.site.com/foo/bar/my-folder/my-file
-- relative path to cps portal: cps/workspaces/my-folder/my-file
+- zope absolute path: /cps/workspaces/my-folder/my-file
 
-e.g rewrite rule is:
-RewriteRule ^/foo/bar(.*)$
-http://localhost:20000/VirtualHostBase/http/%{SERVER_NAME}:80/cps/workspaces/VirtualHostRoot/_vh_foo/_vh_bar/$1
-[L,P]
+This can be achieved with a rewrite rule like::
 
+  RewriteRule ^/foo/bar(.*)$ http://localhost:20000/VirtualHostBase/http/%{SERVER_NAME}:80/cps/workspaces/VirtualHostRoot/_vh_foo/_vh_bar/$1 [L,P]
+
+Fundamental concepts
+====================
+
+The fundamental concepts manipulated inside CPS are:
+- object's physical path: ('', 'cps', 'workspaces', 'my-folder', 'my-file')
+- same as a string: '/cps/workspaces/my-folder/my-file'
+- object's rpath: 'workspaces/my-folder/my-file'
+- object's URL: http://www.site.com/foo/bar/my-folder/my-file
+
+The rpath is the zope path relative to the portal. It's called
+"relativeContentURL" by CMF, but this is wrong as it's not an URL.
+
+An object's URL is only ever used on output, it's not used for internal
+treatments.
+
+Public methods
+==============
+
+The only public methods to be used by user code are:
+- getRelativeContentURL(ob): gets an rpath from an object
+- ob.absolute_url() or ob.absolute_url_path(): get an URL from an object.
+- getAbsoluteURLFromRelativeURL(rpath): get an URL from an rpath
+- portal.restrictedTraverse(rpath): get an object from an rpath
+
+Internals
+=========
 
 OFS.Traversable methods:
-- absolute_url(self, relative=0):
-  'http://www.site.com/foo/bar/my-folder/my-file' if relative==0
-  'my-folder/my-file' if relative==1
+- absolute_url(self):
+  'http://www.site.com/foo/bar/my-folder/my-file'
+- absolute_url(self, relative=1):
+  'my-folder/my-file'
+  This should never be used by user code.
 - absolute_url_path(self): '/foo/bar/my-folder/my-file'
+  This is a valid URL shortened to not use a site specification.
 - virtual_url_path(self): 'my-folder/my-file'
+  This should never be used by user code.
 - getPhysicalPath(self): ('', 'cps', 'workspaces', 'my-folder', 'my-file'),
 
 CMF URLTool methods:
