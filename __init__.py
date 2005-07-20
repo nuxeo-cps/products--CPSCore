@@ -97,7 +97,6 @@ def initialize(registrar):
     cmfutils.ToolInit(
         'CPS Tools',
         tools=tools,
-        product_name='CPSCore',
         icon='tool.png',
     ).initialize(registrar)
 
