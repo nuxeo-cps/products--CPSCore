@@ -44,9 +44,9 @@ Public methods
 ==============
 
 The only public methods to be used by user code are:
-- getRelativeContentURL(ob): gets an rpath from an object
+- getRpath(ob): gets an rpath from an object
 - ob.absolute_url() or ob.absolute_url_path(): get an URL from an object.
-- getAbsoluteURLFromRelativeURL(rpath): get an URL from an rpath
+- getURLFromRpath(rpath): get an URL from an rpath
 - portal.restrictedTraverse(rpath): get an object from an rpath
 
 Internals
@@ -66,15 +66,18 @@ OFS.Traversable methods:
 
 CMF URLTool methods:
 - getPortalPath(self): '/cps'
-- getRelativeContentPath(self, content): ('workspaces', 'my-folder', 'my-file')
-- getRelativeContentURL(self, content): 'workspaces/my-folder/my-file'
+- getRelativeContentPath(self, content): ('workspaces', 'my-folder',
+  'my-file')
+- getRelativeContentURL(self, content) or getRelativeUrl(self, content):
+  'workspaces/my-folder/my-file'
 
 CPS URLTool adds new methods:
+- getRpath(self, content): alias for getRelativeContentURL(self, content)
+  and getRelativeUrl(self, content)
 - getBaseURL(self): /foo/bar
 - getVirtualRootPhysicalPath(self): ('', 'cps', 'workspaces')
 - getVirtualHostPhysicalPath(self): ('', 'foo', 'bar')
-
-- getAbsoluteURLFromRelativeURL(self, relative_url):
+- getURLFromRpath(self, rpath):
   returns 'http://www.site.com/foo/bar/my-folder/my-file' when given
   relative_url 'workspaces/my-folder/my-file'
 - getBreadCrumbs(self, context=None, only_parents=0):

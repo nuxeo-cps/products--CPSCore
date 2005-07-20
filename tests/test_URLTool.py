@@ -31,6 +31,8 @@ from Products.CPSCore.CPSMembershipTool import CPSMembershipTool
 
 class URLToolTests(unittest.TestCase):
 
+    traverse_value = '/portal/folder/doc'
+
     #
     # test case methods
     #
@@ -57,6 +59,8 @@ class URLToolTests(unittest.TestCase):
         self.app.REQUEST.set('PARENTS', [self.app])
         self.traverse = self.app.REQUEST.traverse
 
+        self.traverse(self.traverse_value)
+
     def tearDown(self):
         get_transaction().abort()
         self.app._p_jar.close()
@@ -64,6 +68,7 @@ class URLToolTests(unittest.TestCase):
     #
     # tests
     #
+
     def test_interface(self):
         from Products.CMFCore.interfaces.portal_url \
              import portal_url as IURLTool
@@ -73,11 +78,12 @@ class URLToolTests(unittest.TestCase):
         verifyClass(IURLTool, URLTool)
         verifyClass(IActionProvider, URLTool)
 
+    # CMF URLTool tests
+
     def test_getPortalObject(self):
         self.assertEqual(self.url_tool.getPortalObject(), self.portal)
 
     def test_getPortalPath(self):
-        self.assertEqual(self.url_tool(), 'http://foo/portal')
         self.assertEqual(self.url_tool.getPortalPath(), '/portal')
 
     def test_getRelativeContentPath(self):
@@ -92,6 +98,21 @@ class URLToolTests(unittest.TestCase):
         self.assertEqual(self.url_tool.getRelativeUrl(self.doc),
                          'folder/doc')
 
+    # CPS URLTool tests
+
+    def test_getRpath(self):
+        self.assertEqual(self.url_tool.getRpath(self.doc),
+                         'folder/doc')
+
+    def test_getURLFromRpath(self):
+        self.assertEqual(self.url_tool.getURLFromRpath('folder/doc'),
+                         self.doc.absolute_url())
+
+    # CPS URLTool tests that may be dependant from virtual hosting configuration
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://foo/portal')
+
     def test_getBaseURL(self):
         self.assertEqual(self.url_tool.getBaseURL(), '/portal/')
 
@@ -103,140 +124,7 @@ class URLToolTests(unittest.TestCase):
         self.assertEqual(self.url_tool.getVirtualHostPhysicalPath(),
                          ('',))
 
-    def test_getAbsoluteURLFromRelativeURL(self):
-        self.assertEqual(self.url_tool.getAbsoluteURLFromRelativeURL('folder/doc'),
-                         self.doc.absolute_url())
-
     def test_getBreadCrumbs(self):
-        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
-                                                      only_parents=0),
-                         [self.portal, self.folder, self.doc])
-        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
-                                                      only_parents=1),
-                         [self.portal, self.folder])
-
-#
-# Generate different cases of virtual hosting
-#
-
-def gen_cases():
-    for vbase, ubase in (
-        # foo is the app name in makerequest
-        ('', 'http://foo'),
-        ('/VirtualHostBase/http/www.site.com:80', 'http://www.site.com'),
-        ):
-        yield vbase, '', '', 'portal/folder/doc', ubase
-        for vr, _vh, content in (
-            ('', '', 'portal/folder/doc'),
-            ('', 'truc', 'portal/folder/doc'),
-            ('portal', '', 'folder/doc'),
-            ('portal', 'truc', 'folder/doc'),
-            # more complicated case, not handled right now
-            ('portal/folder', 'truc/bidule', 'doc'),
-            ):
-            vparts = [vbase, vr, 'VirtualHostRoot']
-            if not vr:
-                del vparts[1]
-            if _vh:
-                new_vh = '/'.join(['_vh_' + x for x in _vh.split('/')])
-                vparts.append(new_vh)
-            yield '/'.join(vparts), vr, _vh, content, ubase
-
-for i, (vaddr, vr, _vh, content, ubase) in enumerate(gen_cases()):
-    def test(self, vaddr=vaddr, vr=vr, _vh=_vh,
-             content=content, ubase=ubase, i=i):
-
-        # get the object, sets the REQUEST
-        ob = self.traverse('%s/%s/' % (vaddr, content))
-
-        # helpers
-
-        # slashed content
-        new_content = content
-        if vr and content.startswith(vr):
-            new_content = content[len(vr):]
-        sl_content = (new_content and ('/' + new_content))
-
-        # slashed virtual host
-        sl_vh = (_vh and ('/' + _vh))
-
-        # absolute url path
-        aup = sl_vh + sl_content
-
-        # debug prints
-
-        #print "\n%s" %(i,)
-        #print "ubase=%s"%(ubase)
-        #print "vaddr=%s"%(vaddr)
-        #print "vr=%s"%(vr)
-        #print "_vh=%s"%(_vh)
-        #print "content=%s"%(content)
-        #print "aup=%s"%(aup,)
-        #print "\n"
-
-        #
-        # OFS.Traversable methods tests
-        #
-
-        # object (file)
-        self.assertEqual(ob.getPhysicalPath(), ('', 'portal', 'folder', 'doc'))
-        self.assertEqual(ob.absolute_url(), ubase + aup)
-        self.assertEqual(ob.absolute_url(relative=1), content)
-        self.assertEqual(ob.absolute_url_path(), aup)
-        self.assertEqual(ob.virtual_url_path(), content)
-        self.assertEqual(self.app.REQUEST['BASEPATH1'] + '/' + content, aup)
-
-        #
-        # URLTool methods tests
-        #
-
-        # portal
-        self.assertEqual(self.url_tool.getPortalObject(), self.portal)
-
-        # independant from virtual hosting
-        self.assertEqual(self.url_tool.getPortalPath(), '/portal')
-        self.assertEqual(self.url_tool.getRelativeContentPath(self.doc),
-                         ('folder', 'doc'))
-        self.assertEqual(self.url_tool.getRelativeContentURL(self.doc),
-                         'folder/doc')
-        self.assertEqual(self.url_tool.getRelativeUrl(self.doc),
-                         'folder/doc')
-
-        # virtual root
-        add_portal_id = 1
-        if vr:
-            vr_list = vr.split('/')
-            if vr_list and vr_list[0] == 'portal':
-                add_portal_id = 0
-
-        # compute url_tool call
-        urltool_call = ubase
-        # add virtual host
-        if _vh:
-            urltool_call += '/' + _vh
-        if add_portal_id:
-            urltool_call += '/portal'
-
-        self.assertEqual(self.url_tool(), urltool_call)
-
-        base_url = ''
-        if _vh:
-            base_url += '/' + _vh
-        if add_portal_id:
-            base_url += '/portal'
-        base_url += '/'
-        self.assertEqual(self.url_tool.getBaseURL(), base_url)
-
-        vrph = ('',)
-        if vaddr.find('VirtualHostRoot') != -1 and vr:
-            vrph = tuple(('/' + vr).split('/'))
-        self.assertEqual(self.url_tool.getVirtualRootPhysicalPath(), vrph)
-
-        self.assertEqual(self.url_tool.getAbsoluteURLFromRelativeURL('folder/doc'),
-                         self.doc.absolute_url())
-
-        # breadcrumbs
-
         # portal
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
                                                       only_parents=0),
@@ -245,51 +133,171 @@ for i, (vaddr, vr, _vh, content, ubase) in enumerate(gen_cases()):
                                                       only_parents=1),
                          [self.portal])
         # folder
-
-        # sometimes folder cannot be seen because it is hidden by virtual host
-        # root
-        vrpp = self.url_tool.getVirtualRootPhysicalPath()
-        if len(vrpp)>2:
-            hide_folder = 1
-        else:
-            hide_folder = 0
-
-        if hide_folder:
-            self.assertEqual([x.getId() for x in self.url_tool.getBreadCrumbs(context=self.folder,
-                                                          only_parents=0)],
-                             [self.portal.getId()])
-            self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
-                                                          only_parents=0),
-                             [self.portal])
-        else:
-            self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
-                                                          only_parents=0),
-                             [self.portal, self.folder])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
+                                                      only_parents=0),
+                         [self.portal, self.folder])
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
                                                       only_parents=1),
                          [self.portal])
         # doc
-        if hide_folder:
-            self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
-                                                          only_parents=0),
-                             [self.portal, self.doc])
-            self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
-                                                          only_parents=1),
-                             [self.portal])
-        else:
-            self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
-                                                          only_parents=0),
-                             [self.portal, self.folder, self.doc])
-            self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
-                                                          only_parents=1),
-                             [self.portal, self.folder])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=0),
+                         [self.portal, self.folder, self.doc])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=1),
+                         [self.portal, self.folder])
 
-    setattr(URLToolTests, 'testTraverse%s' % i, test)
+
+class URLToolTestsVHB(URLToolTests):
+
+    traverse_value = '/VirtualHostBase/http/www.site.com:80/portal/folder/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://www.site.com/portal')
+
+
+class URLToolTests2(URLToolTests):
+
+    traverse_value = '/VirtualHostRoot/portal/folder/doc/'
+
+
+class URLToolTests2VHB(URLToolTests2):
+
+    traverse_value = '/VirtualHostBase/http/www.site.com:80/VirtualHostRoot/portal/folder/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://www.site.com/portal')
+
+
+class URLToolTests3(URLToolTests):
+
+    traverse_value = '/VirtualHostRoot/_vh_truc/portal/folder/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://foo/truc/portal')
+
+    def test_getBaseURL(self):
+        self.assertEqual(self.url_tool.getBaseURL(), '/truc/portal/')
+
+    def test_getVirtualHostPhysicalPath(self):
+        self.assertEqual(self.url_tool.getVirtualHostPhysicalPath(),
+                         ('', 'truc'))
+
+
+class URLToolTests3VHB(URLToolTests3):
+
+    traverse_value = '/VirtualHostBase/http/www.site.com:80/VirtualHostRoot/_vh_truc/portal/folder/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://www.site.com/truc/portal')
+
+
+class URLToolTests4(URLToolTests):
+
+    traverse_value = '/portal/VirtualHostRoot/folder/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://foo')
+
+    def test_getBaseURL(self):
+        self.assertEqual(self.url_tool.getBaseURL(), '/')
+
+    def test_getVirtualRootPhysicalPath(self):
+        self.assertEqual(self.url_tool.getVirtualRootPhysicalPath(),
+                         ('', 'portal'))
+
+
+class URLToolTests4VHB(URLToolTests4):
+
+    traverse_value = '/VirtualHostBase/http/www.site.com:80/portal/VirtualHostRoot/folder/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://www.site.com')
+
+
+class URLToolTests5(URLToolTests):
+
+    traverse_value = '/portal/VirtualHostRoot/_vh_truc/folder/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://foo/truc')
+
+    def test_getBaseURL(self):
+        self.assertEqual(self.url_tool.getBaseURL(), '/truc/')
+
+    def test_getVirtualRootPhysicalPath(self):
+        self.assertEqual(self.url_tool.getVirtualRootPhysicalPath(),
+                         ('', 'portal'))
+
+    def test_getVirtualHostPhysicalPath(self):
+        self.assertEqual(self.url_tool.getVirtualHostPhysicalPath(),
+                         ('', 'truc'))
+
+class URLToolTests5VHB(URLToolTests5):
+
+    traverse_value = '/VirtualHostBase/http/www.site.com:80/portal/VirtualHostRoot/_vh_truc/folder/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://www.site.com/truc')
+
+
+class URLToolTests6(URLToolTests):
+
+    traverse_value = '/portal/folder/VirtualHostRoot/_vh_truc/_vh_bidule/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://foo/truc/bidule')
+
+    def test_getBaseURL(self):
+        self.assertEqual(self.url_tool.getBaseURL(), '/truc/bidule/')
+
+    def test_getVirtualRootPhysicalPath(self):
+        self.assertEqual(self.url_tool.getVirtualRootPhysicalPath(),
+                         ('', 'portal', 'folder'))
+
+    def test_getVirtualHostPhysicalPath(self):
+        self.assertEqual(self.url_tool.getVirtualHostPhysicalPath(),
+                         ('', 'truc', 'bidule'))
+
+    def test_getBreadCrumbs(self):
+        # portal
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
+                                                      only_parents=0),
+                         [self.portal])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
+                                                      only_parents=1),
+                         [self.portal])
+        # folder
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
+                                                      only_parents=0),
+                         [self.portal])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
+                                                      only_parents=1),
+                         [self.portal])
+        # doc
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=0),
+                         [self.portal, self.doc])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=1),
+                         [self.portal])
+
+
+class URLToolTests6VHB(URLToolTests6):
+
+    traverse_value = '/VirtualHostBase/http/www.site.com:80/portal/folder/VirtualHostRoot/_vh_truc/_vh_bidule/doc/'
+
+    def test_tool_call(self):
+        self.assertEqual(self.url_tool(), 'http://www.site.com/truc/bidule')
+
 
 def test_suite():
-    suites = []
-    suites.append(unittest.makeSuite(URLToolTests))
-    return unittest.TestSuite(suites)
+    from inspect import isclass
+    tests = []
+    for obj in globals().values():
+        if isclass(obj) and issubclass(obj, URLToolTests):
+            tests.append(unittest.makeSuite(obj))
+    return unittest.TestSuite(tests)
 
 if __name__=="__main__":
     unittest.main(defaultTest='test_suite')

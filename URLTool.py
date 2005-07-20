@@ -50,9 +50,18 @@ class URLTool(CMFURLTool):
 
     security = ClassSecurityInfo()
 
+    security.declarePublic('getRpath')
+    def getRpath(self, content):
+        """ Get the path for an object, relative to the portal root.
+
+        Provides an alias name for the CMF URLTool getRelativeContentURL
+        method.
+        """
+        return self.getRelativeContentURL(content)
+
     security.declarePublic("getBaseURL")
     def getBaseURL(self):
-        """Get base url for the portal; handle virtual hosting
+        """Get base url for the portal; handles virtual hosting
         """
         portal = self.getPortalObject()
         base_url = portal.absolute_url_path()
@@ -60,7 +69,7 @@ class URLTool(CMFURLTool):
             base_url += '/'
         return base_url
 
-    security.declarePublic("getVirtualRootPhysicalPath")
+    security.declarePrivate("getVirtualRootPhysicalPath")
     def getVirtualRootPhysicalPath(self):
         """Get the virtual root physical path
 
@@ -73,6 +82,7 @@ class URLTool(CMFURLTool):
             vr = ('',)
         return vr
 
+    security.declarePrivate("getVirtualHostPhysicalPath")
     def getVirtualHostPhysicalPath(self):
         """Get the virtual host physical path
 
@@ -86,10 +96,11 @@ class URLTool(CMFURLTool):
             path = tuple(aup.split('/'))
         return path
 
-    def getAbsoluteURLFromRelativeURL(self, relative_url):
+    security.declarePublic("getURLFromRpath")
+    def getURLFromRpath(self, rpath):
         """Guess the object absolute url from the relative url
         """
-        path = relative_url.split('/')
+        path = rpath.split('/')
 
         # add portal path
         portal = self.getPortalObject()
@@ -106,7 +117,7 @@ class URLTool(CMFURLTool):
 
         # avoid calling costly restrictedTraverse
         #portal = self.getPortalObject()
-        #ob = portal.restrictedTraverse(relative_url, None)
+        #ob = portal.restrictedTraverse(rpath, None)
         #if ob is not None:
         #    url = ob.absolute_url()
         #else:
@@ -153,7 +164,8 @@ class URLTool(CMFURLTool):
 
         return parents
 
-    def getBreadCrumbsDict(self, context=None, only_parents=0, title_size=20):
+    security.declarePublic("getBreadCrumbsInfo")
+    def getBreadCrumbsInfo(self, context=None, only_parents=0, title_size=20):
         """
         Title is truncated so that its size is 20 characters (middle truncture)
         """
