@@ -83,3 +83,6 @@ CPS URLTool adds new methods:
 - getBreadCrumbs(self, context=None, only_parents=0):
   returns parents, omitting objects that are hidden by virtual hosting, and
   with portal as greater parent.
+- getBreadCrumbsInfo(self, context=None, only_parents=0, title_size=20):
+  returns a list of parents info to be presented in a template. Info is a
+  dictionnary with various information (id, title, url...)
