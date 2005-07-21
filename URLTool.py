@@ -31,14 +31,17 @@ from Acquisition import aq_inner
 from Acquisition import aq_parent
 from Globals import InitializeClass
 
+from Products.CMFCore.permissions import View
+from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
-from Products.CMFCore.URLTool import URLTool as CMFURLTool
 from Products.CMFCore.interfaces.portal_url import portal_url as IURLTool
+from Products.CMFCore.utils import SimpleItemWithProperties
+from Products.CMFCore.URLTool import URLTool as CMFURLTool
 from Products.CMFCore.ActionProviderBase import ActionProviderBase
 
 from Products.CPSUtil.text import truncateText
 
-class URLTool(CMFURLTool):
+class URLTool(CMFURLTool, SimpleItemWithProperties):
     """ CPS URL Tool.
     """
 
@@ -46,9 +49,31 @@ class URLTool(CMFURLTool):
 
     id = 'portal_url'
     meta_type = 'CPS URL Tool'
+
     _actions = ()
 
+    _properties = (
+        {'id': 'show_breadcrumbs_root', 'type': 'boolean', 'mode': 'w',
+         'label': 'Show portal (or virtual root) in breadcrumbs'},
+        {'id': 'breadcrumbs_root_name', 'type': 'text', 'mode': 'w',
+         'label': "Root of breadcrumbs i18n name"},
+        # Do not show unvisible items in breadcrumbs, or show them without a
+        # link on their name.
+        {'id': 'breadcrumbs_show_unvisible', 'type': 'boolean', 'mode': 'w',
+         'label': 'Show unvisible items in breadcrumbs'},
+        )
+    show_breadcrumbs_root = True
+    breadcrumbs_root_name = ''
+    breadcrumbs_show_unvisible = False
+
     security = ClassSecurityInfo()
+
+    manage_options = (ActionProviderBase.manage_options
+                      + ({'label':'Overview',
+                          'action':'manage_overview',},
+                         )
+                      + SimpleItemWithProperties.manage_options
+                      )
 
     security.declarePublic('getRpath')
     def getRpath(self, content):
@@ -156,9 +181,10 @@ class URLTool(CMFURLTool):
             else:
                 break
 
-        # add portal as root if not here
-        if len(parents) == 0 or parents[-1] != portal:
-            parents.append(portal)
+        # add virtual root
+        if self.show_breadcrumbs_root:
+            if len(parents) == 0 or parents[-1] != vr:
+                parents.append(vr)
 
         parents.reverse()
 
@@ -171,23 +197,40 @@ class URLTool(CMFURLTool):
         """
         parents = self.getBreadCrumbs(context, only_parents)
         items = []
+        first_loop = 1
         for obj in parents:
-            title = obj.title_or_id()
-            try:
-                is_archived = obj.isProxyArchived()
-            except AttributeError:
-                is_archived = 0
-            if is_archived:
-                # XXX i18n
-                title = 'v%s (%s)' % (obj.getRevision(), title)
-            aup = obj.absolute_url_path()
-            url = '%s/' % aup
-            items.append({'id': obj.getId(),
-                          'title': truncateText(title, size=title_size),
-                          'longtitle': title,
-                          'url': url,
-                          'rpath': aup,
-                         })
+            visible = _checkPermission(View, obj)
+            if visible or self.breadcrumbs_show_unvisible:
+                # title
+                if (first_loop
+                    and self.show_breadcrumbs_root
+                    and self.breadcrumbs_root_name):
+                    mcat = getToolByName(self, 'translation_service')
+                    title = mcat(self.breadcrumbs_root_name,
+                                 default=self.breadcrumbs_root_name)
+                else:
+                    title = obj.title_or_id()
+                    try:
+                        is_archived = obj.isProxyArchived()
+                    except AttributeError:
+                        is_archived = 0
+                    if is_archived:
+                        # XXX i18n
+                        title = 'v%s (%s)' % (obj.getRevision(), title)
+                # url, rpath
+                if not visible:
+                    url = ''
+                    rpath = ''
+                else:
+                    url = obj.absolute_url()
+                    rpath = self.getRpath(obj)
+                items.append({'id': obj.getId(),
+                              'title': truncateText(title, size=title_size),
+                              'longtitle': title,
+                              'url': url,
+                              'rpath': url,
+                              })
+            first_loop = 0
         return items
 
 InitializeClass(URLTool)

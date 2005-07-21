@@ -147,6 +147,30 @@ class URLToolTests(unittest.TestCase):
                                                       only_parents=1),
                          [self.portal, self.folder])
 
+    def test_getBreadCrumbsWithoutRoot(self):
+        self.url_tool.manage_changeProperties(show_breadcrumbs_root=False)
+        # portal
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
+                                                      only_parents=0),
+                         [])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
+                                                      only_parents=1),
+                         [])
+        # folder
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
+                                                      only_parents=0),
+                         [self.folder])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
+                                                      only_parents=1),
+                         [])
+        # doc
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=0),
+                         [self.folder, self.doc])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=1),
+                         [self.folder])
+
 
 class URLToolTestsVHB(URLToolTests):
 
@@ -260,27 +284,52 @@ class URLToolTests6(URLToolTests):
                          ('', 'truc', 'bidule'))
 
     def test_getBreadCrumbs(self):
-        # portal
+        # portal is not supposed to be seen because folder is the virtual root
+        # portal, even this is awkward
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
                                                       only_parents=0),
-                         [self.portal])
+                         [self.folder])
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
                                                       only_parents=1),
-                         [self.portal])
+                         [self.folder])
         # folder
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
                                                       only_parents=0),
-                         [self.portal])
+                         [self.folder])
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
                                                       only_parents=1),
-                         [self.portal])
+                         [self.folder])
         # doc
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
                                                       only_parents=0),
-                         [self.portal, self.doc])
+                         [self.folder, self.doc])
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
                                                       only_parents=1),
-                         [self.portal])
+                         [self.folder])
+
+    def test_getBreadCrumbsWithoutRoot(self):
+        self.url_tool.manage_changeProperties(show_breadcrumbs_root=False)
+        # portal
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
+                                                      only_parents=0),
+                         [])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
+                                                      only_parents=1),
+                         [])
+        # folder
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
+                                                      only_parents=0),
+                         [])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.folder,
+                                                      only_parents=1),
+                         [])
+        # doc
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=0),
+                         [self.doc])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=1),
+                         [])
 
 
 class URLToolTests6VHB(URLToolTests6):

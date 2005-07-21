@@ -11,7 +11,7 @@ New features:
 - Added a new URLTool to have methods dealing with virtual hosting: now able to
   get the base url (portal absolute url path), get an object absolute url from
   its relative url, and get its breadcrumbs without objects hidden with the
-  virtual hosting.
+  virtual hosting. Also possible to configure breadcrumbs display.
 Bug fixes:
 ~~~~~~~~~~
 - Fixed missing reindexing of localUsersWithRoles by reindexObjectSecurity.
