@@ -55,7 +55,6 @@ import EventServicePatches
 import TypesToolPatches
 import PatchBTreeFolder2
 import PatchCatalogTool
-import PatchCMFCatalogAware
 import ProxyTool
 import ObjectRepositoryTool
 import TreesTool

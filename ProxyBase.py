@@ -418,8 +418,6 @@ class ProxyBase(Base):
         # (The notification for the object repo is done by the repo.)
         evtool = getEventService(self)
         evtool.notify('sys_modify_security', self, {})
-        # Method definition is monkey-patched by PatchCMFCatalogAware
-        # to add the second argument.
         return CMFCatalogAware.__dict__['reindexObjectSecurity'](self,
                                                                  skip_self)
 

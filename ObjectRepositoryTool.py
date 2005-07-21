@@ -26,7 +26,7 @@ from zLOG import LOG, ERROR, DEBUG, TRACE
 import random
 from Globals import InitializeClass, DTMLFile
 from cStringIO import StringIO
-from Acquisition import aq_base, aq_parent, aq_inner
+from Acquisition import aq_base, aq_parent, aq_inner, aq_get
 from AccessControl import ClassSecurityInfo
 from AccessControl.Permission import Permission, name_trans
 
@@ -131,6 +131,7 @@ class ObjectRepositoryTool(UniqueObject,
         id = self._getId(docid_, rev)
         self.constructContent(type_name_, id, *args, **kw)
         ob = self.get(id)
+        self._markObjectInRepository(ob)
         evtool = getEventService(self)
         evtool.notify('sys_add_cmf_object', ob, {})
         # XXX or call ob.manage_afterCMFAdd(ob, self) ? recurse ?
@@ -223,10 +224,36 @@ class ObjectRepositoryTool(UniqueObject,
         else:
             return (None, None)
 
-    security.declarePublic('isObjectInRepository')
+    security.declarePrivate('_markObjectInRepository')
+    def _markObjectInRepository(self, ob):
+        """Mark an object as being in the repository."""
+        ob._isInCPSRepository = True
+
+    security.declarePrivate('isObjectInRepository')
     def isObjectInRepository(self, ob):
         """Test if an object is in the repository."""
+        # We have to use an attribute on the object, as the repository
+        # objects are always rewrapped under the acquisition context of
+        # the proxy.
+        if getattr(ob, '_isInCPSRepository', False):
+            return True
+        # During creation, in manage_afterAdd, the attribute hasn't been
+        # set yet, which is why we have to do the explicit path check.
         return ob.getPhysicalPath()[:-1] == self.getPhysicalPath()
+
+
+    security.declarePrivate('isObjectUnderRepository')
+    def isObjectUnderRepository(self, ob):
+        """Test if an object is under the repository.
+
+        Returns true for all objects contained somewhere under the
+        repository.
+        """
+        if aq_get(ob, '_isInCPSRepository', False, 1):
+            return True
+        # Do the path check as above.
+        repo_path = self.getPhysicalPath()
+        return ob.getPhysicalPath()[:len(repo_path)] == repo_path
 
     security.declarePrivate('freezeRevision')
     def freezeRevision(self, docid, rev):

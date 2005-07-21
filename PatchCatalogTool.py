@@ -78,10 +78,6 @@ class IndexableObjectWrapper:
                 ob_repo = ob.getContent(lang=self.__lang)
                 if ob_repo is not None:
                      ob = ob_repo
-        elif 'portal_repository' in ob.getPhysicalPath():
-            if name in ('SearchableText', 'Title'):
-                # skip useless indexes for repository document
-                raise AttributeError
 
         try:
             ret = getattr(ob, name)
@@ -148,8 +144,9 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=
     """Wraps the object with workflow and accessibility
     information just before cataloging."""
 
-    # Don't index repository objects
-    if 'portal_repository' in object.getPhysicalPath():
+    # Don't index repository objects or anything under them.
+    repotool = getToolByName(self, 'portal_repository', None)
+    if repotool is not None and repotool.isObjectUnderRepository(object):
         return
 
     LOG('PatchCatalogTool.catalog_object', TRACE, 'index uid %s  obj %s' % (

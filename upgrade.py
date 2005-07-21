@@ -21,23 +21,24 @@ def upgrade_334_335_repository(context):
     """Upgrade the repository to remove security synthesis remnants.
 
     Removes all local roles on the contained objects.
+    Marks all objects as being in the repository.
     """
     PARTIAL_COMMIT_EVERY = 100
     repo = context.portal_url.getPortalObject().portal_repository
     count = 0
     for ob in repo.objectValues():
         changed = False
-        print ob
-        print getattr(ob, '__ac_local_roles__', None)
-        print getattr(ob, '__ac_local_group_roles__', None)
         if getattr(ob, '__ac_local_roles__', None) is not None:
             ob.__ac_local_roles__ = None
             changed = True
         if getattr(ob, '__ac_local_group_roles__', None) is not None:
             ob.__ac_local_group_roles__ = None
             changed = True
+        if not getattr(ob, '_isInCPSRepository', False):
+            repo._markObjectInRepository(ob)
+            changed = True
         if changed:
             count += 1
             if (count % PARTIAL_COMMIT_EVERY) == 0:
                 get_transaction().commit(1)
-    return "%s repository objects cleaned" % count
+    return "%s repository objects updated" % count

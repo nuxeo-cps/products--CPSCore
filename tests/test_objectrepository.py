@@ -25,6 +25,7 @@ import unittest
 
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
+from Acquisition import aq_base
 from OFS.Folder import Folder
 
 from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
@@ -152,6 +153,44 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
         revs = ortool.listRevisions(docid)
         for rev in (2, 9998):
             self.assert_(rev in revs)
+
+    def test_under_repo(self):
+        ortool = self.root.portal_repository
+
+        # Not in the repo
+        ob = DummyContent('bibi')
+        subob = DummyContent('subob')
+        ob.subob = subob
+        self.failIf(ortool.isObjectInRepository(ob))
+        self.failIf(ortool.isObjectUnderRepository(ob))
+        self.failIf(ortool.isObjectInRepository(ob.subob))
+        self.failIf(ortool.isObjectUnderRepository(ob.subob))
+
+        # In the repo because stored there
+        ortool.ob = ob
+        ob = ortool.ob
+        self.assert_(ortool.isObjectInRepository(ob))
+        self.assert_(ortool.isObjectUnderRepository(ob))
+        self.failIf(ortool.isObjectInRepository(ob.subob))
+        self.assert_(ortool.isObjectUnderRepository(ob.subob))
+
+        # Object created through the repo API
+        ortool.createRevision('123', 'DummyContent')
+        ob = ortool.getObjectRevision('123', 1)
+        subob = DummyContent('subob')
+        ob.subob = subob
+        self.assert_(ortool.isObjectInRepository(ob))
+        self.assert_(ortool.isObjectUnderRepository(ob))
+        self.failIf(ortool.isObjectInRepository(ob.subob))
+        self.assert_(ortool.isObjectUnderRepository(ob.subob))
+
+        # Now rewrap in another acquisition context
+        proxy = DummyContent('proxy')
+        wrapped = aq_base(ob).__of__(proxy)
+        self.assert_(ortool.isObjectInRepository(wrapped))
+        self.assert_(ortool.isObjectUnderRepository(wrapped))
+        self.failIf(ortool.isObjectInRepository(wrapped.subob))
+        self.assert_(ortool.isObjectUnderRepository(wrapped.subob))
 
 
 def test_suite():

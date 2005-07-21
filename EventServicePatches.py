@@ -108,7 +108,7 @@ def manage_beforeDelete(self, *args, **kw):
     self._cps_old_manage_beforeDelete(*args, **kw)
     notify(self, 'sys_del_object', self, *args, **kw)
 
-for class_ in (Item, ObjectManager):
+for class_ in (Item, ObjectManager, CMFCatalogAware):
     patch_action(class_, manage_afterAdd)
     patch_action(class_, manage_beforeDelete)
 

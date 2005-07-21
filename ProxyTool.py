@@ -528,7 +528,11 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     security.declarePrivate('_reindexProxiesForObject')
     def _reindexProxiesForObject(self, ob):
-        """Reindex all the proxies corresponding to an object in the repo."""
+        """Reindex the proxies corresponding to a repository object.
+
+        Also sends notification events (for these proxies).
+        """
+        evtool = getToolByName(self, 'portal_eventservice')
         repotool = getToolByName(self, 'portal_repository')
         portal = aq_parent(aq_inner(self))
         docid, rev = repotool.getDocidAndRevisionFromObjectId(ob.getId())
@@ -550,6 +554,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             #LOG('ProxyTool', TRACE, '_reindexProxiesForObject reindexing '
             #    'rpath=%s' % rpath)
             proxy.reindexObject()
+            evtool.notify('sys_modify_object', proxy, {})
 
     # XXX implement this
     security.declarePublic('searchResults')
@@ -750,36 +755,30 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         Called when a proxy is added/deleted/modified.
         Updates internal indexes.
-        """
-        # XXX Called when a document is modified. Notifies the proxies
-        # that they have implicitly been modified. (Would be used so
-        # that Title is reindexed for instance.)
 
-        if event_type in ('sys_add_object',
-                          'sys_del_object',
-                          'sys_modify_object',
-                          'modify_object'):
-            if isinstance(object, ProxyBase):
-                #LOG('ProxyTool', DEBUG, 'Got %s for proxy %s'
-                #    % (event_type, '/'.join(object.getPhysicalPath())))
-                rpath = infos['rpath']
-                dodel = 0
-                if event_type == 'sys_add_object':
-                    self._addProxy(object, rpath)
-                elif event_type == 'sys_modify_object':
-                    self._modifyProxy(object, rpath)
-                elif event_type == 'sys_del_object':
-                    self._delProxy(rpath)
-                #LOG('ProxyTool', DEBUG, '  ... done')
-            else:
-                repotool = getToolByName(self, 'portal_repository')
-                if repotool.isObjectInRepository(object):
-                    if event_type in ('sys_modify_object', 'modify_object'):
-                        #LOG('ProxyTool', DEBUG, 'Got %s for repoob %s'
-                        #   % (event_type, '/'.join(object.getPhysicalPath())))
-                        # Repo object was modified, reindex all the proxies.
-                        self._reindexProxiesForObject(object)
-                        #LOG('ProxyTool', DEBUG, '  ... done')
+        When a repository document is modified, reindexes the proxies
+        and notifies of their modification.
+        """
+        # Notifying of the proxies is important to get a new Title taken
+        # into account by a Tree Cache for example.
+
+        if event_type not in ('sys_add_object',
+                              'sys_del_object',
+                              'sys_modify_object',
+                              'modify_object'):
+            return
+        if isinstance(object, ProxyBase):
+            rpath = infos['rpath']
+            if event_type == 'sys_add_object':
+                self._addProxy(object, rpath)
+            elif event_type == 'sys_modify_object':
+                self._modifyProxy(object, rpath)
+            elif event_type == 'sys_del_object':
+                self._delProxy(rpath)
+        elif event_type in ('sys_modify_object', 'modify_object'):
+            repotool = getToolByName(self, 'portal_repository')
+            if repotool.isObjectInRepository(object):
+                self._reindexProxiesForObject(object)
 
     #
     # Management
