@@ -121,6 +121,7 @@ class ProxyBaseTest(ZopeTestCase):
         self.assertEquals(proxy.getTag(), 'tag')
 
         # Most other APIs just indirect to the proxy tool:
+        # FIXME: add tests for those.
         # Can't test getLanguage, getRevision, getContent, getEditableContent,
         # proxyChanged, __getitem__, freezeProxy
         # reindexObject, reindexObjectSecurity, Title,
