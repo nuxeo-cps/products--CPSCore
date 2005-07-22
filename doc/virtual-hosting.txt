@@ -74,9 +74,11 @@ CMF URLTool methods:
 CPS URLTool adds new methods:
 - getRpath(self, content): alias for getRelativeContentURL(self, content)
   and getRelativeUrl(self, content)
-- getBaseURL(self): /foo/bar
+- getBaseUrl(self): /foo/bar/
 - getVirtualRootPhysicalPath(self): ('', 'cps', 'workspaces')
+  This should never be used by user code (private method)
 - getVirtualHostPhysicalPath(self): ('', 'foo', 'bar')
+  This should never be used by user code (private method)
 - getURLFromRpath(self, rpath):
   returns 'http://www.site.com/foo/bar/my-folder/my-file' when given
   relative_url 'workspaces/my-folder/my-file'

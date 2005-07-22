@@ -121,8 +121,8 @@ class URLToolTests(unittest.TestCase):
     def test_tool_call(self):
         self.assertEqual(self.url_tool(), 'http://foo/portal')
 
-    def test_getBaseURL(self):
-        self.assertEqual(self.url_tool.getBaseURL(), '/portal/')
+    def test_getBaseUrl(self):
+        self.assertEqual(self.url_tool.getBaseUrl(), '/portal/')
 
     def test_getVirtualRootPhysicalPath(self):
         self.assertEqual(self.url_tool.getVirtualRootPhysicalPath(),
@@ -208,8 +208,8 @@ class URLToolTests3(URLToolTests):
     def test_tool_call(self):
         self.assertEqual(self.url_tool(), 'http://foo/truc/portal')
 
-    def test_getBaseURL(self):
-        self.assertEqual(self.url_tool.getBaseURL(), '/truc/portal/')
+    def test_getBaseUrl(self):
+        self.assertEqual(self.url_tool.getBaseUrl(), '/truc/portal/')
 
     def test_getVirtualHostPhysicalPath(self):
         self.assertEqual(self.url_tool.getVirtualHostPhysicalPath(),
@@ -231,8 +231,8 @@ class URLToolTests4(URLToolTests):
     def test_tool_call(self):
         self.assertEqual(self.url_tool(), 'http://foo')
 
-    def test_getBaseURL(self):
-        self.assertEqual(self.url_tool.getBaseURL(), '/')
+    def test_getBaseUrl(self):
+        self.assertEqual(self.url_tool.getBaseUrl(), '/')
 
     def test_getVirtualRootPhysicalPath(self):
         self.assertEqual(self.url_tool.getVirtualRootPhysicalPath(),
@@ -254,8 +254,8 @@ class URLToolTests5(URLToolTests):
     def test_tool_call(self):
         self.assertEqual(self.url_tool(), 'http://foo/truc')
 
-    def test_getBaseURL(self):
-        self.assertEqual(self.url_tool.getBaseURL(), '/truc/')
+    def test_getBaseUrl(self):
+        self.assertEqual(self.url_tool.getBaseUrl(), '/truc/')
 
     def test_getVirtualRootPhysicalPath(self):
         self.assertEqual(self.url_tool.getVirtualRootPhysicalPath(),
@@ -280,8 +280,8 @@ class URLToolTests6(URLToolTests):
     def test_tool_call(self):
         self.assertEqual(self.url_tool(), 'http://foo/truc/bidule')
 
-    def test_getBaseURL(self):
-        self.assertEqual(self.url_tool.getBaseURL(), '/truc/bidule/')
+    def test_getBaseUrl(self):
+        self.assertEqual(self.url_tool.getBaseUrl(), '/truc/bidule/')
 
     def test_getVirtualRootPhysicalPath(self):
         self.assertEqual(self.url_tool.getVirtualRootPhysicalPath(),

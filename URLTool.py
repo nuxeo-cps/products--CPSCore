@@ -84,8 +84,8 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         """
         return self.getRelativeContentURL(content)
 
-    security.declarePublic("getBaseURL")
-    def getBaseURL(self):
+    security.declarePublic("getBaseUrl")
+    def getBaseUrl(self):
         """Get base url for the portal; handles virtual hosting
         """
         portal = self.getPortalObject()
