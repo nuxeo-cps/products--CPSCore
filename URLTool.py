@@ -55,16 +55,16 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
     _properties = (
         {'id': 'breadcrumbs_show_root', 'type': 'boolean', 'mode': 'w',
          'label': 'Show portal (or virtual root) in breadcrumbs'},
-        {'id': 'breadcrumbs_root_name', 'type': 'text', 'mode': 'w',
+        {'id': 'breadcrumbs_root_name', 'type': 'string', 'mode': 'w',
          'label': "Root of breadcrumbs i18n name"},
-        # Do not show unvisible items in breadcrumbs, or show them without a
+        # Do not show invisible items in breadcrumbs, or show them without a
         # link on their name.
-        {'id': 'breadcrumbs_show_unvisible', 'type': 'boolean', 'mode': 'w',
-         'label': 'Show unvisible items in breadcrumbs'},
+        {'id': 'breadcrumbs_show_invisible', 'type': 'boolean', 'mode': 'w',
+         'label': 'Show invisible items in breadcrumbs'},
         )
     breadcrumbs_show_root = True
     breadcrumbs_root_name = ''
-    breadcrumbs_show_unvisible = False
+    breadcrumbs_show_invisible = False
 
     security = ClassSecurityInfo()
 
@@ -214,7 +214,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         first_loop = 1
         for obj in parents:
             visible = _checkPermission(View, obj)
-            if visible or self.breadcrumbs_show_unvisible:
+            if visible or self.breadcrumbs_show_invisible:
                 # title
                 if (first_loop
                     and self.breadcrumbs_show_root
