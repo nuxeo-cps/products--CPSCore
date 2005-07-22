@@ -46,9 +46,11 @@ class FakeRoot:
         assert dummy == ''
         return self.getDummy(int(id))
 
-    def addDummy(self):
+    def addDummy(self, cls=None):
         id = self.generateId()
-        ob = Dummy(id)
+        if cls is None:
+            cls = Dummy
+        ob = cls(id)
         self.__objects__[id] = ob
         return ob
 
@@ -83,6 +85,17 @@ class Dummy:
 
     def _reindexObjectSecurity(self, skip_self=False):
         self.log.append('secu %s %r' % (self.id, skip_self))
+
+
+class Dummy2(Dummy):
+
+    def _reindexObject(self, idxs=[]):
+        if idxs == ['nest']:
+            # While reindexing, provoke another indexing
+            get_indexation_manager().push(self, idxs=['bob'])
+            get_indexation_manager().push(self.other, idxs=['bob'])
+        Dummy._reindexObject(self, idxs)
+
 
 class IndexationManagerTest(unittest.TestCase):
 
@@ -242,6 +255,24 @@ class TransactionIndexationManagerTest(unittest.TestCase):
         get_transaction().abort()
         self.assertEquals(dummy.getLog(), [])
         root.clear()
+
+    def test_transaction_nested(self):
+        get_transaction().begin()
+        mgr = get_indexation_manager()
+        # This one, when reindexed, provokes additional reindexings,
+        # which must be processed too.
+        dummy = root.addDummy(cls=Dummy2)
+        other = root.addDummy()
+        dummy.other = other
+        mgr.push(dummy, idxs=['nest'])
+        self.assertEquals(dummy.getLog(), [])
+        self.assertEquals(other.getLog(), [])
+        get_transaction().commit()
+        self.assertEquals(dummy.getLog(), ["idxs %s ['nest']" % dummy.id,
+                                           "idxs %s ['bob']" % dummy.id])
+        self.assertEquals(other.getLog(), ["idxs %s ['bob']" % other.id])
+        root.clear()
+
 
 def test_suite():
     return unittest.TestSuite((

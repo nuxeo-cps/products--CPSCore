@@ -106,7 +106,12 @@ class IndexationManager:
         Does the actual indexing work.
         """
 
-        # FIXME: at this point _TXN_MGR_ATTRIBUTE should be removed
+        # At this point, we start processing the queue. If any further
+        # indexing happen during this, it still has to be treated.
+
+        # Currently the data structures are such that this is not needed
+        # (see unit tests).
+        #_remove_indexation_manager()
 
         LOG("IndexationManager", DEBUG, "__call__")
 
@@ -142,6 +147,11 @@ class IndexationManager:
             LOG("IndexationManager", DEBUG,
                 "reindexObjectSecurity %r skip=%s" % (ob, skip_self))
             ob._reindexObjectSecurity(skip_self=skip_self)
+
+
+def _remove_indexation_manager():
+    transaction = get_transaction()
+    setattr(transaction, _TXN_MGR_ATTRIBUTE, None)
 
 
 def get_indexation_manager():
