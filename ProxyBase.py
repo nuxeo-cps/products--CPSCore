@@ -393,9 +393,7 @@ class ProxyBase(Base):
         if 'allowedRolesAndUsers' in idxs:
             # Both must be updated
             idxs.append('localUsersWithRoles')
-        # Doesn't work if CMFCatalogAware isn't an ExtensionClass:
-        #return CMFCatalogAware.reindexObject(self, idxs=idxs)
-        return CMFCatalogAware.__dict__['reindexObject'](self, idxs=idxs)
+        return CMFCatalogAware.reindexObject(self, idxs=idxs)
 
     # overloaded
     def reindexObject(self, idxs=[]):
@@ -418,8 +416,7 @@ class ProxyBase(Base):
         # (The notification for the object repo is done by the repo.)
         evtool = getEventService(self)
         evtool.notify('sys_modify_security', self, {})
-        return CMFCatalogAware.__dict__['reindexObjectSecurity'](self,
-                                                                 skip_self)
+        return CMFCatalogAware.reindexObjectSecurity(self, skip_self)
 
     # overloaded
     def reindexObjectSecurity(self):
