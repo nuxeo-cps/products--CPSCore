@@ -46,7 +46,7 @@ Public methods
 The only public methods to be used by user code are:
 - getRpath(ob): gets an rpath from an object
 - ob.absolute_url() or ob.absolute_url_path(): get an URL from an object.
-- getURLFromRpath(rpath): get an URL from an rpath
+- getUrlFromRpath(rpath): get an URL from an rpath
 - portal.restrictedTraverse(rpath): get an object from an rpath
 
 Internals
@@ -79,7 +79,7 @@ CPS URLTool adds new methods:
   This should never be used by user code (private method)
 - getVirtualHostPhysicalPath(self): ('', 'foo', 'bar')
   This should never be used by user code (private method)
-- getURLFromRpath(self, rpath):
+- getUrlFromRpath(self, rpath):
   returns 'http://www.site.com/foo/bar/my-folder/my-file' when given
   relative_url 'workspaces/my-folder/my-file'
 - getRpathFromPath(self, path): returns 'workspaces/my-folder/my-file' with

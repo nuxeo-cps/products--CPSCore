@@ -135,8 +135,8 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         rpath = '/'.join(rpath)
         return rpath
 
-    security.declarePublic("getURLFromRpath")
-    def getURLFromRpath(self, rpath):
+    security.declarePublic("getUrlFromRpath")
+    def getUrlFromRpath(self, rpath):
         """Guess the object absolute url from the relative url
         """
         path = rpath.split('/')

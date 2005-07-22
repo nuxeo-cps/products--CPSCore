@@ -104,8 +104,8 @@ class URLToolTests(unittest.TestCase):
         self.assertEqual(self.url_tool.getRpath(self.doc),
                          'folder/doc')
 
-    def test_getURLFromRpath(self):
-        self.assertEqual(self.url_tool.getURLFromRpath('folder/doc'),
+    def test_getUrlFromRpath(self):
+        self.assertEqual(self.url_tool.getUrlFromRpath('folder/doc'),
                          self.doc.absolute_url())
 
     def test_getRpathFromPath(self):
