@@ -108,6 +108,14 @@ class URLToolTests(unittest.TestCase):
         self.assertEqual(self.url_tool.getURLFromRpath('folder/doc'),
                          self.doc.absolute_url())
 
+    def test_getRpathFromPath(self):
+        path = ('', 'portal', 'folder', 'doc')
+        self.assertEqual(self.url_tool.getRpathFromPath(path),
+                         'folder/doc')
+        path = '/portal/folder/doc'
+        self.assertEqual(self.url_tool.getRpathFromPath(path),
+                         'folder/doc')
+
     # CPS URLTool tests that may be dependant from virtual hosting configuration
 
     def test_tool_call(self):
@@ -148,7 +156,7 @@ class URLToolTests(unittest.TestCase):
                          [self.portal, self.folder])
 
     def test_getBreadCrumbsWithoutRoot(self):
-        self.url_tool.manage_changeProperties(show_breadcrumbs_root=False)
+        self.url_tool.manage_changeProperties(breadcrumbs_show_root=False)
         # portal
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
                                                       only_parents=0),
@@ -308,7 +316,7 @@ class URLToolTests6(URLToolTests):
                          [self.folder])
 
     def test_getBreadCrumbsWithoutRoot(self):
-        self.url_tool.manage_changeProperties(show_breadcrumbs_root=False)
+        self.url_tool.manage_changeProperties(breadcrumbs_show_root=False)
         # portal
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
                                                       only_parents=0),

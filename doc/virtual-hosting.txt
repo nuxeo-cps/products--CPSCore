@@ -80,6 +80,10 @@ CPS URLTool adds new methods:
 - getURLFromRpath(self, rpath):
   returns 'http://www.site.com/foo/bar/my-folder/my-file' when given
   relative_url 'workspaces/my-folder/my-file'
+- getRpathFromPath(self, path): returns 'workspaces/my-folder/my-file' with
+  path either ('', 'cps', 'workspaces', 'my-folder', 'my-file') or
+  /cps/workspaces/my-folder/my-file. This is useful to get the object rpath
+  from the object path in catalog (brain.getPath()).
 - getBreadCrumbs(self, context=None, only_parents=0):
   returns parents, omitting objects that are hidden by virtual hosting, and
   with portal as greater parent.

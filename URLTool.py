@@ -53,7 +53,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
     _actions = ()
 
     _properties = (
-        {'id': 'show_breadcrumbs_root', 'type': 'boolean', 'mode': 'w',
+        {'id': 'breadcrumbs_show_root', 'type': 'boolean', 'mode': 'w',
          'label': 'Show portal (or virtual root) in breadcrumbs'},
         {'id': 'breadcrumbs_root_name', 'type': 'text', 'mode': 'w',
          'label': "Root of breadcrumbs i18n name"},
@@ -62,7 +62,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         {'id': 'breadcrumbs_show_unvisible', 'type': 'boolean', 'mode': 'w',
          'label': 'Show unvisible items in breadcrumbs'},
         )
-    show_breadcrumbs_root = True
+    breadcrumbs_show_root = True
     breadcrumbs_root_name = ''
     breadcrumbs_show_unvisible = False
 
@@ -120,6 +120,20 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         else:
             path = tuple(aup.split('/'))
         return path
+
+    security.declarePublic("getRpathFromPath")
+    def getRpathFromPath(self, path):
+        """Get the object relative path from its physical path
+
+        path can either be a tuple like ('', 'foo', 'bar') or a string like
+        '/foo/bar'.
+        """
+        portal_path = self.getPortalObject().getPhysicalPath()
+        if isinstance(path, str):
+            path = path.split('/')
+        rpath = path[len(portal_path):]
+        rpath = '/'.join(rpath)
+        return rpath
 
     security.declarePublic("getURLFromRpath")
     def getURLFromRpath(self, rpath):
@@ -182,7 +196,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                 break
 
         # add virtual root
-        if self.show_breadcrumbs_root:
+        if self.breadcrumbs_show_root:
             if len(parents) == 0 or parents[-1] != vr:
                 parents.append(vr)
 
@@ -203,7 +217,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             if visible or self.breadcrumbs_show_unvisible:
                 # title
                 if (first_loop
-                    and self.show_breadcrumbs_root
+                    and self.breadcrumbs_show_root
                     and self.breadcrumbs_root_name):
                     mcat = getToolByName(self, 'translation_service')
                     title = mcat(self.breadcrumbs_root_name,
