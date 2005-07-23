@@ -16,12 +16,18 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 #
+# $Id$
+#
 
 import unittest
 from Testing.makerequest import makerequest
 
-import Zope
-Zope.startup()
+try:
+    import Zope2
+except ImportError: # BBB: for Zope 2.7
+    import Zope as Zope2
+
+Zope2.startup()
 
 from OFS.Folder import Folder
 
@@ -39,7 +45,7 @@ class URLToolTests(unittest.TestCase):
 
     def setUp(self):
         get_transaction().begin()
-        self.app = makerequest(Zope.app())
+        self.app = makerequest(Zope2.app())
 
         # portal
         self.app.manage_addFolder('portal')
