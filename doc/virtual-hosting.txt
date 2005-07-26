@@ -14,7 +14,7 @@ These tickets are fixed by using proper methods (portal_url methods) to
 get proper paths (relative or not) to objects.
 
 Still, some issues need to be fixed:
-- https://svn.nuxeo.org/trac/pub/ticket/847: "Unresolved issues when using
+- http://svn.nuxeo.org/trac/pub/ticket/847: "Unresolved issues when using
   virtual hosting"
 
 General case of virtual hosting
