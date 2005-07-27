@@ -20,6 +20,12 @@ Bug fixes:
 - #783: Made LanguageViewer work with Zope 2 trunk, allowing correct catalog
   searches.
 - Removed duplicated 'mystuff' action from portal_membership
+- fix #849: The patching of OFS.Folder broke renaming in some instances.
+  The patch was no longer used (thanks to CMF 1.5.0s PortalFolder being ordered
+  and was therefore removed). 
+- Deprecation warnings was added to any calls using the old 
+  OrderedFolderSupportPatch product method names, usages of the old naming
+  has been changed to the new OrderedSupport naming.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - #413: Security synthesis has been removed, security on the repository
