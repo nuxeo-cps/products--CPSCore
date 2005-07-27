@@ -70,6 +70,7 @@ OFS.Traversable methods:
 
 CMF URLTool methods:
 - getPortalPath(self): '/cps'
+  This method does not take care of virtual hosting.
 - getRelativeContentPath(self, content): ('workspaces', 'my-folder',
   'my-file')
 - getRelativeContentURL(self, content) or getRelativeUrl(self, content):
