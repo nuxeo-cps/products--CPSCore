@@ -127,7 +127,6 @@ Image.manage_beforeDelete = File_manage_beforeDelete
 #
 # Ordered Folder
 #
-import PatchOFSFolder # ensure it does its patches
 
 def moveObjectsByDelta(self, *args, **kw):
     res = self._cps_old_moveObjectsByDelta(*args, **kw)

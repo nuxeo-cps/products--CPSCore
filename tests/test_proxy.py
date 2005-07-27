@@ -31,7 +31,7 @@ from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
 
 from Products.CPSCore.ProxyTool import ProxyTool
-from Products.CPSCore.ProxyBase import ProxyBase
+from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolder
 
 from dummy import DummyPortalUrl, DummyWorkflowTool, DummyRoot
 
@@ -193,6 +193,34 @@ class ProxyBaseTest(ZopeTestCase):
         self.assert_('Winner' in rolesForPermissionOn(View, doc))
         self.assert_(user.has_role('Winner', doc))
 
+class ProxyFolderTest(ZopeTestCase):
+
+    def afterSetUp(self):
+        ZopeTestCase.afterSetUp(self)
+        # Use the ZopeTestCase folder as root, as we need to have
+        # acl_user in context.
+        self.folder._setObject('portal_proxies', DummyProxyTool())
+        self.folder.docs = Folder('docs')
+
+    def testOrdering(self):
+        # Proxy Folders should have ordering support
+        self.folder._setObject('proxyfolder', ProxyFolder('proxyfolder'))
+        pxfolder = self.folder.proxyfolder
+        pxfolder._setObject('object1', PlacefulProxy('object1'))
+        pxfolder._setObject('object2', PlacefulProxy('object2'))
+        pxfolder._setObject('object3', PlacefulProxy('object3'))
+        # Check the order:
+        ids = self.folder.proxyfolder.objectIds()
+        self.assertEqual(ids, ['object1', 'object2', 'object3'])
+        # Move
+        pxfolder.moveObjectsUp( ('object2', 'object3') )
+        ids = self.folder.proxyfolder.objectIds()
+        self.assertEqual(ids, ['object2', 'object3', 'object1'])
+        # BBB We still need support for old names of the methods:
+        pxfolder.move_object_up('object3')
+        ids = self.folder.proxyfolder.objectIds()
+        self.assertEqual(ids, ['object3', 'object2', 'object1'])
+
 class ProxyToolTest(ZopeTestCase):
     """Test CPS Proxy Tool."""
 
@@ -287,6 +315,7 @@ def test_suite():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
     suite.addTest(loader.loadTestsFromTestCase(ProxyBaseTest))
+    suite.addTest(loader.loadTestsFromTestCase(ProxyFolderTest))
     suite.addTest(loader.loadTestsFromTestCase(ProxyToolTest))
     return suite
 

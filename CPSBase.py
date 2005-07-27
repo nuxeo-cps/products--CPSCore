@@ -20,10 +20,12 @@
 """
 
 import sys
+import warnings
 from types import StringType, UnicodeType
 
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
+from AccessControl.Permissions import manage_properties, access_contents_information
 from Acquisition import aq_parent, aq_inner
 
 from OFS.ObjectManager import ObjectManager
@@ -164,6 +166,7 @@ class CPSBaseFolder(TypeConstructor, TypeContainer, CPSBaseDocument):
     isPrincipiaFolderish = 1
     __dav_collection__ = 1
     isAnObjectManager = 1
+    security = ClassSecurityInfo()
 
     #
     # ZMI
@@ -175,6 +178,63 @@ class CPSBaseFolder(TypeConstructor, TypeContainer, CPSBaseDocument):
         PortalContent.manage_options + # DublinCore, Edit, View, Owner, Secu
         FindSupport.manage_options # Find
         )
+
+    # BBB old orderedfolder method names:
+    security.declareProtected(manage_properties, 'move_object_up')
+    def move_object_up(self, ids, delta=1, subset_ids=None):
+        """ Move specified sub-objects up by delta in container.
+        """
+        warnings.warn('The naming of OrderSupport methods have changed. '
+                      '"move_object_up" is now called "moveObjectsUp"',
+                      DeprecationWarning)
+        return self.moveObjectsUp(ids, delta, subset_ids)
+
+    security.declareProtected(manage_properties, 'move_object_down')
+    def move_object_down(self, ids, delta=1, subset_ids=None):
+        """ Move specified sub-objects down by delta in container.
+        """
+        warnings.warn('The naming of OrderSupport methods have changed. '
+                      '"move_object_down" is now called "moveObjectsDown"',
+                      DeprecationWarning)
+        return self.moveObjectsDown(ids, delta, subset_ids)
+
+    security.declareProtected(manage_properties, 'move_object_to_top')
+    def move_object_to_top(self, ids, subset_ids=None):
+        """ Move specified sub-objects to top of container.
+        """
+        warnings.warn('The naming of OrderSupport methods have changed. '
+                      '"move_object_to_top" is now called "moveObjectsToTop"',
+                      DeprecationWarning)
+        return self.moveObjectsToTop(ids, subset_ids )
+
+    security.declareProtected(manage_properties, 'move_object_to_bottom')
+    def move_object_to_bottom(self, ids, subset_ids=None):
+        """ Move specified sub-objects to bottom of container.
+        """
+        warnings.warn('The naming of OrderSupport methods have changed. '
+                      '"move_object_to_bottom" is now called "moveObjectsToBottom"',
+                      DeprecationWarning)
+        return self.moveObjectsToBottom(ids, subset_ids)
+
+    security.declareProtected(access_contents_information,
+                              'get_object_position')
+    def get_object_position(self, id):
+        """ Get the position of an object by its id.
+        """
+        warnings.warn('The naming of OrderSupport methods have changed. '
+                      '"get_object_position" is now called "getObjectPosition"',
+                      DeprecationWarning)
+        return self.getObjectPosition(id)
+
+    security.declareProtected(manage_properties, 'move_object_to_position')
+    def move_object_to_position(self, id, position):
+        """ Move specified object to absolute position.
+        """
+        warnings.warn('The naming of OrderSupport methods have changed. '
+                      '"move_object_to_position" is now called "moveObjectToPosition"',
+                      DeprecationWarning)
+        self.moveObjectToPosition(id, position)
+
 
 InitializeClass(CPSBaseFolder)
 

@@ -59,7 +59,6 @@ import ProxyTool
 import ObjectRepositoryTool
 import TreesTool
 import CPSRegistrationTool
-import PatchOFSFolder
 import CopyrightPatch
 import URLTool
 
