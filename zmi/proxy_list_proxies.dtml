@@ -5,7 +5,7 @@
           docid="REQUEST.get('docid') or None"
           qdocid="docid or ''"
           allitems="listProxies(docid=docid)"
-          ppath="portal_url.getPortalPath()">
+          ppath="portal_url()">
 
 <dtml-if docid>
   <p class="form-text">
@@ -68,6 +68,7 @@
 </tr>
 <dtml-in allitems size=20 start=query_start>
 <dtml-let rpath=sequence-key
+          url="portal_url.getUrlFromRpath(rpath)"
           docid="_['sequence-item'][0]"
           language_revs="_['sequence-item'][1]">
 <dtml-if sequence-odd>
@@ -77,7 +78,7 @@
 </dtml-if>
   <td align="left">
     <div class="list-item">
-      <a href="&dtml-ppath;/&dtml-rpath;/manage_main">&dtml-rpath;</a>
+      <a href="&dtml-url;/manage_main">&dtml-rpath;</a>
     </div>
   </td>
   <td align="left">

@@ -17,8 +17,7 @@
     <div class="list-item">Title</div>
   </td>
 </tr>
-<dtml-let ppurl="portal_url()"
-          docid=getDocid>
+<dtml-let ppurl="portal_url()" docid=getDocid>
 <dtml-in "getLanguageRevisions().items()">
 <dtml-let lang=sequence-key rev=sequence-item>
 <dtml-if sequence-odd>
