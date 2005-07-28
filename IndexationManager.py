@@ -32,7 +32,7 @@ except ImportError:
     # BBB: for Zope 2.7
     from Products.CMFCore.utils import transaction
     # The following is missing from CMF 1.5.2
-    def BBBget(self):
+    def BBBget():
         return get_transaction()
     transaction.get = BBBget
 
