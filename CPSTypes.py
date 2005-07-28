@@ -125,7 +125,6 @@ class TypeConstructor(Base):
         ob._setPortalTypeName(final_type_name)
         # Object has been constructed without indexing, index it now.
         ob.reindexObject()
-        # XXX should notify something
         return ob.getId()
 
 InitializeClass(TypeConstructor)
