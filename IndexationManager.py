@@ -26,6 +26,13 @@ Asynchronous by default.
 from zLOG import LOG, DEBUG
 from Acquisition import aq_base
 
+try:
+    import transaction
+except ImportError:
+    # BBB: for Zope 2.7
+    from Products.CMFCore.utils import transaction
+
+
 _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
 
 class IndexationManager:
@@ -35,12 +42,12 @@ class IndexationManager:
     # XXX This may be monkey-patched by unit-tests.
     DEFAULT_SYNC = False
 
-    def __init__(self, transaction):
+    def __init__(self, txn):
         """Initialize and register this manager with the transaction."""
         self._queue = []
         self._infos = {}
         self._sync = self.DEFAULT_SYNC
-        transaction.beforeCommitHook(self)
+        txn.beforeCommitHook(self)
 
     def setSynchonous(self, sync):
         """Set queuing mode."""
@@ -150,8 +157,8 @@ class IndexationManager:
 
 
 def _remove_indexation_manager():
-    transaction = get_transaction()
-    setattr(transaction, _TXN_MGR_ATTRIBUTE, None)
+    txn = transaction.get()
+    setattr(txn, _TXN_MGR_ATTRIBUTE, None)
 
 
 def get_indexation_manager():
@@ -159,9 +166,9 @@ def get_indexation_manager():
 
     Creates it if needed.
     """
-    transaction = get_transaction()
-    mgr = getattr(transaction, _TXN_MGR_ATTRIBUTE, None)
+    txn = transaction.get()
+    mgr = getattr(txn, _TXN_MGR_ATTRIBUTE, None)
     if mgr is None:
-        mgr = IndexationManager(transaction)
-        setattr(transaction, _TXN_MGR_ATTRIBUTE, mgr)
+        mgr = IndexationManager(txn)
+        setattr(txn, _TXN_MGR_ATTRIBUTE, mgr)
     return mgr
