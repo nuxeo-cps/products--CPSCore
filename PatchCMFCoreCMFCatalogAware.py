@@ -25,30 +25,29 @@ from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 
-if True:
-    def reindexObjectSecurity(self, skip_self=False):
-        """
-            Reindex security-related indexes on the object
-            (and its descendants).
-        """
-        catalog = getToolByName(self, 'portal_catalog', None)
-        if catalog is not None:
-            path = '/'.join(self.getPhysicalPath())
-            for brain in catalog.unrestrictedSearchResults(path=path):
-                brain_path = brain.getPath()
-                if brain_path == path and skip_self:
-                    continue
+def reindexObjectSecurity(self, skip_self=False):
+    """
+        Reindex security-related indexes on the object
+        (and its descendants).
+    """
+    catalog = getToolByName(self, 'portal_catalog', None)
+    if catalog is not None:
+        path = '/'.join(self.getPhysicalPath())
+        for brain in catalog.unrestrictedSearchResults(path=path):
+            brain_path = brain.getPath()
+            if brain_path == path and skip_self:
+                continue
 
-                # Get the object
-                if hasattr(aq_base(brain), '_unrestrictedGetObject'):
-                    ob = brain._unrestrictedGetObject()
-                else: # BBB: older Zope
-                    ob = self.unrestrictedTraverse(brain_path)
-                s = getattr(ob, '_p_changed', 0)
-                # Recatalog with the same catalog uid.
-                catalog.catalog_object(ob, brain_path,
-                                       idxs=self._cmf_security_indexes,
-                                       update_metadata=0)
-                if s is None: ob._p_deactivate()
+            # Get the object
+            if hasattr(aq_base(brain), '_unrestrictedGetObject'):
+                ob = brain._unrestrictedGetObject()
+            else: # BBB: older Zope
+                ob = self.unrestrictedTraverse(brain_path)
+            s = getattr(ob, '_p_changed', 0)
+            # Recatalog with the same catalog uid.
+            catalog.catalog_object(ob, brain_path,
+                                   idxs=self._cmf_security_indexes,
+                                   update_metadata=0)
+            if s is None: ob._p_deactivate()
 
 CMFCatalogAware.reindexObjectSecurity = reindexObjectSecurity
