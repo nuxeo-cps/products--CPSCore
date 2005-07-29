@@ -27,6 +27,12 @@ from OFS.SimpleItem import SimpleItem
 from Products.CPSCore.IndexationManager import IndexationManager
 from Products.CPSCore.IndexationManager import get_indexation_manager
 
+try:
+    import transaction
+except ImportError: # BBB: for Zope 2.7
+    from Products.CMFCore.utils import transaction
+
+
 class FakeTransaction:
     def beforeCommitHook(self, hook):
         pass
@@ -237,27 +243,27 @@ class TransactionIndexationManagerTest(unittest.TestCase):
     # These really test the beforeCommitHook
 
     def test_transaction(self):
-        get_transaction().begin()
+        transaction.begin()
         mgr = get_indexation_manager()
         dummy = root.addDummy()
         mgr.push(dummy, idxs=['bar'])
         self.assertEquals(dummy.getLog(), [])
-        get_transaction().commit()
+        transaction.commit()
         self.assertEquals(dummy.getLog(), ["idxs %s ['bar']"%dummy.id])
         root.clear()
 
     def test_transaction_aborting(self):
-        get_transaction().begin()
+        transaction.begin()
         mgr = get_indexation_manager()
         dummy = root.addDummy()
         mgr.push(dummy, idxs=['bar'])
         self.assertEquals(dummy.getLog(), [])
-        get_transaction().abort()
+        transaction.abort()
         self.assertEquals(dummy.getLog(), [])
         root.clear()
 
     def test_transaction_nested(self):
-        get_transaction().begin()
+        transaction.begin()
         mgr = get_indexation_manager()
         # This one, when reindexed, provokes additional reindexings,
         # which must be processed too.
@@ -267,7 +273,7 @@ class TransactionIndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, idxs=['nest'])
         self.assertEquals(dummy.getLog(), [])
         self.assertEquals(other.getLog(), [])
-        get_transaction().commit()
+        transaction.commit()
         self.assertEquals(dummy.getLog(), ["idxs %s ['nest']" % dummy.id,
                                            "idxs %s ['bob']" % dummy.id])
         self.assertEquals(other.getLog(), ["idxs %s ['bob']" % other.id])

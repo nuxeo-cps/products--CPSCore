@@ -22,6 +22,11 @@ from Products.CMFCore.tests.base.security \
 
 from Products.CPSCore.EventServiceTool import EventServiceTool
 
+try:
+    import transaction
+except ImportError: # BBB: for Zope 2.7
+    from Products.CMFCore.utils import transaction
+
 
 class EventServiceToolTest(unittest.TestCase):
     """
@@ -30,7 +35,7 @@ class EventServiceToolTest(unittest.TestCase):
 
     # XXX: refactor this using ZopeTestCase
     def setUp(self):
-        get_transaction().begin()
+        transaction.begin()
         self._policy = PermissiveSecurityPolicy()
         self._oldPolicy = setSecurityPolicy(self._policy)
         self.connection = Zope.DB.open()
@@ -42,7 +47,7 @@ class EventServiceToolTest(unittest.TestCase):
         manage_addCMFSite(self.root, 'testsite')
 
     def tearDown(self):
-        get_transaction().abort()
+        transaction.abort()
         self.connection.close()
         noSecurityManager()
         setSecurityPolicy(self._oldPolicy)

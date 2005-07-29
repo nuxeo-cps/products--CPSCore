@@ -35,6 +35,13 @@ from Interface.Verify import verifyClass
 from Products.CPSCore.URLTool import URLTool
 from Products.CPSCore.CPSMembershipTool import CPSMembershipTool
 
+try:
+    import transaction
+except ImportError: # BBB: for Zope 2.7
+    from Products.CMFCore.utils import transaction
+
+
+
 class URLToolTests(unittest.TestCase):
 
     traverse_value = '/portal/folder/doc'
@@ -44,7 +51,7 @@ class URLToolTests(unittest.TestCase):
     #
 
     def setUp(self):
-        get_transaction().begin()
+        transaction.begin()
         self.app = makerequest(Zope2.app())
 
         # portal
@@ -68,7 +75,7 @@ class URLToolTests(unittest.TestCase):
         self.traverse(self.traverse_value)
 
     def tearDown(self):
-        get_transaction().abort()
+        transaction.abort()
         self.app._p_jar.close()
 
     #

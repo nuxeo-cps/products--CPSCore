@@ -114,10 +114,8 @@ class ProxyBase(Base):
 
     security.declarePrivate('setDefaultLanguage')
     def setDefaultLanguage(self, default_language):
-        """Set the default language for this proxy.
-
-        (Called by ProxyTool.)
-        """
+        """Set the default language for this proxy."""
+        # Called by CPSWorkflow after creating an empty proxy.
         self._default_language = default_language
 
     # XXX was def getVersionInfos(self):

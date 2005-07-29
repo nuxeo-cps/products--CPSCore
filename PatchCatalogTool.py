@@ -49,11 +49,11 @@ class IndexableObjectWrapper:
     CMFCore.CatalogTool.IndexableObjectWrapper"""
     __implements__ = IIndexableObjectWrapper
 
-    def __init__(self, vars, ob, lang=None, is_default_proxy=0):
+    def __init__(self, vars, ob, lang=None, uid=None):
         self.__vars = vars
         self.__ob = ob
         self.__lang = lang
-        self.__is_default_proxy = is_default_proxy
+        self.__uid = uid
 
     def __getattr__(self, name):
         """This is the indexable wrapper getter for CPS,
@@ -66,15 +66,11 @@ class IndexableObjectWrapper:
         proxy = None
         if isinstance(ob, ProxyBase):
             proxy = ob
-            if (self.__is_default_proxy and
-                name in ('getL10nTitles', 'getL10nDescriptions')) or (
-                name in ('getId', 'id', 'path', 'uid', 'modified',
-                         'getPhysicalPath', 'splitPath', 'getProxyLanguages',
-                         'isDefaultLanguage')):
-                # we use the proxy
+            if name in ('getId', 'id', 'getPhysicalPath', 'uid', 'modified'):
+                # These attributes are computed from the proxy
                 pass
             else:
-                # use the repository document instead of the proxy
+                # Use the repository document for remaining attributes
                 ob_repo = ob.getContent(lang=self.__lang)
                 if ob_repo is not None:
                      ob = ob_repo
@@ -114,9 +110,18 @@ class IndexableObjectWrapper:
             ['group:%s' % r[0] for r in ob.get_local_group_roles()])
         return local_roles
 
+    def path(self):
+        """PathIndex needs a path attribute, otherwise it uses
+        getPhysicalPath which fails for viewLanguage paths."""
+        if self.__uid is not None:
+            return self.__uid
+        else:
+            return self.__ob.getPhysicalPath()
+
     def container_path(self):
         """This is used to produce an index
         return the parent full path."""
+        # XXX what should we return for viewLanguage paths?
         return '/'.join(self.__ob.getPhysicalPath()[:-1])
 
     def relative_path(self):
@@ -141,13 +146,21 @@ class IndexableObjectWrapper:
 
 ### Patching CatalogTool methods
 def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=None):
-    """Wraps the object with workflow and accessibility
-    information just before cataloging."""
+    """Wraps the object before cataloging.
+
+    Also takes into account multiple CPS languages.
+    """
 
     # Don't index repository objects or anything under them.
     repotool = getToolByName(self, 'portal_repository', None)
     if repotool is not None and repotool.isObjectUnderRepository(object):
         return
+
+    # BBB: for Zope 2.7, which doesn't take a pghandler
+    if pghandler is None:
+        pgharg = ()
+    else:
+        pgharg = (pghandler,)
 
     LOG('PatchCatalogTool.catalog_object', TRACE, 'index uid %s  obj %s' % (
         uid, object))
@@ -156,44 +169,71 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=
         vars = wf.getCatalogVariablesFor(object)
     else:
         vars = {}
-    path = uid.split('/')
-    proxy = None
-    if isinstance(object, ProxyBase):
-        proxy = object
-        languages = proxy.getProxyLanguages()
-    if proxy is None or len(languages) == 1 or \
-           KEYWORD_VIEW_LANGUAGE in path:
+
+    # Filter out invalid indexes.
+    if idxs != []:
+        idxs = [i for i in idxs if self._catalog.indexes.has_key(i)]
+
+    # Not a proxy.
+    if not isinstance(object, ProxyBase):
         w = IndexableObjectWrapper(vars, object)
-        ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
-    else:
-        if len(languages) == 2:
-            # remove previous entry with uid path
-            self.uncatalog_object(uid)
-        # we index all available translation of the proxy
-        # with uid/viewLanguage/language for path
-        default_language = proxy.getDefaultLanguage()
-        default_uid = uid
-        for language in languages:
-            is_default_proxy = 0
-            if language == default_language:
-                is_default_proxy = 1
-            uid = default_uid + '/%s/%s' % (KEYWORD_VIEW_LANGUAGE,
-                                            language)
-            w = IndexableObjectWrapper(vars, proxy, language,
-                                       is_default_proxy=is_default_proxy)
-            LOG('PatchCatalogTool.catalog_object', TRACE,
-                'index uid locale %s' % uid)
-            if pghandler is not None:
-	        # pghandler is a new keyword parameter introduced in
-		# Zope2.8. We do this check to keep 2.7 compatibility:
-                ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, pghandler)
-            else:
-                ZCatalog.catalog_object(self, w, uid, idxs, update_metadata)
+        ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, *pgharg)
+        return
+
+    # Proxy with a viewLanguage uid.
+    # Happens when the catalog is reindexed (refreshCatalog)
+    # or when called by reindexObjectSecurity.
+    path = uid.split('/')
+    if KEYWORD_VIEW_LANGUAGE in path:
+        if path.index(KEYWORD_VIEW_LANGUAGE) == len(path)-2:
+            lang = path[-1]
+        else:
+            # Weird, but don't crash
+            lang = None
+        w = IndexableObjectWrapper(vars, object, lang, uid)
+        ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, *pgharg)
+        return
+
+    # We reindex a normal proxy.
+    # Find what languages are in the catalog for this proxy
+    uid_view = uid+'/'+KEYWORD_VIEW_LANGUAGE
+    had_languages = []
+    for brain in self.unrestrictedSearchResults(path=uid_view):
+        path = brain.getPath()
+        had_languages.append(path[path.rindex('/')+1:])
+
+    # Do we now have only one language?
+    languages = object.getProxyLanguages()
+    if len(languages) == 1:
+        # Remove previous languages
+        for lang in had_languages:
+            self.uncatalog_object(uid_view+'/'+lang)
+        # Index normal proxy
+        w = IndexableObjectWrapper(vars, object)
+        ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, *pgharg)
+        return
+
+    # We now have several languages (or none).
+    # Remove old base proxy path
+    if self._catalog.uids.has_key(uid):
+        self.uncatalog_object(uid)
+    # Also remove old languages
+    for lang in had_languages:
+        if lang not in languages:
+            self.uncatalog_object(uid_view+'/'+lang)
+    # Index all available translations of the proxy
+    # with uid/viewLanguage/language for path
+    for lang in languages:
+        uid = uid_view + '/' + lang
+        w = IndexableObjectWrapper(vars, object, lang, uid)
+        ZCatalog.catalog_object(self, w, uid, idxs, update_metadata, *pgharg)
+
 
 CatalogTool.catalog_object = cat_catalog_object
 LOG('PatchCatalogTool', TRACE, "Patching CMF CatalogTool.catalog_object")
 
 
+#XXX should be a patch of uncatalog_object
 def cat_unindexObject(self, object):
     """Remove from catalog."""
     default_uid = self._CatalogTool__url(object)

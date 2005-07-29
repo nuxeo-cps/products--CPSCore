@@ -666,8 +666,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if final_type_name is None:
             final_type_name = type_name
         ob._setPortalTypeName(final_type_name)
-        ##ob.reindexObject(idxs=['portal_type', 'Type'])
-        # XXX should notify something
+        # Object has been constructed without indexing, index it now.
+        ob.reindexObject()
         return ob
 
     #
