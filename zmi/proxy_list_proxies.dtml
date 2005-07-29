@@ -5,7 +5,7 @@
           docid="REQUEST.get('docid') or None"
           qdocid="docid or ''"
           allitems="listProxies(docid=docid)"
-          ppath="portal_url()">
+          purl="portal_url()">
 
 <dtml-if docid>
   <p class="form-text">
@@ -90,7 +90,7 @@
     <div class="list-item">
       <dtml-in "language_revs.items()">
       <dtml-let lang=sequence-key rev=sequence-item>
-        <a href="&dtml-ppath;/portal_repository/manage_redirectRevision?docid:int=&dtml.url_quote-docid;&amp;rev:int=&dtml.url_quote-rev;">
+        <a href="&dtml-purl;/portal_repository/manage_redirectRevision?docid:int=&dtml.url_quote-docid;&amp;rev:int=&dtml.url_quote-rev;">
           &dtml-lang;: &dtml-rev;</a>
       </dtml-let>
       </dtml-in>
