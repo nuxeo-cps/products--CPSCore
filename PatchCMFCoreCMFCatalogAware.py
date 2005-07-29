@@ -14,7 +14,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 #
-# $Id:$
+# $Id$
 """Patch CMFCore CMFCatalogAware
 
 - Make reindexObjectSecurity correctly recurse in the presence of
@@ -40,7 +40,10 @@ if True:
                     continue
 
                 # Get the object
-                ob = brain._unrestrictedGetObject()
+                if hasattr(aq_base(brain), '_unrestrictedGetObject'):
+                    ob = brain._unrestrictedGetObject()
+                else: # BBB: older Zope
+                    ob = self.unrestrictedTraverse(brain_path)
                 s = getattr(ob, '_p_changed', 0)
                 # Recatalog with the same catalog uid.
                 catalog.catalog_object(ob, brain_path,
