@@ -24,6 +24,7 @@ import time
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.Folder import Folder as OFS_Folder
 
+from Products.CMFCore.tests.base.testcase import LogInterceptor
 from Products.CPSCore.EventServiceTool import EventServiceTool
 
 
@@ -70,7 +71,7 @@ class Class2:
         return 'instance2'
 
 
-class SynchronousNotificationsTest(unittest.TestCase):
+class SynchronousNotificationsTest(unittest.TestCase, LogInterceptor):
     """Test portal_elements"""
 
     def makeInfrastructure(self):
@@ -235,8 +236,13 @@ class SynchronousNotificationsTest(unittest.TestCase):
         self.assert_(buggy.time < subscriber.time)
 
         # Make the buggy one raise an exception
+        from zLOG import ERROR
+        self._catch_log_errors(ERROR)
+        self.logged = None
         self.assertRaises(SomeException, tool.notify,
                           'an_event', object, {'bug': 1})
+        self.assert_(self.logged)
+        self._ignore_log_errors()
 
         # Check that the other subscriber was notified.
         self.assertEqual(subscriber.notified, 2)

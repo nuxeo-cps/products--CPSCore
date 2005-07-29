@@ -23,6 +23,8 @@
 import unittest
 from Testing.ZopeTestCase import ZopeTestCase
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
+from Products.CMFCore.tests.base.testcase import LogInterceptor
+from Products.CMFCore.tests.base.testcase import WarningInterceptor
 
 from AccessControl import Unauthorized
 from AccessControl import getSecurityManager
@@ -193,7 +195,7 @@ class ProxyBaseTest(ZopeTestCase):
         self.assert_('Winner' in rolesForPermissionOn(View, doc))
         self.assert_(user.has_role('Winner', doc))
 
-class ProxyFolderTest(ZopeTestCase):
+class ProxyFolderTest(ZopeTestCase, WarningInterceptor):
 
     def afterSetUp(self):
         ZopeTestCase.afterSetUp(self)
@@ -217,11 +219,14 @@ class ProxyFolderTest(ZopeTestCase):
         ids = self.folder.proxyfolder.objectIds()
         self.assertEqual(ids, ['object2', 'object3', 'object1'])
         # BBB We still need support for old names of the methods:
+        self._trap_warning_output()
         pxfolder.move_object_up('object3')
+        self.assert_(self._our_stderr_stream.getvalue())
+        self._free_warning_output()
         ids = self.folder.proxyfolder.objectIds()
         self.assertEqual(ids, ['object3', 'object2', 'object1'])
 
-class ProxyToolTest(ZopeTestCase):
+class ProxyToolTest(ZopeTestCase, LogInterceptor):
     """Test CPS Proxy Tool."""
 
     def afterSetUp(self):
@@ -250,7 +255,13 @@ class ProxyToolTest(ZopeTestCase):
             [('123', (None, {'en': 78}))])
 
         # Check that we can't add two proxies with same id
+        from zLOG import ERROR
+        self._catch_log_errors(ERROR)
+        self.logged = None
         self.assertRaises(ValueError, ptool._addProxy, proxy2, '123')
+        self.assert_(self.logged)
+        self._ignore_log_errors()
+
         # No side effects
         self.assertEquals(ptool.listProxies(),
             [('123', (None, {'en': 78}))])

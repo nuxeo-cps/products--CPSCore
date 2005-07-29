@@ -24,6 +24,7 @@ import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
 
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
+from Products.CMFCore.tests.base.testcase import LogInterceptor
 
 from Acquisition import aq_base
 from OFS.Folder import Folder
@@ -38,7 +39,7 @@ def constructContent(self, type_name, id, *args, **kw):
 
 constructContent_old = ObjectRepositoryTool.constructContent
 
-class ObjectRepositoryToolTests(SecurityRequestTest):
+class ObjectRepositoryToolTests(SecurityRequestTest, LogInterceptor):
     """Test object repository ."""
 
     def setUp(self):
@@ -117,7 +118,12 @@ class ObjectRepositoryToolTests(SecurityRequestTest):
         ortool.createRevision('foo', 'DummyContent', 'moo')
 
         # Check getObjectRevision
+        from zLOG import ERROR
+        self._catch_log_errors(ERROR)
+        self.logged = None
         self.assertRaises(KeyError, ortool.getObjectRevision, 'foo', 99)
+        self.assert_(self.logged)
+        self._ignore_log_errors()
         ob = ortool.getObjectRevision('foo', 1)
         self.assertEqual(ob.getData(), 'bar')
         ob = ortool.getObjectRevision('foo', 2)
