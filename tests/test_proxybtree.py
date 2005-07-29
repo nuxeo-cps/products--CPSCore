@@ -18,52 +18,34 @@
 """Tests for the btree proxies."""
 
 import unittest
-from Products.BTreeFolder2.tests.testBTreeFolder2 import BTreeFolder2Tests
-
-from Products.CPSCore.ProxyBase import ProxyBTreeFolder
-from Products.CPSCore.ProxyBase import ProxyBTreeFolderishDocument
 
 
-class ProxyBTreeFolderTest(BTreeFolder2Tests):
+class ProxyBTreeFolderTest(unittest.TestCase):
 
     def setUp(self):
+        from Products.CPSCore.ProxyBase import ProxyBTreeFolder
         self.f = ProxyBTreeFolder('root')
-        ff = ProxyBTreeFolder('item')
-        self.f._setOb(ff.id, ff)
-        self.ff = self.f._getOb(ff.id)
 
     def testCheckId(self):
-        self.assertEqual(self.f._checkId('xyz'), None)
+        self.assertEquals(self.f._checkId('xyz'), None)
 
-    def test_proxy_presence(self):
-        # XXX: test if proxy exists, using __nonzero__ method
-        proxy = ProxyBTreeFolder('truc')
-        self.assert_(proxy)
-
-    # skip base testWrapped test
-    def testWrapped(self):
-        pass
+    def testTrue(self):
+        # Test true even if empty
+        self.assertEquals(bool(self.f), True)
 
 
-class ProxyBTreeFolderishDocumentTest(BTreeFolder2Tests):
+class ProxyBTreeFolderishDocumentTest(unittest.TestCase):
 
     def setUp(self):
+        from Products.CPSCore.ProxyBase import ProxyBTreeFolderishDocument
         self.f = ProxyBTreeFolderishDocument('root')
-        ff = ProxyBTreeFolderishDocument('item')
-        self.f._setOb(ff.id, ff)
-        self.ff = self.f._getOb(ff.id)
 
     def testCheckId(self):
-        self.assertEqual(self.f._checkId('xyz'), None)
+        self.assertEquals(self.f._checkId('xyz'), None)
 
-    def test_proxy_presence(self):
-        # XXX: test if proxy exists, using __nonzero__ method
-        proxy = ProxyBTreeFolderishDocument('tt')
-        self.assert_(proxy)
-
-    # skip base testWrapped test
-    def testWrapped(self):
-        pass
+    def testTrue(self):
+        # Test true even if empty
+        self.assertEquals(bool(self.f), True)
 
 
 def test_suite():
