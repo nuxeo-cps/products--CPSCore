@@ -66,7 +66,8 @@ class IndexableObjectWrapper:
         proxy = None
         if isinstance(ob, ProxyBase):
             proxy = ob
-            if name in ('getId', 'id', 'getPhysicalPath', 'uid', 'modified'):
+            if name in ('getId', 'id', 'getPhysicalPath', 'uid', 'modified',
+                        'getDocid'):
                 # These attributes are computed from the proxy
                 pass
             else:
