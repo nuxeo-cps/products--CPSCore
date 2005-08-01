@@ -20,6 +20,8 @@
 - Make reindexObjectSecurity correctly recurse in the presence of
   'viewLanguage' brains.
 """
+
+from zLOG import LOG, WARNING
 from Acquisition import aq_base
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
@@ -37,12 +39,16 @@ def reindexObjectSecurity(self, skip_self=False):
             brain_path = brain.getPath()
             if brain_path == path and skip_self:
                 continue
-
             # Get the object
             if hasattr(aq_base(brain), '_unrestrictedGetObject'):
                 ob = brain._unrestrictedGetObject()
             else: # BBB: older Zope
-                ob = self.unrestrictedTraverse(brain_path)
+                ob = self.unrestrictedTraverse(brain_path, None)
+            if ob is None:
+                # Ignore old references to deleted objects.
+                LOG('reindexObjectSecurity', WARNING,
+                    "Cannot get %s from catalog" % brain_path)
+                continue
             s = getattr(ob, '_p_changed', 0)
             # Recatalog with the same catalog uid.
             catalog.catalog_object(ob, brain_path,
