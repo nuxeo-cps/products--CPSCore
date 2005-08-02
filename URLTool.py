@@ -242,7 +242,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                               'title': truncateText(title, size=title_size),
                               'longtitle': title,
                               'url': url,
-                              'rpath': url,
+                              'rpath': rpath,
                               })
             first_loop = 0
         return items
