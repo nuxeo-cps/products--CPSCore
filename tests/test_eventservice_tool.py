@@ -47,6 +47,7 @@ class EventServiceToolTest(unittest.TestCase):
         manage_addCMFSite(self.root, 'testsite')
 
     def tearDown(self):
+        self.root.REQUEST.close()
         transaction.abort()
         self.connection.close()
         noSecurityManager()

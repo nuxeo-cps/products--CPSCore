@@ -75,6 +75,7 @@ class URLToolTests(unittest.TestCase):
         self.traverse(self.traverse_value)
 
     def tearDown(self):
+        self.app.REQUEST.close()
         transaction.abort()
         self.app._p_jar.close()
 
