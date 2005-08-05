@@ -40,10 +40,7 @@ from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
-try:
-    from Products.CMFCore.CMFBTreeFolder import CMFBTreeFolder
-except ImportError:
-    from Products.BTreeFolder2.CMFBTreeFolder import CMFBTreeFolder
+from Products.CMFCore.CMFBTreeFolder import CMFBTreeFolder
 
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
