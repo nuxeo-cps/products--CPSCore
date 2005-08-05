@@ -1,33 +1,12 @@
 Requires:
 ~~~~~~~~~
-- CPSCompat > 0.3.1
-- You must upgrade using upgrade_334_335, see the release notes.
+-
 New features:
 ~~~~~~~~~~~~~
-- added API and zmi UI to the CPSMembershipTool to purge the locaroles of
-  deleted users
-- The Trees Tool can be configured to skip some paths. Useful for folders
-  like workspaces/members that have a huge number of children
-- Added a new URLTool to have methods dealing with virtual hosting: now able to
-  get the base url (portal absolute url path), get an object absolute url from
-  its relative url, and get its breadcrumbs without objects hidden with the
-  virtual hosting. Also possible to configure breadcrumbs display.
+-
 Bug fixes:
 ~~~~~~~~~~
-- Fixed missing reindexing of localUsersWithRoles by reindexObjectSecurity.
-- Fixed computing of home folder when members folder is a btree.
-- BBB: subscriber activated by default when no activation status specified.
-- #783: Made LanguageViewer work with Zope 2 trunk, allowing correct catalog
-  searches.
-- Removed duplicated 'mystuff' action from portal_membership
-- fix #849: The patching of OFS.Folder broke renaming in some instances.
-  The patch was no longer used (thanks to CMF 1.5.0s PortalFolder being ordered
-  and was therefore removed). 
-- Deprecation warnings was added to any calls using the old 
-  OrderedFolderSupportPatch product method names, usages of the old naming
-  has been changed to the new OrderedSupport naming.
-- New URLTool was giving url instead of rpath in breadcrumbs info.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- #413: Security synthesis has been removed, security on the repository
-  is now much more efficient.
+-
