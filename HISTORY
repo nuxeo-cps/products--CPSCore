@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.28.1 [R1 build 2005/08/05-15:40 by fguillaume]
+** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 25569
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Correctly import CMFBTreeFolder.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.28.0 [R1 build 2005/08/05-13:53 by ben]
 ** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 25426
 Requires:
