@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Correctly import CMFBTreeFolder.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
