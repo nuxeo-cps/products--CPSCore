@@ -2,7 +2,7 @@
 
 # misc -------------------
 TranslationService > 0.7.0
-BTreeFolder2
+# BTreeFolder2 only for zope 2.7.x
 DCWorkflow
 
 # CMF ---------------------
