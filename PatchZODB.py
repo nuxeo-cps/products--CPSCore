@@ -29,7 +29,6 @@ As well, see CPSCompat.PatchZODBTransaction
 
 from zLOG import LOG, DEBUG, INFO, DEBUG
 
-from types import IntType
 import bisect
 
 try:
@@ -45,7 +44,7 @@ def getBeforeCommitHooks(self):
 Transaction.getBeforeCommitHooks = getBeforeCommitHooks
 
 def beforeCommitHookOrdered(self, __hook, __order, *args, **kws):
-    if not isinstance(__order, IntType):
+    if not isinstance(__order, int):
         raise ValueError("An integer value is required "
                              "for the order argument")
     # `index` goes up by 1 on each append.  Then no two tuples can
