@@ -22,6 +22,21 @@ from zLOG import LOG, DEBUG, TRACE
 
 import Products.CPSCompat
 
+#
+# Monkey patching starts here
+#
+
+# Remove the overflow pb when using a DateIndex for expires
+from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
+from DateTime.DateTime import DateTime
+DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
+
+
+#
+# Patching UndoTool: Removing undo action
+#
+
+
 from Products.CMFCore.UndoTool import UndoTool
 import utils # To quickly force the patching of localroles.
 
