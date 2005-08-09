@@ -39,6 +39,10 @@ except ImportError:
 
 _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
 
+# We don't want any other hooks executed before this one right now.  It
+# will have an order of -100
+_TXN_MGR_ORDER = -100
+
 class IndexationManager:
     """Holds data about reindexings to be done."""
 
@@ -51,7 +55,7 @@ class IndexationManager:
         self._queue = []
         self._infos = {}
         self._sync = self.DEFAULT_SYNC
-        txn.beforeCommitHook(self)
+        txn.beforeCommitHookOrdered(self, _TXN_MGR_ORDER)
 
     def setSynchonous(self, sync):
         """Set queuing mode."""

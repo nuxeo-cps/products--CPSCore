@@ -9,4 +9,5 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Add the support for before commit hooks ordering
+- IndexationManager will be the first hook to be called
