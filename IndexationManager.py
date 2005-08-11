@@ -55,7 +55,7 @@ class IndexationManager:
         self._queue = []
         self._infos = {}
         self._sync = self.DEFAULT_SYNC
-        txn.beforeCommitHookOrdered(self, _TXN_MGR_ORDER)
+        txn.addBeforeCommitHook(self, order=_TXN_MGR_ORDER)
 
     def setSynchonous(self, sync):
         """Set queuing mode."""

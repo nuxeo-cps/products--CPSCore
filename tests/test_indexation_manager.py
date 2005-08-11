@@ -34,7 +34,7 @@ except ImportError: # BBB: for Zope 2.7
 
 
 class FakeTransaction:
-    def beforeCommitHookOrdered(self, hook, order):
+    def addBeforeCommitHook(self, hook, order):
         pass
 
 class FakeRoot:

@@ -37,27 +37,37 @@ except ImportError, e:
     if str(e) != 'No module named Transaction': raise
     from transaction import Transaction
 
+if not getattr(Transaction, '_old__init__', False):
+    Transaction._old__init__ = Transaction.__init__
+    def __init__(self, synchronizers=None, manager=None):
+        self._old__init__(synchronizers, manager)
+        self._before_commit_index = 0
+    Transaction.__init__ = __init__
+
 def getBeforeCommitHooks(self):
     # Don't return the hook order and index values because of
     # backward compatibility. As well, those are internals
     return iter([x[2:5] for x in self._before_commit])
 Transaction.getBeforeCommitHooks = getBeforeCommitHooks
 
-def beforeCommitHookOrdered(self, __hook, __order, *args, **kws):
-    if not isinstance(__order, int):
+def addBeforeCommitHook(self, hook, args=(), kws=None, order=0):
+    if not isinstance(order, int):
         raise ValueError("An integer value is required "
-                             "for the order argument")
+                         "for the order argument")
+    if kws is None:
+        kws = {}
     # `index` goes up by 1 on each append.  Then no two tuples can
     # compare equal, and indeed no more than the `order` and
     # `index` fields ever get compared when the tuples are compared
     # (because no two `index` fields are equal).
-    index = len([x[1] for x in self._before_commit if x[1] == __order])
-    bisect.insort(self._before_commit, (__order, index, __hook, args, kws))
-Transaction.beforeCommitHookOrdered = beforeCommitHookOrdered
+    bisect.insort(self._before_commit, (order, self._before_commit_index,
+                                        hook, tuple(args), kws))
+    self._before_commit_index += 1
+Transaction.addBeforeCommitHook = addBeforeCommitHook
 
-def beforeCommitHook(self, __hook, *args, **kws):
+def beforeCommitHook(self, hook, *args, **kws):
     # Default order is zero (0)
-    self.beforeCommitHookOrdered(__hook, 0, *args, **kws)
+    self.addBeforeCommitHook(hook, args, kws, order=0)
 Transaction.beforeCommitHook = beforeCommitHook
 
 def _callBeforeCommitHooks(self):
@@ -66,6 +76,7 @@ def _callBeforeCommitHooks(self):
     while self._before_commit:
         order, index, hook, args, kws = self._before_commit.pop(0)
         hook(*args, **kws)
+    self._before_commit_index = 0
 Transaction._callBeforeCommitHooks = _callBeforeCommitHooks
 
 LOG('PatchZODB.transaction', INFO,
