@@ -56,7 +56,6 @@ import EventServicePatches
 import TypesToolPatches
 import PatchBTreeFolder2
 import PatchCatalogTool
-import PatchZODB
 import ProxyTool
 import ObjectRepositoryTool
 import TreesTool
