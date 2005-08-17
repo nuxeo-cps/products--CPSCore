@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- #884 : CPSCore does not allow the creation of placeful containers by users
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - IndexationManager will be the first hook to be called
+- Removed the _checkId() CPSBased override and patch PortalFolder._checkId()
