@@ -31,19 +31,7 @@ from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
 from DateTime.DateTime import DateTime
 DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
 
-
-#
-# Patching UndoTool: Removing undo action
-#
-
-
-from Products.CMFCore.UndoTool import UndoTool
 import utils # To quickly force the patching of localroles.
-
-_actions = []
-UndoTool._actions = _actions
-LOG("CPSCore", TRACE, "Patching CMFCore UndoTool : removing undo action")
-
 
 from Products.CMFCore import utils as cmfutils
 from Products.CMFCore.permissions import AddPortalContent, ManagePortal
@@ -51,16 +39,18 @@ from Products.CMFCore.permissions import AddPortalContent, ManagePortal
 # Don't remove.
 import AllowModules
 
+# Patches
+import PatchBTreeFolder2
+import PatchCMFDefault
+import PatchCMFCore
+import CopyrightPatch
+
 import EventServiceTool
 import EventServicePatches
-import TypesToolPatches
-import PatchBTreeFolder2
-import PatchCatalogTool
 import ProxyTool
 import ObjectRepositoryTool
 import TreesTool
 import CPSRegistrationTool
-import CopyrightPatch
 import URLTool
 
 import ProxyBase
