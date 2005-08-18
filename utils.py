@@ -79,18 +79,18 @@ def mergedLocalRoles(object, withgroups=0):
             if callable(dict): dict = dict()
             for k, v in dict.items():
                 if withgroups:
-                    k = 'user:'+k
+                    k = 'user:' + k
                 if merged.has_key(k):
                     merged[k] = merged[k] + v
                 elif v:
                     merged[k] = v
         if hasattr(object, 'aq_parent'):
-            object=object.aq_parent
-            object=getattr(object, 'aq_inner', object)
+            object = object.aq_parent
+            object = getattr(object, 'aq_inner', object)
             continue
         if hasattr(object, 'im_self'):
-            object=object.im_self
-            object=getattr(object, 'aq_inner', object)
+            object = object.im_self
+            object = getattr(object, 'aq_inner', object)
             continue
         break
     return merged
