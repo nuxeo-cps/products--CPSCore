@@ -11,3 +11,4 @@ New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - IndexationManager will be the first hook to be called
 - Removed the _checkId() CPSBased override and patch PortalFolder._checkId()
+- Adapted to new CPSUtil.id.generateId default values.

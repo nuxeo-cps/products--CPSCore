@@ -476,7 +476,7 @@ class CPSMembershipTool(MembershipTool):
     security.declarePublic('getHomeFolderId')
     def getHomeFolderId(self, id, max_chars_for_id=128):
         """Compute an home folder id for the given member id."""
-        id = generateId(id, max_chars_for_id)
+        id = generateId(id, max_chars_for_id, False)
         return id
 
     security.declarePublic('homeFolderExists')
