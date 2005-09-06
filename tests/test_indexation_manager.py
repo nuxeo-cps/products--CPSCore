@@ -34,9 +34,13 @@ except ImportError: # BBB: for Zope 2.7
 
 
 class FakeTransaction:
-    def addBeforeCommitHook(self, hook, order):
+    def addBeforeCommitHook(self, hook):
         pass
 
+class FakeTransactionManager:
+    def addBeforeCommitHook(self, hook, order):
+        pass
+    
 class FakeRoot:
 
     __objects__ = {}
@@ -106,7 +110,7 @@ class Dummy2(Dummy):
 class IndexationManagerTest(unittest.TestCase):
 
     def get_stuff(self):
-        return IndexationManager(FakeTransaction()), root.addDummy()
+        return IndexationManager(FakeTransactionManager()), root.addDummy()
 
     def test_simple(self):
         mgr, dummy = self.get_stuff()

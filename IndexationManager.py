@@ -36,6 +36,7 @@ except ImportError:
         return get_transaction()
     transaction.get = BBBget
 
+from Products.CPSCore.TransactionManager import get_transaction_manager
 
 _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
 
@@ -50,12 +51,12 @@ class IndexationManager:
     # XXX This may be monkey-patched by unit-tests.
     DEFAULT_SYNC = False
 
-    def __init__(self, txn):
+    def __init__(self, mgr):
         """Initialize and register this manager with the transaction."""
         self._queue = []
         self._infos = {}
         self._sync = self.DEFAULT_SYNC
-        txn.addBeforeCommitHook(self, order=_TXN_MGR_ORDER)
+        mgr.addBeforeCommitHook(self, order=_TXN_MGR_ORDER)
 
     def setSynchonous(self, sync):
         """Set queuing mode."""
@@ -163,11 +164,9 @@ class IndexationManager:
                 "reindexObjectSecurity %r skip=%s" % (ob, skip_self))
             ob._reindexObjectSecurity(skip_self=skip_self)
 
-
-def _remove_indexation_manager():
+def del_indexation_manager():
     txn = transaction.get()
     setattr(txn, _TXN_MGR_ATTRIBUTE, None)
-
 
 def get_indexation_manager():
     """Get the indexation manager.
@@ -177,6 +176,6 @@ def get_indexation_manager():
     txn = transaction.get()
     mgr = getattr(txn, _TXN_MGR_ATTRIBUTE, None)
     if mgr is None:
-        mgr = IndexationManager(txn)
+        mgr = IndexationManager(get_transaction_manager())
         setattr(txn, _TXN_MGR_ATTRIBUTE, mgr)
     return mgr
