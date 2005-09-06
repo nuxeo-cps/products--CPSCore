@@ -13,3 +13,4 @@ New internal features:
 - Removed the _checkId() CPSBased override and patch PortalFolder._checkId()
 - Adapted to new CPSUtil.id.generateId default values.
 - Use the cps transaction manager to register the indexation manager hook
+- Remove the useless MirrorTool module
