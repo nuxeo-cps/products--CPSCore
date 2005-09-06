@@ -41,7 +41,6 @@ from Products.CPSCore.utils import getAllowedRolesAndUsersOfUser
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject
 from Products.CPSUtil.text import truncateText
 
-
 def intersects(a, b):
     for v in a:
         if v in b:
@@ -69,7 +68,7 @@ class TreesTool(UniqueObject, Folder):
     def notify_tree(self, event_type, ob, infos):
         """Notification method called by the event service.
 
-        Dispatches to the caches notification methods.
+        Dispatches to the accurate caches notification methods.
         """
 
         if event_type not in ('sys_add_cmf_object', # XXX ugh clean this up
@@ -82,7 +81,13 @@ class TreesTool(UniqueObject, Folder):
         LOG('TreesTool', DEBUG, 'Got %s for %s'
             % (event_type, '/'.join(ob.getPhysicalPath())))
         for tree in self.objectValues():
-            tree.notify_tree(event_type, ob, infos)
+            urltool = getToolByName(self, 'portal_url')
+            plen = len(urltool.getPortalObject().getPhysicalPath())
+            rpath = '/'.join(ob.getPhysicalPath()[plen:])
+            if tree._isCandidate(ob, plen):
+                LOG('TreeCache.notify_tree', DEBUG, "%s: %s for %s"
+                    % (self.getId(), event_type, rpath))
+                tree.notify_tree(event_type, ob, infos)
 
     #
     # ZMI
@@ -178,18 +183,13 @@ class TreeCache(SimpleItemWithProperties):
     def notify_tree(self, event_type, ob, infos):
         """Notification method called when an event is received.
 
-        Called by the the trees tool's notify method.
+        Called by the the trees tool's notify method. Here, we are
+        sure ob has to be managed by this tree cache since it has been
+        filtered at TreesTool level
         """
+
         self._maybeUpgrade()
-
-        urltool = getToolByName(self, 'portal_url')
-        plen = len(urltool.getPortalObject().getPhysicalPath())
-        rpath = '/'.join(ob.getPhysicalPath()[plen:])
-        if not self._isCandidate(ob, plen):
-            return
-        LOG('TreeCache.notify_tree', DEBUG, "%s: %s for %s"
-            % (self.getId(), event_type, rpath))
-
+        
         if event_type == 'sys_add_cmf_object':
             self.updateNode(ob)
             parent = aq_parent(aq_inner(ob))

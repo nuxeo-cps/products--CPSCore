@@ -37,6 +37,8 @@ class DummyTreeCache(SimpleItem):
     notified = 0
     def notify_tree(self, event_type, ob, infos):
         self.notified = self.notified + 1
+    def _isCandidate(self, ob, plen):
+        return True
 
 class DummyObject(OrderedFolder):
     portal_type = 'ThePortalType'
@@ -84,6 +86,7 @@ class TreesToolTest(unittest.TestCase):
     def test_propagated_events(self):
         # Test that suitable events are propagated to the caches
         tool = TreesTool()
+        tool.portal_url = DummyUrlTool()
         cache1 = DummyTreeCache()
         cache2 = DummyTreeCache()
         tool._setObject('cache1', cache1)
