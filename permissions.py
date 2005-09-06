@@ -1,5 +1,5 @@
 # (C) Copyright 2005 Nuxeo SARL <http://nuxeo.com>
-# Author: Julien Anguenot <ja@nuxeo.com>
+# Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -16,20 +16,19 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Backward compatibility;  see Products.CPSCore.permissions
+"""CPS core permissions.
+
+  - 'View archived revisions' is the permissions (on a proxy) needed to
+    get the View permission on archived revisions otherwise not
+    accessible.
+
 """
 
-from warnings import warn
+from Products.CMFCore.permissions import setDefaultRoles
 
-warn("The module, "
-     "'Products.CPSCore.CPSCorePermissions' "
-     "is a deprecated compatiblity alias for "
-     "'Products.CPSCore.permissions'; "
-     "please use the new module instead. "
-     "This reference will be removed within CPS-3.6",
-     DeprecationWarning, stacklevel=2)
+ViewArchivedRevisions = 'View archived revisions'
+setDefaultRoles(ViewArchivedRevisions, ('Manager',))
 
-# BBB : can be removed in CPS-3.6
-from Products.CPSCore.permissions import ViewArchivedRevisions
-from Products.CPSCore.permissions import ChangeSubobjectsOrder
+ChangeSubobjectsOrder = 'Change subobjects order'
+setDefaultRoles(ChangeSubobjectsOrder, ('Manager',))
 

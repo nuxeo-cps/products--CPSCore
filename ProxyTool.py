@@ -38,7 +38,7 @@ from Products.CMFCore.utils import mergedLocalRoles
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
-from Products.CPSCore.CPSCorePermissions import ViewArchivedRevisions
+from Products.CPSCore.permissions import ViewArchivedRevisions
 from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
      REQUEST_LANGUAGE_KEY
 

@@ -43,7 +43,7 @@ from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.permissions import View
 from Products.CMFCore.permissions import ModifyPortalContent
 from Products.CMFCore.permissions import ViewManagementScreens
-from Products.CPSCore.CPSCorePermissions import ViewArchivedRevisions
+from Products.CPSCore.permissions import ViewArchivedRevisions
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import TimeoutCache, getCache
