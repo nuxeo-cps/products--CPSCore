@@ -1,27 +1,3 @@
 # $Id$
-# CPSCore TODO 
 
-- Packaging
-   x [] move all skins into CPSDefault/skins
-     removed, still available in NuxCPS3 repository
-   x [] remove CPSDummyDocument
-     removed, still available in NuxCPS3 repository
-   x [] move CPSFolder.py into CPSDefault/Folder.py
-     Changing 'CPS Folder' portal type into 'Folder'
-   x [] remove zexp workflow
-   x [] update INSTALL.txt
-   o tests CPSCore
-      o fix unit test asap, should pass with _ut
-      o remove test with dummy doc or CPS Folder
-      o use ZTC ?
-      o find scenarii for maximum coverage
-
-- Features
-   o make it possible to specify the destination id when doing publishing
-
-# deprecated tasks ?
-- Elements
-   o CachableElement
-   o patches for ZPT and Python Scripts
-- Events
-  o use the new API (see notes.txt)
+See : http://svn.nuxeo.org/trac/pub/report/9
