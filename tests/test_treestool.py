@@ -20,7 +20,6 @@
 """Tests for the trees tool.
 """
 
-import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
 
 from Acquisition import aq_parent, aq_inner
@@ -31,7 +30,6 @@ from OFS.OrderedFolder import OrderedFolder
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 
 from Products.CPSCore.TreesTool import TreesTool, TreeCache
-
 
 class DummyTreeCache(SimpleItem):
     notified = 0

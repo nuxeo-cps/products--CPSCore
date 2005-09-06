@@ -20,26 +20,28 @@
 """
 
 from zLOG import LOG, DEBUG, ERROR
-from Globals import InitializeClass, DTMLFile
-from Acquisition import aq_base, aq_parent, aq_inner
+
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
 from AccessControl import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.SecurityManagement import setSecurityManager
 from AccessControl.User import UnrestrictedUser as BaseUnrestrictedUser
-
+from Acquisition import aq_base, aq_parent, aq_inner
 from BTrees.OOBTree import OOBTree
+from Globals import InitializeClass, DTMLFile
 from OFS.Folder import Folder
 
-from Products.CMFCore.permissions \
-    import View, ManagePortal, ViewManagementScreens
-from Products.CMFCore.utils \
-    import SimpleItemWithProperties, UniqueObject, getToolByName
+from Products.CMFCore.utils import SimpleItemWithProperties
+from Products.CMFCore.utils import UniqueObject
+from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.permissions import View
+from Products.CMFCore.permissions import ManagePortal
+from Products.CMFCore.permissions import ViewManagementScreens
 
+from Products.CPSUtil.text import truncateText
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfUser
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject
-from Products.CPSUtil.text import truncateText
 
 def intersects(a, b):
     for v in a:
@@ -47,13 +49,11 @@ def intersects(a, b):
             return True
     return False
 
-
 class UnrestrictedUser(BaseUnrestrictedUser):
     """Unrestricted user that still has an id."""
     def getId(self):
         """Return the ID of the user."""
         return self.getUserName()
-
 
 class TreesTool(UniqueObject, Folder):
     """Trees Tool that caches information about the site's hierarchies.
@@ -98,7 +98,8 @@ class TreesTool(UniqueObject, Folder):
                  'action': 'manage_addCPSTreeCacheForm',
                  'permission': ManagePortal},)
 
-    security.declareProtected(ViewManagementScreens, 'manage_addCPSTreeCacheForm')
+    security.declareProtected(ViewManagementScreens,
+                              'manage_addCPSTreeCacheForm')
     manage_addCPSTreeCacheForm = DTMLFile('zmi/tree_add', globals())
 
     security.declareProtected(ViewManagementScreens, 'manage_addCPSTreeCache')
@@ -112,7 +113,6 @@ class TreesTool(UniqueObject, Folder):
             REQUEST.RESPONSE.redirect(ob.absolute_url()+'/manage_workspace')
 
 InitializeClass(TreesTool)
-
 
 class TreeCache(SimpleItemWithProperties):
     """Tree cache object, caches information about one hierarchy.
@@ -136,6 +136,7 @@ class TreeCache(SimpleItemWithProperties):
         {'id': 'info_method', 'type': 'string', 'mode': 'w',
          'label': 'Info Method'},
         )
+
     title = ''
     root = ''
     type_names = ()
