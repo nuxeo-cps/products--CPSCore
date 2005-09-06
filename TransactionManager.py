@@ -139,7 +139,7 @@ class TransactionManager:
         the transaction.
         """
 
-        LOG("IndexationManager", DEBUG, "__call__")
+        LOG("TransactionManager", DEBUG, "__call__")
 
         while self._before_commit:
             order, index, hook, args, kws = self._before_commit.pop(0)
@@ -148,7 +148,7 @@ class TransactionManager:
             hook(*args, **kws)
         self._before_commit_index = 0
 
-        LOG("IndexationManager", DEBUG, "__call__ done")
+        LOG("TransactionManager", DEBUG, "__call__ done")
 
 def del_transaction_manager():
     txn = transaction.get()
