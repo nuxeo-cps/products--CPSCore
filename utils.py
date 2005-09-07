@@ -33,6 +33,8 @@ This code uses if possible the following methods on the user folder:
   - getAllowedRolesAndUsersOfUser
 """
 
+from copy import deepcopy
+
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl.PermissionRole import rolesForPermissionOn
 from Products import CMFCore
@@ -93,7 +95,7 @@ def mergedLocalRoles(object, withgroups=0):
             object = getattr(object, 'aq_inner', object)
             continue
         break
-    return merged
+    return deepcopy(merged)
 
 def mergedLocalRolesWithPath(object, withgroups=0):
     aclu = getattr(object, 'acl_users', None)

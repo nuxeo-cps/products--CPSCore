@@ -7,6 +7,7 @@ New features:
 Bug fixes:
 ~~~~~~~~~~
 - #884 : CPSCore does not allow the creation of placeful containers by users
+- #904 : Backport CMF fix for mergedLocalRoles
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - IndexationManager will be the first hook to be called
