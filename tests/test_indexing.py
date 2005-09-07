@@ -130,7 +130,7 @@ class ProxyIndexingTest(ZopeTestCase.PortalTestCase):
         self._setupUser()
         self.login()
         self._setupTools()
-        get_indexation_manager().setSynchonous(True)
+        get_indexation_manager().setSynchronous(True)
 
     def _setupTools(self):
         from Products.CPSCore.URLTool import URLTool

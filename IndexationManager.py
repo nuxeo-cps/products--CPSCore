@@ -36,6 +36,8 @@ except ImportError:
         return get_transaction()
     transaction.get = BBBget
 
+from Products.CPSCore.interfaces import IBaseManager
+from Products.CPSCore.BaseManager import BaseManager
 from Products.CPSCore.TransactionManager import get_transaction_manager
 
 _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
@@ -44,36 +46,23 @@ _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
 # will have an order of -100
 _TXN_MGR_ORDER = -100
 
-class IndexationManager:
+class IndexationManager(BaseManager):
     """Holds data about reindexings to be done."""
 
-    # Not synchronous by default
-    # XXX This may be monkey-patched by unit-tests.
-    DEFAULT_SYNC = False
+    __implements__ = IBaseManager
 
     def __init__(self, mgr):
         """Initialize and register this manager with the transaction."""
+        BaseManager.__init__(self, mgr, order=_TXN_MGR_ORDER)
         self._queue = []
         self._infos = {}
-        self._sync = self.DEFAULT_SYNC
-        mgr.addBeforeCommitHook(self, order=_TXN_MGR_ORDER)
-
-    def setSynchonous(self, sync):
-        """Set queuing mode."""
-        if sync:
-            self()
-        self._sync = sync
-
-    def isSynchonous(self):
-        """Get queuing mode."""
-        return self._sync
 
     def push(self, ob, idxs=None, with_security=False):
         """Add / update an object to reindex to the reindexing queue.
 
         Copes with security reindexation as well.
         """
-        if self.isSynchonous():
+        if self.isSynchronous():
             LOG("IndexationManager", DEBUG, "index object %r" % ob)
             self.process(ob, idxs, with_security)
             return

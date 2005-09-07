@@ -24,6 +24,7 @@ import random
 import unittest
 from OFS.SimpleItem import SimpleItem
 
+from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.IndexationManager import IndexationManager
 from Products.CPSCore.IndexationManager import get_indexation_manager
 
@@ -111,6 +112,10 @@ class IndexationManagerTest(unittest.TestCase):
 
     def get_stuff(self):
         return IndexationManager(FakeTransactionManager()), root.addDummy()
+
+    def test_z2interfaces(self):
+        from Interface.Verify import verifyClass
+        verifyClass(IBaseManager, IndexationManager)
 
     def test_simple(self):
         mgr, dummy = self.get_stuff()
@@ -229,13 +234,13 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr.push(dummy, idxs=['a'])
         self.assertEquals(dummy.getLog(), [])
-        mgr.setSynchonous(True)
+        mgr.setSynchronous(True)
         self.assertEquals(dummy.getLog(), ["idxs %s ['a']"%dummy.id])
         mgr.push(dummy, idxs=['b'])
         self.assertEquals(dummy.getLog(), ["idxs %s ['b']"%dummy.id])
         mgr.push(dummy, idxs=['c'])
         self.assertEquals(dummy.getLog(), ["idxs %s ['c']"%dummy.id])
-        mgr.setSynchonous(False)
+        mgr.setSynchronous(False)
         mgr.push(dummy, idxs=['d'])
         self.assertEquals(dummy.getLog(), [])
         mgr()
