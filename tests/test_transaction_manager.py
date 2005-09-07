@@ -27,6 +27,7 @@ try:
 except ImportError: # BBB: for Zope 2.7
     from Products.CMFCore.utils import transaction
 
+from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.TransactionManager import TransactionManager
 from Products.CPSCore.TransactionManager import _CPS_TXN_ATTRIBUTE
 from Products.CPSCore.TransactionManager import get_transaction_manager
@@ -44,6 +45,10 @@ def hook(arg='no_arg', kw1='no_kw1', kw2='no_kw2'):
     log.append("arg %r kw1 %r kw2 %r" % (arg, kw1, kw2))
 
 class TransactionManagerTest(unittest.TestCase):
+
+    def test_z2interfaces(self):
+        from Interface.Verify import verifyClass
+        verifyClass(IBaseManager, TransactionManager)
 
     def test_fixtures(self):
 

@@ -20,3 +20,5 @@ cache has to manage it. The object is filtered at TreesTool level
 instead of TreeCache level so that we can hook
 - New TreeCacheManager delayed until commit time and used by the TreesTool
 - New BaseManager class definition and interface for before commit hooks
+- TransactionManager, IndexationManager, TreeCacheManager implements
+IBaseManager

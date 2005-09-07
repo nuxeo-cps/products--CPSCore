@@ -43,13 +43,14 @@ except ImportError:
 
 _CPS_TXN_ATTRIBUTE = '_cps_transaction_manager'
 
-class TransactionManager:
+from Products.CPSCore.interfaces import IBaseManager
+from Products.CPSCore.BaseManager import BaseManager
+
+class TransactionManager(BaseManager):
     """Holds hooks that will be executed at the end of the transaction.
     """
 
-    # Not synchronous by default
-    # XXX This may be monkey-patched by unit-tests.
-    DEFAULT_SYNC = False
+    __implements__ = IBaseManager
 
     def __init__(self, txn):
         """Initialize and register this manager with the transaction.
@@ -67,16 +68,6 @@ class TransactionManager:
         self._before_commit = []
         self._before_commit_index = 0
         txn.addBeforeCommitHook(self)
-
-    def setSynchronous(self, sync):
-        """Set queuing mode."""
-        if sync:
-            self()
-        self._sync = sync
-
-    def isSynchronous(self):
-        """Get queuing mode."""
-        return self._sync
 
     def addBeforeCommitHook(self, hook, args=(), kws=None, order=0):
         """Register a hook to call before the transaction is committed.
