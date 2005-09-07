@@ -22,3 +22,4 @@ instead of TreeCache level so that we can hook
 - New BaseManager class definition and interface for before commit hooks
 - TransactionManager, IndexationManager, TreeCacheManager implements
 IBaseManager
+- Cleanups : remove useless LoggerTool and MirrorTool
