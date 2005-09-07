@@ -42,6 +42,7 @@ from Products.CMFCore.permissions import ViewManagementScreens
 from Products.CPSUtil.text import truncateText
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfUser
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject
+from Products.CPSCore.TreeCacheManager import get_treecache_manager
 
 def intersects(a, b):
     for v in a:
@@ -85,9 +86,9 @@ class TreesTool(UniqueObject, Folder):
             plen = len(urltool.getPortalObject().getPhysicalPath())
             rpath = '/'.join(ob.getPhysicalPath()[plen:])
             if tree._isCandidate(ob, plen):
-                LOG('TreeCache.notify_tree', DEBUG, "%s: %s for %s"
-                    % (self.getId(), event_type, rpath))
-                tree.notify_tree(event_type, ob, infos)
+                ##LOG('TreeCache.notify_tree', DEBUG, "%s: %s for %s"
+                ##    % (self.getId(), event_type, rpath))
+                get_treecache_manager().push(tree, event_type, ob, infos)
 
     #
     # ZMI

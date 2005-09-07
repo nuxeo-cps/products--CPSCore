@@ -15,7 +15,7 @@ New internal features:
 - Use the cps transaction manager to register the indexation manager hook
 - Remove the useless MirrorTool module
 - CPSCorePermissions.py renamed in permissions.py
-
 - TreesTool.notify_tree() send objects on tree caches only if the
 cache has to manage it. The object is filtered at TreesTool level
 instead of TreeCache level so that we can hook
+- New TreeCacheManager delayed until commit time and used by the TreesTool

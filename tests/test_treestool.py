@@ -81,6 +81,13 @@ class DummyMember(SimpleItem):
 
 class TreesToolTest(unittest.TestCase):
 
+    def setUp(self):
+        # During setup and tests we want synchronous tree cache updates
+        from Products.CPSCore.TreeCacheManager import get_treecache_manager
+        from Products.CPSCore.TreeCacheManager import TreeCacheManager
+        TreeCacheManager.DEFAULT_SYNC = True # Monkey patch
+        get_treecache_manager().setSynchronous(True) # current transaction
+
     def test_propagated_events(self):
         # Test that suitable events are propagated to the caches
         tool = TreesTool()
