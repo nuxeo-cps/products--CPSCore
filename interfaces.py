@@ -45,7 +45,3 @@ class IBaseManager(Interface):
 
         Does the actual manager work.
         """
-
-    def push(*args):
-        """Push an item within the manager queue
-        """
