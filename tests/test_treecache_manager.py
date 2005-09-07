@@ -24,6 +24,7 @@ import random
 import unittest
 from OFS.SimpleItem import SimpleItem
 
+from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.TreeCacheManager import TreeCacheManager
 from Products.CPSCore.TreeCacheManager import get_treecache_manager
 
@@ -104,6 +105,10 @@ class TreeCacheManagerTest(unittest.TestCase):
         return (TreeCacheManager(FakeTransactionManager()),
                 root.addDummy(),
                 DummyTreeCache())
+
+    def test_z2interfaces(self):
+        from Interface.Verify import verifyClass
+        verifyClass(IBaseManager, TreeCacheManager)
 
     def test_simple(self):
         mgr, dummy, tree = self.get_stuff()
