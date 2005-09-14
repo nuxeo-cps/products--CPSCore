@@ -25,3 +25,4 @@ instead of TreeCache level so that we can hook
 - TransactionManager, IndexationManager, TreeCacheManager implements
 IBaseManager
 - Cleanups : remove useless LoggerTool and MirrorTool
+- API : mtool.canMemberChangeLocalRoles()
