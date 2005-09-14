@@ -74,11 +74,11 @@ class TreeCacheManager(BaseManager):
         # XXX : Here, we can optimize by dealing with the events on
         # the same object
         rpath = '/'.join(ob.getPhysicalPath())[1:]
-        i = (tree, id(aq_base(ob)), rpath, event_type)
+        i = (id(tree), id(aq_base(ob)), rpath, event_type)
         if i not in self._queue:
-            self._queue[i] = (ob, infos)
+            self._queue[i] = (ob, tree, infos)
         else:
-            self._queue[i][1].update(infos)
+            self._queue[i][2].update(infos)
 
     def __call__(self):
         """Called when transaction commits.
@@ -91,8 +91,8 @@ class TreeCacheManager(BaseManager):
         for k, v in self._queue.items():
             LOG("TreeCacheManager", DEBUG,
                 "rebuild cache %s for %s on %s with %s"
-                %(k[0], v[0], k[3], v[1]))
-            k[0].notify_tree(k[3], v[0], v[1])
+                %(v[1], v[0], k[3], v[2]))
+            v[1].notify_tree(k[3], v[0], v[2])
 
         self._queue = {}
 
