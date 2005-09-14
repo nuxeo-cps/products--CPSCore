@@ -38,7 +38,7 @@ from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolder
 from dummy import DummyPortalUrl, DummyWorkflowTool, DummyRoot
 
 from Products.CMFCore.permissions import View
-from Products.CPSCore.CPSCorePermissions import ViewArchivedRevisions
+from Products.CPSCore.permissions import ViewArchivedRevisions
 ViewAR = ViewArchivedRevisions
 
 
