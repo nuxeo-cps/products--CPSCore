@@ -130,10 +130,8 @@ class CPSMembershipTool(MembershipTool):
         """Can the authenticated member change the local roles
         """
         user = getSecurityManager().getUser()
-        if (user.has_role('Manager') or 
-            user.has_role(self.roles_managing_local_roles, context)):
-            return True
-        return False
+        return (user.has_role('Manager') or 
+                user.has_role(self.roles_managing_local_roles, context))
 
     security.declareProtected(View, 'getMergedLocalRoles')
     def getMergedLocalRoles(self, object, withgroups=1):
