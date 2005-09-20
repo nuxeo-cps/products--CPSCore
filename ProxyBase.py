@@ -1354,7 +1354,7 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
             'moveObjectToPosition',
             )
 
-    # Trying not to remain consistent with Zope default behaviour
+    # Trying to remain consistent with Zope default behaviour
     security.setPermissionDefault(ChangeSubobjectsOrder, ('Manager', 'Owner'))
 
 
