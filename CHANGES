@@ -10,6 +10,8 @@ Bug fixes:
 - #904: Backport CMF fix for mergedLocalRoles
 - #922: can't instanciate cps sites on 2.7
 - #872: Proper upgrades for catalog broken by CPS 3.3.5 (unicode errors)
+- #946: fixed missing ChangeSubobjectsOrder security declarations for
+  CPSProxyFolder methods
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - IndexationManager will be the first hook to be called

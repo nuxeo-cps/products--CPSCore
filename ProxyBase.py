@@ -44,6 +44,7 @@ from Products.CMFCore.permissions import View
 from Products.CMFCore.permissions import ModifyPortalContent
 from Products.CMFCore.permissions import ViewManagementScreens
 from Products.CPSCore.permissions import ViewArchivedRevisions
+from Products.CPSCore.permissions import ChangeSubobjectsOrder
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import TimeoutCache, getCache
@@ -1310,6 +1311,8 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
 
     meta_type = 'CPS Proxy Folder'
 
+    security = ClassSecurityInfo()
+
     def __init__(self, id, **kw):
         CPSBaseFolder.__init__(self, id)
         ProxyBase.__init__(self, **kw)
@@ -1338,6 +1341,22 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
                       ProxyBase.proxybase_manage_options +
                       CPSBaseFolder.manage_options[1:]
                       )
+
+    # Changing security declarations of inherited methods from OFS.OrderSupport
+    # to gain finer granularity
+    security.declareProtected(ChangeSubobjectsOrder,
+            'moveObjectsByDelta',
+            'moveObjectsUp',
+            'moveObjectsDown',
+            'moveObjectsToTop',
+            'moveObjectsToBottom',
+            'orderObjects',
+            'moveObjectToPosition',
+            )
+
+    # Trying not to remain consistent with Zope default behaviour
+    security.setPermissionDefault(ChangeSubobjectsOrder, ('Manager', 'Owner'))
+
 
 InitializeClass(ProxyFolder)
 
