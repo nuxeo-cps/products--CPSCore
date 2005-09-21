@@ -1,31 +1,12 @@
 Requires:
 ~~~~~~~~~
-- CPSCompat > 0.4.0
+-
 New features:
 ~~~~~~~~~~~~~
 -
 Bug fixes:
 ~~~~~~~~~~
-- #884: CPSCore does not allow the creation of placeful containers by users
-- #904: Backport CMF fix for mergedLocalRoles
-- #922: can't instanciate cps sites on 2.7
-- #872: Proper upgrades for catalog broken by CPS 3.3.5 (unicode errors)
-- #946: fixed missing ChangeSubobjectsOrder security declarations for
-  CPSProxyFolder methods
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- IndexationManager will be the first hook to be called
-- Removed the _checkId() CPSBased override and patch PortalFolder._checkId()
-- Adapted to new CPSUtil.id.generateId default values.
-- Use the cps transaction manager to register the indexation manager hook
-- Remove the useless MirrorTool module
-- CPSCorePermissions.py renamed in permissions.py
-- TreesTool.notify_tree() send objects on tree caches only if the
-cache has to manage it. The object is filtered at TreesTool level
-instead of TreeCache level so that we can hook
-- New TreeCacheManager delayed until commit time and used by the TreesTool
-- New BaseManager class definition and interface for before commit hooks
-- TransactionManager, IndexationManager, TreeCacheManager implements
-IBaseManager
-- Cleanups : remove useless LoggerTool and MirrorTool
-- API : mtool.canMemberChangeLocalRoles()
+-
