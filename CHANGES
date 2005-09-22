@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Fix 3.3.5->3.3.6 upgrade catalog for Zope-2.7.x
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

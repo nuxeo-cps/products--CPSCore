@@ -79,7 +79,7 @@ def upgrade_335_336_catalog(context):
         _unindex = index._unindex
         # Check if there's some unicode somewhere
         bad = []
-        for key, value in _index.iteritems():
+        for key, value in _index.items():
             if isinstance(key, unicode):
                 bad.append((key, value))
                 nbindexes += 1
@@ -96,7 +96,7 @@ def upgrade_335_336_catalog(context):
     ixs = [i for i in ixs if i is not None]
     # Check if there's some unicode in the metadata
     bad = []
-    for key, value in cat.data.iteritems():
+    for key, value in cat.data.items():
         for i in ixs:
             if isinstance(value[i], unicode):
                 bad.append(key)
@@ -116,7 +116,7 @@ def upgrade_335_336_catalog(context):
             continue
         # Check if some words are unicode
         bad = []
-        for word, wid in lexicon._wids.iteritems():
+        for word, wid in lexicon._wids.items():
             if isinstance(word, unicode):
                 bad.append((word, wid))
                 nblexicons += 1
