@@ -143,7 +143,7 @@ class CPSMembershipTool(MembershipTool):
         """Return aquisition roles with path"""
         return mergedLocalRolesWithPath(object, withgroups)
 
-    security.declareProtected(View, 'getCandidateLocalRoles')
+    security.declareProtected(View, 'getCPSCandidateLocalRoles')
     def getCPSCandidateLocalRoles(self, obj):
         """What local roles according to the context ?"""
 

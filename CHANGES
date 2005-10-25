@@ -7,6 +7,7 @@ New features:
 Bug fixes:
 ~~~~~~~~~~
 - Fix 3.3.5->3.3.6 upgrade catalog for Zope-2.7.x
+- #1059 (wrong security assertion for getCPSCandidateLocalRoles)
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
