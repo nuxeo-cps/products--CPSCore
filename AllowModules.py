@@ -1,4 +1,4 @@
-# (C) Copyright 2003 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2003-2005 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,6 @@ ModuleSecurityInfo('DateTime.DateTime').declarePublic('DateTimeError')
 ModuleSecurityInfo('Products.CPSCore.utils').declarePublic('resetSessionLanguageSelection')
 ModuleSecurityInfo(
     'Products.CMFCore.WorkflowCore').declarePublic('WorkflowException')
-ModuleSecurityInfo('Products.CPSUtil.html').declarePublic('sanitize') 
 
 try:
     from mx import Tidy
