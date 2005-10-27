@@ -41,9 +41,8 @@ class FakeTransaction:
 class FakeTransactionManager:
     def addBeforeCommitHook(self, hook, order):
         pass
-    
-class FakeRoot:
 
+class FakeRoot:
     __objects__ = {}
 
     def generateId(self):
@@ -74,7 +73,6 @@ class FakeRoot:
 root = FakeRoot()
 
 class Dummy:
-
     def __init__(self, id):
         self.id = id
         self.log = []
@@ -112,21 +110,21 @@ class TreeCacheManagerTest(unittest.TestCase):
 
     def test_simple(self):
         mgr, dummy, tree = self.get_stuff()
-    
+
         # Push it, reindexation not done yet.
         mgr.push(tree, 'sys_add_cmf_object', dummy, {})
         self.assertEquals(tree.notified, 0)
-    
+
         # Manager is called (by commit), check notification
         mgr()
         self.assertEquals(tree.notified, 1)
-    
+
         # Object is gone from queue after that.
         mgr()
         self.assertEquals(mgr._queue, {})
-    
+
         root.clear()
-    
+
     def test_several_times_1(self):
         mgr, dummy, tree = self.get_stuff()
         mgr.push(tree, 'sys_add_cmf_object', dummy, {})
@@ -135,7 +133,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(tree.notified, 1)
         root.clear()
-    
+
     def test_several_times_2(self):
         mgr, dummy, tree = self.get_stuff()
         mgr.push(tree, 'sys_add_cmf_object', dummy, {})
@@ -144,7 +142,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(tree.notified, 1)
         root.clear()
-    
+
     def test_several_times_3(self):
         mgr, dummy, tree = self.get_stuff()
         mgr.push(tree, 'sys_add_cmf_object', dummy, {'foo':'bar'})
@@ -153,7 +151,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(tree.notified, 1)
         root.clear()
-    
+
     def test_several_times_4(self):
         mgr, dummy, tree = self.get_stuff()
         mgr.push(tree, 'sys_add_cmf_object', dummy, {'foo':'bar'})
@@ -162,7 +160,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(tree.notified, 1)
         root.clear()
-    
+
     def test_several_times_5(self):
         mgr, dummy,tree = self.get_stuff()
         mgr.push(tree, 'sys_add_cmf_object', dummy, None)
@@ -171,7 +169,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(tree.notified, 1)
         root.clear()
-    
+
     def test_several_times_6(self):
         mgr, dummy,tree = self.get_stuff()
         mgr.push(tree, 'sys_add_cmf_object', dummy, None)
@@ -180,7 +178,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(tree.notified, 1)
         root.clear()
-    
+
     def test_several_times_7(self):
         mgr, dummy,tree = self.get_stuff()
         mgr.push(tree, 'sys_add_cmf_object', dummy, {})
@@ -189,7 +187,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(tree.notified, 1)
         root.clear()
-    
+
     def test_several_events_1(self):
         # XXX : this is supposed to break when the optimizations will be done.
         # This is what I expect.
@@ -200,7 +198,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(tree.notified, 2)
         root.clear()
-    
+
     def test_synchronous(self):
         mgr, dummy, tree = self.get_stuff()
         self.assertEquals(tree.notified, 0)
@@ -233,7 +231,7 @@ class TreeCacheManagerIntegrationTest(unittest.TestCase):
         transaction.commit()
         self.assertEquals(tree.notified, 1)
         root.clear()
-    
+
     def test_transaction_aborting(self):
         transaction.begin()
         mgr = get_treecache_manager()
@@ -244,7 +242,7 @@ class TreeCacheManagerIntegrationTest(unittest.TestCase):
         transaction.abort()
         self.assertEquals(tree.notified, 0)
         root.clear()
-    
+
 def test_suite():
     return unittest.TestSuite((
         unittest.makeSuite(TreeCacheManagerTest),
