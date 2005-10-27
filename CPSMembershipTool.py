@@ -76,7 +76,7 @@ class CPSMembershipTool(MembershipTool):
       AI(id='login',
          title='Login',
          description='Click here to Login',
-         action=Expression(text='string:${portal_url}/login_form'),
+         action=Expression(text='python:"%s/login_form?%s" % (portal_url, modules["urllib"].urlencode({"came_from": request.URL}))'),
          permissions=(View,),
          category='user',
          condition=Expression(text='not: member'),
