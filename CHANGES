@@ -8,8 +8,10 @@ Bug fixes:
 ~~~~~~~~~~
 - Fix 3.3.5->3.3.6 upgrade catalog for Zope-2.7.x
 - #1059 (wrong security assertion for getCPSCandidateLocalRoles)
-- Removed useless ModuleSecurityInfo declaration for Products.CPSUtil.html since
-  this declaration is already done in the CPSUtil.html module itself.
+- Removed useless ModuleSecurityInfo declaration for
+Products.CPSUtil.html since this declaration is already done in the
+CPSUtil.html module itself.
+- #429 : copy_submit leaves pasted objects without any associated workflows
 - #802: allowed QueryParserError from TextIndexNG2
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
