@@ -10,6 +10,7 @@ Bug fixes:
 - #1059 (wrong security assertion for getCPSCandidateLocalRoles)
 - Removed useless ModuleSecurityInfo declaration for Products.CPSUtil.html since
   this declaration is already done in the CPSUtil.html module itself.
+- #802: allowed QueryParserError from TextIndexNG2
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

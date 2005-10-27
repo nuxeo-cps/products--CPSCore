@@ -46,6 +46,12 @@ ModuleSecurityInfo(
     'Products.CMFCore.WorkflowCore').declarePublic('WorkflowException')
 
 try:
+    ModuleSecurityInfo(
+        'Products.TextIndexNG2.BaseParser').declarePublic('QueryParserError')
+except ImportError:
+    pass
+
+try:
     from mx import Tidy
     allow_class(Tidy)
     ModuleSecurityInfo('mx').declarePublic('Tidy')
