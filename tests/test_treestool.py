@@ -21,6 +21,7 @@
 """
 
 import unittest
+import Testing.ZopeTestCase.ZopeLite
 
 from Acquisition import aq_parent, aq_inner
 from OFS.SimpleItem import SimpleItem
