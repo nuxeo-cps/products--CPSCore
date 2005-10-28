@@ -279,7 +279,8 @@ class TypeContainer(Base):
                 if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
                     ob.manage_afterCMFAdd(ob, self)
 
-        # Do not move this import from here.
+        # Do not move this import from here: causes import problems at
+        # initialization time because of weird dependencies
         from Products.CPSWorkflow import transitions
 
         # Insert the new pasted object within the workflow if the
