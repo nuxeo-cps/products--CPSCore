@@ -224,6 +224,11 @@ class TypeContainer(Base):
                 if not ok:
                     raise CopyError, '%s not allowed, %s' % (behavior, why)
                 containers.append(container)
+            # verify self ACTs
+            act = self.getTypeInfo().allowed_content_types
+            if ob.getPortalTypeName() not in act:
+                why = 'Wrong content type'
+                raise CopyError, '%s not allowed, %s' % (behavior, why)
             oblist.append(ob)
 
         result = []
@@ -274,7 +279,6 @@ class TypeContainer(Base):
                 if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
                     ob.manage_afterCMFAdd(ob, self)
 
-
         # Do not move this import from here.
         from Products.CPSWorkflow import transitions
 
@@ -292,7 +296,6 @@ class TypeContainer(Base):
                     crtrans = wftool.getInitialTransitions(
                         self, type_name, behavior)
                     for initial_transition in crtrans:
-                        kwargs = {}
                         initial_behavior = behavior
                         try:
                             wftool._insertWorkflowRecursive(

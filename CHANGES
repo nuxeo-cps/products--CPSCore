@@ -12,7 +12,8 @@ Bug fixes:
 Products.CPSUtil.html since this declaration is already done in the
 CPSUtil.html module itself.
 - #429 : copy_submit leaves pasted objects without any associated workflows
-- #802: allowed QueryParserError from TextIndexNG2
+- #802 : allowed QueryParserError from TextIndexNG2
+- #1005 : forbid mix workspace and sections
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
