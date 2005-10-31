@@ -16,7 +16,7 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Incremental trees.
+"""Tree Modification
 
 This module deals with trees, and how they are modified using a set of
 simple add/modify/delete operations.
@@ -46,98 +46,98 @@ Tests
 Setup and basic tests.
 We'll use strings for sequence, it's easier to read::
 
-  >>> from CPSCore.incrementaltree import ADD, REMOVE, MODIFY
-  >>> from CPSCore.incrementaltree import IncrementalTree
+  >>> from CPSCore.treemodification import ADD, REMOVE, MODIFY
+  >>> from CPSCore.treemodification import TreeModification
 
-  >>> IncrementalTree([])
-  IncrementalTree([])
-  >>> IncrementalTree([(ADD, 'A')])
-  IncrementalTree([(ADD, 'A')])
-  >>> tree = IncrementalTree([(ADD, 'A'), (ADD, 'B')])
+  >>> TreeModification([])
+  TreeModification([])
+  >>> TreeModification([(ADD, 'A')])
+  TreeModification([(ADD, 'A')])
+  >>> tree = TreeModification([(ADD, 'A'), (ADD, 'B')])
   >>> tree.do(ADD, 'C')
   >>> tree.do(ADD, 'D')
   >>> tree
-  IncrementalTree([(ADD, 'A'), (ADD, 'B'), (ADD, 'C'), (ADD, 'D')])
+  TreeModification([(ADD, 'A'), (ADD, 'B'), (ADD, 'C'), (ADD, 'D')])
 
 Simple optimizations::
 
-  >>> IncrementalTree([(ADD, 'A'), (ADD, 'A')])
-  IncrementalTree([(ADD, 'A')])
+  >>> TreeModification([(ADD, 'A'), (ADD, 'A')])
+  TreeModification([(ADD, 'A')])
 
-  >>> IncrementalTree([(REMOVE, 'A'), (ADD, 'A')])
-  IncrementalTree([(ADD, 'A')])
+  >>> TreeModification([(REMOVE, 'A'), (ADD, 'A')])
+  TreeModification([(ADD, 'A')])
 
-  >>> IncrementalTree([(ADD, 'A'), (REMOVE, 'A')])
-  IncrementalTree([(REMOVE, 'A')])
+  >>> TreeModification([(ADD, 'A'), (REMOVE, 'A')])
+  TreeModification([(REMOVE, 'A')])
 
-  >>> IncrementalTree([(MODIFY, 'A'), (MODIFY, 'A')])
-  IncrementalTree([(MODIFY, 'A')])
+  >>> TreeModification([(MODIFY, 'A'), (MODIFY, 'A')])
+  TreeModification([(MODIFY, 'A')])
 
 If you add a node and remove one of its subnode, it's the same as just
 adding the node in its final state::
 
-  >>> IncrementalTree([(ADD, 'A'), (REMOVE, 'AB')])
-  IncrementalTree([(ADD, 'A')])
+  >>> TreeModification([(ADD, 'A'), (REMOVE, 'AB')])
+  TreeModification([(ADD, 'A')])
 
-  >>> IncrementalTree([(ADD, 'A'), (REMOVE, 'A'), (ADD, 'A')])
-  IncrementalTree([(ADD, 'A')])
+  >>> TreeModification([(ADD, 'A'), (REMOVE, 'A'), (ADD, 'A')])
+  TreeModification([(ADD, 'A')])
 
 If you add something and later add something higher, only the last is
 kept::
 
-  >>> IncrementalTree([(ADD, 'AB'), (ADD, 'A')])
-  IncrementalTree([(ADD, 'A')])
+  >>> TreeModification([(ADD, 'AB'), (ADD, 'A')])
+  TreeModification([(ADD, 'A')])
 
 But not for modifies::
 
-  >>> IncrementalTree([(ADD, 'AB'), (MODIFY, 'A')])
-  IncrementalTree([(ADD, 'AB'), (MODIFY, 'A')])
+  >>> TreeModification([(ADD, 'AB'), (MODIFY, 'A')])
+  TreeModification([(ADD, 'AB'), (MODIFY, 'A')])
 
 If you modify and later add, only add is kept::
 
-  >>> IncrementalTree([(MODIFY, 'A'), (ADD, 'A')])
-  IncrementalTree([(ADD, 'A')])
+  >>> TreeModification([(MODIFY, 'A'), (ADD, 'A')])
+  TreeModification([(ADD, 'A')])
 
 If you modify and later remove, only add is kept::
 
-  >>> IncrementalTree([(MODIFY, 'A'), (REMOVE, 'A')])
-  IncrementalTree([(REMOVE, 'A')])
+  >>> TreeModification([(MODIFY, 'A'), (REMOVE, 'A')])
+  TreeModification([(REMOVE, 'A')])
 
 You can't have a modify or add under something that's been removed::
 
-  >>> IncrementalTree([(REMOVE, 'A'), (ADD, 'AB')])
+  >>> TreeModification([(REMOVE, 'A'), (ADD, 'AB')])
   Traceback (most recent call last):
   ...
-  IncrementalTreeError: ADD 'AB' after REMOVE 'A'
-  >>> IncrementalTree([(REMOVE, 'A'), (MODIFY, 'AB')])
+  TreeModificationError: ADD 'AB' after REMOVE 'A'
+  >>> TreeModification([(REMOVE, 'A'), (MODIFY, 'AB')])
   Traceback (most recent call last):
   ...
-  IncrementalTreeError: MODIFY 'AB' after REMOVE 'A'
-  >>> IncrementalTree([(REMOVE, 'A'), (MODIFY, 'A')])
+  TreeModificationError: MODIFY 'AB' after REMOVE 'A'
+  >>> TreeModification([(REMOVE, 'A'), (MODIFY, 'A')])
   Traceback (most recent call last):
   ...
-  IncrementalTreeError: MODIFY 'A' after REMOVE 'A'
+  TreeModificationError: MODIFY 'A' after REMOVE 'A'
 
 And you can't remove something that's sure to not exist anymore::
 
-  >>> IncrementalTree([(REMOVE, 'A'), (REMOVE, 'AB')])
+  >>> TreeModification([(REMOVE, 'A'), (REMOVE, 'AB')])
   Traceback (most recent call last):
   ...
-  IncrementalTreeError: REMOVE 'AB' after REMOVE 'A'
+  TreeModificationError: REMOVE 'AB' after REMOVE 'A'
 
-  >>> IncrementalTree([(REMOVE, 'A'), (REMOVE, 'A')])
+  >>> TreeModification([(REMOVE, 'A'), (REMOVE, 'A')])
   Traceback (most recent call last):
   ...
-  IncrementalTreeError: REMOVE 'A' after REMOVE 'A'
+  TreeModificationError: REMOVE 'A' after REMOVE 'A'
 
 Of course all this is used with tuple paths in real life::
 
-  >>> IncrementalTree([(ADD, ('root', 'bob')), (ADD, ('root',))])
-  IncrementalTree([(ADD, ('root',))])
+  >>> TreeModification([(ADD, ('root', 'bob')), (ADD, ('root',))])
+  TreeModification([(ADD, ('root',))])
 
 """
 
-class IncrementalTreeError(Exception):
+class TreeModificationError(Exception):
     """Exception raised for impossible tree operations."""
 
 # Tree operations
@@ -176,7 +176,7 @@ _RULES = {
     (MODIFY, MODIFY): [_CONT,  _FORGET, _CONT  , _CONT],
     }
 
-class IncrementalTree(object):
+class TreeModification(object):
     """Represents the optimized list of changes that were applied to a tree.
     """
 
@@ -194,7 +194,7 @@ class IncrementalTree(object):
         res = []
         for op, path in self._ops:
             res.append('(%s, %r)' % (printable_op(op), path))
-        return 'IncrementalTree(['+', '.join(res)+'])'
+        return 'TreeModification(['+', '.join(res)+'])'
 
     def get(self):
         """Return the optimized tree, as a list of operations."""
@@ -222,7 +222,7 @@ class IncrementalTree(object):
             if action == _STOP:
                 return
             elif action == _ERROR:
-                raise IncrementalTreeError(
+                raise TreeModificationError(
                     "%s %r after %s %r" % (printable_op(op), path,
                                            printable_op(old_op), old_path))
             elif action == _FORGET:

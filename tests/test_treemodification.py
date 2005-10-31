@@ -16,7 +16,7 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Test incremental trees.
+"""Test Tree Modification module
 """
 
 import unittest
@@ -24,7 +24,7 @@ from zope.testing.doctest import DocFileTest, ELLIPSIS
 
 def test_suite():
     return unittest.TestSuite((
-        DocFileTest('incrementaltree.py', package="Products.CPSCore"),
+        DocFileTest('treemodification.py', package="Products.CPSCore"),
         ))
 
 if __name__ == '__main__':
