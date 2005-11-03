@@ -41,7 +41,7 @@ replace it.
 
 
 Tests
------
+=====
 
 Setup and basic tests.
 We'll use strings for sequence, it's easier to read::
@@ -136,6 +136,79 @@ Of course all this is used with tuple paths in real life::
   >>> TreeModification([(ADD, ('root', 'bob')), (ADD, ('root',))])
   TreeModification([(ADD, ('root',))])
 
+
+Info mapping
+------------
+
+You can pass an additional ``info`` mapping when you do a tree
+operation. The purpose of this information is to specify in more detail
+the type of operation done. Its semantics is up to the application.:
+
+  >>> TreeModification([(ADD, 'A', {'foo': True})])
+  TreeModification([(ADD, 'A', {'foo': True})])
+
+Remember that ``info`` is additional semantics about the operation done,
+and ADD always takes precedence over MODIFY, so if a MODIFY is done
+after an ADD, the ADD is kept, with its info::
+
+  >>> TreeModification([(ADD, 'A', {'foo': 1}), (MODIFY, 'A', {'bar': 2})])
+  TreeModification([(ADD, 'A', {'foo': 1})])
+
+When doing several ADD or REMOVE operations on a node, the last ``info``
+always wins::
+
+  >>> TreeModification([(ADD, 'A', {'foo': 1}), (ADD, 'A', {'bar': 2})])
+  TreeModification([(ADD, 'A', {'bar': 2})])
+  >>> TreeModification([(ADD, 'A', {'foo': 1}), (REMOVE, 'A', {'gee': 3})])
+  TreeModification([(REMOVE, 'A', {'gee': 3})])
+  >>> TreeModification([(REMOVE, 'A', {'foo': 1}), (ADD, 'A', {'hah': 4})])
+  TreeModification([(ADD, 'A', {'hah': 4})])
+
+Info merging
+------------
+
+The only interesting use case is when several MODIFY operations are made
+in a row on the same node. Then, their ``info`` mappings are merged::
+
+  >>> tree = TreeModification([(MODIFY, 'A', {'foo': 1}),
+  ...                          (MODIFY, 'A', {'bar': 2})])
+  >>> list(tree.get()) == [(MODIFY, 'A', {'foo': 1, 'bar': 2})]
+  True
+
+For some specific application use cases, it's possible to override the
+default merging method to make it do whatever is needed::
+
+  >>> def myMergeInfo(old, new):
+  ...     return {'n': old['n']+2*new['n']}
+
+  >>> tree = TreeModification(mergeModifyInfo=myMergeInfo)
+  >>> tree.do(MODIFY, 'A', {'n': 24})
+  >>> tree.do(MODIFY, 'A', {'n': 9})
+  >>> tree
+  TreeModification([(MODIFY, 'A', {'n': 42})])
+  >>> tree.do(MODIFY, 'A', {'n': 4})
+  >>> tree
+  TreeModification([(MODIFY, 'A', {'n': 50})])
+
+A more realistic use case would be to have "light" and "complex"
+modifications, where "complex" takes precedence over "light"::
+
+  >>> def complexMerge(old, new):
+  ...     return {'complex': old['complex'] or new['complex']}
+
+  >>> tree = TreeModification(mergeModifyInfo=complexMerge)
+  >>> tree.do(MODIFY, 'A', {'complex': False})
+  >>> tree.do(MODIFY, 'A', {'complex': False})
+  >>> tree
+  TreeModification([(MODIFY, 'A', {'complex': False})])
+  >>> tree.do(MODIFY, 'A', {'complex': True})
+  >>> tree
+  TreeModification([(MODIFY, 'A', {'complex': True})])
+  >>> tree.do(MODIFY, 'A', {'complex': False})
+  >>> tree
+  TreeModification([(MODIFY, 'A', {'complex': True})])
+
+
 """
 
 class TreeModificationError(Exception):
@@ -160,11 +233,12 @@ class TreeModification(object):
     """Represents the optimized list of changes that were applied to a tree.
     """
 
-    def __init__(self, ops=None):
+    def __init__(self, ops=None, mergeModifyInfo=None):
         self.clear()
+        self._mergeModifyInfo = mergeModifyInfo
         if ops is not None:
-            for op, path in ops:
-                self.do(op, path)
+            for args in ops:
+                self.do(*args)
 
     def clear(self):
         """Clear the tree."""
@@ -174,8 +248,11 @@ class TreeModification(object):
 
     def __repr__(self):
         res = []
-        for op, path in self.get():
-            res.append('(%s, %r)' % (printable_op(op), path))
+        for op, path, info in self.get():
+            if not info:
+                res.append('(%s, %r)' % (printable_op(op), path))
+            else:
+                res.append('(%s, %r, %r)' % (printable_op(op), path, info))
         return 'TreeModification(['+', '.join(res)+'])'
 
     def __len__(self):
@@ -191,25 +268,46 @@ class TreeModification(object):
 
     def _recurse(self, prefix, tree, ops):
         for step, value in tree.items():
-            op, subtree = value
+            op, info, subtree = value
             path = prefix + (step,)
             if op is not _SEEN:
                 if self._path_is_string:
                     jpath = ''.join(path)
                 else:
                     jpath = path
-                ops.append((op, jpath))
+                ops.append((op, jpath, info))
             self._recurse(path, subtree, ops)
 
-    def do(self, op, path):
+    def mergeModifyInfo(self, old, new):
+        """Default modify merger.
+
+        If several ``MODIFY`` are applied successively, their ``info``
+        values get merged using this method, which by default simply
+        calls ``update()``.
+        """
+        if self._mergeModifyInfo is not None:
+            return self._mergeModifyInfo(old, new)
+        else:
+            # Default merging
+            res = {}
+            res.update(old)
+            res.update(new)
+            return res
+
+    def do(self, op, path, info=None):
         """Do an operation on the tree.
 
         ``op`` can be one of ``ADD``, ``REMOVE`` or ``MODIFY``.
 
         ``path`` is a sequence representing a node.
+
+        ``info`` is a mapping, or None. It represents additional
+        information about ``MODIFY`` operations
         """
         if not path:
             return TreeModificationError("Empty path forbidden")
+        if info is None:
+            info = {}
         self._ops = None
         tree = self._tree
         if not tree and isinstance(path, basestring):
@@ -217,7 +315,7 @@ class TreeModification(object):
         # Walk the path to our node.
         for i, step in enumerate(path[:-1]):
             if step in tree:
-                old_op, subtree = tree[step]
+                old_op, old_info, subtree = tree[step]
                 if old_op == REMOVE:
                     # REMOVE higher in the tree, error
                     raise TreeModificationError(
@@ -229,27 +327,28 @@ class TreeModification(object):
             else:
                 # We've never been here, add an intermediate node
                 subtree = {}
-                tree[step] = (_SEEN, subtree)
+                tree[step] = (_SEEN, None, subtree)
             tree = subtree
         # Last step
         step = path[-1]
         if step in tree:
-            old_op, subtree = tree[step]
+            old_op, old_info, subtree = tree[step]
             if old_op == REMOVE and op in (REMOVE, MODIFY):
                 raise TreeModificationError(
                     "%s %r after REMOVE %r" %
                     (printable_op(op), path, path))
             elif op in (ADD, REMOVE):
                 # ADD or REMOVE override older ops and the subtree
-                tree[step] = (op, {})
+                tree[step] = (op, info, {})
             elif old_op == ADD:
                 # MODIFY after ADD, ignore
                 pass
             elif old_op == _SEEN:
                 # MODIFY after _SEEN, replace op
-                tree[step] = (op, subtree)
+                tree[step] = (op, info, subtree)
             else: # old_op == MODIFY
-                # MODIFY after MODIFY, ignore
-                pass
+                # MODIFY after MODIFY, merge infos
+                new_info = self.mergeModifyInfo(old_info, info)
+                tree[step] = (op, new_info, subtree)
         else:
-            tree[step] = (op, {})
+            tree[step] = (op, info, {})
