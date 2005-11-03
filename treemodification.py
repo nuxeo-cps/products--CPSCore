@@ -56,8 +56,8 @@ We'll use strings for sequence, it's easier to read::
   >>> tree = TreeModification([(ADD, 'A'), (ADD, 'B')])
   >>> tree.do(ADD, 'C')
   >>> tree.do(ADD, 'D')
-  >>> tree
-  TreeModification([(ADD, 'A'), (ADD, 'B'), (ADD, 'C'), (ADD, 'D')])
+  >>> len(tree) # order-dependent
+  4
 
 Simple optimizations::
 
@@ -90,8 +90,9 @@ kept::
 
 But not for modifies::
 
-  >>> TreeModification([(ADD, 'AB'), (MODIFY, 'A')])
-  TreeModification([(ADD, 'AB'), (MODIFY, 'A')])
+  >>> tree = TreeModification([(ADD, 'AB'), (MODIFY, 'A')])
+  >>> len(tree) # order-dependent
+  2
 
 If you modify and later add, only add is kept::
 
@@ -144,37 +145,16 @@ class TreeModificationError(Exception):
 ADD = 0
 REMOVE = 1
 MODIFY = 2
+# Internal to the tree representation
+_SEEN = 3
 
 printable_op = {
     ADD: 'ADD',
     REMOVE: 'REMOVE',
     MODIFY: 'MODIFY',
+    _SEEN: '_SEEN',
     }.get
 
-
-# Internal decision table:
-_STOP, _FORGET, _CONT, _ERROR = range(4)
-# _STOP: stop trying, something overrides us anyway
-# _FORGET: forget the old op (it's overriden), and continue looking
-# _CONT: continue looking
-# _ERROR: impossible case
-_OLD_ABOVE_NEW = 0
-_OLD_EQ_NEW =    1
-_OLD_UNDER_NEW = 2
-_UNRELATED =     3
-_RULES = {
-   #                 (>:above)         (<:under)
-   # old_op  op       old>new  old=new  old<new  unrel
-    (ADD,    ADD   ): [_STOP,  _FORGET, _FORGET, _CONT],
-    (ADD,    REMOVE): [_STOP,  _FORGET, _FORGET, _CONT],
-    (ADD,    MODIFY): [_STOP,  _STOP,   _CONT  , _CONT],
-    (REMOVE, ADD   ): [_ERROR, _FORGET, _FORGET, _CONT],
-    (REMOVE, REMOVE): [_ERROR, _ERROR,  _FORGET, _CONT],
-    (REMOVE, MODIFY): [_ERROR, _ERROR,  _CONT  , _CONT],
-    (MODIFY, ADD   ): [_CONT,  _FORGET, _FORGET, _CONT],
-    (MODIFY, REMOVE): [_CONT,  _FORGET, _FORGET, _CONT],
-    (MODIFY, MODIFY): [_CONT,  _FORGET, _CONT  , _CONT],
-    }
 
 class TreeModification(object):
     """Represents the optimized list of changes that were applied to a tree.
@@ -188,47 +168,88 @@ class TreeModification(object):
 
     def clear(self):
         """Clear the tree."""
-        self._ops = []
+        self._tree = {}
+        self._ops = None
+        self._path_is_string = False # tuple by default
 
     def __repr__(self):
         res = []
-        for op, path in self._ops:
+        for op, path in self.get():
             res.append('(%s, %r)' % (printable_op(op), path))
         return 'TreeModification(['+', '.join(res)+'])'
 
+    def __len__(self):
+        return len(self.get())
+
     def get(self):
         """Return the optimized tree, as a list of operations."""
-        return self._ops[:]
+        if self._ops is None:
+            ops = []
+            self._recurse((), self._tree, ops)
+            self._ops = tuple(ops)
+        return self._ops
+
+    def _recurse(self, prefix, tree, ops):
+        for step, value in tree.items():
+            op, subtree = value
+            path = prefix + (step,)
+            if op is not _SEEN:
+                if self._path_is_string:
+                    jpath = ''.join(path)
+                else:
+                    jpath = path
+                ops.append((op, jpath))
+            self._recurse(path, subtree, ops)
 
     def do(self, op, path):
         """Do an operation on the tree.
 
         ``op`` can be one of ``ADD``, ``REMOVE`` or ``MODIFY``.
+
         ``path`` is a sequence representing a node.
         """
-        ops = []
-        len_path = len(path)
-        for old_op, old_path in self._ops:
-            if old_path == path:
-                case = _OLD_EQ_NEW
+        if not path:
+            return TreeModificationError("Empty path forbidden")
+        self._ops = None
+        tree = self._tree
+        if not tree and isinstance(path, basestring):
+            self._path_is_string = True
+        # Walk the path to our node.
+        for i, step in enumerate(path[:-1]):
+            if step in tree:
+                old_op, subtree = tree[step]
+                if old_op == REMOVE:
+                    # REMOVE higher in the tree, error
+                    raise TreeModificationError(
+                        "%s %r after REMOVE %r" %
+                        (printable_op(op), path, path[:i+1]))
+                elif old_op == ADD:
+                    # ADD higher in the tree, stop
+                    return
             else:
-                if old_path[:len_path] == path:
-                    case = _OLD_UNDER_NEW
-                elif path[:len(old_path)] == old_path:
-                    case = _OLD_ABOVE_NEW
-                else:
-                    case = _UNRELATED
-            action = _RULES[(old_op, op)][case]
-            if action == _STOP:
-                return
-            elif action == _ERROR:
+                # We've never been here, add an intermediate node
+                subtree = {}
+                tree[step] = (_SEEN, subtree)
+            tree = subtree
+        # Last step
+        step = path[-1]
+        if step in tree:
+            old_op, subtree = tree[step]
+            if old_op == REMOVE and op in (REMOVE, MODIFY):
                 raise TreeModificationError(
-                    "%s %r after %s %r" % (printable_op(op), path,
-                                           printable_op(old_op), old_path))
-            elif action == _FORGET:
-                continue
-            else: # action == _CONT
-                ops.append((old_op, old_path))
-        ops.append((op, path))
-        self._ops = ops
-
+                    "%s %r after REMOVE %r" %
+                    (printable_op(op), path, path))
+            elif op in (ADD, REMOVE):
+                # ADD or REMOVE override older ops and the subtree
+                tree[step] = (op, {})
+            elif old_op == ADD:
+                # MODIFY after ADD, ignore
+                pass
+            elif old_op == _SEEN:
+                # MODIFY after _SEEN, replace op
+                tree[step] = (op, subtree)
+            else: # old_op == MODIFY
+                # MODIFY after MODIFY, ignore
+                pass
+        else:
+            tree[step] = (op, {})
