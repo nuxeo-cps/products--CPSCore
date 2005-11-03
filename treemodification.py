@@ -142,7 +142,7 @@ Info mapping
 
 You can pass an additional ``info`` mapping when you do a tree
 operation. The purpose of this information is to specify in more detail
-the type of operation done. Its semantics is up to the application.:
+the type of operation done. Its semantics is up to the application.::
 
   >>> TreeModification([(ADD, 'A', {'foo': True})])
   TreeModification([(ADD, 'A', {'foo': True})])
