@@ -70,8 +70,8 @@ class TreeCacheManager(BaseManager):
     def push(self, cache, op, path, info):
         """Push an operation for a tree cache.
         """
-        LOG("TreeCacheManager", DEBUG, "cache %r: %s %s %r"
-            % (cache, printable_op(op), '/'.join(path), info))
+        LOG('TreeCacheManager', DEBUG, "push for %s: %s %s %r"
+            % (cache.getId(), printable_op(op), '/'.join(path), info))
         cache_path = cache.getPhysicalPath()
         if cache_path not in self._trees:
             tree = TreeModification()
@@ -91,17 +91,12 @@ class TreeCacheManager(BaseManager):
 
         Does the actual rebuild work
         """
-
-        LOG("TreeCacheManager", DEBUG, "__call__")
-
         for cache_path, tree in self._trees.items():
             cache = self._caches[cache_path]
-            LOG("TreeCacheManager", DEBUG, "replaying for cache %r")
+            LOG('TreeCacheManager', DEBUG, "replaying for cache %s" %
+                cache.getId())
             cache.updateTree(tree)
-
         self.clear()
-
-        LOG("TreeCacheManager", DEBUG, "__call__ done")
 
 def get_treecache_manager():
     """Get the treecache manager.
