@@ -44,17 +44,25 @@ from Products.CPSCore.utils import getAllowedRolesAndUsersOfUser
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject
 from Products.CPSCore.TreeCacheManager import get_treecache_manager
 
+from Products.CPSCore.treemodification import ADD, REMOVE, MODIFY
+from Products.CPSCore.treemodification import printable_op
+
+
 def intersects(a, b):
     for v in a:
         if v in b:
             return True
     return False
 
+
 class UnrestrictedUser(BaseUnrestrictedUser):
     """Unrestricted user that still has an id."""
     def getId(self):
         """Return the ID of the user."""
         return self.getUserName()
+
+
+
 
 class TreesTool(UniqueObject, Folder):
     """Trees Tool that caches information about the site's hierarchies.
@@ -66,29 +74,52 @@ class TreesTool(UniqueObject, Folder):
     security = ClassSecurityInfo()
 
     security.declarePrivate('notify_tree')
-    def notify_tree(self, event_type, ob, infos):
+    def notify_tree(self, event_type, ob, infos=None):
         """Notification method called by the event service.
 
         Dispatches to the accurate caches notification methods.
+
+        infos is ignored.
         """
 
-        if event_type not in ('sys_add_cmf_object', # XXX ugh clean this up
+        if event_type not in ('sys_add_cmf_object',
+                              'sys_add_object',
                               'sys_del_object',
                               'sys_modify_object',
                               'sys_modify_security',
                               'sys_order_object',
                               'modify_object'):
             return
-        LOG('TreesTool', DEBUG, 'Got %s for %s'
-            % (event_type, '/'.join(ob.getPhysicalPath())))
-        for tree in self.objectValues():
-            urltool = getToolByName(self, 'portal_url')
-            plen = len(urltool.getPortalObject().getPhysicalPath())
-            rpath = '/'.join(ob.getPhysicalPath()[plen:])
-            if tree._isCandidate(ob, plen):
-                ##LOG('TreeCache.notify_tree', DEBUG, "%s: %s for %s"
-                ##    % (self.getId(), event_type, rpath))
-                get_treecache_manager().push(tree, event_type, ob, infos)
+
+        path = ob.getPhysicalPath()
+        LOG('TreesTool', DEBUG, "Got %s for %s" %
+            (event_type, '/'.join(path)))
+        for cache in self.objectValues():
+            if cache.isCandidate(ob):
+                if event_type in ('sys_add_cmf_object', 'sys_add_object'):
+                    op = ADD
+                    info = None
+                elif event_type == 'sys_del_object':
+                    op = REMOVE
+                    info = None
+                elif event_type in ('sys_modify_object', 'modify_object'):
+                    op = MODIFY
+                    info = {'full': True}
+                elif event_type == 'sys_modify_security':
+                    op = MODIFY
+                    info = {'security': True}
+                elif event_type == 'sys_order_object':
+                    op = MODIFY
+                    info = {'order': True}
+                else:
+                    raise ValueError("Invalid event type %s" % event_type)
+                get_treecache_manager().push(cache, op, path, info)
+
+    security.declarePrivate('flushEvents')
+    def flushEvents(self):
+        """Flush tree cache manager, which executes the modifications.
+        """
+        get_treecache_manager()()
 
     #
     # ZMI
@@ -114,6 +145,256 @@ class TreesTool(UniqueObject, Folder):
             REQUEST.RESPONSE.redirect(ob.absolute_url()+'/manage_workspace')
 
 InitializeClass(TreesTool)
+
+
+class TreeCacheUpdater(object):
+    """Get or update info about a cache.
+    """
+    def __init__(self, cache):
+        self.cache = cache
+        self.infos = cache._infos
+        self.portal = getToolByName(cache, 'portal_url').getPortalObject()
+        self.plen = len(self.portal.getPhysicalPath())
+        self.info_method = cache.info_method
+        tmp_user = UnrestrictedUser('manager', '', ['Manager'], '')
+        self.tmp_user = tmp_user.__of__(aq_inner(cache.acl_users))
+        self.root = cache.getRoot()
+
+    def getRpathFromPath(self, path):
+        return '/'.join(path[self.plen:])
+
+    def getRpath(self, ob):
+        return self.getRpathFromPath(ob.getPhysicalPath())
+
+    # Operations on objects
+
+    def isCandidate(self, ob):
+        """Return True if the object should be cached."""
+        # Check under root
+        if not self.root:
+            return False
+        rpath_slash = self.getRpath(ob)+'/'
+        if not rpath_slash.startswith(self.root+'/'):
+            return False
+        # Check excluded rpaths
+        for excluded_rpath in self.cache.excluded_rpaths:
+            if rpath_slash.startswith(excluded_rpath+'/'):
+                return False
+        # Check types
+        bob = aq_base(ob)
+        if (self.cache.meta_types and
+            getattr(bob, 'meta_type', None) not in self.cache.meta_types):
+            return False
+        type_names = self.cache.type_names or ()
+        if getattr(bob, 'portal_type', None) not in type_names:
+            return False
+
+        return True
+
+    def getNodeInfo(self, ob):
+        """Compute info about one object.
+        """
+        info = {}
+        if self.cache.info_method:
+            method = getattr(ob, self.cache.info_method, None)
+            if method is not None:
+                doc = ob.getContent(lang='default')
+
+                # Call the info method while being a temporary Manager
+                # so that it can access protected methods.
+                old_sm = getSecurityManager()
+                try:
+                    newSecurityManager(None, self.tmp_user)
+                    info = method(doc=doc)
+                finally:
+                    setSecurityManager(old_sm)
+
+                if not isinstance(info, dict):
+                    LOG('TreeCache', ERROR,
+                        "getNodeInfo returned non-dict %s" % `info`)
+                    info = {}
+        info.update({
+            'id': ob.getId(),
+            'rpath': self.getRpath(ob),
+            'portal_type': ob.portal_type,
+            })
+        info.update(self.getNodeSecurityInfo(ob))
+        return info
+
+    def getNodeSecurityInfo(self, ob):
+        """Get the security info about one object.
+        """
+        allowed_roles_and_users = getAllowedRolesAndUsersOfObject(ob)
+        local_roles = {}
+        for k, v in ob.get_local_roles():
+            local_roles['user:'+k] = v
+        for k, v in ob.get_local_group_roles():
+            local_roles['group:'+k] = v
+        return {
+            'allowed_roles_and_users': allowed_roles_and_users,
+            'local_roles': local_roles,
+            }
+
+    def updateNode(self, ob):
+        """Compute one node in the tree.
+
+        Keeps children info from previous node if available.
+        """
+        rpath = self.getRpath(ob)
+        old_info = self.infos.get(rpath)
+        info = self.getNodeInfo(ob)
+        if old_info is not None:
+            info['depth'] = old_info['depth']
+            info['children'] = old_info['children']
+            info['nb_children'] = old_info['nb_children']
+            self.infos[rpath] = info
+        else:
+            # Compute depth
+            root = self.root
+            depth = rpath.count('/') - root.count('/')
+            info['depth'] = depth
+            self.infos[rpath] = info
+            self.updateChildrenInfo(ob)
+
+    def updateChildrenInfo(self, ob):
+        """Recompute the list of children a node has.
+        """
+        rpath = self.getRpath(ob)
+        info = self.infos.get(rpath)
+        if info is None:
+            # Parent is outside of the tree
+            return
+        children = []
+        for subob in ob.objectValues():
+            if self.isCandidate(subob):
+                subrpath = self.getRpath(subob)
+                children.append(subrpath)
+        info['children'] = children
+        info['nb_children'] = len(children)
+        self.infos[rpath] = info
+
+    def makeTree(self, ob):
+        """Recompute the tree starting from ob."""
+        rpath = self.getRpath(ob)
+        root = self.root
+        depth = rpath.count('/') - root.count('/')
+        self._makeTree(ob, depth)
+
+    def _makeTree(self, ob, depth):
+        """Recompute the tree starting from ob.
+
+        Recursive method.
+        """
+        info = self.getNodeInfo(ob)
+        subdepth = depth+1
+        children = []
+        for subob in ob.objectValues():
+            if self.isCandidate(subob):
+                subrpath = self._makeTree(subob, subdepth)
+                children.append(subrpath)
+        info['depth'] = depth
+        info['children'] = children
+        info['nb_children'] = len(children)
+        rpath = info['rpath']
+        self.infos[rpath] = info
+        return rpath
+
+    def updateSecurityUnder(self, ob):
+        """Update security under an object.
+        """
+        rpath = self.getRpath(ob)
+        info = self.infos.get(rpath)
+        if info is not None:
+            info.update(self.getNodeSecurityInfo(ob))
+            self.infos[rpath] = info
+        # Recurse
+        for subob in ob.objectValues():
+            if self.isCandidate(subob):
+                self.updateSecurityUnder(subob)
+
+    # Operations on physical paths
+
+    def updateNodeAtPath(self, path):
+        """Update a node.
+        """
+        ob = self.portal.unrestrictedTraverse(path)
+        self.updateNode(ob)
+
+    def updateChildrenInfoAtPath(self, path):
+        """Update children info at a given physical path.
+        """
+        ob = self.portal.unrestrictedTraverse(path)
+        self.updateChildrenInfo(ob)
+
+    def addNodesUnderPath(self, path):
+        """Add a node and all its subnodes.
+        """
+        ob = self.portal.unrestrictedTraverse(path)
+        self.makeTree(ob)
+
+    def deleteNodesUnderPath(self, path):
+        """Delete all nodes at or under a given physical path.
+        """
+        rpath = self.getRpathFromPath(path)
+        for key in self.infos.keys(rpath+'/', rpath+'/\xFF'):
+            del self.infos[key]
+        if rpath in self.infos:
+            del self.infos[rpath]
+
+    def fixParentOfPathAfterDelete(self, path):
+        """Fix a parent's children info after a remove.
+        """
+        rpath = self.getRpathFromPath(path)
+        prpath = self.getRpathFromPath(path[:-1])
+        parent_info = self.infos.get(prpath)
+        if parent_info is None:
+            # Parent is outside of the tree
+            return
+        try:
+            parent_info['children'].remove(rpath)
+        except ValueError:
+            pass
+        else:
+            parent_info['nb_children'] -= 1
+            self.infos[prpath] = parent_info
+
+    def updateSecurityUnderPath(self, path):
+        """Update security info under a path.
+        """
+        ob = self.portal.unrestrictedTraverse(path)
+        self.updateSecurityUnder(ob)
+
+    # Operations on modificationt tree
+
+    def updateTree(self, tree):
+        """Replay modifications to a ModificationTree.
+
+        Here events have been compressed, and we have to recurse for ADD
+        and REMOVE.
+        """
+        for op, path, info in tree.get():
+            LOG('TreeCacheUpdater', DEBUG, "  replaying %s %s %s" %
+                (printable_op(op), '/'.join(path), info))
+            if op == ADD:
+                # First, delete old info about it
+                self.deleteNodesUnderPath(path)
+                # Then add new info
+                self.addNodesUnderPath(path)
+                # Fixup the parent because order is now unknown.
+                self.updateChildrenInfoAtPath(path[:-1])
+            elif op == REMOVE:
+                self.deleteNodesUnderPath(path)
+                # Fixup the parent
+                self.fixParentOfPathAfterDelete(path)
+            else: # op == MODIFY
+                if 'full' in info:
+                    self.updateNodeAtPath(path)
+                else:
+                    if 'security' in info:
+                        self.updateSecurityUnderPath(path)
+                    if 'order' in info:
+                        self.updateChildrenInfoAtPath(path)
+
 
 class TreeCache(SimpleItemWithProperties):
     """Tree cache object, caches information about one hierarchy.
@@ -159,12 +440,10 @@ class TreeCache(SimpleItemWithProperties):
 
     def _upgrade(self):
         """Upgrade from the old format."""
-        LOG('TreeCache._upgrade', DEBUG, 'Upgrading tree %s' % self.getId())
-
+        LOG('TreeCache', DEBUG, 'Upgrading tree %s' % self.getId())
         delattr(self, '_tree')
         delattr(self, '_pointers')
         delattr(self, '_flat')
-
         self._clear()
         self.rebuild()
 
@@ -181,30 +460,10 @@ class TreeCache(SimpleItemWithProperties):
         res.sort()
         return res
 
-    security.declarePrivate('notify_tree')
-    def notify_tree(self, event_type, ob, infos):
-        """Notification method called when an event is received.
-
-        Called by the the trees tool's notify method. Here, we are
-        sure ob has to be managed by this tree cache since it has been
-        filtered at TreesTool level
-        """
-
-        self._maybeUpgrade()
-        
-        if event_type == 'sys_add_cmf_object':
-            self.updateNode(ob)
-            parent = aq_parent(aq_inner(ob))
-            self.updateChildrenInfo(parent)
-        elif event_type == 'sys_del_object':
-            self.deleteNode(ob)
-        elif event_type == 'sys_order_object':
-            self.updateChildrenInfo(ob)
-        elif event_type == 'sys_modify_security':
-            # This event has to do recursion by itself
-            self.makeTree(ob)
-        else: # event_type == 'modify_object' / 'sys_modify_object'
-            self.updateNode(ob)
+    security.declareProtected(View, 'isCandidate')
+    def isCandidate(self, ob):
+        """Return True if the object should be cached."""
+        return TreeCacheUpdater(self).isCandidate(ob)
 
     security.declarePrivate('rebuild')
     def rebuild(self):
@@ -216,169 +475,24 @@ class TreeCache(SimpleItemWithProperties):
             return
         root_ob = portal.unrestrictedTraverse(root, None)
         if root_ob is None:
-            LOG('TreeCache.rebuild', ERROR,
-                "%s: bad root '%s'" % (self.getId(), root))
+            LOG('TreeCache', ERROR, "Rebuild %s: bad root %r" %
+                (self.getId(), root))
             return
-        self.makeTree(root_ob)
+        TreeCacheUpdater(self).makeTree(root_ob)
 
-    def _isCandidate(self, ob, plen):
-        """Return True if the object should be cached."""
-        # Check under root
-        root = self.getRoot()
-        if not root:
-            return False
-        rpath_slash = '/'.join(ob.getPhysicalPath()[plen:])+'/'
-        if not rpath_slash.startswith(root+'/'):
-            return False
-        # Check excluded rpaths
-        for excluded_rpath in self.excluded_rpaths:
-            if rpath_slash.startswith(excluded_rpath+'/'):
-                return False
-        # Check types
-        bob = aq_base(ob)
-        if (self.meta_types and
-            getattr(bob, 'meta_type', None) not in self.meta_types):
-            return False
-        type_names = self.type_names or ()
-        if getattr(bob, 'portal_type', None) not in type_names:
-            return False
+    # Called by the TreeCacheManager
 
-        return True
-
-    security.declarePrivate('getNodeInfo')
-    def getNodeInfo(self, ob, plen):
-        """Compute info about one object."""
-        info = {}
-        if self.info_method:
-            method = getattr(ob, self.info_method, None)
-            if method is not None:
-                doc = ob.getContent(lang='default')
-
-                # Call the info method while being a temporary Manager
-                # so that it can access protected methods.
-                old_sm = getSecurityManager()
-                tmp_user = UnrestrictedUser('manager', '', ['Manager'], '')
-                tmp_user = tmp_user.__of__(self.acl_users)
-                try:
-                    newSecurityManager(None, tmp_user)
-                    info = method(doc=doc)
-                finally:
-                    setSecurityManager(old_sm)
-
-                if not isinstance(info, dict):
-                    LOG('TreeCache', ERROR,
-                        "getNodeInfo returned non-dict %s" % `info`)
-                    info = {}
-        allowed_roles_and_users = getAllowedRolesAndUsersOfObject(ob)
-        local_roles = {}
-        for k, v in ob.get_local_roles():
-            local_roles['user:'+k] = v
-        for k, v in ob.get_local_group_roles():
-            local_roles['group:'+k] = v
-        ppath = ob.getPhysicalPath()
-        info.update({'id': ob.getId(),
-                     'rpath': '/'.join(ppath[plen:]),
-                     'portal_type': ob.portal_type,
-                     'allowed_roles_and_users': allowed_roles_and_users,
-                     'local_roles': local_roles,
-                     })
-        return info
-
-    security.declarePrivate('makeTree')
-    def makeTree(self, ob):
-        """Recompute the tree starting from ob."""
-        urltool = getToolByName(self, 'portal_url')
-        plen = len(urltool.getPortalObject().getPhysicalPath())
-        rpath = urltool.getRelativeUrl(ob)
-        root = self.getRoot()
-        depth = rpath.count('/') - root.count('/')
-        self._makeTree(ob, depth, plen)
-
-    security.declarePrivate('_makeTree')
-    def _makeTree(self, ob, depth, plen):
-        """Recompute the tree starting from ob.
-
-        Recursive method.
+    security.declarePrivate('updateTree')
+    def updateTree(self, tree):
+        """Replay modifications to a ModificationTree.
         """
-        info = self.getNodeInfo(ob, plen)
-        subdepth = depth+1
-        children = []
-        for subob in ob.objectValues():
-            if self._isCandidate(subob, plen):
-                subrpath = self._makeTree(subob, subdepth, plen)
-                children.append(subrpath)
-        info['depth'] = depth
-        info['children'] = children
-        info['nb_children'] = len(children)
-        rpath = info['rpath']
-        self._infos[rpath] = info
-        return rpath
+        self._maybeUpgrade()
+        TreeCacheUpdater(self).updateTree(tree)
 
-    def updateNode(self, ob):
-        """Compute one node in the tree.
-
-        Keeps children info from previous node if available.
+    def _getModificationTree(self):
+        """Debugging: get the current modification tree.
         """
-        urltool = getToolByName(self, 'portal_url')
-        plen = len(urltool.getPortalObject().getPhysicalPath())
-        rpath = urltool.getRelativeUrl(ob)
-        old_info = self._infos.get(rpath)
-        info = self.getNodeInfo(ob, plen)
-        if old_info is not None:
-            info['depth'] = old_info['depth']
-            children = old_info['children']
-            info['children'] = children
-            info['nb_children'] = len(children)
-            self._infos[rpath] = info
-        else:
-            # Compute depth
-            root = self.getRoot()
-            depth = rpath.count('/') - root.count('/')
-            info['depth'] = depth
-            self._infos[rpath] = info
-            self.updateChildrenInfo(ob)
-
-    def updateChildrenInfo(self, ob):
-        """Recompute info about children of a node."""
-        urltool = getToolByName(self, 'portal_url')
-        plen = len(urltool.getPortalObject().getPhysicalPath())
-        rpath = urltool.getRelativeUrl(ob)
-        info = self._infos.get(rpath)
-        if info is None:
-            # Parent is outside of the tree
-            return
-        children = []
-        for subob in ob.objectValues():
-            if self._isCandidate(subob, plen):
-                subrpath = urltool.getRelativeUrl(subob)
-                children.append(subrpath)
-        info['children'] = children
-        info['nb_children'] = len(children)
-        self._infos[rpath] = info
-
-    def deleteNode(self, ob):
-        """Delete a node from the tree."""
-        urltool = getToolByName(self, 'portal_url')
-        rpath = urltool.getRelativeUrl(ob)
-
-        # Update parent's children list
-        parent = aq_parent(aq_inner(ob))
-        prpath = urltool.getRelativeUrl(parent)
-        parent_info = self._infos.get(prpath)
-        if parent_info is not None:
-            try:
-                parent_info['children'].remove(rpath)
-            except ValueError:
-                pass
-            else:
-                parent_info['nb_children'] -= 1
-                self._infos[prpath] = parent_info
-
-        # Remove object info
-        try:
-            del self._infos[rpath]
-        except KeyError:
-            pass
+        return get_treecache_manager()._getModificationTree(self)
 
     def _localize(self, info, locale_keys, locale):
         """Localize info attributes specified in locale_keys into the locale

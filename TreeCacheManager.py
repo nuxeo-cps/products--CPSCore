@@ -23,7 +23,6 @@ Asynchronous by default.
 """
 
 from zLOG import LOG, DEBUG
-from Acquisition import aq_base
 
 try:
     import transaction
@@ -39,6 +38,10 @@ from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.BaseManager import BaseManager
 from Products.CPSCore.TransactionManager import get_transaction_manager
 
+from Products.CPSCore.treemodification import TreeModification
+from Products.CPSCore.treemodification import printable_op
+
+
 _TXN_MGR_ATTRIBUTE = '_cps_tc_manager'
 
 # Just before the EventManager
@@ -52,33 +55,36 @@ class TreeCacheManager(BaseManager):
     def __init__(self, mgr):
         """Initialize and register this manager with the transaction manager
         """
-        BaseManager.__init__(self, mgr, order=_TXN_MGR_ORDER)
-        self._queue = {}
+        super(TreeCacheManager, self).__init__(mgr, order=_TXN_MGR_ORDER)
+        self.clear()
+        self._sync = False
 
-    def push(self, tree, event_type, ob, infos):
+    def clear(self):
+        self._trees = {} # modification tree for each cache
+        self._caches = {} # caches (keyed by tree path)
 
-        if infos is None:
-            infos = {}
+    def setSynchronous(self, sync):
+        if sync:
+            raise ValueError("Can't set TreeCacheManager synchronous")
 
-        if self.isSynchronous():
-            LOG("TreeCacheManager", DEBUG,
-                "rebuild cache %s for %s on %s with %s"
-                %(tree, ob, event_type, infos))
-            tree.notify_tree(event_type, ob, infos)
-            return
-
-        LOG("TreeCacheManager", DEBUG,
-            "queue object %s in cache %s for %s with %s"
-            % (ob, tree, event_type, infos))
-
-        # XXX : Here, we can optimize by dealing with the events on
-        # the same object
-        rpath = '/'.join(ob.getPhysicalPath())[1:]
-        i = (id(tree), id(aq_base(ob)), rpath, event_type)
-        if i not in self._queue:
-            self._queue[i] = (ob, tree, infos)
+    def push(self, cache, op, path, info):
+        """Push an operation for a tree cache.
+        """
+        LOG("TreeCacheManager", DEBUG, "cache %r: %s %s %r"
+            % (cache, printable_op(op), '/'.join(path), info))
+        cache_path = cache.getPhysicalPath()
+        if cache_path not in self._trees:
+            tree = TreeModification()
+            self._trees[cache_path] = tree
+            self._caches[cache_path] = cache
         else:
-            self._queue[i][2].update(infos)
+            tree = self._trees[cache_path]
+        tree.do(op, path, info)
+
+    def _getModificationTree(self, cache):
+        """Debugging: get the modification tree for a tree cache.
+        """
+        return self._trees[cache.getPhysicalPath()]
 
     def __call__(self):
         """Called when transaction commits.
@@ -88,13 +94,12 @@ class TreeCacheManager(BaseManager):
 
         LOG("TreeCacheManager", DEBUG, "__call__")
 
-        for k, v in self._queue.items():
-            LOG("TreeCacheManager", DEBUG,
-                "rebuild cache %s for %s on %s with %s"
-                %(v[1], v[0], k[3], v[2]))
-            v[1].notify_tree(k[3], v[0], v[2])
+        for cache_path, tree in self._trees.items():
+            cache = self._caches[cache_path]
+            LOG("TreeCacheManager", DEBUG, "replaying for cache %r")
+            cache.updateTree(tree)
 
-        self._queue = {}
+        self.clear()
 
         LOG("TreeCacheManager", DEBUG, "__call__ done")
 

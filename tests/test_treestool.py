@@ -27,17 +27,20 @@ from Acquisition import aq_parent, aq_inner
 from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
 from OFS.OrderedFolder import OrderedFolder
-
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
-
 from Products.CPSCore.TreesTool import TreesTool, TreeCache
+from Products.CPSCore.treemodification import ADD, REMOVE, MODIFY
 
 class DummyTreeCache(SimpleItem):
-    notified = 0
-    def notify_tree(self, event_type, ob, infos):
-        self.notified = self.notified + 1
-    def _isCandidate(self, ob, plen):
+    def __init__(self, id):
+        self.id = id
+        self.notified = 0
+    def updateTree(self, tree):
+        self.notified += len(tree)
+    def isCandidate(self, ob):
         return True
+    def getPhysicalPath(self):
+        return (self.getId(),)
 
 class DummyObject(OrderedFolder):
     portal_type = 'ThePortalType'
@@ -60,14 +63,18 @@ class DummyObject(OrderedFolder):
     def get_local_group_roles(self):
         return {}
 
+class DummyApp(Folder):
+    def __init__(self):
+        self.id = ''
+    def getPhysicalPath(self):
+        return ('',)
+    def getPhysicalRoot(self):
+        return self
+
 class DummyUrlTool(Folder):
     id = 'portal_url'
     def getPortalObject(self):
         return aq_parent(aq_inner(self))
-    def getRelativeUrl(self, ob):
-        pplen = len(self.getPortalObject().getPhysicalPath())
-        path = ob.getPhysicalPath()
-        return '/'.join(path[pplen:])
 
 class DummyMembershipTool(SimpleItem):
     def getAuthenticatedMember(self):
@@ -82,42 +89,32 @@ class DummyMember(SimpleItem):
 
 class TreesToolTest(unittest.TestCase):
 
-    def setUp(self):
-        # During setup and tests we want synchronous tree cache updates
-        from Products.CPSCore.TreeCacheManager import get_treecache_manager
-        from Products.CPSCore.TreeCacheManager import TreeCacheManager
-        TreeCacheManager.DEFAULT_SYNC = True # Monkey patch
-        get_treecache_manager().setSynchronous(True) # current transaction
-
     def test_propagated_events(self):
         # Test that suitable events are propagated to the caches
         tool = TreesTool()
         tool.portal_url = DummyUrlTool()
-        cache1 = DummyTreeCache()
-        cache2 = DummyTreeCache()
+        cache1 = DummyTreeCache('cache1')
+        cache2 = DummyTreeCache('cache2')
         tool._setObject('cache1', cache1)
         tool._setObject('cache2', cache2)
-        interesting = (
-            'sys_add_cmf_object',
-            'sys_del_object',
-            'sys_modify_object',
-            'sys_modify_security',
-            'sys_order_object',
-            'modify_object',
-            )
-        for event_type in interesting:
-            tool.notify_tree(event_type, DummyObject(), {})
-        self.assertEquals(cache1.notified, len(interesting))
-        self.assertEquals(cache2.notified, len(interesting))
-        cache1.notified = cache2.notified = 0
-        other = (
-            'foo',
-            'sys_add_something',
-            'sys_modify_your_hair',
-            'modify_car',
-            )
-        for event_type in other:
-            tool.notify_tree(event_type, DummyObject(), {})
+        tool.notify_tree('sys_add_cmf_object', DummyObject(path='a'))
+        tool.notify_tree('sys_del_object', DummyObject(path='b'))
+        tool.notify_tree('sys_modify_object', DummyObject(path='c'))
+        tool.notify_tree('sys_modify_security', DummyObject(path='d'))
+        tool.notify_tree('sys_order_object', DummyObject(path='e'))
+        tool.notify_tree('modify_object', DummyObject(path='f'))
+        self.assertEquals(cache1.notified, 0)
+        self.assertEquals(cache2.notified, 0)
+        tool.flushEvents()
+        self.assertEquals(cache1.notified, 6)
+        self.assertEquals(cache2.notified, 6)
+        cache1.notified = 0
+        cache2.notified = 0
+        tool.notify_tree('foo', DummyObject(path='a'))
+        tool.notify_tree('sys_add_something', DummyObject(path='b'))
+        tool.notify_tree('sys_modify_your_hair', DummyObject(path='c'))
+        tool.notify_tree('modify_car', DummyObject(path='d'))
+        tool.flushEvents()
         self.assertEquals(cache1.notified, 0)
         self.assertEquals(cache2.notified, 0)
 
@@ -125,7 +122,7 @@ class TreesToolTest(unittest.TestCase):
 class TreeCacheTest(SecurityRequestTest):
 
     def makeOne(self):
-        cache = TreeCache('treecache')
+        cache = TreeCache('cache')
         cache.manage_changeProperties(
             root='root/foo',
             type_names=('ThePortalType',),
@@ -136,43 +133,46 @@ class TreeCacheTest(SecurityRequestTest):
         return cache
 
     def test_isCandidate(self):
-        ppath = '/cmf'.split('/')
-        plen = len(ppath)
-        cache = self.makeOne()
+        app = DummyApp()
+        app.cmf = Folder('cmf')
+        app.cmf.acl_users = SimpleItem()
+        app.cmf.portal_url = DummyUrlTool()
+        app.cmf.cache = self.makeOne()
+        cache = app.cmf.cache
 
         ob = DummyObject(path='/cmf/root/foo')
-        self.assert_(cache._isCandidate(ob, plen))
+        self.assert_(cache.isCandidate(ob))
         ob = DummyObject(path='/cmf/root/foo/bar')
-        self.assert_(cache._isCandidate(ob, plen))
+        self.assert_(cache.isCandidate(ob))
         ob = DummyObject(path='/cmf/root/bar')
-        self.failIf(cache._isCandidate(ob, plen))
+        self.failIf(cache.isCandidate(ob))
         ob = DummyObject(path='/cmf/root/foobared')
-        self.failIf(cache._isCandidate(ob, plen))
+        self.failIf(cache.isCandidate(ob))
         # We'll never be notified outside of the portal anyway
         #ob = DummyObject(path='/moo/root/foo/bar')
-        #self.failIf(cache._isCandidate(ob, plen))
+        #self.failIf(cache.isCandidate(ob))
 
         ob = DummyObject(path='/cmf/root/foo')
         ob.portal_type = 'Ah'
-        self.failIf(cache._isCandidate(ob, plen))
+        self.failIf(cache.isCandidate(ob))
         ob = DummyObject(path='/cmf/root/foo')
         ob.meta_type = 'Hehe'
-        self.failIf(cache._isCandidate(ob, plen))
+        self.failIf(cache.isCandidate(ob))
 
         # Test excluded rpaths
         ob = DummyObject(path='/cmf/root/foo/members/me')
-        self.failIf(cache._isCandidate(ob, plen))
+        self.failIf(cache.isCandidate(ob))
         ob = DummyObject(path='/cmf/root/foo/members/me/sub/subsub')
-        self.failIf(cache._isCandidate(ob, plen))
+        self.failIf(cache.isCandidate(ob))
         ob = DummyObject(path='/cmf/root/foo/lots/stuff')
-        self.failIf(cache._isCandidate(ob, plen))
+        self.failIf(cache.isCandidate(ob))
         ob = DummyObject(path='/cmf/root/foo/membership')
-        self.assert_(cache._isCandidate(ob, plen))
+        self.assert_(cache.isCandidate(ob))
 
         # Test border cases
         cache.root = ''
         ob = DummyObject(path='/cmf/root/foo')
-        self.failIf(cache._isCandidate(ob, plen))
+        self.failIf(cache.isCandidate(ob))
 
     def test_getRoot(self):
         cache = self.makeOne()
@@ -189,24 +189,17 @@ class TreeCacheTest(SecurityRequestTest):
         self.assertEquals(cache.getRoot(), '')
 
     def makeInfrastructure(self):
-        app = Folder()
-        app._setId('')
-        self.app = app
-
+        self.app = DummyApp()
         # fake acl_users
-        app.acl_users = Folder()
-
-        cmf = Folder()
-        cmf._setId('cmf')
-        app.cmf = cmf
-        cmf = app.cmf # Wrap
-
+        self.app.acl_users = Folder()
+        self.app.cmf = Folder('cmf')
+        cmf = self.app.cmf
         cmf.portal_url = DummyUrlTool()
         cmf.portal_membership = DummyMembershipTool()
-
+        cmf.portal_trees = TreesTool()
         cache = self.makeOne()
-        cmf.cache = cache
-        cache = cmf.cache # Wrap
+        cmf.portal_trees._setObject('cache', cache)
+        cache = cmf.portal_trees.cache # Wrap
 
         cache.manage_changeProperties(info_method='info_method')
         def info_method(doc=None):
@@ -217,14 +210,13 @@ class TreeCacheTest(SecurityRequestTest):
 
         # Build root hierarchy
         cmf.root = DummyObject('root')
-        cmf.root.foo = DummyObject('foo', title='Foo')
-
+        cmf.root._setObject('foo', DummyObject('foo', title='Foo'))
 
     def test_rebuild(self):
         # Test rebuilding a tree
         self.makeInfrastructure()
         cmf = self.app.cmf
-        cache = cmf.cache
+        cache = cmf.portal_trees.cache
 
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
         cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
@@ -241,7 +233,7 @@ class TreeCacheTest(SecurityRequestTest):
         self.makeInfrastructure()
         cmf = self.app.cmf
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
-        cache = cmf.cache
+        cache = cmf.portal_trees.cache
 
         # Setup old data
         cache._tree = [] # dummy
@@ -265,16 +257,18 @@ class TreeCacheTest(SecurityRequestTest):
     def test_event_sys_add_cmf_object(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
-        cache = cmf.cache
+        tool = cmf.portal_trees
+        cache = tool.cache
 
         # Add root first
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals(l, [{
             'allowed_roles_and_users': ['Manager'],
             'depth': 0,
             'id': 'foo',
-            'local_roles': {},
+            'local_roles': {'user:Anonymous User': ('Owner',)},
             'nb_children': 0,
             'portal_type': 'ThePortalType',
             'rpath': 'root/foo',
@@ -286,7 +280,8 @@ class TreeCacheTest(SecurityRequestTest):
 
         # Add first child
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.bar)
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
@@ -299,7 +294,8 @@ class TreeCacheTest(SecurityRequestTest):
 
         # Add another
         cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.baz)
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar', 'root/foo/baz'])
@@ -311,9 +307,11 @@ class TreeCacheTest(SecurityRequestTest):
                           [2, 0, 0])
 
         # Check re-add existing one
+        tool.notify_tree('sys_del_object', cmf.root.foo.bar)
         cmf.root.foo._delObject('bar')
         cmf.root.foo._setObject('bar', DummyObject('bar', title='NewBar'))
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.bar)
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/baz', 'root/foo/bar'])
@@ -332,12 +330,14 @@ class TreeCacheTest(SecurityRequestTest):
     def test_event_sys_del_object(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
-        cache = cmf.cache
+        tool = cmf.portal_trees
+        cache = tool.cache
 
         # Add
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.bar)
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
@@ -345,31 +345,50 @@ class TreeCacheTest(SecurityRequestTest):
                           [1, 0])
 
         # Delete child
-        cache.notify_tree('sys_del_object', cmf.root.foo.bar, {})
+        tool.notify_tree('sys_del_object', cmf.root.foo.bar)
+        cmf.root.foo._delObject('bar')
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo'])
         self.assertEquals([d['nb_children'] for d in l],
                           [0])
-
         # Delete root itself
-        cache.notify_tree('sys_del_object', cmf.root.foo, {})
+        tool.notify_tree('sys_del_object', cmf.root.foo)
+        cmf.root._delObject('foo')
+        tool.flushEvents()
+        l = cache.getList(filter=False)
+        self.assertEquals(l, [])
+
+        # Now test deleting several objects at a time
+        cmf.root._setObject('foo', DummyObject('foo', title='Foo'))
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.bar)
+        tool.flushEvents()
+        # Delete root directly
+        tool.notify_tree('sys_del_object', cmf.root.foo.bar)
+        tool.notify_tree('sys_del_object', cmf.root.foo)
+        cmf.root._delObject('foo')
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals(l, [])
 
     def test_event_sys_order_object(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
-        cache = cmf.cache
+        tool = cmf.portal_trees
+        cache = tool.cache
 
         # Add
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.bar)
         cmf.root.foo.bar._setObject('b', DummyObject('b', title='B'))
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar.b, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.bar.b)
         cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.baz, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.baz)
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar', 'root/foo/bar/b',
@@ -377,7 +396,8 @@ class TreeCacheTest(SecurityRequestTest):
 
         # Reorder children
         cmf.root.foo.moveObjectsDown('bar')
-        cache.notify_tree('sys_order_object', cmf.root.foo, {})
+        tool.notify_tree('sys_order_object', cmf.root.foo)
+        tool.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/baz', 'root/foo/bar',
@@ -386,42 +406,49 @@ class TreeCacheTest(SecurityRequestTest):
     def test_event_sys_modify_security(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
-        cache = cmf.cache
+        tool = cmf.portal_trees
+        cache = tool.cache
 
         # Add
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
         prebar = DummyObject('bar', title='Bar')
         cmf.root.foo._setObject('bar', prebar)
         bar = cmf.root.foo.bar
-        cache.notify_tree('sys_add_cmf_object', bar, {})
+        tool.notify_tree('sys_add_cmf_object', bar)
+        cache.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
         self.assertEquals([d['allowed_roles_and_users'] for d in l],
                           [['Manager'], ['Manager']])
         self.assertEquals([d['local_roles'] for d in l],
-                          [{}, {'user:Anonymous User': ('Owner',)}])
+                          [{'user:Anonymous User': ('Owner',)},
+                           {'user:Anonymous User': ('Owner',)}])
 
         # Change security
         bar._View_Permission = ('SomeRole',)
         bar.__ac_local_roles__ = {'bob': ['SomeRole']}
-        cache.notify_tree('sys_modify_security', bar, {})
+        tool.notify_tree('sys_modify_security', bar)
+        cache.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['allowed_roles_and_users'] for d in l],
                           [['Manager'], ['SomeRole', 'user:bob']])
         self.assertEquals([d['local_roles'] for d in l],
-                          [{}, {'user:bob': ('SomeRole',)}])
+                          [{'user:Anonymous User': ('Owner',)},
+                           {'user:bob': ('SomeRole',)}])
 
 
     def test_event_modify_object(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
-        cache = cmf.cache
+        tool = cmf.portal_trees
+        cache = tool.cache
 
         # Add
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
         cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
-        cache.notify_tree('sys_add_cmf_object', cmf.root.foo.bar, {})
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.bar)
+        cache.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
@@ -431,7 +458,8 @@ class TreeCacheTest(SecurityRequestTest):
         # Change
         cmf.root.foo._delObject('bar')
         cmf.root.foo._setObject('bar', DummyObject('bar', title='NewBar'))
-        cache.notify_tree('modify_object', cmf.root.foo.bar, {})
+        tool.notify_tree('modify_object', cmf.root.foo.bar)
+        cache.flushEvents()
         l = cache.getList(filter=False)
         self.assertEquals([d['title'] for d in l],
                           ['Foo', 'NewBar'])
@@ -450,7 +478,8 @@ class TreeCacheTest(SecurityRequestTest):
     def makeDeepStructure(self):
         self.makeInfrastructure()
         cmf = self.app.cmf
-        cache = cmf.cache
+        tool = cmf.portal_trees
+        cache = tool.cache
 
         # Build structure
         foo = cmf.root.foo
@@ -478,13 +507,14 @@ class TreeCacheTest(SecurityRequestTest):
                    foo.bar.b.d.d2,
                    foo.bar.b.d.d1,
                    ):
-            cache.notify_tree('sys_add_cmf_object', ob, {})
+            tool.notify_tree('sys_add_cmf_object', ob)
 
         return cache
 
     def test_deep_no_filtering(self):
         # Without visibility filtering
         cache = self.makeDeepStructure()
+        cache.flushEvents()
 
         # without children
         l = cache.getList(filter=False, order=False, count_children=False)
@@ -572,6 +602,7 @@ class TreeCacheTest(SecurityRequestTest):
     def test_deep_with_filtering(self):
         # With visibility filtering, not visible starting from d
         cache = self.makeDeepStructure()
+        cache.flushEvents()
 
         # without children
         l = cache.getList(filter=True, order=False, count_children=False)
@@ -630,7 +661,31 @@ class TreeCacheTest(SecurityRequestTest):
                            ('root/foo/baz',   0),
                            ])
 
+    def test_compression_1(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        tool = cmf.portal_trees
+        cache = tool.cache
+        # Add hierarchical objects
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo.bar)
+        tree = cache._getModificationTree()
+        self.assertEquals(list(tree.get()),
+                          [(ADD, ('', 'cmf', 'root', 'foo'), {})])
 
+    def test_compression_2(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        tool = cmf.portal_trees
+        cache = tool.cache
+        # Del in the middle
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
+        tool.notify_tree('sys_del_object', cmf.root.foo)
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
+        tree = cache._getModificationTree()
+        self.assertEquals(list(tree.get()),
+                          [(ADD, ('', 'cmf', 'root', 'foo'), {})])
 
 
 def test_suite():

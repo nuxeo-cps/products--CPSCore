@@ -25,7 +25,7 @@ Provides a base class for before commit hooks definitions
 
 from Products.CPSCore.interfaces import IBaseManager
 
-class BaseManager:
+class BaseManager(object):
     """Base Manager definition
     """
 

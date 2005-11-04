@@ -28,220 +28,70 @@ from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.TreeCacheManager import TreeCacheManager
 from Products.CPSCore.TreeCacheManager import get_treecache_manager
 
+from Products.CPSCore.treemodification import ADD
+
+
 try:
     import transaction
 except ImportError: # BBB: for Zope 2.7
     from Products.CMFCore.utils import transaction
 
 
-class FakeTransaction:
-    def addBeforeCommitHook(self, hook):
-        pass
-
 class FakeTransactionManager:
     def addBeforeCommitHook(self, hook, order):
         pass
 
-class FakeRoot:
-    __objects__ = {}
-
-    def generateId(self):
-        id = random.randrange(1000000)
-        while id in self.__objects__.keys():
-            id = random.randrange(1000000)
-        return id
-
-    def unrestrictedTraverse(self, path, default):
-        dummy, id = path
-        assert dummy == ''
-        return self.getDummy(int(id))
-
-    def addDummy(self, cls=None):
-        id = self.generateId()
-        if cls is None:
-            cls = Dummy
-        ob = cls(id)
-        self.__objects__[id] = ob
-        return ob
-
-    def getDummy(self, id):
-        return self.__objects__.get(id)
-
-    def clear(self):
-        self.__objects__ = {}
-
-root = FakeRoot()
-
-class Dummy:
-    def __init__(self, id):
-        self.id = id
-        self.log = []
-
-    def getLog(self):
-        # get and clear log
-        log = self.log
-        self.log = []
-        return log
-
-    def getPhysicalRoot(self):
-        return root
-
-    def getPhysicalPath(self):
-        return ('', str(self.id))
-
 class DummyTreeCache(SimpleItem):
     notified = 0
-    def notify_tree(self, event_type, ob, infos):
-        self.notified = self.notified + 1
-    def _isCandidate(self, ob, plen):
-        return True
+    def updateTree(self, tree):
+        self.notified += 1
 
 
 class TreeCacheManagerTest(unittest.TestCase):
-
-    def get_stuff(self):
-        return (TreeCacheManager(FakeTransactionManager()),
-                root.addDummy(),
-                DummyTreeCache())
 
     def test_z2interfaces(self):
         from Interface.Verify import verifyClass
         verifyClass(IBaseManager, TreeCacheManager)
 
     def test_simple(self):
-        mgr, dummy, tree = self.get_stuff()
+        mgr = TreeCacheManager(FakeTransactionManager())
+        cache = DummyTreeCache()
 
         # Push it, reindexation not done yet.
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 0)
+        mgr.push(cache, ADD, ('abc',), None)
+        mgr.push(cache, ADD, ('def',), None)
+        mgr.push(cache, ADD, ('ghi',), None)
+        self.assertEquals(cache.notified, 0)
 
         # Manager is called (by commit), check notification
         mgr()
-        self.assertEquals(tree.notified, 1)
+        self.assertEquals(cache.notified, 1)
 
-        # Object is gone from queue after that.
+        # Nothing left after that
         mgr()
-        self.assertEquals(mgr._queue, {})
+        self.assertEquals(mgr._trees, {})
 
-        root.clear()
-
-    def test_several_times_1(self):
-        mgr, dummy, tree = self.get_stuff()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 0)
-        mgr()
-        self.assertEquals(tree.notified, 1)
-        root.clear()
-
-    def test_several_times_2(self):
-        mgr, dummy, tree = self.get_stuff()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {'foo':'bar'})
-        self.assertEquals(tree.notified, 0)
-        mgr()
-        self.assertEquals(tree.notified, 1)
-        root.clear()
-
-    def test_several_times_3(self):
-        mgr, dummy, tree = self.get_stuff()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {'foo':'bar'})
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 0)
-        mgr()
-        self.assertEquals(tree.notified, 1)
-        root.clear()
-
-    def test_several_times_4(self):
-        mgr, dummy, tree = self.get_stuff()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {'foo':'bar'})
-        mgr.push(tree, 'sys_add_cmf_object', dummy, None)
-        self.assertEquals(tree.notified, 0)
-        mgr()
-        self.assertEquals(tree.notified, 1)
-        root.clear()
-
-    def test_several_times_5(self):
-        mgr, dummy,tree = self.get_stuff()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, None)
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {'foo':'bar'})
-        self.assertEquals(tree.notified, 0)
-        mgr()
-        self.assertEquals(tree.notified, 1)
-        root.clear()
-
-    def test_several_times_6(self):
-        mgr, dummy,tree = self.get_stuff()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, None)
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 0)
-        mgr()
-        self.assertEquals(tree.notified, 1)
-        root.clear()
-
-    def test_several_times_7(self):
-        mgr, dummy,tree = self.get_stuff()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        mgr.push(tree, 'sys_add_cmf_object', dummy, None)
-        self.assertEquals(tree.notified, 0)
-        mgr()
-        self.assertEquals(tree.notified, 1)
-        root.clear()
-
-    def test_several_events_1(self):
-        # XXX : this is supposed to break when the optimizations will be done.
-        # This is what I expect.
-        mgr, dummy, tree = self.get_stuff()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        mgr.push(tree, 'sys_del_object', dummy, {})
-        self.assertEquals(tree.notified, 0)
-        mgr()
-        self.assertEquals(tree.notified, 2)
-        root.clear()
-
-    def test_synchronous(self):
-        mgr, dummy, tree = self.get_stuff()
-        self.assertEquals(tree.notified, 0)
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 0)
-        mgr.setSynchronous(True)
-        self.assertEquals(tree.notified, 1)
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 2)
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 3)
-        mgr.setSynchronous(False)
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 3)
-        mgr()
-        self.assertEquals(tree.notified, 4)
-        root.clear()
 
 class TreeCacheManagerIntegrationTest(unittest.TestCase):
-
     # These really test the beforeCommitHook
 
     def test_transaction(self):
         transaction.begin()
         mgr = get_treecache_manager()
-        tree = DummyTreeCache()
-        dummy = root.addDummy()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 0)
+        cache = DummyTreeCache()
+        mgr.push(cache, ADD, ('abc',), None)
+        self.assertEquals(cache.notified, 0)
         transaction.commit()
-        self.assertEquals(tree.notified, 1)
-        root.clear()
+        self.assertEquals(cache.notified, 1)
 
     def test_transaction_aborting(self):
         transaction.begin()
         mgr = get_treecache_manager()
-        tree = DummyTreeCache()
-        dummy = root.addDummy()
-        mgr.push(tree, 'sys_add_cmf_object', dummy, {})
-        self.assertEquals(tree.notified, 0)
+        cache = DummyTreeCache()
+        mgr.push(cache, ADD, ('abc',), None)
+        self.assertEquals(cache.notified, 0)
         transaction.abort()
-        self.assertEquals(tree.notified, 0)
-        root.clear()
+        self.assertEquals(cache.notified, 0)
 
 def test_suite():
     return unittest.TestSuite((
