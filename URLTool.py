@@ -86,7 +86,10 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
 
     security.declarePublic("getBaseUrl")
     def getBaseUrl(self):
-        """Get base url for the portal; handles virtual hosting
+        """Get base url for the portal; handles virtual hosting.
+
+        Beware that this method does not actually return an URL (that starts
+        with http:// for example) but a path.
         """
         portal = self.getPortalObject()
         base_url = portal.absolute_url_path()
