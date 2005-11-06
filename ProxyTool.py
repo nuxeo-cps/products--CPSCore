@@ -666,6 +666,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if final_type_name is None:
             final_type_name = type_name
         ob._setPortalTypeName(final_type_name)
+        # Send a creation event with the correct portal_type set
+        evtool = getToolByName(self, 'portal_eventservice')
+        evtool.notify('sys_add_object', ob, {})
         # Object has been constructed without indexing, index it now.
         ob.reindexObject()
         return ob
@@ -679,6 +682,12 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """Add knowledge about a new proxy.
 
         Maintains internal indexes.
+
+        We have to be flexible about receiving several adds for the same
+        rpath. Because when a proxy is initially created it is without a
+        portal_type, and after the portal_type is really set we have to
+        send another sys_add_object so that subscribers caring about the
+        portal_type see it created.
         """
         docid = proxy.getDocid()
         language_revs = proxy.getLanguageRevisions()
@@ -687,11 +696,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         if rpath not in rpaths:
             rpaths = rpaths + (rpath,)
             self._docid_to_rpaths[docid] = rpaths
-        else:
-            LOG('ProxyTool', ERROR,
-                'Index _docid_to_rpaths for %s already has rpath=%s: %s'
-                % (docid, rpath, rpaths))
-            raise ValueError, rpath
 
         self._rpath_to_infos[rpath] = (docid, language_revs)
 
@@ -704,11 +708,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             if rpath not in rpaths:
                 rpaths = rpaths + (rpath,)
                 self._docid_rev_to_rpaths[key] = rpaths
-            else:
-                LOG('ProxyTool', ERROR,
-                    'Index _docid_rev_to_rpaths for %s already has '
-                    'rpath=%s: %s' % (key, rpath, rpaths))
-                raise ValueError, rpath
 
 
     security.declarePrivate('_delProxy')

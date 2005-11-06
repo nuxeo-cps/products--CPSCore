@@ -247,40 +247,35 @@ class ProxyToolTest(ZopeTestCase, LogInterceptor):
         ptool = self.root.portal_proxies
         self.assertEqual(ptool.listProxies(), [])
 
-        proxy1 = ProxyBase(language_revs={'en': 78})
-        proxy2 = ProxyBase(language_revs={'fr': 90})
+        proxy1 = ProxyBase(1357, language_revs={'en': 78})
+        proxy2 = ProxyBase(1357, language_revs={'fr': 90})
 
-        ptool._addProxy(proxy1, '123')
+        ptool._addProxy(proxy1, '/foo')
         self.assertEquals(ptool.listProxies(),
-            [('123', (None, {'en': 78}))])
+            [('/foo', (1357, {'en': 78}))])
 
-        # Check that we can't add two proxies with same id
-        from zLOG import ERROR
-        self._catch_log_errors(ERROR)
-        self.logged = None
-        self.assertRaises(ValueError, ptool._addProxy, proxy2, '123')
-        self.assert_(self.logged)
-        self._ignore_log_errors()
+        # We can re-add the same docid at the same path,
+        # to be flexible about events sent.
+        ptool._addProxy(proxy1, '/foo')
 
         # No side effects
         self.assertEquals(ptool.listProxies(),
-            [('123', (None, {'en': 78}))])
+            [('/foo', (1357, {'en': 78}))])
 
-        ptool._addProxy(proxy2, '456')
+        ptool._addProxy(proxy2, '/bar')
         items = ptool.listProxies()
         items.sort()
-        self.assertEquals(items,
-            [('123', (None, {'en': 78})), ('456', (None, {'fr': 90})),]
-        )
+        self.assertEquals(items, [('/bar', (1357, {'fr': 90})),
+                                  ('/foo', (1357, {'en': 78}))])
 
-        ptool._delProxy('456')
+        ptool._delProxy('/bar')
         self.assertEquals(ptool.listProxies(),
-            [('123', (None, {'en': 78}))])
+            [('/foo', (1357, {'en': 78}))])
 
-        ptool._modifyProxy(proxy2, '123')
+        ptool._modifyProxy(proxy2, '/foo')
         self.assertEquals(ptool.listProxies(),
-            [('123', (None, {'fr': 90}))])
-        ptool._delProxy('123')
+            [('/foo', (1357, {'fr': 90}))])
+        ptool._delProxy('/foo')
         self.assertEquals(len(ptool.listProxies()), 0)
 
     def testBestRevision(self):
@@ -289,15 +284,10 @@ class ProxyToolTest(ZopeTestCase, LogInterceptor):
         def absolute_url():
             return "fake path"
         proxy.absolute_url = absolute_url
-        ptool._addProxy(proxy, '456')
+        ptool._addProxy(proxy, '/foo')
         self.assertEquals(ptool.getBestRevision(proxy), ('en', 78))
         self.assertEquals(ptool.getBestRevision(proxy, 'en'), ('en', 78))
         self.assertEquals(ptool.getBestRevision(proxy, 'fr'), ('fr', 33))
-
-    # XXX what about this?
-        #self.assertEqual(ptool.getMatchedObject(123), 'ob_456_78')
-        #self.assertEqual(ptool.getMatchedObject(123, 'en'), 'ob_456_78')
-        #self.assertEqual(ptool.getMatchedObject(123, 'fr'), 'ob_456_33')
 
     def test_getProxyInfosFromDocid(self):
         ptool = self.root.portal_proxies
