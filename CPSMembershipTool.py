@@ -390,11 +390,6 @@ class CPSMembershipTool(MembershipTool):
                                              list(self.memberfolder_roles))
             member_area.reindexObjectSecurity()
 
-            # Rebuild the tree with corrected local roles.
-            # This needs a user that can View the object.
-            portal_eventservice = getToolByName(self, 'portal_eventservice')
-            portal_eventservice.notify('sys_modify_security', member_area, {})
-
             self._createMemberContentAsManager(member, member_id, member_area)
 
         finally:
