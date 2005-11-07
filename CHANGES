@@ -6,14 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Fix 3.3.5->3.3.6 upgrade catalog for Zope-2.7.x
-- #1059 (wrong security assertion for getCPSCandidateLocalRoles)
-- #429: copy_submit leaves pasted objects without any associated workflows
-- #802: allowed QueryParserError from TextIndexNG2
-- #1005: forbid mix workspace and sections
-- #1029: Fixed TreeCache after an id change
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- The TreeCache implementation has been rethought completely. New algorithms
-  and datastructures are used, and the updates are always delayed to the
-  end of the transaction.
+-
