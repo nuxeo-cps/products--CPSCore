@@ -687,6 +687,34 @@ class TreeCacheTest(SecurityRequestTest):
         self.assertEquals(list(tree.get()),
                           [(ADD, ('', 'cmf', 'root', 'foo'), {})])
 
+    def test_del_several_children(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        tool = cmf.portal_trees
+        cache = tool.cache
+        cache.manage_changeProperties(root='root')
+        root = cmf.root
+        # Build specific hierarchy that caused problems
+        root.foo._setObject('blob', DummyObject('blob'))
+        root.foo.blob._setObject('go', DummyObject('go'))
+        root._setObject('zzz', DummyObject('zzz'))
+        tool.notify_tree('sys_add_cmf_object', root)
+        cache.flushEvents()
+        l = cache.getList(filter=False, order=False)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root',
+                           'root/foo',
+                           'root/foo/blob',
+                           'root/foo/blob/go',
+                           'root/zzz'])
+
+        # Delete specific child which has several subchildren
+        tool.notify_tree('sys_del_object', root.foo)
+        root._delObject('foo')
+        tool.flushEvents()
+        l = cache.getList(filter=False, order=False)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root', 'root/zzz'])
 
 def test_suite():
     return unittest.TestSuite((

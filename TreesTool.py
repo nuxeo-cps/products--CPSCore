@@ -336,7 +336,7 @@ class TreeCacheUpdater(object):
         """Delete all nodes at or under a given physical path.
         """
         rpath = self.getRpathFromPath(path)
-        for key in self.infos.keys(rpath+'/', rpath+'/\xFF'):
+        for key in list(self.infos.keys(rpath+'/', rpath+'/\xFF')):
             del self.infos[key]
         if rpath in self.infos:
             del self.infos[rpath]
