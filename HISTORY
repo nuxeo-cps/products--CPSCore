@@ -1,4 +1,21 @@
 *******************************************
+** CPSCore V3.30.1 [R1 build 2005/11/08-16:52 by fguillaume]
+** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 29274
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Fixed bug in trees tool when deleting objects where data got mixed up
+  in the cache.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.30.0 [R1 build 2005/11/07-15:13 by fguillaume]
 ** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 29055
 Requires:

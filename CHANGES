@@ -6,8 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Fixed bug in trees tool when deleting objects where data got mixed up
-  in the cache.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
