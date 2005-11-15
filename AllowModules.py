@@ -41,7 +41,8 @@ ModuleSecurityInfo('types').declarePublic('IntType', 'StringType',
                                           'ListType', 'DictType',
                                           'TupleType')
 ModuleSecurityInfo('DateTime.DateTime').declarePublic('DateTimeError')
-ModuleSecurityInfo('Products.CPSCore.utils').declarePublic('resetSessionLanguageSelection')
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+        'resetSessionLanguageSelection')
 ModuleSecurityInfo(
     'Products.CMFCore.WorkflowCore').declarePublic('WorkflowException')
 
