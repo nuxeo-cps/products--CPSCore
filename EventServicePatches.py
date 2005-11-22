@@ -113,14 +113,20 @@ for class_ in (Item, ObjectManager, CMFCatalogAware):
     patch_action(class_, manage_beforeDelete)
 
 # Special fix for CMFDefault.File and Image:
+# These classes inherit both from Item and CMFCatalogAware
 from Products.CMFCore.PortalContent import PortalContent
 from Products.CMFDefault.File import File
 from Products.CMFDefault.Image import Image
+def File_manage_afterAdd(self, item, container):
+    """Both of my parents have an afterAdd method"""
+    PortalContent._cps_old_manage_afterAdd(self, item, container)
 def File_manage_beforeDelete(self, item, container):
     """Both of my parents have a beforeDelete method"""
     PortalContent._cps_old_manage_beforeDelete(self, item, container)
 # We don't use patch_action because we specifically do not want to
 # set or call _cps_old_<action>
+File.manage_afterAdd = File_manage_afterAdd
+Image.manage_afterAdd = File_manage_afterAdd
 File.manage_beforeDelete = File_manage_beforeDelete
 Image.manage_beforeDelete = File_manage_beforeDelete
 

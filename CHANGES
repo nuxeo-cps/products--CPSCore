@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Fixed CMF File and Image indexing. This gets rid of the "unsuccessfully
+  attempted to uncatalog an object" messages.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
