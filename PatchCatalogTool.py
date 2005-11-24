@@ -157,7 +157,7 @@ class IndexableObjectWrapper:
         if proxy_language is None:
             return ALL_LOCALES
         languages = [proxy_language]
-        if not hasattr(ob, 'isDefaultLanguage') or ob.isDefaultLanguage():
+        if ob.getDefaultLanguage() == proxy_language:
             languages.extend([lang for lang in ALL_LOCALES
                               if lang not in ob.getProxyLanguages()])
         return languages
