@@ -29,12 +29,11 @@ from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 from Products.CMFCore.utils import getToolByName, _getAuthenticatedUser, \
      _checkPermission
 from Products.CMFCore.permissions import AccessInactivePortalContent
-
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject, \
      getAllowedRolesAndUsersOfUser
-from Products.CPSCore.ProxyBase import ProxyBase, KEYWORD_SWITCH_LANGUAGE, \
+from Products.CPSCore.utils import KEYWORD_SWITCH_LANGUAGE, \
      KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY, ALL_LOCALS
-from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
+from Products.CPSCore.ProxyBase import ProxyBase
 
 
 # We're monkey patching CMFCatalogAware here because it's
