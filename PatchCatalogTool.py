@@ -363,13 +363,5 @@ LOG('PatchCatalogTool', TRACE,
     "Patching CMF CatalogTool.searchResults and __call__")
 
 
-### TopicIndex.clear patch
-def topicindex_clear(self):
-    """Fixing cmf method that remove all filter."""
-    for fid, filteredSet in self.filteredSets.items():
-        filteredSet.clear()
-TopicIndex.clear = topicindex_clear
-LOG('PatchCatalogTool', TRACE, "Patching Zope TopicIndex.clear method")
-
 
 
