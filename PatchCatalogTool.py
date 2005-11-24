@@ -122,7 +122,6 @@ class IndexableObjectWrapper:
     def container_path(self):
         """This is used to produce an index
         return the parent full path."""
-        # XXX what should we return for viewLanguage paths?
         return '/'.join(self.__ob.getPhysicalPath()[:-1])
 
     def relative_path(self):
