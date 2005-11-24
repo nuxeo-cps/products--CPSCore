@@ -51,6 +51,8 @@ KEYWORD_VIEW_LANGUAGE = 'viewLanguage'
 KEYWORD_VIEW_ZIP = 'viewZip'
 SESSION_LANGUAGE_KEY = 'CPS_SWITCH_LANGUAGE'
 REQUEST_LANGUAGE_KEY = 'CPS_VIEW_LANGUAGE'
+ALL_LOCALS = ['fr', 'en', 'de', 'es', 'it', 'nl', 'pt',
+              'pt_BR', 'mg', 'ro', 'eu', 'ca', 'fi']
 
 
 # Safe hasattr that doesn't catch unwanted exceptions and checks on base.

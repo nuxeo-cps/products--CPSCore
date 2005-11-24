@@ -19,7 +19,7 @@
 """
 from zLOG import LOG, DEBUG, INFO, TRACE
 from types import TupleType, ListType
-from Acquisition import aq_base
+from Acquisition import aq_base, aq_parent, aq_inner
 from DateTime.DateTime import DateTime
 from Products.ZCatalog.ZCatalog import ZCatalog
 from Products.CMFCore.interfaces.portal_catalog import \
@@ -33,7 +33,7 @@ from Products.CMFCore.permissions import AccessInactivePortalContent
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject, \
      getAllowedRolesAndUsersOfUser
 from Products.CPSCore.ProxyBase import ProxyBase, KEYWORD_SWITCH_LANGUAGE, \
-     KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY
+     KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY, ALL_LOCALS
 from Products.PluginIndexes.TopicIndex.TopicIndex import TopicIndex
 
 
@@ -143,6 +143,26 @@ class IndexableObjectWrapper:
         if rpath:
             ret = rpath.count('/')+1
         return ret
+
+    def position_in_container(self):
+        """Return the object position in the container."""
+        ob = self.__ob
+        container = aq_parent(aq_inner(ob))
+        if hasattr(container, 'getObjectPosition'):
+            return container.getObjectPosition(ob.getId())
+        return 0
+
+    def match_languages(self):
+        """Return a list of languages that the proxy matches."""
+        ob = self.__ob
+        proxy_language = self.__lang
+        if proxy_language is None:
+            return ALL_LOCALS
+        languages = [proxy_language]
+        if not hasattr(ob, 'isDefaultLanguage') or ob.isDefaultLanguage():
+            languages.extend([lang for lang in ALL_LOCALS
+                              if lang not in ob.getProxyLanguages()])
+        return languages
 
 
 ### Patching CatalogTool methods
