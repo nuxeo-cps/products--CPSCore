@@ -32,7 +32,7 @@ from Products.CMFCore.permissions import AccessInactivePortalContent
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject, \
      getAllowedRolesAndUsersOfUser
 from Products.CPSCore.utils import KEYWORD_SWITCH_LANGUAGE, \
-     KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY, ALL_LOCALS
+     KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY, ALL_LOCALES
 from Products.CPSCore.ProxyBase import ProxyBase
 
 
@@ -155,10 +155,10 @@ class IndexableObjectWrapper:
         ob = self.__ob
         proxy_language = self.__lang
         if proxy_language is None:
-            return ALL_LOCALS
+            return ALL_LOCALES
         languages = [proxy_language]
         if not hasattr(ob, 'isDefaultLanguage') or ob.isDefaultLanguage():
-            languages.extend([lang for lang in ALL_LOCALS
+            languages.extend([lang for lang in ALL_LOCALES
                               if lang not in ob.getProxyLanguages()])
         return languages
 
