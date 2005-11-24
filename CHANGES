@@ -10,4 +10,5 @@ Bug fixes:
   attempted to uncatalog an object" messages.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- PatchCatalogTool new wrapper index position_in_container and match_languages
+  used by getCatalogFolderContents
