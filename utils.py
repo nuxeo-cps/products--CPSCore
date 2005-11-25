@@ -51,8 +51,15 @@ KEYWORD_VIEW_LANGUAGE = 'viewLanguage'
 KEYWORD_VIEW_ZIP = 'viewZip'
 SESSION_LANGUAGE_KEY = 'CPS_SWITCH_LANGUAGE'
 REQUEST_LANGUAGE_KEY = 'CPS_VIEW_LANGUAGE'
-ALL_LOCALES = ['fr', 'en', 'de', 'es', 'it', 'nl', 'pt',
-               'pt_BR', 'mg', 'ro', 'eu', 'ca', 'fi']
+ALL_LOCALES = ['ae', 'am', 'ar', 'at', 'az', 'be', 'bg', 'bh', 'br',
+               'by', 'ca', 'ch', 'cu', 'cz', 'de', 'dj', 'dk', 'dz',
+               'ee', 'eg', 'en', 'es', 'eu', 'fi', 'fr', 'ge', 'gr',
+               'hr', 'hu', 'il', 'iq', 'is', 'it', 'jo', 'jp', 'km',
+               'kw', 'la', 'lb', 'lt', 'ly', 'ma', 'mg', 'mk', 'mx',
+               'nl', 'no', 'om', 'pl', 'ps', 'pt', 'pt_BR', 'qa', 'qc',
+               'ro', 'ru', 'sa', 'si', 'sk', 'so', 'su', 'sv', 'sy',
+               'th', 'tn', 'tr', 'ua', 'uk', 'un', 'us', 'uy', 'vn',
+               'ye', 'yu']
 
 
 # Safe hasattr that doesn't catch unwanted exceptions and checks on base.
