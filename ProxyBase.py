@@ -529,6 +529,19 @@ class ProxyBase(Base):
         else:
             return 1
 
+    security.declareProtected(View, 'isCPSFolderish')
+    def isCPSFolderish(self):
+        """Return True if the document is a structural folderish."""
+        if not self.isPrincipiaFolderish:
+            # structural document must be folderish
+            return False
+        ttool = getToolByName(self, 'portal_types')
+        if getattr(ttool[self.portal_type],
+                   'cps_display_as_document_in_listing', False):
+            # this folderish document is not structural
+            return False
+        return True
+
     #
     # Revision management
     #
@@ -1230,6 +1243,11 @@ class NotAProxy:
     def isProxyArchived(self):
         """Is the proxy archived."""
         return 0
+
+    def isCPSFolderish(self):
+        """Return True if the document is a structural folderish."""
+        return self.isPrincipiaFolderish
+
 
 InitializeClass(NotAProxy)
 
