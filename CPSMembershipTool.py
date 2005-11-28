@@ -125,12 +125,12 @@ class CPSMembershipTool(MembershipTool):
 
     security = ClassSecurityInfo()
 
-    security.declarePublic('canMemberChangeLocalRoles')    
+    security.declarePublic('canMemberChangeLocalRoles')
     def canMemberChangeLocalRoles(self, context):
         """Can the authenticated member change the local roles
         """
         user = getSecurityManager().getUser()
-        return (user.has_role('Manager') or 
+        return (user.has_role('Manager') or
                 user.has_role(self.roles_managing_local_roles, context))
 
     security.declareProtected(View, 'getMergedLocalRoles')
@@ -433,10 +433,19 @@ class CPSMembershipTool(MembershipTool):
 
     security.declarePublic('isHomeless')
     def isHomeless(self, member=None):
-        """Return 1 if member have no home using homeless attribute."""
+        """Return 1 if member have no home using homeless attribute.
+
+        Anonymous users and users registered above CPS level are homeless.
+        """
         ret = 0
         if member is None:
             member = self.getAuthenticatedMember()
+        if member.getUserName() == "Anonymous User":
+            return 1
+        # users registered above the portal level are homeless
+        member_acl_users = aq_parent(aq_inner(member.getUser()))
+        if aq_base(member_acl_users) is not aq_base(self.acl_users):
+            return 1
 
         if hasattr(member, 'getProperty'):
             ret = member.getProperty('homeless', 0)

@@ -12,5 +12,6 @@ New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - PatchCatalogTool new wrapper index position_in_container and match_languages
   used by getCatalogFolderContents.
-- new Proxy method isCPSFolderish to filter documents in the navigation 
+- new Proxy method isCPSFolderish to filter documents in the navigation
   or listing representation.
+- Zope level users and anonymous users are explicitely homeless
