@@ -17,7 +17,7 @@
 # $Id$
 """Patch CMF CatalogTool
 """
-from zLOG import LOG, DEBUG, INFO, TRACE
+from zLOG import LOG, DEBUG, INFO, TRACE, WARNING
 from types import TupleType, ListType
 from Acquisition import aq_base, aq_parent, aq_inner
 from DateTime.DateTime import DateTime
@@ -147,7 +147,13 @@ class IndexableObjectWrapper:
         ob = self.__ob
         container = aq_parent(aq_inner(ob))
         if hasattr(container, 'getObjectPosition'):
-            return container.getObjectPosition(ob.getId())
+            try:
+                return container.getObjectPosition(ob.getId())
+            except ValueError, err:
+                # Trying to index a doc before it is created ?
+                LOG('position_in_container', WARNING,
+                    'got a Value Error %s' % err)
+                return 0
         return 0
 
     def match_languages(self):
