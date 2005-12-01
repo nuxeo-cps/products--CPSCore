@@ -26,11 +26,6 @@ import Products.CPSCompat
 # Monkey patching starts here
 #
 
-# Remove the overflow pb when using a DateIndex for expires
-from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
-from DateTime.DateTime import DateTime
-DefaultDublinCoreImpl._DefaultDublinCoreImpl__CEILING_DATE = DateTime(3000, 0)
-
 import utils # To quickly force the patching of localroles.
 
 from Products.CMFCore import utils as cmfutils
@@ -40,8 +35,6 @@ from Products.CMFCore.permissions import AddPortalContent, ManagePortal
 import AllowModules
 
 # Patches
-import PatchBTreeFolder2
-import PatchCMFDefault
 import PatchCMFCore
 import CopyrightPatch
 
