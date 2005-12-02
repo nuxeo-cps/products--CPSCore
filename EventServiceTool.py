@@ -31,6 +31,7 @@ from zLOG import LOG, ERROR, DEBUG
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner, aq_base
 from AccessControl import ClassSecurityInfo
+from AccessControl import ModuleSecurityInfo
 from AccessControl import Unauthorized
 from AccessControl.Permissions import manage_properties
 from ZODB.POSException import ConflictError
@@ -55,8 +56,23 @@ fake_event_service = FakeEventService()
 
 def getEventService(context):
     """Return the event service relative to context."""
-    # XXX Maybe cache it in REQUEST for improved speed?
     return getToolByName(context, 'portal_eventservice', fake_event_service)
+
+class PublicEventService(object):
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+    security.setDefaultAccess('allow')
+    def __init__(self, context):
+        self.context = context
+    def notifyEvent(self, event_type, ob, infos):
+        evtool = getEventService(self.context)
+        return evtool.notifyEvent(event_type, ob, infos)
+InitializeClass(PublicEventService)
+
+ModuleSecurityInfo('Products.CPSCore.EventServiceTool').declarePublic(
+    'getPublicEventService')
+def getPublicEventService(context):
+    return PublicEventService(context)
 
 
 class SubscriberDef(SimpleItemWithProperties):
