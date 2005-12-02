@@ -37,6 +37,7 @@ ZopeTestCase.installProduct('ZCTextIndex')
 from OFS.Folder import Folder
 from OFS.SimpleItem import SimpleItem
 from Products.CPSCore.IndexationManager import get_indexation_manager
+from Products.CPSCore.EventServiceTool import getEventService
 
 
 def catalog_paths(catalog):
@@ -185,7 +186,7 @@ class ProxyIndexingTest(ZopeTestCase.PortalTestCase):
         brain = catalog.searchResults()[0]
         self.assertEquals(brain.Title, 'iceberg detected')
         # Now send a notification, proxy tool will act on it
-        evtool = self.portal.portal_eventservice
+        evtool = getEventService(self.portal)
         evtool.notify('sys_modify_object', docfr, {})
         brain = catalog.searchResults()[0]
         self.assertEquals(brain.Title, 'titanic skins')
