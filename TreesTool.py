@@ -73,6 +73,12 @@ class TreesTool(UniqueObject, Folder):
 
     security = ClassSecurityInfo()
 
+    _properties = Folder._properties + (
+        {'id': 'ignore_events', 'type': 'boolean', 'mode': 'w',
+         'label': "Ignore events"},
+        )
+    ignore_events = False
+
     security.declarePrivate('notify_tree')
     def notify_tree(self, event_type, ob, infos=None):
         """Notification method called by the event service.
@@ -81,7 +87,8 @@ class TreesTool(UniqueObject, Folder):
 
         infos is ignored.
         """
-
+        if self.ignore_events:
+            return
         if event_type not in ('sys_add_cmf_object',
                               'sys_add_object',
                               'sys_del_object',

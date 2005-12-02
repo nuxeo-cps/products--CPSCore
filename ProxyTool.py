@@ -65,12 +65,16 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     id = 'portal_proxies'
     meta_type = 'CPS Proxies Tool'
-    use_portal_default_lang = 0
+    use_portal_default_lang = False
+    ignore_events = False
 
     _properties = SimpleItemWithProperties._properties + (
         {'id': 'use_portal_default_lang', 'type': 'boolean', 'mode': 'w',
-         'label': "Use translation_service default prior to proxies default "\
-                  "when current lang not found"},)
+         'label': "Use translation_service default prior to proxies default "
+                  "when current lang not found"},
+        {'id': 'ignore_events', 'type': 'boolean', 'mode': 'w',
+         'label': "Ignore events (DO NOT USE)"},
+        )
 
     security = ClassSecurityInfo()
 
@@ -760,6 +764,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         """
         # Notifying of the proxies is important to get a new Title taken
         # into account by a Tree Cache for example.
+
+        if self.ignore_events:
+            return
 
         if event_type not in ('sys_add_object',
                               'sys_del_object',

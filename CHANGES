@@ -15,3 +15,4 @@ New internal features:
 - new Proxy method isCPSFolderish to filter documents in the navigation
   or listing representation.
 - Zope level users and anonymous users are explicitely homeless
+- Added ignore_event flag on trees tool and proxies tool.
