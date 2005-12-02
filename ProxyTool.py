@@ -38,6 +38,7 @@ from Products.CMFCore.utils import mergedLocalRoles
 from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
+from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.permissions import ViewArchivedRevisions
 from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
      REQUEST_LANGUAGE_KEY
@@ -536,7 +537,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         Also sends notification events (for these proxies).
         """
-        evtool = getToolByName(self, 'portal_eventservice')
+        evtool = getEventService(self)
         repotool = getToolByName(self, 'portal_repository')
         portal = aq_parent(aq_inner(self))
         docid, rev = repotool.getDocidAndRevisionFromObjectId(ob.getId())
@@ -671,7 +672,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             final_type_name = type_name
         ob._setPortalTypeName(final_type_name)
         # Send a creation event with the correct portal_type set
-        evtool = getToolByName(self, 'portal_eventservice')
+        evtool = getEventService(self)
         evtool.notify('sys_add_object', ob, {})
         # Object has been constructed without indexing, index it now.
         ob.reindexObject()
