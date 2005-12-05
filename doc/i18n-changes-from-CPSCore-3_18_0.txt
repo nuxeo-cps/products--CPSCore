@@ -1,78 +1,90 @@
-These is some explanation about changes to handle i18n from a CPSCore 3.18.0
+=============================
+i18n Changes from the CPSCore
+=============================
 
-$Id$
+:Revision: $Id$
+
+.. sectnum::    :depth: 4
+.. contents::   :depth: 4
+
+
+This document provides some explanation about changes to handle
+i18n from a CPSCore 3.18.0.
+
 
 ProxyBase:
-~~~~~~~~~~
-new methods:
-getL10nTitles(), getL10nDescriptions()
-    this methods return all available translation of the title or description
-    into an dictionnary this is used by the portal_tree to make it i18n,
+==========
 
-Languages():
-    return a list of locale abbreviation
+New methods:
 
-Title() and Description():
-    if the proxy have an use_mcat attribute instead of return
-    proxy.getContent.Title() it will return
-    translation_service(proxy.getContent.Title())
+- ``getL10nTitles()``and ``getL10nDescriptions()``: These methods
+  return all available translation of the title or description
+  into a dictionary.  This is used by the portal_tree to make it
+  i18n.
 
-    this enable to have structural folder like 'Favorite' 'Root of
-    workspace' ... using the message catalog to i18n their Title and
-    Description without need to create a new document revision
+- ``Languages()``: return a list of locale abbreviation
+
+- ``Title()`` and ``Description()``: If the proxy has an use_mcat
+  attribute instead of return ``proxy.getContent.Title()`` it will
+  return ``translation_service(proxy.getContent.Title())``.
+
+  This makes it possible to have structural folder like
+  'Favorite', 'Root of workspace', ... using the message catalog
+  to i18n their Title and Description without the need to create a
+  new document revision.
 
 Intermediate Objects:
-LanguageViewer:
-    this is called by the traversall on url like
-      pathToObject/viewLanguage/fr
-    this will force getBestRevision to choose the requested language
-    only during the request life
-    It is mainly used for indexing purpose
 
-LanguageSwitcher
-    this is called by the traversall on url like
-    pathToObject/switchLanguage/fr
-    this will force getBestRevision to choose the requested language
-    this choice is stored into session, so any further request
-    to pahtToObject will return the latest switchLanguage requested
-    It is used by the document language selector
+LanguageViewer:
+    This is called by the traversall on url like
+    ``pathToObject/viewLanguage/fr``. This will force
+    getBestRevision to choose the requested language only during
+    the request life. It is mainly used for indexing purpose.
+
+LanguageSwitcher:
+    This is called by the traversall on url like
+    pathToObject/switchLanguage/fr. This will force
+    ``getBestRevision`` to choose the requested language. This
+    choice is stored into session, so any further request to
+    ``pathToObject`` will return the latest ``switchLanguage``
+    requested. It is used by the document language selector.
 
 
 ProxyTool
-~~~~~~~~~
+---------
+
 getBestRevision(proxy, lang=None):
-    this method is called by any proxy.getContent() or getEditableContent
-    and choose wich document revision/local to return
-    by order it try to:
-    return the request lang locale if any
-    return the locale setted into the request by languageViewer
-    return the locale setted into session by languageSwitcher
-    return Localizer selected locale
-    return portal default locale
-    return the first available locale
+    This method is called by any ``proxy.getContent()`` or
+    ``getEditableContent`` It chooses which document
+    revision/local to return in order.  It tries to: (1) return
+    the request lang locale if any, (2) return the locale set into
+    the request by languageViewer, (3) return the locale set into
+    session by languageSwitcher, (4) return Localizer selected
+    locale, (5) return portal default locale, (6) return the first
+    available locale.
 
 
 PatchCatalogTool
-~~~~~~~~~~~~~~~~
+----------------
+
 IndexableObjectWrapper:
-    this class is redefine, this makes things easier
-    there is an optional parameter 'is_default_proxy' this enable for example
-    to create some index only for the default locale proxy
-    this will be usefull when replacing portal_tree by catalog_navigation
+    This class is redefined; this makes things easier. There is an
+    optional parameter ``is_default_proxy``; this enables for
+    example creation of some index only for the default locale
+    proxy. This will be useful when replacing ``portal_tree`` by
+    catalog_navigation.
 
 catalog_object():
-    If the object have only one locale it behave exactly like standard cmf
-    catalog.
-    If the object have more than one locale (proxy.Languages()>1)
-    then we create one entry by language with path like:
-    objectPath/viewLanguage/fr
-    objectPath/viewLanguage/en
-    ...
+    If the object has only one locale, it behaves exactly like a
+    standard CMF catalog. If the object has more than one locale
+    (``proxy.Languages()>1``), then we create one entry by
+    language with a path like: ``objectPath/viewLanguage/fr`` or 
+    ``objectPath/viewLanguage/en``
 
 uncatalog_object
-    If the object have more than one locale it take care of deleting all
-    catalog entries (objectPath/viewLanguage/*)
-    Otherwise works like cmf
+    If the object has more than one locale, it takes care of
+    deleting all catalog entries (``objectPath/viewLanguage/*``).
+    Otherwise works like CMF.
 
 
-* more info CPSDefault/doc/i18n-changes-from-CPSDefault-3_29_0.txt
+[ more info CPSDefault/doc/i18n-changes-from-CPSDefault-3_29_0.txt]
