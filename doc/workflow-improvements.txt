@@ -1,99 +1,109 @@
+=====================
 Workflow improvements
+=====================
 
-  (Incomplete draft.)
+:Revision: $Id$
 
-  $Id$
+.. sectnum::    :depth: 4
+.. contents::   :depth: 4
 
-  The CPS workflows need to be improved to take into account common
-  usage patterns regarding work delegation.
 
-  Use cases
+[ This is an incomplete draft.]
 
-    1. Delegation of responsibility for an action.
+The CPS workflows need to be improved to take into account common
+usage patterns regarding work delegation.
 
-       I have to review a document before doing 'accept' but for some
-       reason I want to delegate this to someone else. The workflow
-       should allow me to say "delegate to someone", in which case:
+Use cases
+=========
 
-         - I get to chose one or several people or groups to which work
-           is delegated, these people are called the delegatees.
+1. Delegation of responsibility for an action.
 
-         - A choice must be made (by the system or by the user) to
-           decide if I keep to possibility to do the action myself,
+   I have to review a document before doing 'accept' but for some
+   reason I want to delegate this to someone else. The workflow
+   should allow me to say "delegate to someone", in which case:
 
-         - If the delegatees consist of several people, I must be able
-           to specify that any person among them has to do the work, or
-           all of them,
+   - I get to chose one or several people or groups to which work
+     is delegated.  These people are called the delegatees.
 
-         - It must be possible for CPSSubscriptions to send a
-           notification to the delegatees to tell them that they have a
-           possible action,
+   - A choice must be made (by the system or by the user) to
+     decide if I keep the possibility to do the action myself.
 
-         - Any delegatee now has the possibility to 'accept' an action
-           on the document,
+   - If the delegatees consist of several people, I must be able
+     to specify that any person among them has to do the work, or
+     all of them.
 
-         - It must be possible for CPSSubscriptions to inform all other
-           delegatees and me that the action was performed.
+   - It must be possible for CPSSubscriptions to send a
+     notification to the delegatees to tell them that they have a
+     possible action.
 
-    2. Delegation with return back up the hierarchy after actions are done.
+   - Any delegatee now has the ability to 'accept' an action on
+     the document.
 
-       I review and validate a document, and pass it to the next persons
-       in the workflow, but I want to check it back when all their work
-       has been done.
+   - It must be possible for CPSSubscriptions to inform all other
+     delegatees and me that the action was performed.
 
-       XXX
+2. Delegation with return back up the hierarchy after actions are
+   done.
 
-    3. XXX
+   I review and validate a document, and pass it to the next
+   people in the workflow, but I want to check it back when all
+   their work has been done.
 
-  Technical details
+   XXX
 
-    A transition where an action delegation is allowed must have an
-    additional flag and parameters specifying what kind of delegation is
-    possible.
+3. XXX
 
-    If a delegation is possible:
+Technical details
+=================
 
-      - a new transition "delegate to someone" is available with a guard
-        for the role Delegatee,
+A transition where an action delegation is allowed must have an
+additional flag and parameters specifying what kind of delegation
+is possible.
 
-      - creating a delegation is only allowed if the original action
-        could have been followed (XXX does this work for time-dependent
-        guards?).
+If a delegation is possible:
 
-    If a delegation is in effect:
+- A new transition "delegate to someone" is available with a guard
+  for the role Delegatee,
 
-      - there is a list of active delegatees, with a flag AND/OR (simple
-        model), it must be stored in the object itself (XXX problems
-        with multilingual documents),
+- Creating a delegation is only allowed if the original action
+  could have been followed (XXX does this work for time-dependent
+  guards?).
 
-      - a delegatee must have the permission to view the document, given
-        through the local role Delegatee that has the View permission,
+If a delegation is in effect:
 
-      - the guard for "delegate to someone" is changed to allow the
-        delegatees to execute the transition, through the local role
-        Delegatee,
+- There is a list of active delegatees, with a flag AND/OR (simple
+  model), it must be stored in the object itself (XXX problems
+  with multilingual documents),
 
-      - an automatic transition for the original action exists, 
+- A delegatee must have the permission to view the document, given
+  through the local role Delegatee that has the View permission.
 
-    When a delegated action is done by a delegatee:
+- The guard for "delegate to someone" is changed to allow the
+  delegatees to execute the transition, through the local role
+  Delegatee,
 
-      - the actor may have to be added to a list of people that acted on
-        the document,
+- An automatic transition for the original action exists.
 
-      - if the actor is not the last, the actor is removed from the list
-        of active delegatees and his local role Delegatee is removed,
+When a delegated action is done by a delegatee:
 
-      - if the actor is the last (or if flag was OR), the original
-        action must be followed, this is done by following the delegated
-        (XXX) transition and then an automatic transition equivalent to
-        the original action will be followed.
+- The actor may have to be added to a list of people that acted on
+  the document.
 
-    XXX
+- If the actor is not the last, the actor is removed from the list
+  of active delegatees and his local role Delegatee is removed.
 
-      - return up the hierarchy
+- If the actor is the last (or if flag was OR), the original
+  action must be followed.  This is done by following the delegated
+  (XXX) transition, and then an automatic transition equivalent to
+  the original action will be followed.
 
-      - affect local role allowing document editing ?
+XXX
 
-      - notify people who "did something" on the object
+- Return up the hierarchy.
 
-      - notify people who had the possibility to do something (local role?)
+- Affect local role allowing document editing?
+
+- Notify people who "did something" on the object.
+
+- Notify people who had the possibility to do something (local
+  role?).
