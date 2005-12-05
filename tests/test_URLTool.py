@@ -21,13 +21,11 @@
 
 import unittest
 from Testing.makerequest import makerequest
+import Testing.ZopeTestCase.ZopeLite as Zope2
+from Testing import ZopeTestCase
+ZopeTestCase.installProduct('CMFCore', quiet=1)
+ZopeTestCase.installProduct('SiteAccess', quiet=1)
 
-try:
-    import Zope2
-except ImportError: # BBB: for Zope 2.7
-    import Zope as Zope2
-
-Zope2.startup()
 
 from OFS.Folder import Folder
 
@@ -35,11 +33,9 @@ from Interface.Verify import verifyClass
 from Products.CPSCore.URLTool import URLTool
 from Products.CPSCore.CPSMembershipTool import CPSMembershipTool
 
-try:
-    import transaction
-except ImportError: # BBB: for Zope 2.7
-    from Products.CMFCore.utils import transaction
+from Products.SiteAccess.VirtualHostMonster import VirtualHostMonster
 
+import transaction
 
 
 class URLToolTests(unittest.TestCase):
@@ -53,6 +49,12 @@ class URLToolTests(unittest.TestCase):
     def setUp(self):
         transaction.begin()
         self.app = makerequest(Zope2.app())
+
+        # Add a VHM
+        if not self.app.objectIds('Virtual Host Monster'):
+            vhm = VirtualHostMonster()
+            vhm.id = 'vhm'
+            vhm.addToContainer(self.app)
 
         # portal
         self.app.manage_addFolder('portal')
@@ -72,7 +74,11 @@ class URLToolTests(unittest.TestCase):
         self.app.REQUEST.set('PARENTS', [self.app])
         self.traverse = self.app.REQUEST.traverse
 
-        self.traverse(self.traverse_value)
+        try:
+            self.traverse(self.traverse_value)
+        except:
+            self.tearDown()
+            raise
 
     def tearDown(self):
         self.app.REQUEST.close()

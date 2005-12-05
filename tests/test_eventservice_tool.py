@@ -6,8 +6,7 @@ Simple test for event service
 import Testing.ZopeTestCase.ZopeLite as Zope
 from Testing import ZopeTestCase
 ZopeTestCase.installProduct('CMFCore', quiet=1)
-if not ZopeTestCase.hasProduct('CMFDefault'):
-    ZopeTestCase.installProduct('CMFDefault', quiet=1)
+ZopeTestCase.installProduct('CMFDefault', quiet=1)
 ZopeTestCase.installProduct('MailHost', quiet=1)
 ZopeTestCase.installProduct('CPSCore', quiet=1)
 ZopeTestCase.installProduct('ZCTextIndex', quiet=1)

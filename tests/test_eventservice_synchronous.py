@@ -19,6 +19,7 @@
 # $Id$
 
 import unittest
+import Testing.ZopeTestCase
 import time
 
 from Acquisition import aq_base, aq_parent, aq_inner
