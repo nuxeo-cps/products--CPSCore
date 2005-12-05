@@ -1,102 +1,138 @@
-$Id$
+============================
+Workflow Stacks Architecture
+============================
 
-Author : Julien Anguenot <ja@nuxeo.com>
+:Author: Julien Anguenot
+:Address: <ja@nuxeo.com>
 
-Worflow stacks : Delegation / validation features for CPS3
+:Revision: $Id$
 
-Details about the implementation
+.. sectnum::    :depth: 4
+.. contents::   :depth: 4
 
-Data structures :
---------------------
 
- - portal_stack_registry which is referencing the existing stacks to be used.
- - Data Structure registry to register new stacks within the portal_stack_registry
+Worflow stacks : Delegation / validation features for CPS3.
 
- - the data structures used for the stack by default
+Details about the implementation.
 
-    + BaseStack class
-    + SimpleStack class
-    + HierarchicalStack class
 
-   It's extensible with the portal_stack_registry tool for integration.
+Data structures
+===============
 
-   Possible to specify rulez about ds management in here :
+- portal_stack_registry which is referencing the existing stacks
+  to be used.
 
-   + canManage()
-   + listLocalRolesMapping()
+- Data Structure registry to register new stacks within the
+  portal_stack_registry.
 
-Stack Definitions :
----------------------
+- The data structures used for the stack by default
 
-  - Holds a given stack configuration.
-      - properties (common + specific)
-  - Holds a data structure instance
+  + BaseStack class
 
-  Default Stack Definition Type
-    o BaseWorkflowStackDefinition
-    o SimpleWorkflowStackDefinition
-    o HierarchicalWorkflowStackDefinition
+  + SimpleStack class
 
-  - potal_stack_registry (cf. above)
-  - Stack Definition registry to register new stack definition
+  + HierarchicalStack class
 
-  Extensible, with the portal_stack_registry tool for integration
+  It's extensible with the portal_stack_registry tool for
+  integration.
 
-  Possible to add more information on these objects
+  Possible to specify rulez about ds management in here :
 
-State information :
----------------------
+  + canManage()
 
- - State information related to stacks
+  + listLocalRolesMapping()
 
-    + flags on the states
 
-      o push behavior
-      o pop behavion
+Stack Definitions
+=================
 
- - State definition holds stack definition declaration.
+- Holds a given stack configuration.
 
-Transition information :
---------------------------
+  + properties (common + specific)
 
- - Transition information related to stacks
+- Holds a data structure instance.
 
-    + transition flags
+Default Stack Definition Type
 
-      o push on variables
-      o pop on variables
-      o returned up hierarchy on variables
-      o workflow up on variables
-      o workflow down on variables
+- BaseWorkflowStackDefinition
 
-    n.b : variable above is a global workflow variable holding a stack
-    definition instance.
+- SimpleWorkflowStackDefinition
 
-CPSWorkflow :
----------------
+- HierarchicalWorkflowStackDefinition
 
- - CPSWorkflow related
+- potal_stack_registry (cf. above)
 
-    + _executeTransitions()
-       cope transition flags for stacks
-    + - _checkTransitionGuard()
-         Hook for delegatees and local roles check.
-    + -  updateRoleMapping()
+- Stack Definition registry to register new stack definition
 
-CPSWorkflowTool :
--------------------
+Extensible, with the portal_stack_registry tool for integration.
 
-   +  getStackDefinitionsFor(self, ob)
-   +  getDataStructureStacks(self, ob)
-   +  getDataStructureStackFor(self, ob, wf_var_id)
+Possible to add more information on these objects.
 
-CPSWorkflowExpression :
--------------------------
+State information
+=================
 
-    + CPSWorkflowExpression extended DC WF expr
-      ? Check if I really need it ?
+- State information related to stacks
 
-Status :
------------
+  + flags on the states
 
-   + the stack data structure is stored within the workflow status. NOT ON THE Stack DEFINITION
+    * push behavior
+
+    * pop behavion
+
+- State definition holds stack definition declaration.
+
+
+Transition information
+======================
+
+- Transition information related to stacks
+
+  + transition flags
+
+    * push on variables
+
+    * pop on variables
+
+    * returned up hierarchy on variables
+
+    * workflow up on variables
+
+    * workflow down on variables
+
+  N.B.: variable above is a global workflow variable holding a
+  stack definition instance.
+
+CPSWorkflow
+===========
+
+- CPSWorkflow related
+
+  + _executeTransitions()
+        cope transition flags for stacks
+
+  + _checkTransitionGuard()
+        Hook for delegatees and local roles check.
+
+  + updateRoleMapping()
+
+CPSWorkflowTool
+===============
+
+-  getStackDefinitionsFor(self, ob)
+
+-  getDataStructureStacks(self, ob)
+
+-  getDataStructureStackFor(self, ob, wf_var_id)
+
+
+CPSWorkflowExpression
+=====================
+
+- CPSWorkflowExpression extended DC WF expr
+      [? Check if I really need it ?]
+
+Status
+======
+
+- The stack data structure is stored within the workflow status,
+  **not on the Stack definition.**
