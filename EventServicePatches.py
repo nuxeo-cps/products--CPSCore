@@ -48,53 +48,11 @@ def patch_action(class_, func):
 #
 
 import sys
-from ZODB.POSException import ConflictError
-from OFS.ObjectManager import BeforeDeleteException
 from OFS.ObjectManager import ObjectManager
 from OFS.CopySupport import CopyContainer
 from OFS.OrderSupport import OrderSupport
 from OFS.SimpleItem import Item
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
-
-# Fix a Zope problem, where ConflictErrors are swallowed.
-
-def OFS_manage_beforeDelete(self, item, container):
-    for object in self.objectValues():
-        try: s=object._p_changed
-        except: s=0
-        try:
-            if hasattr(aq_base(object), 'manage_beforeDelete'):
-                object.manage_beforeDelete(item, container)
-        except BeforeDeleteException, ob:
-            raise
-        except ConflictError: # Added for CPS
-            raise
-        except:
-            LOG('Zope',ERROR,'manage_beforeDelete() threw',
-                error=sys.exc_info())
-            pass
-        if s is None: object._p_deactivate()
-
-ObjectManager.manage_beforeDelete = OFS_manage_beforeDelete
-
-def OFS_delObject(self, id, dp=1):
-    object=self._getOb(id)
-    try:
-        object.manage_beforeDelete(object, self)
-    except BeforeDeleteException, ob:
-        raise
-    except ConflictError: # Added for CPS
-        raise
-    except:
-        LOG('Zope',ERROR,'manage_beforeDelete() threw',
-            error=sys.exc_info())
-        pass
-    self._objects=tuple(filter(lambda i,n=id: i['id']!=n, self._objects))
-    self._delOb(id)
-    try:    object._v__object_deleted__ = 1
-    except: pass
-
-ObjectManager._delObject = OFS_delObject
 
 # Patch all before/after methods.
 
