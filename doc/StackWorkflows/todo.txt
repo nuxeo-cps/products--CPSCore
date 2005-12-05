@@ -1,31 +1,47 @@
-$Id$
+====================
+Workflow Stacks Todo
+====================
 
- o views on stack objects (edit / view)
-   o stack.render(mode='edit')
-   o use schema / layout / widgets to render them
+:Revision: $Id$
 
- o views on stack elements
+.. sectnum::    :depth: 4
+.. contents::   :depth: 4
 
- o stack registries
 
- o stack def registries
+- Views on stack objects (edit / view)
 
- o stack elements (to be able to store any kind of object, not just users)
+  + stack.render(mode='edit')
 
- o WorkflowStackDelegate
-   + class representing a member within a stack
-   + think about the substitutes
+  + use schema / layout / widgets to render them
 
- o WorkflowStackGroupDelegate
-   + think about the substitutes
+- Views on stack elements
 
- o Former local roles for a given stack stored within the status of the object
-   + for the moment stored as an attribute of the ds
+- Stack registries
 
- o Hierchical stack: be able to insert users at intermediate levels
-   (e.g. move forward the already affected delegatees, and insert users at
-   the (now free) given level)
+- Stack def registries
 
- x Cope with anonymous access in general
+- Stack elements (to be able to store any kind of object, not just
+  users)
 
- x Give possibility to reset stacks
+- WorkflowStackDelegate
+
+  + Class representing a member within a stack
+
+  + Think about the substitutes.
+
+- WorkflowStackGroupDelegate
+
+  + Think about the substitutes.
+
+- Former local roles for a given stack stored within the status of
+  the object
+
+  + for the moment stored as an attribute of the ds
+
+- Hierchical stack: be able to insert users at intermediate levels
+  (e.g. move forward the already affected delegatees, and insert
+  users at the (now free) given level)
+
+- x Cope with anonymous access in general
+
+- x Give possibility to reset stacks
