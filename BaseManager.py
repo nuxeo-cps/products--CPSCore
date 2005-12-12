@@ -23,13 +23,15 @@
 Provides a base class for before commit hooks definitions
 """
 
+import zope.interface
+
 from Products.CPSCore.interfaces import IBaseManager
 
 class BaseManager(object):
     """Base Manager definition
     """
 
-    __implements__ = IBaseManager
+    zope.interface.implements(IBaseManager)
 
     # Not synchronous by default
     # XXX This may be monkey-patched by unit-tests.

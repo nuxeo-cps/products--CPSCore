@@ -16,3 +16,4 @@ New internal features:
   or listing representation.
 - Zope level users and anonymous users are explicitely homeless
 - Added ignore_event flag on trees tool and proxies tool.
+- Use zope.interface within interfaces.py

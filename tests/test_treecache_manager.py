@@ -49,8 +49,8 @@ class DummyTreeCache(SimpleItem):
 
 class TreeCacheManagerTest(unittest.TestCase):
 
-    def test_z2interfaces(self):
-        from Interface.Verify import verifyClass
+    def test_interfaces(self):
+        from zope.interface.verify import verifyClass
         verifyClass(IBaseManager, TreeCacheManager)
 
     def test_fixtures(self):

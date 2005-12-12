@@ -21,17 +21,18 @@
 """CPSCore interfaces
 """
 
-from Interface import Interface
-from Interface import Attribute
+import zope.interface
 
-class IBaseManager(Interface):
+class IBaseManager(zope.interface.Interface):
     """Base Manager definition
 
     Provides a base interface for before commit hooks definitions
     """
 
-    DEFAULT_SYNC = Attribute('DEFAULT_SYNC', "Default sync mode")
-    DEFAULT_STATUS = Attribute('status', "Default status")
+    DEFAULT_SYNC = zope.interface.Attribute('DEFAULT_SYNC',
+                                            "Default sync mode")
+    DEFAULT_STATUS = zope.interface.Attribute('DEFAULT_STATUS',
+                                              "Default status")
     
     def setSynchronous(sync):
         """Set queuing mode.

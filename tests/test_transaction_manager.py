@@ -46,8 +46,8 @@ def hook(arg='no_arg', kw1='no_kw1', kw2='no_kw2'):
 
 class TransactionManagerTest(unittest.TestCase):
 
-    def test_z2interfaces(self):
-        from Interface.Verify import verifyClass
+    def test_interfaces(self):
+        from zope.interface.verify import verifyClass
         verifyClass(IBaseManager, TransactionManager)
 
     def test_fixtures(self):

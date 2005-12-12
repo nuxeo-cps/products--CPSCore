@@ -113,8 +113,8 @@ class IndexationManagerTest(unittest.TestCase):
     def get_stuff(self):
         return IndexationManager(FakeTransactionManager()), root.addDummy()
 
-    def test_z2interfaces(self):
-        from Interface.Verify import verifyClass
+    def test_interfaces(self):
+        from zope.interface.verify import verifyClass
         verifyClass(IBaseManager, IndexationManager)
 
     def test_fixtures(self):
