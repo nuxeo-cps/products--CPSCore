@@ -70,6 +70,17 @@ class TreeCacheManager(BaseManager):
     def push(self, cache, op, path, info):
         """Push an operation for a tree cache.
         """
+
+        # Do not push anything if the subscriber is not enabled
+        # When the manager is disabled it won't queue anything. It means, it
+        # can be deactiveted for a while, thus won't queue, and then be
+        # activated again and start queuing again.
+        if not self._status:
+            LOG('TreeCacheManager is DISABLED', DEBUG,
+                "push for %s: %s %s %r will *not* be done"
+                % (cache.getId(), printable_op(op), '/'.join(path), info))
+            return
+        
         LOG('TreeCacheManager', DEBUG, "push for %s: %s %s %r"
             % (cache.getId(), printable_op(op), '/'.join(path), info))
         cache_path = cache.getPhysicalPath()

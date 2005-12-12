@@ -31,6 +31,7 @@ class IBaseManager(Interface):
     """
 
     DEFAULT_SYNC = Attribute('DEFAULT_SYNC', "Default sync mode")
+    DEFAULT_STATUS = Attribute('status', "Default status")
     
     def setSynchronous(sync):
         """Set queuing mode.
@@ -44,4 +45,12 @@ class IBaseManager(Interface):
         """Called when transaction commits.
 
         Does the actual manager work.
+        """
+
+    def enable():
+        """Enable the manager
+        """
+
+    def disable():
+        """Disable the manager
         """

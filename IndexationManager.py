@@ -62,6 +62,16 @@ class IndexationManager(BaseManager):
 
         Copes with security reindexation as well.
         """
+
+        # Do not push anything if the subscriber is not enabled
+        # When the manager is disabled it won't queue anything. It means, it
+        # can be deactiveted for a while, thus won't queue, and then be
+        # activated again and start queuing again.
+        if not self._status:
+            LOG("IndexationManager is DISABLED", DEBUG,
+                "index object %r won't be processed" % ob)
+            return
+
         if self.isSynchronous():
             LOG("IndexationManager", DEBUG, "index object %r" % ob)
             self.process(ob, idxs, with_security)

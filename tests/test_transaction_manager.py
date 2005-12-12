@@ -59,6 +59,17 @@ class TransactionManagerTest(unittest.TestCase):
         self.assertEqual(mgr._sync, False)
         self.assertEqual(mgr.isSynchronous(), False)
         self.assertEqual(mgr.isSynchronous(), mgr._sync)
+        self.assertEqual(mgr._status, True)
+
+    def test_status_api(self):
+
+        mgr = TransactionManager(FakeTransaction())
+
+        self.assertEqual(mgr._status, True)
+        mgr.disable()
+        self.assertEqual(mgr._status, False)
+        mgr.enable()
+        self.assertEqual(mgr._status, True)
 
     def test_async(self):
 
@@ -77,6 +88,78 @@ class TransactionManagerTest(unittest.TestCase):
         mgr.addBeforeCommitHook(hook, '1')
 
         self.assertEqual(log, ["arg '1' kw1 'no_kw1' kw2 'no_kw2'"])
+        reset_log()
+
+    def test_status_as_async(self):
+
+        mgr = TransactionManager(FakeTransaction())
+
+        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr._sync, False)
+
+        # Disable subscriber
+        mgr.disable()
+
+        # Register hooks
+        mgr.addBeforeCommitHook(hook, '1')
+        mgr.addBeforeCommitHook(hook, '2')
+        mgr.addBeforeCommitHook(hook, '3')
+
+        # Enable subscriber
+        mgr.enable()
+        
+        mgr.addBeforeCommitHook(hook, '4')
+        mgr.addBeforeCommitHook(hook, '5')
+        mgr.addBeforeCommitHook(hook, '6')
+        mgr.addBeforeCommitHook(hook, '7')
+
+        # Execute
+        mgr()
+        
+        # Nothing has been executed since it's disabled
+        self.assertEqual(
+            ["arg '4' kw1 'no_kw1' kw2 'no_kw2'",
+             "arg '5' kw1 'no_kw1' kw2 'no_kw2'",
+             "arg '6' kw1 'no_kw1' kw2 'no_kw2'",
+             "arg '7' kw1 'no_kw1' kw2 'no_kw2'"],
+            log)
+
+        reset_log()
+
+    def test_status_as_sync(self):
+
+        mgr = TransactionManager(FakeTransaction())
+
+        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr._sync, False)
+
+        # Sync = True
+        mgr.setSynchronous(True)
+
+        # Disable subscriber
+        mgr.disable()
+
+        # Register hooks
+        mgr.addBeforeCommitHook(hook, '1')
+        mgr.addBeforeCommitHook(hook, '2')
+        mgr.addBeforeCommitHook(hook, '3')
+
+        # Enable subscriber
+        mgr.enable()
+        
+        mgr.addBeforeCommitHook(hook, '4')
+        mgr.addBeforeCommitHook(hook, '5')
+        mgr.addBeforeCommitHook(hook, '6')
+        mgr.addBeforeCommitHook(hook, '7')
+
+        # Nothing has been executed since it's disabled
+        self.assertEqual(
+            ["arg '4' kw1 'no_kw1' kw2 'no_kw2'",
+             "arg '5' kw1 'no_kw1' kw2 'no_kw2'",
+             "arg '6' kw1 'no_kw1' kw2 'no_kw2'",
+             "arg '7' kw1 'no_kw1' kw2 'no_kw2'"],
+            log)
+
         reset_log()
 
     def test_hooks_registration_without_order(self):

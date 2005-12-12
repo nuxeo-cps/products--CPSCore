@@ -53,6 +53,25 @@ class TreeCacheManagerTest(unittest.TestCase):
         from Interface.Verify import verifyClass
         verifyClass(IBaseManager, TreeCacheManager)
 
+    def test_fixtures(self):
+
+        mgr = TreeCacheManager(FakeTransactionManager())
+                
+        self.assertEqual(mgr._sync, False)
+        self.assertEqual(mgr.isSynchronous(), False)
+        self.assertEqual(mgr.isSynchronous(), mgr._sync)
+        self.assertEqual(mgr._status, True)
+
+    def test_status_api(self):
+
+        mgr = TreeCacheManager(FakeTransactionManager())
+
+        self.assertEqual(mgr._status, True)
+        mgr.disable()
+        self.assertEqual(mgr._status, False)
+        mgr.enable()
+        self.assertEqual(mgr._status, True)
+
     def test_simple(self):
         mgr = TreeCacheManager(FakeTransactionManager())
         cache = DummyTreeCache()
@@ -71,6 +90,47 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(mgr._trees, {})
 
+    def test_status_with_async_subscriber(self):
+
+        mgr = TreeCacheManager(FakeTransactionManager())
+        cache = DummyTreeCache()
+
+        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr._sync, False)
+
+        # Disable subscriber
+        mgr.disable()
+
+        # Push it, reindexation not done yet.
+        mgr.push(cache, ADD, ('abc',), None)
+        mgr.push(cache, ADD, ('def',), None)
+        mgr.push(cache, ADD, ('ghi',), None)
+        self.assertEquals(cache.notified, 0)
+
+        # Manager is called (by commit), check notification
+        mgr()
+        self.assertEquals(cache.notified, 0)
+
+        # Nothing left after that
+        mgr()
+        self.assertEquals(mgr._trees, {})
+
+        # Enable subscriber back
+        mgr.enable()
+
+        # Push it, reindexation not done yet.
+        mgr.push(cache, ADD, ('abc',), None)
+        mgr.push(cache, ADD, ('def',), None)
+        mgr.push(cache, ADD, ('ghi',), None)
+        self.assertEquals(cache.notified, 0)
+
+        # Manager is called (by commit), check notification
+        mgr()
+        self.assertEquals(cache.notified, 1)
+
+        # Nothing left after that
+        mgr()
+        self.assertEquals(mgr._trees, {})
 
 class TreeCacheManagerIntegrationTest(unittest.TestCase):
     # These really test the beforeCommitHook

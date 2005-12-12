@@ -117,6 +117,15 @@ class IndexationManagerTest(unittest.TestCase):
         from Interface.Verify import verifyClass
         verifyClass(IBaseManager, IndexationManager)
 
+    def test_fixtures(self):
+
+        mgr, dummy = self.get_stuff()
+
+        self.assertEqual(mgr._sync, False)
+        self.assertEqual(mgr.isSynchronous(), False)
+        self.assertEqual(mgr.isSynchronous(), mgr._sync)
+        self.assertEqual(mgr._status, True)
+
     def test_simple(self):
         mgr, dummy = self.get_stuff()
 
@@ -245,6 +254,87 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s ['d']"%dummy.id])
+        root.clear()
+
+    def test_status_api(self):
+
+        mgr, dummy = self.get_stuff()
+
+        self.assertEqual(mgr._status, True)
+        mgr.disable()
+        self.assertEqual(mgr._status, False)
+        mgr.enable()
+        self.assertEqual(mgr._status, True)
+
+    def test_status_with_async_subscriber(self):
+
+        mgr, dummy = self.get_stuff()
+
+        # Disable the subsriber
+        mgr.disable()
+
+        # Push it, reindexation not done yet because async. The push is
+        # not supposed to do anything anyway here since the subscriber
+        # is disabled
+
+        mgr.push(dummy, idxs=[])
+        self.assertEquals(dummy.getLog(), [])
+
+        # Manager is called (by commit).
+        mgr()
+        self.assertEquals(dummy.getLog(), [])
+
+        # Object is gone from queue after that.
+        mgr()
+        self.assertEquals(dummy.getLog(), [])
+
+        # Enable the subsriber
+        mgr.enable()
+
+        # Push it, reindexation not done yet because async. The push is
+        # not supposed to do anything anyway here since the subscriber
+        # is disabled
+
+        mgr.push(dummy, idxs=[])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
+
+        # Object is gone from queue after that.
+        mgr()
+        self.assertEquals(dummy.getLog(), [])
+
+        root.clear()
+
+    def test_status_with_sync_subscriber(self):
+
+        mgr, dummy = self.get_stuff()
+
+        # Set the subcriber async mode to True
+        mgr.setSynchronous(True)
+
+        # Disable the subsriber
+        mgr.disable()
+
+        # Push it, reindexation not done yet because async. The push is
+        # not supposed to do anything anyway here since the subscriber
+        # is disabled
+
+        mgr.push(dummy, idxs=[])
+        self.assertEquals(dummy.getLog(), [])
+
+        # Enable the subsriber
+        mgr.enable()
+
+        # Push it, reindexation not done yet because async. The push is
+        # not supposed to do anything anyway here since the subscriber
+        # is disabled
+
+        mgr.push(dummy, idxs=[])
+        self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
+
+        # Object is gone from queue after that.
+        self.assertEquals(dummy.getLog(), [])
+
         root.clear()
 
 class TransactionIndexationManagerTest(unittest.TestCase):

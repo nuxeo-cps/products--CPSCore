@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- API : enable / disable transaction before commit hook subscribers
 Bug fixes:
 ~~~~~~~~~~
 - Fixed CMF File and Image indexing. This gets rid of the "unsuccessfully

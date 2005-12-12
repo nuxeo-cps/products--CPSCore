@@ -35,8 +35,12 @@ class BaseManager(object):
     # XXX This may be monkey-patched by unit-tests.
     DEFAULT_SYNC = False
 
+    # Enabled by default
+    DEFAULT_STATUS = True
+
     def __init__(self, mgr, order=0):
         self._sync = self.DEFAULT_SYNC
+        self._status = self.DEFAULT_STATUS
         mgr.addBeforeCommitHook(self, order=order)
 
     def setSynchronous(self, sync):
@@ -54,4 +58,10 @@ class BaseManager(object):
 
     def push(self, *args):
         raise NotImplementedError
+
+    def enable(self):
+        self._status = True
+
+    def disable(self):
+        self._status = False
 

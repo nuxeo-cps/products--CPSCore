@@ -56,6 +56,7 @@ class TransactionManager(BaseManager):
         """Initialize and register this manager with the transaction.
         """
         self._sync = self.DEFAULT_SYNC
+        self._status = self.DEFAULT_STATUS
 
         # List of (order, index, hook, args, kws) tuples added by
         # addbeforeCommitHook().  `index` is used to resolve ties on equal
@@ -103,6 +104,17 @@ class TransactionManager(BaseManager):
         consider registering a synchronizer object via a TransactionManager's
         registerSynch() method instead.
         """
+
+        # When the manager is disabled it won't add new hooks. It
+        # means, it can be deactiveted for a while, thus won't add any
+        # new one, and then be activated again and start adding some
+        # again.
+        if not self._status:
+            LOG("TransactionManager is DISABLED", DEBUG,
+                "won't register %s with %s and %s with order %s"
+                %(repr(hook), args, kws, str(order)))
+            return
+
         if not isinstance(order, int):
             raise ValueError("An integer value is required "
                              "for the order argument")
