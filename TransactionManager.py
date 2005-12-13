@@ -27,30 +27,23 @@ for each hook. As well, note the transaction manager is responsible of
 the execution of the hooks. (not the ZODB transaction itself)
 """
 
-import bisect
-
 from zLOG import LOG, DEBUG
 
-try:
-    import transaction
-except ImportError:
-    # BBB: for Zope 2.7
-    from Products.CMFCore.utils import transaction
-    # The following is missing from CMF 1.5.2
-    def BBBget():
-        return get_transaction()
-    transaction.get = BBBget
+import bisect
 
-_CPS_TXN_ATTRIBUTE = '_cps_transaction_manager'
+import transaction
+import zope.interface
 
 from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.BaseManager import BaseManager
+
+_CPS_TXN_ATTRIBUTE = '_cps_transaction_manager'
 
 class TransactionManager(BaseManager):
     """Holds hooks that will be executed at the end of the transaction.
     """
 
-    __implements__ = IBaseManager
+    zope.interface.implements(IBaseManager)
 
     def __init__(self, txn):
         """Initialize and register this manager with the transaction.
