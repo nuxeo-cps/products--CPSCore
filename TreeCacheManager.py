@@ -95,11 +95,13 @@ class TreeCacheManager(BaseManager):
 
         Does the actual rebuild work
         """
+        logger.debug("__call__")
         for cache_path, tree in self._trees.items():
             cache = self._caches[cache_path]
             logger.debug("replaying for cache %s" % cache.getId())
             cache.updateTree(tree)
         self.clear()
+        logger.debug("__call__ DONE")
 
 def get_treecache_manager():
     """Get the treecache manager.
