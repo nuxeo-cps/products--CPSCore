@@ -20,3 +20,4 @@ New internal features:
 - txn managers cleanups
   o use logging instead of the zLOG
   o use zope.interface
+- CPSCore housekeeping
