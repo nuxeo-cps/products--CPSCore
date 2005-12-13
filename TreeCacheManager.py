@@ -70,7 +70,7 @@ class TreeCacheManager(BaseManager):
         # activated again and start queuing again.
         if not self._status:
             logger.debug(
-                "push for %s: %s %s %r will *not* be done"
+                "is DISABLED. push for %s: %s %s %r will *not* be done"
                 % (cache.getId(), printable_op(op), '/'.join(path), info))
             return
         

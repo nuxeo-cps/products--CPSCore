@@ -63,7 +63,7 @@ class IndexationManager(BaseManager):
         # can be deactiveted for a while, thus won't queue, and then be
         # activated again and start queuing again.
         if not self._status:
-            logger.debug("index object %r won't be processed" % ob)
+            logger.debug("is DISABLED. object %r won't be processed" % ob)
             return
 
         if self.isSynchronous():
