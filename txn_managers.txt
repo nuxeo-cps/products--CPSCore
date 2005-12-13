@@ -207,6 +207,8 @@ CONTENTS
         >>> class FailingDataManager:
         ...     def tpc_begin(self, txn, sub=False):
         ...         raise CommitFailure
+        ...     def tpc_abort(self, txn):
+        ...         pass
         ...     def abort(self, txn):
         ...         pass
 
