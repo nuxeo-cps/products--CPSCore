@@ -1,45 +1,17 @@
-Installation notes
+$Id$
 
-  Products
+This product declares only the key framework services for the Nuxeo
+Collaborative Portal Server (CPS) v3 (or CPS3).
 
-    CPS is based on CMF, so the following products are mandatory:
+This package should come along with a distribution of CPS3. Either one
+of the official CPS3 releases or from a svn checkout.
 
-    - CMFCore
+If it comes along a CPS3 release then check the instructions included
+within the release of CPS3 for further information about the
+installation.
 
-    - CMFDefault
+See also http://svn.nuxeo.org/trac/pub/file/CPSRelease/ for release
+information
 
-    - CMFTopic
-
-    - DCWorkflow
-
-    The following additional products are also needed:
-
-    - BTreeFolder2
-
-    - Localizer
-
-    - TranslationService
-
-    The following products are part of CPS 3:
-
-    - NuxUserGroups
-
-    - OrderedFolderSupportPatch
-
-    - CPSCore
-
-    - CPSDefault
-
-    The following product is highly recommended for debugging:
-
-    - VerboseSecurity
-
-    The following product is required to run unit tests:
-
-    - ZopeTestCase
-
-
-  Start your server and using the ZMI
-    
-    - Add a CPSDefault Site
+If you're looking for support goto http://www.cps-project.org/
 
