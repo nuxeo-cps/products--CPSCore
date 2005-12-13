@@ -23,11 +23,11 @@
 Asynchronous by default.
 """
 
-from zLOG import LOG, DEBUG
-from Acquisition import aq_base
-
+import logging
 import transaction
 import zope.interface
+
+from Acquisition import aq_base
 
 from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.BaseManager import BaseManager
@@ -38,6 +38,8 @@ _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
 # We don't want any other hooks executed before this one right now.  It
 # will have an order of -100
 _TXN_MGR_ORDER = -100
+
+logger = logging.getLogger("CPSCore.IndexationManager")
 
 class IndexationManager(BaseManager):
     """Holds data about reindexings to be done."""
@@ -61,17 +63,16 @@ class IndexationManager(BaseManager):
         # can be deactiveted for a while, thus won't queue, and then be
         # activated again and start queuing again.
         if not self._status:
-            LOG("IndexationManager is DISABLED", DEBUG,
-                "index object %r won't be processed" % ob)
+            logger.debug("index object %r won't be processed" % ob)
             return
 
         if self.isSynchronous():
-            LOG("IndexationManager", DEBUG, "index object %r" % ob)
+            logger.debug("index object %r" % ob)
             self.process(ob, idxs, with_security)
             return
 
-        LOG("IndexationManager", DEBUG, "queue object %r idxs=%s secu=%s"
-            % (ob, idxs, with_security))
+        logger.debug("queue object %r idxs=%s secu=%s"
+                     % (ob, idxs, with_security))
 
         # Compute a key for ob. id() is not enough when cut and paste
         # <id_of_ob, rpath>
@@ -106,7 +107,7 @@ class IndexationManager(BaseManager):
             # Update secu
             info['secu'] = info['secu'] or with_security
 
-        LOG("IndexationManager", DEBUG, "info %r" % info)
+        logger.debug("info %r" % info)
 
     def __call__(self):
         """Called when transaction commits.
@@ -121,16 +122,16 @@ class IndexationManager(BaseManager):
         # (see unit tests).
         #_remove_indexation_manager()
 
-        LOG("IndexationManager", DEBUG, "__call__")
+        logger.debug("__call__")
 
         while self._queue:
             info = self._queue.pop(0)
             del self._infos[info['id']]
 
-            LOG("IndexationManager", DEBUG, "__call__ processing %r" % info)
+            logger.debug("__call__ processing %r" % info)
             self.process(info['object'], info['idxs'], info['secu'])
 
-        LOG("IndexationManager", DEBUG, "__call__ done")
+        logger.debug("__call__ done")
 
     def process(self, ob, idxs, secu):
         """Process an object, to reindex it."""
@@ -143,17 +144,15 @@ class IndexationManager(BaseManager):
         old_ob = ob
         ob = root.unrestrictedTraverse(path, None)
         if ob is None:
-            LOG("IndexationManager", DEBUG, "Object %r disappeared" % old_ob)
+            logger.debug("Object %r disappeared" % old_ob)
             return
         if idxs is not None:
-            LOG("IndexationManager", DEBUG, "reindexObject %r idxs=%r"
-                % (ob, idxs))
+            logger.debug("reindexObject %r idxs=%r" % (ob, idxs))
             ob._reindexObject(idxs=idxs)
         if secu:
             skip_self = (idxs == [] or
                          (idxs and 'allowedRolesAndUsers' in idxs))
-            LOG("IndexationManager", DEBUG,
-                "reindexObjectSecurity %r skip=%s" % (ob, skip_self))
+            logger.debug("reindexObjectSecurity %r skip=%s" % (ob, skip_self))
             ob._reindexObjectSecurity(skip_self=skip_self)
 
 def del_indexation_manager():

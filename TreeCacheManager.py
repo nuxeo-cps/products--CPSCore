@@ -22,8 +22,7 @@
 Asynchronous by default.
 """
 
-from zLOG import LOG, DEBUG
-
+import logging
 import transaction
 import zope.interface
 
@@ -34,11 +33,12 @@ from Products.CPSCore.TransactionManager import get_transaction_manager
 from Products.CPSCore.treemodification import TreeModification
 from Products.CPSCore.treemodification import printable_op
 
-
 _TXN_MGR_ATTRIBUTE = '_cps_tc_manager'
 
 # Just before the EventManager
 _TXN_MGR_ORDER = 0
+
+logger = logging.getLogger("CPSCore.TreeCacheManager")
 
 class TreeCacheManager(BaseManager):
     """Holds data about treecache rebuilts to be done."""
@@ -69,13 +69,13 @@ class TreeCacheManager(BaseManager):
         # can be deactiveted for a while, thus won't queue, and then be
         # activated again and start queuing again.
         if not self._status:
-            LOG('TreeCacheManager is DISABLED', DEBUG,
+            logger.debug(
                 "push for %s: %s %s %r will *not* be done"
                 % (cache.getId(), printable_op(op), '/'.join(path), info))
             return
         
-        LOG('TreeCacheManager', DEBUG, "push for %s: %s %s %r"
-            % (cache.getId(), printable_op(op), '/'.join(path), info))
+        logger.debug("push for %s: %s %s %r"
+                     % (cache.getId(), printable_op(op), '/'.join(path), info))
         cache_path = cache.getPhysicalPath()
         if cache_path not in self._trees:
             tree = TreeModification()
@@ -97,8 +97,7 @@ class TreeCacheManager(BaseManager):
         """
         for cache_path, tree in self._trees.items():
             cache = self._caches[cache_path]
-            LOG('TreeCacheManager', DEBUG, "replaying for cache %s" %
-                cache.getId())
+            logger.debug("replaying for cache %s" % cache.getId())
             cache.updateTree(tree)
         self.clear()
 
