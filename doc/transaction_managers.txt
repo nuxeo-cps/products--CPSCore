@@ -18,7 +18,7 @@ OUTLINE
 
 3. CPS before commit hook extensions
   3.1 Simple ordering policy for execution
-  3.2 CPS default subscribers and orders
+  3.2 CPS default subscribers
   3.3 Design
     3.3.2 IBaseManager / BaseManager
     3.3.3 TransactionManager
@@ -344,7 +344,7 @@ CONTENTS
            - method that does the actual job.
 
       This is what you should be implementing if you want to define
-      your own subscriber to benefit of the CPS integration. (sync,
+      your own subscriber to benefit from the CPS integration. (sync,
       status, etc...)
 
       I guess, this part could be shared at the Zope layer. I'll try
@@ -357,7 +357,8 @@ CONTENTS
         Transaction manager for CPS that will be responsible of the
         execution of ZODB transaction hooks registred by CPS. As well,
         note the transaction manager is responsible of the execution of
-        the hooks. (not the ZODB transaction itself !)
+        the hooks. (not the ZODB transaction itself !) This object
+        will be registred as a ZODB before commit hook.
         
         Multiple hooks can be registered and will be called in the order
         they were registered (first registered, first called), except
@@ -408,6 +409,8 @@ CONTENTS
 
 
       The CPSCore.TransactionManager module provides an helper as well
+      creating a TransactionManager instance, on the transaction
+      iself, and register it as a ZODB before commit hook.
 
         >>> from Products.CPSCore.TransactionManager import \
         ... get_transaction_manager
@@ -449,14 +452,90 @@ CONTENTS
 
     3.3.3 IndexationManager
 
-      Manager for indexation that can be delayed until commit time.
-      Order of execution -100.
-      This is the first hook called from the CPS default ones.
+      o Goal
 
-      CPSCore/IndexationManager.py
-      CPSCore/tests/test_indexation_manager.py
+        During a transaction we want always a single indexation per
+        object, including the security indexe updates, no matter what
+        appends during this transaction. We assume third party code
+        can request indexation itself and we want the same result in
+        this case too. ONE SINGLE INDEXATION PER TRANSACTION NO MATTER
+        WHAT APPENDS.
+
+      o Introduction
+
+        Manager for indexation that can be delayed until commit time.
+        Order of execution -100. This is the first hook called from the
+        CPS default ones within a stock CPS instance.
+
+      o Get the indexation manager
+    
+        >>> from Products.CPSCore.IndexationManager import \
+        ... get_indexation_manager
+        >>> mgr = get_indexation_manager()
+
+      o Public API     
+
+        >>> def push(self, ob, idxs=None, with_security=False):
+        ...     """Add / update an object to reindex to the reindexing queue.
+        ...     
+        ...     Copes with security reindexation as well.
+        ...     """
+
+      You may find interesting to check the module unit tests over
+      there for practical examples : CPSCore/tests/test_indexation_manager.py
+
+      o CPS Integration
+
+        This manager required us to change a bit our
+        infrastructure. CPS proxies inherits from ProxyBase.ProxyBase
+        and redefine the following CMFCore.CMFCatalogAware methods
+        reindexObject() and reindexObjectSecurity().
+
+        We changed the ProxyBase.reindexObject() method this way :
+
+        >>> def reindexObject(self, idxs=[]):
+        ...     get_indexation_manager().push(self, idxs=idxs)
+        >>> 
+
+        And the reindexObjectSecurity() one :
+
+        >>> def reindexObjectSecurity(self):
+        ...     get_indexation_manager().push(self, with_security=True)
+        >>> 
+
+        Now, both methods are invoking the indexation manager for the
+        schedule of the indexation of self.
+
+        The methods doing the actual reindexation are private now on
+        the ProxyBase class :
+
+          def _reindexObjectSecurity(self, skip_self=False):
+              # Implementation
+         
+          def reindexObject(self, idxs=[]):
+              # Implementation
+        
+        The Indexation Manager will call this method while processing
+        the objects that have been pushed for indexation.
 
     3.3.4 TreeCacheManager
+
+      o Goal
+
+        We want only one single tree cache rebuilt per object per
+        transaction.
+
+      o Introduction
+
+        CPS defines a Trees Tool, that caches some information about
+        the site's hierarchies for evident performance issues. Trees
+        Tool updates are realized after some event have been send on
+        the CPS event channel. The events can be thrown several times
+        with different informations.
+
+     XXX to finish
+
+     o CPSCore/TreeCacheManager
 
       Manager for tree cache that can be delayed until commit time.
       Order of execution 0
@@ -471,6 +550,8 @@ CONTENTS
 
       CPSSubscriptions/EventManager.py
       CPSSusbcriptions/test_event_manager.py
+
+      XXX to finish
 
 5. FAQ
 
