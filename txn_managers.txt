@@ -474,7 +474,7 @@ CONTENTS
   o How can I define, register and use my own subscriber ?
 
     You can of course define and register your own subscribers
-      >>> 
+
     Define it. It implements IBaseManager
 
       >>> from Products.CPSCore.interfaces import IBaseManager
