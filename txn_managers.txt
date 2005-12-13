@@ -17,7 +17,7 @@ OUTLINE
   2.3 Examples
 
 3. CPS before commit hook extensions
-  3.1 Simple execution ordering policy
+  3.1 Simple ordering policy for execution
   3.2 CPS default subscribers and orders
   3.3 Design
     3.3.2 IBaseManager / BaseManager
@@ -249,7 +249,7 @@ CONTENTS
 
 3. CPS before commit hook extensions
 
-  3.1 Simple ordering policy for subscribed execution
+  3.1 Simple ordering policy for subscriber execution
 
     The ZODB transaction has an implicit policy dealing with the order
     of execution of its before commit hooks which is the order in
@@ -258,7 +258,7 @@ CONTENTS
     ordering them. In fact, you can rarely predict in which order the
     hooks will be registered at runtime.
 
-    CPS TransactionManager defines a trivial and senseful ordering
+    CPS transaction manager defines a trivial and senseful ordering
     policy using an order of registration as an integer value
     specifying the order level for each hook.
 
@@ -283,14 +283,15 @@ CONTENTS
      3. EventManager      (order 100)
 
     Remember this if you want to define, register and use your own
-    manager.
+    manager. (See last section, it contains an exemple of such a
+    definition)
 
   3.3 Design
 
     3.3.1 IBaseManager / BaseManager
 
     This is the default interface and base class for all the
-    before commit hooks including the TransactionManager (see below)
+    before commit hooks including the transaction manager (see below)
 
     Here is the IBaseInterface interface definition
 
@@ -342,18 +343,75 @@ CONTENTS
         o __call__()
            - method that does the actual job.
 
+      This is what you should be implementing if you want to define
+      your own subscriber to benefit of the CPS integration. (sync,
+      status, etc...)
+
+      I guess, this part could be shared at the Zope layer. I'll try
+      to sketch a proposal someday on Zope3.
+
     3.3.2 TransactionManager
 
-      Transaction manager for CPS that will be responsible of the
-      execution of ZODB transaction hooks registrars by CPS. As well,
-      note the transaction manager is responsible of the execution of
-      the hooks. (not the ZODB transaction itself!)
+      o What is it ? 
 
-      Multiple hooks can be registered and will be called in the order
-      they were registered (first registered, first called), except
-      that hooks registered with different `order` arguments are
-      invoked from smallest `order` value to largest.  `order` must be
-      an integer, and defaults to 0.
+        Transaction manager for CPS that will be responsible of the
+        execution of ZODB transaction hooks registred by CPS. As well,
+        note the transaction manager is responsible of the execution of
+        the hooks. (not the ZODB transaction itself !)
+        
+        Multiple hooks can be registered and will be called in the order
+        they were registered (first registered, first called), except
+        that hooks registered with different `order` arguments are
+        invoked from smallest `order` value to largest.  `order` must be
+        an integer, and defaults to 0.
+
+      o API of the TransactionManager class
+
+        >>> def addBeforeCommitHook(self, hook, args=(), kws=None, order=0):
+        ...     """Register a hook to call before the transaction is committed.
+        ...     
+        ...     The specified hook function will be called after the
+        ...     transaction's commit method has been called, but before
+        ...     the commit process has been started.  The hook will be
+        ...     passed the specified positional (`args`) and keyword
+        ...     (`kws`) arguments.  `args` is a sequence of positional
+        ...     arguments to be passed, defaulting to an empty tuple (no
+        ...     positional arguments are passed).  `kws` is a dictionary
+        ...     of keyword argument names and values to be passed, or the
+        ...     default None (no keyword arguments are passed).
+        ...     
+        ...     Multiple hooks can be registered and will be called in the
+        ...     order they were registered (first registered, first
+        ...     called), except that hooks registered with different
+        ...     `order` arguments are invoked from smallest `order` value
+        ...     to largest.  `order` must be an integer, and defaults to
+        ...     0.
+        ...     
+        ...     For instance, a hook registered with order=1 will be
+        ...     invoked after another hook registered with order=-1 and
+        ...     before another registered with order=2, regardless of
+        ...     which was registered first.  When two hooks are registered
+        ...     with the same order, the first one registered is called
+        ...     first.
+        ...     
+        ...     Hooks are called only for a top-level commit.  A
+        ...     subtransaction commit or savepoint creation does not call
+        ...     any hooks.  If the transaction is aborted, hooks are not
+        ...     called, and are discarded.  Calling a hook "consumes" its
+        ...     registration too: hook registrations do not persist across
+        ...     transactions.  If it's desired to call the same hook on
+        ...     every transaction commit, then addBeforeCommitHook() must
+        ...     be called with that hook during every transaction; in such
+        ...     a case consider registering a synchronizer object via a
+        ...     TransactionManager's registerSynch() method instead.
+        ...     """
+
+
+      The CPSCore.TransactionManager module provides an helper as well
+
+        >>> from Products.CPSCore.TransactionManager import \
+        ... get_transaction_manager
+        >>> txn_manager = get_transaction_manager()
 
       Let's take an example :
 
@@ -364,10 +422,9 @@ CONTENTS
         >>> def hook(arg='no_arg', kw1='no_kw1', kw2='no_kw2'):
         ...     log.append("arg %r kw1 %r kw2 %r" % (arg, kw1, kw2))
 
-        >>> from Products.CPSCore.TransactionManager import TransactionManager
-        >>> import transaction
-
-        >>> mgr = TransactionManager(transaction.get())
+        >>> from Products.CPSCore.TransactionManager import \
+        ... get_transaction_manager
+        >>> mgr = get_transaction_manager()
 
         Register hooks
 
