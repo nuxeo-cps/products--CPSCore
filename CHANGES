@@ -17,3 +17,6 @@ New internal features:
 - Zope level users and anonymous users are explicitely homeless
 - Added ignore_event flag on trees tool and proxies tool.
 - Use zope.interface within interfaces.py
+- txn managers cleanups
+  o use logging instead of the zLOG
+  o use zope.interface
