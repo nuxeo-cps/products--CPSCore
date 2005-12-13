@@ -54,14 +54,15 @@ CONTENTS
   overall CPS based application performance.
 
   The first step has been to extend the ZODB transaction mechanism to
-  support subscribers that would be execute transactional code just
+  support subscribers that would execute transactional code just
   *before* the actual transaction commit time but at the end of the
   "regular" transaction execution. See chapter 2 for more information
-  about this.
+  about that.
 
   With this ZODB transaction extension, we defined the indexation
-  manager and it's been a real win for performance since we ended
-  up having an atomic indexation whatever the transactions was dealing with.
+  manager and it's been a real win for performance since we ended up
+  having an atomic indexation whatever the transactions was dealing
+  with.
 
   We realized soon after we could use other subscribers to manage
   other non optimum internal tasks. CPS extends the CMF and provides
@@ -77,7 +78,7 @@ CONTENTS
   times in the event channel at runtime and we can't control
   that. Think about third party code.
 
-  Thus, we needed a subscriber ordering policy for our subscribers
+  Thus, we needed a subscriber ordering policy for our CPS subscribers
   since it was clear that we would be faced to subscriber execution
   dependencies. See section 3 for more information about this.
 
@@ -473,7 +474,7 @@ CONTENTS
   o How can I define, register and use my own subscriber ?
 
     You can of course define and register your own subscribers
-
+      >>> 
     Define it. It implements IBaseManager
 
       >>> from Products.CPSCore.interfaces import IBaseManager
