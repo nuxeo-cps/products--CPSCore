@@ -24,8 +24,8 @@ from zope.testing.doctest import DocFileTest
 
 def test_suite():
     return unittest.TestSuite((
-        DocFileTest('txn_managers.txt', package="Products.CPSCore"),
+        DocFileTest('doc/txn_managers.txt', package="Products.CPSCore"),
         ))
 
 if __name__ == '__main__':
-    unittest.main(defaultTest='test_suite')
+    unittest.TextTestRunner().run(test_suite())
