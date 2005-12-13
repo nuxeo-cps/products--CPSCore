@@ -22,10 +22,7 @@
 
 import unittest
 
-try:
-    import transaction
-except ImportError: # BBB: for Zope 2.7
-    from Products.CMFCore.utils import transaction
+import transaction
 
 from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.TransactionManager import TransactionManager

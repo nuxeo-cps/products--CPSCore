@@ -28,11 +28,7 @@ from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.IndexationManager import IndexationManager
 from Products.CPSCore.IndexationManager import get_indexation_manager
 
-try:
-    import transaction
-except ImportError: # BBB: for Zope 2.7
-    from Products.CMFCore.utils import transaction
-
+import transaction
 
 class FakeTransaction:
     def addBeforeCommitHook(self, hook):

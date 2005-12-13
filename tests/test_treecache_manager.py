@@ -30,12 +30,7 @@ from Products.CPSCore.TreeCacheManager import get_treecache_manager
 
 from Products.CPSCore.treemodification import ADD
 
-
-try:
-    import transaction
-except ImportError: # BBB: for Zope 2.7
-    from Products.CMFCore.utils import transaction
-
+import transaction
 
 class FakeTransactionManager:
     def addBeforeCommitHook(self, hook, order):
