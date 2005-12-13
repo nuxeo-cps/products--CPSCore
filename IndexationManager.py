@@ -26,15 +26,8 @@ Asynchronous by default.
 from zLOG import LOG, DEBUG
 from Acquisition import aq_base
 
-try:
-    import transaction
-except ImportError:
-    # BBB: for Zope 2.7
-    from Products.CMFCore.utils import transaction
-    # The following is missing from CMF 1.5.2
-    def BBBget():
-        return get_transaction()
-    transaction.get = BBBget
+import transaction
+import zope.interface
 
 from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.BaseManager import BaseManager
@@ -49,7 +42,7 @@ _TXN_MGR_ORDER = -100
 class IndexationManager(BaseManager):
     """Holds data about reindexings to be done."""
 
-    __implements__ = IBaseManager
+    zope.interface.implements(IBaseManager)
 
     def __init__(self, mgr):
         """Initialize and register this manager with the transaction."""
