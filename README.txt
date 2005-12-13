@@ -1,33 +1,43 @@
+$Id$
+
 This product declares the key framework services for the Nuxeo Collaborative
-Portal Server (CPS) v3 (or CPS3). 
+Portal Server (CPS) v3 (or CPS3).
 
 Features
-
-  - Flexible revision and translation framework for content.
 
   - Single repository for content objects, that stores versions of
     documents.
 
+  - Flexible revision (proxy) and translation framework for content.
+
   - Event service: flexible tool to manage loose communication between
     tools.
 
-  - Everything is workflow-driven, with placeful (local) workflow association.
-    Workflow can be tuned for very different purposes (e.g.  collaboration vs.
-    publication).
+  - A Transaction Manager that extends the ZODB transaction.
 
-  - (XXX: to be completed)
+  - Misc CMF extensions
+
+Tracker for this component :
+
+  - http://svn.nuxeo.org/trac/pub/report/9
 
 More information
 
-  You can find more information about CPS3 in the "EuroPython
-  slides":http://www.europython.org/Talks/Slides/cps_europython_2003.pdf
-    
-  See also the "Nuxeo web site":http://www.nuxeo.com/en/ and "CPS
-  Project":http://www.cps-project.org/ for more details.
+  See http://www.cps-project.org/ for more information.
 
-  There is now a "cps-devel mailing
-  list":http://lists.nuxeo.com/mailman/listinfo/cps-devel for CPS3 (and CPS2)
-  developers. CPS users lists ("cps-users
-  (english)":http://lists.nuxeo.com/mailman/listinfo/cps-users and
-  "cps-users-fr (french)":ttp://lists.nuxeo.com/mailman/listinfo/cps-users-fr)
-  are also available.
+License
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License version 2 as published
+  by the Free Software Foundation.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  02111-1307, USA.
+
