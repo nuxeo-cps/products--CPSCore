@@ -27,8 +27,7 @@ for each hook. As well, note the transaction manager is responsible of
 the execution of the hooks. (not the ZODB transaction itself)
 """
 
-from zLOG import LOG, DEBUG
-
+import logging
 import bisect
 
 import transaction
@@ -36,6 +35,8 @@ import zope.interface
 
 from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.BaseManager import BaseManager
+
+logger = logging.getLogger("CPSCore.TransactionManager")
 
 _CPS_TXN_ATTRIBUTE = '_cps_transaction_manager'
 
@@ -103,9 +104,8 @@ class TransactionManager(BaseManager):
         # new one, and then be activated again and start adding some
         # again.
         if not self._status:
-            LOG("TransactionManager is DISABLED", DEBUG,
-                "won't register %s with %s and %s with order %s"
-                %(repr(hook), args, kws, str(order)))
+            logger.debug("won't register %s with %s and %s with order %s"
+                         %(repr(hook), args, kws, str(order)))
             return
 
         if not isinstance(order, int):
@@ -115,14 +115,12 @@ class TransactionManager(BaseManager):
             kws = {}
 
         if self.isSynchronous():
-            LOG("TransactionManager ", DEBUG,
-                "executs %s with %s and %s" %(repr(hook), args, kws))
+            logger.debug("executs %s with %s and %s" %(repr(hook), args, kws))
             hook(*args, **kws)
             return
 
-        LOG("TransactionManager ", DEBUG,
-            "register %s with %s and %s with order %s"
-            %(repr(hook), args, kws, str(order)))
+        logger.debug("register %s with %s and %s with order %s"
+                     %(repr(hook), args, kws, str(order)))
         bisect.insort(self._before_commit, (order, self._before_commit_index,
                                             hook, tuple(args), kws))
         self._before_commit_index += 1
@@ -135,16 +133,15 @@ class TransactionManager(BaseManager):
         the transaction.
         """
 
-        LOG("TransactionManager", DEBUG, "__call__")
+        logger.debug("__call__")
 
         while self._before_commit:
             order, index, hook, args, kws = self._before_commit.pop(0)
-            LOG("TransactionManager ", DEBUG,
-                "executs %s with %s and %s" %(repr(hook), args, kws))
+            logger.debug("executs %s with %s and %s" %(repr(hook), args, kws))
             hook(*args, **kws)
         self._before_commit_index = 0
 
-        LOG("TransactionManager", DEBUG, "__call__ done")
+        logger.debug("__call__ done")
 
 def del_transaction_manager():
     txn = transaction.get()
