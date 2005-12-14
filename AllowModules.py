@@ -34,6 +34,7 @@ allow_type(type(re.match('x', 'x')))
 allow_type(type(re.sub('x', 'x', 'x')))
 
 ModuleSecurityInfo('urllib').declarePublic('urlencode')
+ModuleSecurityInfo('urllib').declarePublic('unquote')
 ModuleSecurityInfo('cgi').declarePublic('escape')
 ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG', 'INFO')
 ModuleSecurityInfo('AccessControl').declarePublic('Unauthorized')
