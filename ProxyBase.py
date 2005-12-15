@@ -284,8 +284,8 @@ class ProxyBase(Base):
     # Freezing
     #
 
-    security.declarePrivate('freezeProxy')
-    def freezeProxy(self):
+    security.declareProtected(ModifyPortalContent, 'freezeProxy')
+    def freezeProxy(self, REQUEST=None):
         """Freeze the proxy.
 
         Freezing means that any attempt at modification will create a new
@@ -293,6 +293,8 @@ class ProxyBase(Base):
 
         (Called by CPSWorkflow.)
         """
+        if REQUEST is not None:
+            raise Unauthorized('Not allowed through the web')
         pxtool = getToolByName(self, 'portal_proxies')
         self._freezeProxy(self, pxtool)
 

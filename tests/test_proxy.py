@@ -66,6 +66,9 @@ class DummyProxyTool(Folder):
         rev = self._findRev(proxy, rev)
         return self.getContentByRevision(docid, rev)
 
+    def freezeProxy(self, proxy):
+        proxy.frozen = True
+
 class PlacefulProxy(ProxyBase, Folder):
     def __init__(self, id, **kw):
         self.id = id
@@ -194,6 +197,27 @@ class ProxyBaseTest(ZopeTestCase):
         self.assertEquals(doc.getId(), 'ob_d_2')
         self.assert_('Winner' in rolesForPermissionOn(View, doc))
         self.assert_(user.has_role('Winner', doc))
+
+    def test_security_freeze(self):
+        docs = self.folder.docs
+        docs.proxy1 = PlacefulProxy('proxy1', docid='d',
+                                    default_language='en',
+                                    language_revs={'en': 1, 'fr': 2})
+        proxy1 = docs.proxy1
+
+        # We can access freezeProxy
+        try:
+            proxy1.freezeProxy()
+        except Unauthorized:
+            self.fail("Catched Unauthorized exception")
+
+        # it calls the proxy tool
+        self.assert_(getattr(proxy1, 'frozen', False))
+            
+        # Unauthorized because it's TTW
+        self.failUnlessRaises(Unauthorized, proxy1.freezeProxy,
+                              REQUEST=self.app.REQUEST)
+        
 
 class ProxyFolderTest(ZopeTestCase, WarningInterceptor):
 
