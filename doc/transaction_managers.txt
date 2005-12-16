@@ -45,16 +45,16 @@ CONTENTS
   actions were taking more and more time as the catalog grew up.
 
   The first bottleneck were the CMF and DCWorkflow that are performing a lot
-  of non optimum or even useless indexations, all along transactions. The
+  of non optimum or even useless indexation, all along transactions. The
   first reflex I had was to check if I could reduce the indexation calls and
-  see how many indexations, at most, I could get. It ended up being an hack
+  see how many indexation, at most, I could get. It ended up being an hack
   and I realized, that anyway, I couldn't be sure of the amount of
   indexation that would occur for a given transaction: I couldn't prevent
   third party code using the CPS framework from making indexation calls,
   thus decreasing the overall CPS based application performance.
 
   The first step was to extend the ZODB transaction mechanism to support
-  subscribers that would execute transactional code just *before* the actual
+  commit hooks that would execute transactional code just *before* the actual
   transaction commit time, but at the end of the "regular" transaction
   execution. See section 2 for more information about this.
 
@@ -62,8 +62,8 @@ CONTENTS
   which was a real win for performance, since we ended up having an atomic
   indexation, whatever the transaction was dealing with.
 
-  We realized soon after that we could use additional subscribers to manage
-  other non optimum internal tasks. CPS extends the CMF and provides an
+  We realized soon after that we could use additional commit hooks to manage
+  other non optimum internal CPS tasks. CPS extends the CMF and provides an
   event service machinery allowing to receive events, and dispatch them to
   interested parties. So we defined an event manager, dispatching user
   notifications based on events, and a tree cache manager, maintaining a
@@ -73,12 +73,20 @@ CONTENTS
   times in the event channel at runtime, without having a complete control
   on this flow: think about third party code.
 
-  We defined a subscriber ordering policy for our CPS subscribers since it
+  We defined a commit hook ordering policy for our CPS managers it
   was clear that we would be faced to subscriber execution dependencies. See
   section 3 for more information about this.
 
   The section 4 is a small devel FAQ.
 
+  Note about the terms used in this document
+
+   - before commit hook : this is the before commit hooks that are registered
+     on the ZODB transaction itself. (see section 2)
+
+   - transaction subscriber : in the context of the CPSCore transaction
+     manager it refers to a commit hook that is registered on the
+     CPSCore transaction manager itself and not on the ZODB. (see section 3)
 
 2. ZODB before commit hooks
 
@@ -107,17 +115,19 @@ CONTENTS
     The ZODB transaction provides the following public API related to
     before commit hooks::
 
-       def addBeforeCommitHook(hook, args=(), kws=None):
-           """Register a hook to call before the transaction is committed.
-           """
+    >>> def addBeforeCommitHook(hook, args=(), kws=None):
+    ...     """Register a hook to call before the transaction is committed.
+    ...     """
+    >>>
 
-       def getBeforeCommitHooks():
-           """Return iterable producing the registered addBeforeCommit hooks.
-
-       	   A triple (hook, args, kws) is produced for each registered hook.
-           The hooks are produced in the order in which they would be invoked
-           by a top-level transaction commit.
-           """
+    >>> def getBeforeCommitHooks():
+    ...     """Return iterable producing the registered addBeforeCommit hooks.
+    ...
+    ...     A triple (hook, args, kws) is produced for each registered hook.
+    ...     The hooks are produced in the order in which they would be invoked
+    ...     by a top-level transaction commit.
+    ...     """
+    >>>
 
    2.3 Examples
 
@@ -276,15 +286,28 @@ CONTENTS
      3. EventManager      (order 100)
 
     Remember this if you want to define, register and use your own
-    manager. (See last section, it contains an exemple of such a definition)
+    manager. (See last section, it contains an example of such a definition)
 
-    XXX AT: I would have said 4, naming the TransactionManager, and
-    explaining that other hooks are not subscribers to the ZODB transaction
-    before commit hook, but to the TransactionManager itself, exactly
-    because it will be able to deal with order. + would have explained
-    briefly why the 3 above managers are executed in that order (what are
-    the dependencies?)
+    Let's explain a bit why we choose this order of execution.
 
+    It's pretty clear that the EventManager should be executed after
+    the IndexationManager and the TreeCacheManager since this manager
+    deals with the results of all the events that were sent during the
+    transaction. Thus, the EventManager can be interested with the
+    events the IndexationManager and the TreeCacheManager can throw on
+    the channel.
+
+    The IndexationManager is called at first because the
+    TreeCacheManager might be interested of asking the catalog before
+    rebuilding the tree for information.
+
+    ATTENTION ! An important point here is the fact the the above CPS
+    managers are not registered on the ZODB transaction itself but on
+    the CPS transaction manager. You need to understand that the only
+    before commit hook that CPS is adding on the ZODB transaction
+    itself is the CPS transaction manager because it is the one
+    defining the order of execution. (see section 4 to see why the
+    ZODB transaction doesn't deal with order of execution)
 
   3.3 Design
 
