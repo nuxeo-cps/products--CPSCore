@@ -26,98 +26,90 @@ OUTLINE
     3.3.5 EventManager
     3.3.6 TreeCacheManager
 
-5. FAQ
+4. FAQ
   o Which version of ZODB do I have to use ?
   o Why the ZODB policy is not part of the core ZODB transaction ?
   o How can I have back a real time indexation within my tests ?
   o How can I deactivate a given transaction subscriber ?
   o How can I define and register my own subscriber ?
-  o Can I launch non transactional using before commit hook subscribers ?
+  o Can I launch non transactional operations using before commit hook
+    subscribers ?
 
 CONTENTS
 
 1. Introduction and motivations
 
-  The first motivation behind this extension has been performances at
-  the first place. We realized on large scale projects, where a huge
-  amount of items where stored within the catalog, that the creation
-  and the edition of items or still workflow actions were taking more
-  and more time as the catalog grew up. The first bottleneck has been
-  the CMF and DCWorkflow that are performing a lot of not optimum, or
-  even useless indexation, all along transactions. The first reflex I
-  had has been to check if I could reduce the indexation calls and see
-  how many indexation, at most, I could get like that. It ended up
-  being really an hack and I realized, that anyway, I couldn't be sure
-  of the amount of indexation that would occur for a given
-  transaction since I couldn't prevent third party code using the CPS
-  framework to call indexation all along and thus decrease the
-  overall CPS based application performance.
+  The first motivation behind this extension was performance. On large scale
+  projects, where a huge amount of items are stored within the catalog, we
+  realized that operations like creation, edition, deletion or workflow
+  actions were taking more and more time as the catalog grew up.
 
-  The first step has been to extend the ZODB transaction mechanism to
-  support subscribers that would execute transactional code just
-  *before* the actual transaction commit time but at the end of the
-  "regular" transaction execution. See chapter 2 for more information
-  about that.
+  The first bottleneck were the CMF and DCWorkflow that are performing a lot
+  of non optimum or even useless indexations, all along transactions. The
+  first reflex I had was to check if I could reduce the indexation calls and
+  see how many indexations, at most, I could get. It ended up being an hack
+  and I realized, that anyway, I couldn't be sure of the amount of
+  indexation that would occur for a given transaction: I couldn't prevent
+  third party code using the CPS framework from making indexation calls,
+  thus decreasing the overall CPS based application performance.
 
-  With this ZODB transaction extension, we defined the indexation
-  manager and it's been a real win for performance since we ended up
-  having an atomic indexation whatever the transactions was dealing
-  with.
+  The first step was to extend the ZODB transaction mechanism to support
+  subscribers that would execute transactional code just *before* the actual
+  transaction commit time, but at the end of the "regular" transaction
+  execution. See section 2 for more information about this.
 
-  We realized soon after we could use other subscribers to manage
-  other non optimum internal tasks. CPS extends the CMF and provides
-  an event service machinery allowing subscribers to react on given
-  events and throw up events in the channel that can be caught by
-  whatever subscribers of the CPS event service tool.
+  With this ZODB transaction extension, we defined the indexation manager
+  which was a real win for performance, since we ended up having an atomic
+  indexation, whatever the transaction was dealing with.
 
-  We defined then an event manager dispatching user notifications
-  based on events and then a tree cache manager maintaining a tree
-  cache for evident performance issues. It seems that the Plone guys
+  We realized soon after that we could use additional subscribers to manage
+  other non optimum internal tasks. CPS extends the CMF and provides an
+  event service machinery allowing to receive events, and dispatch them to
+  interested parties. So we defined an event manager, dispatching user
+  notifications based on events, and a tree cache manager, maintaining a
+  tree cache for evident performance issues. It seems that the Plone guys
   never really get that<wink>. The main idea is to sort, filter and process
-  the events as *less* as we can. Notice, the events are sent several
-  times in the event channel at runtime and we can't control
-  that. Think about third party code.
+  events as *less* as possible, being aware that events are sent several
+  times in the event channel at runtime, without having a complete control
+  on this flow: think about third party code.
 
-  Thus, we needed a subscriber ordering policy for our CPS subscribers
-  since it was clear that we would be faced to subscriber execution
-  dependencies. See section 3 for more information about this.
+  We defined a subscriber ordering policy for our CPS subscribers since it
+  was clear that we would be faced to subscriber execution dependencies. See
+  section 3 for more information about this.
 
-  We'll present the CPS transaction before commit hook definition and
-  the way they interact in section 4
+  The section 4 is a small devel FAQ.
 
-  The section 5 will be a small devel FAQ
 
 2. ZODB before commit hooks
 
   2.1 Introduction
 
-    ZODB transaction permits the registration of hooks to be call
-    before the transaction is committed.
+    ZODB transaction allows to register hooks to be called before the
+    transaction is committed.
 
-    The specified hook functions will be called after the transaction's
-    commit method has been called, but before the commit process has been
-    started.
+    The specified hook functions will be called after the transaction commit
+    method has been called, but before the commit process has been started.
 
     Multiple hooks can be registered and will be called in the order they
-    were registered (first registered, first called).  This method can
-    also be called from a hook:  an executing hook can register more
-    hooks.  Applications should take care to avoid creating infinite loops
-    by recursively registering hooks.
+    were registered (first registered, first called). This method can also
+    be called from a hook: an executing hook can register more hooks.
+    Applications should take care to avoid creating infinite loops by
+    recursively registering hooks.
 
-    Hooks are called only for a top-level commit.  A subtransaction
-    commit or savepoint creation does not call any hooks.  If the
-    transaction is aborted, hooks are not called, and are discarded.
-    Calling a hook "consumes" its registration too:  hook registrations
-    do not persist across transactions.
+    Hooks are called only for a top-level commit. A subtransaction commit or
+    savepoint creation does not call any hooks. If the transaction is
+    aborted, hooks are not called, and are discarded. Calling a hook
+    "consumes" its registration too: hook registrations do not persist
+    across transactions.
 
   2.2 Transaction API
 
     The ZODB transaction provides the following public API related to
-    before commit hooks
+    before commit hooks::
 
        def addBeforeCommitHook(hook, args=(), kws=None):
            """Register a hook to call before the transaction is committed.
-       	 """
+           """
 
        def getBeforeCommitHooks():
            """Return iterable producing the registered addBeforeCommit hooks.
@@ -247,26 +239,27 @@ CONTENTS
          "arg '5' kw1 'no_kw1' kw2 '5.2'"]
         >>> reset_log()
 
+
 3. CPS before commit hook extensions
 
   3.1 Simple ordering policy for subscriber execution
 
-    The ZODB transaction has an implicit policy dealing with the order
-    of execution of its before commit hooks which is the order in
-    which they have been registered. Despite the fact that you can
-    register several hooks on the transaction, you got no way of
-    ordering them. In fact, you can rarely predict in which order the
-    hooks will be registered at runtime.
+    The ZODB transaction has an implicit policy dealing with the order of
+    execution of its before commit hooks: it is the order in which they have
+    been registered. Despite the fact that you can register several hooks on
+    the transaction, you have no way to order them. In fact, you can rarely
+    predict in which order the hooks will be registered at runtime.
 
-    CPS transaction manager defines a trivial and senseful ordering
-    policy using an order of registration as an integer value
-    specifying the order level for each hook.
+    CPS transaction manager defines a trivial and senseful ordering policy
+    using an order of registration as an integer value specifying the order
+    level for each hook.
 
     For instance, a hook registered with order=1 will be invoked after
-    another hook registered with order=-1 and before another
-    registered with order=2, regardless of which was registered first.
-    When two hooks are registered with the same order, the first one
-    registered is called first.
+    another hook registered with order=-1 and before another registered with
+    order=2, regardless of which was registered first. When two hooks are
+    registered with the same order, the first one registered is called
+    first.
+
 
   3.2 CPS default subscribers and execution dependency
 
@@ -283,8 +276,15 @@ CONTENTS
      3. EventManager      (order 100)
 
     Remember this if you want to define, register and use your own
-    manager. (See last section, it contains an exemple of such a
-    definition)
+    manager. (See last section, it contains an exemple of such a definition)
+
+    XXX AT: I would have said 4, naming the TransactionManager, and
+    explaining that other hooks are not subscribers to the ZODB transaction
+    before commit hook, but to the TransactionManager itself, exactly
+    because it will be able to deal with order. + would have explained
+    briefly why the 3 above managers are executed in that order (what are
+    the dependencies?)
+
 
   3.3 Design
 
@@ -293,7 +293,7 @@ CONTENTS
     This is the default interface and base class for all the
     before commit hooks including the transaction manager (see below)
 
-    Here is the IBaseInterface interface definition
+    Here is the IBaseInterface interface definition.
 
         >>> import zope.interface
         >>> class IBaseManager(zope.interface.Interface):
@@ -304,7 +304,7 @@ CONTENTS
         ...
         ...     DEFAULT_SYNC = zope.interface.Attribute('DEFAULT_SYNC',
         ...     "Default sync mode")
-        ...     
+        ...
         ...     DEFAULT_STATUS = zope.interface.Attribute('DEFAULT_STATUS',
         ...     "Default status")
         ...
@@ -352,25 +352,25 @@ CONTENTS
 
     3.3.2 TransactionManager
 
-      o What is it ? 
+      o What is it ?
 
-        Transaction manager for CPS that will be responsible of the
-        execution of ZODB transaction hooks registred by CPS. As well,
-        note the transaction manager is responsible of the execution of
-        the hooks. (not the ZODB transaction itself !) This object
-        will be registred as a ZODB before commit hook.
-        
+        Transaction manager for CPS that will be responsible for the
+        execution of ZODB transaction hooks registred by CPS. As well, note
+        that the transaction manager is responsible for the execution of
+        hooks (not the ZODB transaction itself !). This object will be
+        registred as a ZODB before commit hook.
+
         Multiple hooks can be registered and will be called in the order
-        they were registered (first registered, first called), except
-        that hooks registered with different `order` arguments are
-        invoked from smallest `order` value to largest.  `order` must be
-        an integer, and defaults to 0.
+        they were registered (first registered, first called), except that
+        hooks registered with different `order` arguments are invoked from
+        smallest `order` value to largest. `order` must be an integer, and
+        defaults to 0.
 
       o API of the TransactionManager class
 
         >>> def addBeforeCommitHook(self, hook, args=(), kws=None, order=0):
         ...     """Register a hook to call before the transaction is committed.
-        ...     
+        ...
         ...     The specified hook function will be called after the
         ...     transaction's commit method has been called, but before
         ...     the commit process has been started.  The hook will be
@@ -380,21 +380,21 @@ CONTENTS
         ...     positional arguments are passed).  `kws` is a dictionary
         ...     of keyword argument names and values to be passed, or the
         ...     default None (no keyword arguments are passed).
-        ...     
+        ...
         ...     Multiple hooks can be registered and will be called in the
         ...     order they were registered (first registered, first
         ...     called), except that hooks registered with different
         ...     `order` arguments are invoked from smallest `order` value
         ...     to largest.  `order` must be an integer, and defaults to
         ...     0.
-        ...     
+        ...
         ...     For instance, a hook registered with order=1 will be
         ...     invoked after another hook registered with order=-1 and
         ...     before another registered with order=2, regardless of
         ...     which was registered first.  When two hooks are registered
         ...     with the same order, the first one registered is called
         ...     first.
-        ...     
+        ...
         ...     Hooks are called only for a top-level commit.  A
         ...     subtransaction commit or savepoint creation does not call
         ...     any hooks.  If the transaction is aborted, hooks are not
@@ -409,8 +409,8 @@ CONTENTS
 
 
       The CPSCore.TransactionManager module provides an helper as well
-      creating a TransactionManager instance, on the transaction
-      iself, and register it as a ZODB before commit hook.
+      creating a TransactionManager instance, on the transaction itself, and
+      registers it as a ZODB before commit hook.
 
         >>> from Products.CPSCore.TransactionManager import \
         ... get_transaction_manager
@@ -454,12 +454,11 @@ CONTENTS
 
       o Goal
 
-        During a transaction we want always a single indexation per
-        object, including the security indexe updates, no matter what
-        appends during this transaction. We assume third party code
-        can request indexation itself and we want the same result in
-        this case too. ONE SINGLE INDEXATION PER TRANSACTION NO MATTER
-        WHAT APPENDS.
+        During a transaction we want always a single indexation per object,
+        including the security indexe update, no matter what appends during
+        this transaction. We assume third party code can request indexation
+        itself and we want the same result in this case too. ONE SINGLE
+        INDEXATION PER TRANSACTION NO MATTER WHAT APPENDS.
 
       o Introduction
 
@@ -468,55 +467,55 @@ CONTENTS
         CPS default ones within a stock CPS instance.
 
       o Get the indexation manager
-    
+
         >>> from Products.CPSCore.IndexationManager import \
         ... get_indexation_manager
         >>> mgr = get_indexation_manager()
 
-      o Public API     
+      o Public API
 
         >>> def push(self, ob, idxs=None, with_security=False):
         ...     """Add / update an object to reindex to the reindexing queue.
-        ...     
+        ...
         ...     Copes with security reindexation as well.
         ...     """
 
-      You may find interesting to check the module unit tests over
-      there for practical examples : CPSCore/tests/test_indexation_manager.py
+        You may find interesting to check the module unit tests over there
+        for practical examples : CPSCore/tests/test_indexation_manager.py
 
       o CPS Integration
 
-        This manager required us to change a bit our
-        infrastructure. CPS proxies inherits from ProxyBase.ProxyBase
-        and redefine the following CMFCore.CMFCatalogAware methods
-        reindexObject() and reindexObjectSecurity().
+        This manager required us to change a bit our infrastructure. CPS
+        proxies inherits from ProxyBase.ProxyBase and redefine the following
+        CMFCore.CMFCatalogAware methods reindexObject() and
+        reindexObjectSecurity().
 
         We changed the ProxyBase.reindexObject() method this way :
 
         >>> def reindexObject(self, idxs=[]):
         ...     get_indexation_manager().push(self, idxs=idxs)
-        >>> 
+        >>>
 
         And the reindexObjectSecurity() one :
 
         >>> def reindexObjectSecurity(self):
         ...     get_indexation_manager().push(self, with_security=True)
-        >>> 
+        >>>
 
-        Now, both methods are invoking the indexation manager for the
-        schedule of the indexation of self.
+        Both methods are now just invoking the indexation manager to
+        schedule their own indexation.
 
-        The methods doing the actual reindexation are private now on
-        the ProxyBase class :
+        The methods doing the actual reindexation are now private on the
+        ProxyBase class :
 
           def _reindexObjectSecurity(self, skip_self=False):
               # Implementation
-         
+
           def reindexObject(self, idxs=[]):
               # Implementation
-        
-        The Indexation Manager will call this method while processing
-        the objects that have been pushed for indexation.
+
+        The Indexation Manager will call this method when processing objects
+        that have been pushed for indexation.
 
     3.3.4 TreeCacheManager
 
@@ -529,7 +528,7 @@ CONTENTS
 
         CPS defines a Trees Tool, that caches some information about
         the site's hierarchies for evident performance issues. Trees
-        Tool updates are realized after some event have been send on
+        Tool updates are realized after some event have been sent on
         the CPS event channel. The events can be thrown several times
         with different informations.
 
@@ -553,7 +552,7 @@ CONTENTS
 
       XXX to finish
 
-5. FAQ
+4. FAQ
 
   o Which version of ZODB do I have to use ?
 
@@ -726,7 +725,8 @@ CONTENTS
      >>> txn_manager.push('CPS is great !')
      CPS is great !
 
-  o Can I launch non transactional using before commit hook subscribers ?
+  o Can I launch non transactional operations using before commit hook
+    subscribers ?
 
     You *cannot* execute non transactional code using before commit
     hook subscribers since the execution of the subscribers are done
