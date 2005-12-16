@@ -286,7 +286,7 @@ CONTENTS
      3. EventManager      (order 100)
 
     Remember this if you want to define, register and use your own
-    manager. (See last section, it contains an example of such a definition)
+    manager (see last section, it contains an example of such a definition).
 
     Let's explain a bit why we choose this order of execution.
 
@@ -297,17 +297,16 @@ CONTENTS
     events the IndexationManager and the TreeCacheManager can throw on
     the channel.
 
-    The IndexationManager is called at first because the
-    TreeCacheManager might be interested of asking the catalog before
-    rebuilding the tree for information.
+    The IndexationManager is called first because the TreeCacheManager might
+    have to query the catalog before rebuilding the tree.
 
-    ATTENTION ! An important point here is the fact the the above CPS
+    ATTENTION ! An important point here is the fact that the above CPS
     managers are not registered on the ZODB transaction itself but on
     the CPS transaction manager. You need to understand that the only
     before commit hook that CPS is adding on the ZODB transaction
-    itself is the CPS transaction manager because it is the one
-    defining the order of execution. (see section 4 to see why the
-    ZODB transaction doesn't deal with order of execution)
+    itself is the CPS transaction manager, because it is the one
+    defining the order of execution (see section 4 to see why the
+    ZODB transaction doesn't deal with order of execution).
 
   3.3 Design
 
