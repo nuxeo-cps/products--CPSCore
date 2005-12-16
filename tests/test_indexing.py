@@ -256,11 +256,40 @@ class ProxyIndexingTest(ZopeTestCase.PortalTestCase):
 
         # XXX check unindexObject
 
+class IndexableObjectWrapperTestCase(ZopeTestCase.PortalTestCase):
+
+    def _setup(self):
+        self._setupUserFolder()
+        self._setupUser()
+        self.login()
+        get_indexation_manager().setSynchronous(True)
+
+    def getPortal(self):
+        self.app.portal = Folder( 'portal')
+        return self.app.portal
+
+    def test_btree_position_in_container(self):
+
+        from Products.CMFCore.CMFBTreeFolder import CMFBTreeFolder
+        from Acquisition import aq_inner, aq_parent
+        
+        self.app.portal._setObject('btree', CMFBTreeFolder('btree'))
+        btree = getattr(self.app.portal, 'btree')
+        btree._setObject('item', SimpleItem('item'))
+        item = getattr(btree, 'item')
+
+        self.assertEqual(aq_parent(aq_inner(item)), btree)
+        from Products.CPSCore.PatchCatalogTool import \
+             IndexableObjectWrapper
+
+        wrapper = IndexableObjectWrapper({}, item)
+        self.assertEqual(0, wrapper.position_in_container())
 
 def test_suite():
     return unittest.TestSuite((
         unittest.makeSuite(IndexingTest),
         unittest.makeSuite(ProxyIndexingTest),
+        unittest.makeSuite(IndexableObjectWrapperTestCase),
         ))
 
 if __name__ == '__main__':

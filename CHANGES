@@ -8,6 +8,8 @@ Bug fixes:
 ~~~~~~~~~~
 - Fixed CMF File and Image indexing. This gets rid of the "unsuccessfully
   attempted to uncatalog an object" messages.
+- Fixed IndexableObjectWrapper for item within btree based container
+that don't have ordering support
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - PatchCatalogTool new wrapper index position_in_container and match_languages

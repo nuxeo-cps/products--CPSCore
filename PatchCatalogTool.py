@@ -152,6 +152,12 @@ class IndexableObjectWrapper:
                 LOG('position_in_container', WARNING,
                     'got a Value Error %s' % err)
                 return 0
+            except AttributeError, err:
+                # Container without ordering support such as
+                # BTreeFolder based folders. (proxy or not)
+                LOG('position_in_container', WARNING,
+                    'got an AttributeError %s' % err)
+                return 0
         return 0
 
     def match_languages(self):
