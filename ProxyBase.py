@@ -678,8 +678,6 @@ class FileDownloader(Acquisition.Explicit):
     def __bobo_traverse__(self, request, name):
         state = self.state
         ob = self.ob
-        LOG('FileDownloader.getitem', DEBUG, "state=%s name=%s"
-            % (state, name))
         if state == 0:
             # First call, swallow attribute
             if not hasattr(aq_base(ob), name):
