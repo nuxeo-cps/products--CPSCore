@@ -25,7 +25,7 @@ import ZODB.tests.util
 from zope.component import getGlobalServices
 from zope.component.exceptions import ComponentLookupError
 from zope.app.testing import ztapi
-from zope.app.tests import placelesssetup
+from zope.app.testing import placelesssetup
 from Products.Five import zcml
 
 import transaction
