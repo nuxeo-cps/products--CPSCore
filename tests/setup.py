@@ -47,8 +47,11 @@ class EventTest(placelesssetup.PlacelessSetup):
         import Products.Five
         import Products.CPSCore
         zcml = file('meta.zcml', Products.Five, execute=False)
+        #file('i18n.zcml', Products.Five, execute=False, context=zcml)
+        #file('permissions.zcml', Products.Five, execute=False, context=zcml)
         file('event.zcml', Products.Five, execute=False, context=zcml)
         file('deprecated.zcml', Products.Five, execute=False, context=zcml)
+        #file('configure.zcml', Products.CMFCore, execute=False, context=zcml)
         file('configure.zcml', Products.CPSCore, execute=False, context=zcml)
         self._zcml = zcml
 
@@ -74,6 +77,15 @@ class EventTest(placelesssetup.PlacelessSetup):
 _eventTest = EventTest()
 eventSetUp = _eventTest.setUp
 eventTearDown = _eventTest.tearDown
+
+
+def fullFiveSetup():
+    from Products.Five import zcml
+    # Cleanup everything first
+    placelesssetup.tearDown()
+    # Now reload Five setup
+    zcml._initialized = False
+    zcml.load_site()
 
 
 class EventObserverTest(EventTest):
