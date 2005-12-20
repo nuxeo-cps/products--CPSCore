@@ -38,9 +38,18 @@ from ZODB.POSException import ConflictError
 
 from OFS.OrderedFolder import OrderedFolder
 
+import zope.event
+from zope.app.container.contained import ObjectAddedEvent
+from zope.app.container.contained import ContainerModifiedEvent
+from zope.app.event.objectevent import ObjectModifiedEvent
+from OFS.event import ObjectWillBeRemovedEvent
+
+
 from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.permissions import ViewManagementScreens
+
+from Products.CPSCore.events import securityModificationEvent
 
 
 CPSSubscriberDefinition_type = 'CPS Subscriber Definition'
@@ -227,8 +236,8 @@ class EventServiceTool(UniqueObject, OrderedFolder):
     #
     # API
     #
-    security.declarePrivate('notify')
-    def notify(self, event_type, object, infos):
+    security.declarePrivate('notifyCompat')
+    def notifyCompat(self, event_type, object, infos):
         """Notifies subscribers of an event
 
         infos is a dictionary with keys:
@@ -237,11 +246,13 @@ class EventServiceTool(UniqueObject, OrderedFolder):
 
         This method is private.
         """
-        utool = getToolByName(self, 'portal_url')
-        rpath = utool.getRelativeUrl(object)
+        # Avoid using portal_url as sometimes we receive notifications before
+        # the URL Tool exists.
+        portal = aq_parent(aq_inner(self))
+        pplen = len(portal.getPhysicalPath())
+        rpath = '/'.join(object.getPhysicalPath()[pplen:])
         infos['rpath'] = rpath
         notification_dict = self._notification_dict
-        portal = aq_parent(aq_inner(self))
         exc_info = None
         try:
             for ev_type in (event_type, '*'):
@@ -296,6 +307,37 @@ class EventServiceTool(UniqueObject, OrderedFolder):
         if event_type.startswith('sys_'):
             raise Unauthorized, event_type
         return self.notify(event_type, object, infos)
+
+    # BBB will be removed in CPS 3.5
+    security.declarePrivate('notify')
+    def notify(self, event_type, ob, infos):
+        """Backward compatibility method for notifications.
+
+        Does old processing and also redispatches as an event.
+        """
+        # Older CPS event tool subscribers notification
+        self.notifyCompat(event_type, ob, infos)
+
+        # Re-send as event
+        if event_type == 'sys_del_object':
+            parent = aq_parent(aq_inner(ob))
+            zope.event.notify(ObjectWillBeRemovedEvent(ob, parent, ob.getId()))
+        elif event_type in ('sys_add_object', 'sys_add_cmf_object'):
+            parent = aq_parent(aq_inner(ob))
+            zope.event.notify(ObjectAddedEvent(ob, parent, ob.getId()))
+        elif event_type == 'sys_order_object':
+            zope.event.notify(ContainerModifiedEvent(ob))
+        elif event_type in ('sys_modify_object', 'modify_object'):
+            zope.event.notify(ObjectModifiedEvent(ob))
+        elif event_type == 'sys_modify_security':
+            self._notifySecurityRecursively(ob)
+
+    def _notifySecurityRecursively(self, ob):
+        # Backward compat for old notify not dispatched to sublocations,
+        # do the dispatching "by hand"
+        zope.event.notify(securityModificationEvent(ob))
+        for subob in ob.objectValues():
+            self._notifySecurityRecursively(subob)
 
     #
     # misc

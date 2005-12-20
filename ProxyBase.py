@@ -39,6 +39,9 @@ from OFS.Image import File
 from OFS.Traversable import Traversable
 from webdav.WriteLockInterface import WriteLockInterface
 
+import zope.interface
+from Products.CPSCore.interfaces import ICPSProxy
+
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.permissions import View
 from Products.CMFCore.permissions import ModifyPortalContent
@@ -78,6 +81,8 @@ class ProxyBase(Base):
     - tag, an optional integer tag. A tag is an abstract reference to
       the mapping language -> revision. It is used to provide branch
       lineage between proxies. """
+
+    zope.interface.implements(ICPSProxy)
 
     security = ClassSecurityInfo()
     use_mcat = 0

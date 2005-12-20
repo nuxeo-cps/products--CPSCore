@@ -63,13 +63,15 @@ class DummySubscriber(Folder):
 
 class Class1:
     meta_type = 'type1'
+    id = 'instance1'
     def getId(self):
-        return 'instance1'
+        return self.id
+    def getPhysicalPath(self):
+        return ()
 
-class Class2:
+class Class2(Class1):
     meta_type = 'type2'
-    def getId(self):
-        return 'instance2'
+    id = 'instance2'
 
 
 class SynchronousNotificationsTest(unittest.TestCase, LogInterceptor):

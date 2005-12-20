@@ -23,6 +23,8 @@
 import random
 import unittest
 from Testing import ZopeTestCase
+from Testing.ZopeTestCase import PortalTestCase
+from Products.CPSCore.tests.setup import EventTest
 
 # Ensure we have made our patches
 ZopeTestCase.installProduct('CPSCompat')
@@ -84,7 +86,7 @@ class CPSCatalogTool(CatalogTool):
             )
 
 
-class IndexingTest(ZopeTestCase.PortalTestCase):
+class IndexingTest(PortalTestCase):
 
     def getPortal(self):
         self.app.portal = Folder('portal')
@@ -120,7 +122,15 @@ class IndexingTest(ZopeTestCase.PortalTestCase):
         self.assertEquals(len(res), 1)
 
 
-class ProxyIndexingTest(ZopeTestCase.PortalTestCase):
+class ProxyIndexingTest(PortalTestCase, EventTest):
+
+    def setUp(self):
+        EventTest.setUp(self)
+        PortalTestCase.setUp(self)
+
+    def tearDown(self):
+        PortalTestCase.tearDown(self)
+        EventTest.tearDown(self)
 
     def getPortal(self):
         self.app.portal = Folder('portal')

@@ -1,5 +1,4 @@
-# -*- coding: iso-8859-15 -*-
-# (C) Copyright 2005 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2005 Nuxeo SAS <http://nuxeo.com>
 # Author: Julien Anguenot <ja@nuxeo.com>
 #         Florent Guillaume <fg@nuxeo.com>
 #
@@ -21,19 +20,32 @@
 """CPSCore interfaces
 """
 
-import zope.interface
+from zope.interface import Interface
+from zope.interface import Attribute
 
-class IBaseManager(zope.interface.Interface):
+from zope.app.event.interfaces import IModificationDescription
+
+
+class ISecurityModificationDescription(IModificationDescription):
+    """Modification of an object's security.
+    """
+
+
+class ICPSProxy(Interface):
+    """CPS Proxy.
+    """
+    # XXX TODO
+
+
+class IBaseManager(Interface):
     """Base Manager definition
 
     Provides a base interface for before commit hooks definitions
     """
 
-    DEFAULT_SYNC = zope.interface.Attribute('DEFAULT_SYNC',
-                                            "Default sync mode")
-    DEFAULT_STATUS = zope.interface.Attribute('DEFAULT_STATUS',
-                                              "Default status")
-    
+    DEFAULT_SYNC = Attribute('DEFAULT_SYNC', "Default sync mode")
+    DEFAULT_STATUS = Attribute('DEFAULT_STATUS', "Default status")
+
     def setSynchronous(sync):
         """Set queuing mode.
         """

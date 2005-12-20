@@ -17,93 +17,22 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Patch Zope so that it sends standard notifications.
+"""Remains of events, will go away.
 """
 
-from zLOG import LOG, DEBUG, ERROR, TRACE
-from Acquisition import aq_base
 from Products.CPSCore.EventServiceTool import getEventService
-
 
 def notify(context, event_type, object, *args, **kw):
     evtool = getEventService(context)
     infos = {'args': args, 'kw': kw}
     evtool.notify(event_type, object, infos)
 
-def patch_action(class_, func):
-    action = func.__name__
-    old_action = '_cps_old_%s' % action
-    if hasattr(class_, old_action):
-        ok = "Already patched."
-    else:
-        old = getattr(class_, action)
-        setattr(class_, old_action, old)
-        ok = 'Done.'
-    setattr(class_, action, func)
-    LOG('EventService', TRACE, ('Patching %s.%s... %s' %
-                               (class_.__name__, action, ok)))
-
-#
-# OFS
-#
-
-import sys
-from OFS.ObjectManager import ObjectManager
-from OFS.CopySupport import CopyContainer
-from OFS.OrderSupport import OrderSupport
-from OFS.SimpleItem import Item
-from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
-
-# Patch all before/after methods.
-
-def manage_afterAdd(self, *args, **kw):
-    """manage_afterAdd patched for event service notification."""
-    notify(self, 'sys_add_object', self, *args, **kw)
-    self._cps_old_manage_afterAdd(*args, **kw)
-
-def manage_beforeDelete(self, *args, **kw):
-    """manage_beforeDelete patched for event service notification."""
-    self._cps_old_manage_beforeDelete(*args, **kw)
-    notify(self, 'sys_del_object', self, *args, **kw)
-
-for class_ in (Item, ObjectManager, CMFCatalogAware):
-    patch_action(class_, manage_afterAdd)
-    patch_action(class_, manage_beforeDelete)
-
-# Special fix for CMFDefault.File and Image:
-# These classes inherit both from Item and CMFCatalogAware
-from Products.CMFCore.PortalContent import PortalContent
-from Products.CMFDefault.File import File
-from Products.CMFDefault.Image import Image
-def File_manage_afterAdd(self, item, container):
-    """Both of my parents have an afterAdd method"""
-    PortalContent._cps_old_manage_afterAdd(self, item, container)
-def File_manage_beforeDelete(self, item, container):
-    """Both of my parents have a beforeDelete method"""
-    PortalContent._cps_old_manage_beforeDelete(self, item, container)
-# We don't use patch_action because we specifically do not want to
-# set or call _cps_old_<action>
-File.manage_afterAdd = File_manage_afterAdd
-Image.manage_afterAdd = File_manage_afterAdd
-File.manage_beforeDelete = File_manage_beforeDelete
-Image.manage_beforeDelete = File_manage_beforeDelete
-
-#
-# Ordered Folder
-#
-
-def moveObjectsByDelta(self, *args, **kw):
-    res = self._cps_old_moveObjectsByDelta(*args, **kw)
-    notify(self, 'sys_order_object', self, *args, **kw)
-    return res
-
-patch_action(OrderSupport, moveObjectsByDelta)
-
 #
 # Generators of CMF Add events
 #
 
-# The recursing method
+from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
+
 def manage_afterCMFAdd(self, item, container):
     """Notify object and event service of CMF add finalization."""
     notify(self, 'sys_add_cmf_object', self)
@@ -111,74 +40,3 @@ def manage_afterCMFAdd(self, item, container):
 
 CMFCatalogAware.manage_afterCMFAdd = manage_afterCMFAdd
 
-# manage_renameObject, defined in CopySupport and redefined
-# (with inheritedAttribute for old one) in OrderSupport...
-
-def manage_renameObject(self, id, new_id, REQUEST=None):
-    res = self._cps_old_manage_renameObject(id, new_id, REQUEST=REQUEST)
-    ob = self._getOb(new_id)
-    if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
-        ob.manage_afterCMFAdd(ob, self)
-    return res
-
-patch_action(CopyContainer, manage_renameObject)
-OrderSupport._old_manage_renameObject = CopyContainer.manage_renameObject
-
-# manage_pasteObjects
-
-from OFS.CopySupport import CopyError, eNoData, eInvalid, _cb_decode
-from OFS.CopySupport import cookie_path
-
-def manage_pasteObjects(self, cb_copy_data=None, REQUEST=None):
-    """Paste an object from a cut or copy."""
-    # --- Get cp for the call and op for the cleanup
-    cp=None
-    if cb_copy_data is not None:
-        cp=cb_copy_data
-    else:
-        if REQUEST and REQUEST.has_key('__cp'):
-            cp=REQUEST['__cp']
-    if cp is None:
-        raise CopyError, eNoData
-    try:    dcp=_cb_decode(cp)
-    except: raise CopyError, eInvalid
-    op = dcp[0]
-    # --- call
-    result = self._cps_old_manage_pasteObjects(cb_copy_data=cp)
-    # --- send events
-    for idchange in result:
-        new_id = idchange['new_id']
-        ob = self._getOb(new_id)
-        if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
-            ob.manage_afterCMFAdd(ob, self)
-    # --- cleanup
-    if op==0:
-        if REQUEST is not None:
-            return self.manage_main(self, REQUEST, update_menu=1,
-                                    cb_dataValid=1)
-    if op==1:
-        if REQUEST is not None:
-            REQUEST['RESPONSE'].setCookie('__cp', 'deleted',
-                                path='%s' % cookie_path(REQUEST),
-                                expires='Wed, 31-Dec-97 23:59:59 GMT')
-            REQUEST['__cp'] = None
-            return self.manage_main(self, REQUEST, update_menu=1,
-                                    cb_dataValid=0)
-    return result
-
-patch_action(CopyContainer, manage_pasteObjects)
-
-# manage_clone
-
-def manage_clone(self, ob, id, REQUEST=None):
-    # Clone an object.
-    ob = self._cps_old_manage_clone(ob, id, REQUEST=REQUEST)
-    if hasattr(aq_base(ob), 'manage_afterCMFAdd'):
-        # XXX: should it be
-        # ob.manage_afterCMFAdd(self) ???
-        ob.manage_afterCMFAdd(ob, self)
-    return self
-
-patch_action(CopyContainer, manage_clone)
-
-# XXX _importObjectFromFile

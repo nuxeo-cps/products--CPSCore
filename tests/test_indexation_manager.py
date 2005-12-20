@@ -24,7 +24,6 @@ import random
 import unittest
 from OFS.SimpleItem import SimpleItem
 
-from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.IndexationManager import IndexationManager
 from Products.CPSCore.IndexationManager import get_indexation_manager
 
@@ -111,6 +110,7 @@ class IndexationManagerTest(unittest.TestCase):
 
     def test_interfaces(self):
         from zope.interface.verify import verifyClass
+        from Products.CPSCore.interfaces import IBaseManager
         verifyClass(IBaseManager, IndexationManager)
 
     def test_fixtures(self):

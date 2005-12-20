@@ -1,0 +1,20 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five">
+
+  <subscriber
+      for="OFS.interfaces.IItem
+           zope.app.event.interfaces.IObjectEvent"
+      handler=".events.handleObjectEvent"
+      />
+
+  <subscriber
+      for="OFS.interfaces.IItem
+           zope.app.event.interfaces.IObjectEvent"
+      handler=".ProxyTool.handleObjectEvent"
+      />
+
+  <five:deprecatedManageAddDelete
+      class="Products.CPSCore.EventServiceTool.SubscriberDef"/>
+
+</configure>

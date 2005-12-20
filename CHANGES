@@ -1,6 +1,6 @@
 Requires:
 ~~~~~~~~~
--
+- Zope 2.9b1
 New features:
 ~~~~~~~~~~~~~
 - API : enable / disable transaction before commit hook subscribers
@@ -23,3 +23,8 @@ New internal features:
   o use logging instead of the zLOG
   o use zope.interface
 - CPSCore housekeeping
+- Uses standard Zope 2.9 Five events instead of our own patching of OFS.
+- Event tool notifications are briged to Zope 3 events, and Zope 3 events
+  are bridged to event tool notifications for BBB.
+- Made the Proxy Tool react to Zope 3 events instead of the event tool.
+- Added a tests setup to initialize the event framework.

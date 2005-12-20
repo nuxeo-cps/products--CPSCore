@@ -29,7 +29,6 @@ ZopeTestCase.installProduct('SiteAccess', quiet=1)
 
 from OFS.Folder import Folder
 
-from Interface.Verify import verifyClass
 from Products.CPSCore.URLTool import URLTool
 from Products.CPSCore.CPSMembershipTool import CPSMembershipTool
 
@@ -90,6 +89,8 @@ class URLToolTests(unittest.TestCase):
     #
 
     def test_interface(self):
+        # XXX use Z3 interfaces when we switch to CMF 1.6
+        from Interface.Verify import verifyClass
         from Products.CMFCore.interfaces.portal_url \
              import portal_url as IURLTool
         from Products.CMFCore.interfaces.portal_actions \

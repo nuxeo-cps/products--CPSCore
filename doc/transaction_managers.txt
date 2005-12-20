@@ -181,7 +181,7 @@ CONTENTS
         >>> dummy = t.savepoint()
         >>> log
         []
-        >>> t.commit(subtransaction=True)
+        >>> sp = t.savepoint(optimistic=True)
         >>> log
         []
         >>> t.commit()

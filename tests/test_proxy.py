@@ -69,6 +69,10 @@ class DummyProxyTool(Folder):
     def freezeProxy(self, proxy):
         proxy.frozen = True
 
+    def handleObjectEvent(self, ob, event):
+        pass
+
+
 class PlacefulProxy(ProxyBase, Folder):
     def __init__(self, id, **kw):
         self.id = id

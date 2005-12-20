@@ -43,6 +43,23 @@ from Products.CPSCore.permissions import ViewArchivedRevisions
 from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
      REQUEST_LANGUAGE_KEY
 
+from zope.app.event.interfaces import IObjectModifiedEvent
+from zope.app.container.interfaces import IObjectMovedEvent
+from OFS.interfaces import IObjectWillBeMovedEvent
+from Products.CPSCore.interfaces import ICPSProxy
+
+
+def handleObjectEvent(ob, event):
+    """Notification from the event service.
+
+    This looks up the local utility ProxyTool and calls it.
+    Will be done with a real local utility later.
+    """
+    pxtool = getToolByName(ob, 'portal_proxies', None)
+    if pxtool is None:
+        return
+    pxtool.handleObjectEvent(ob, event)
+
 
 class ProxyTool(UniqueObject, SimpleItemWithProperties):
     """The proxy tool caches global informations about all proxies.
@@ -753,39 +770,47 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     # Event notification
     #
 
+    # BBB will be removed in CPS 3.5
     security.declarePrivate('notify_proxy')
-    def notify_proxy(self, event_type, object, infos):
+    def notify_proxy(self, event_type, ob, infos):
+        """Old event service tool subscriber method, now unused.
+        """
+        return
+
+    security.declarePrivate('handleObjectEvent')
+    def handleObjectEvent(self, ob, event):
         """Notification from the event service.
 
         Called when a proxy is added/deleted/modified.
+
         Updates internal indexes.
 
         When a repository document is modified, reindexes the proxies
         and notifies of their modification.
         """
-        # Notifying of the proxies is important to get a new Title taken
-        # into account by a Tree Cache for example.
-
         if self.ignore_events:
             return
 
-        if event_type not in ('sys_add_object',
-                              'sys_del_object',
-                              'sys_modify_object',
-                              'modify_object'):
-            return
-        if isinstance(object, ProxyBase):
-            rpath = infos['rpath']
-            if event_type == 'sys_add_object':
-                self._addProxy(object, rpath)
-            elif event_type == 'sys_modify_object':
-                self._modifyProxy(object, rpath)
-            elif event_type == 'sys_del_object':
-                self._delProxy(rpath)
-        elif event_type in ('sys_modify_object', 'modify_object'):
-            repotool = getToolByName(self, 'portal_repository')
-            if repotool.isObjectInRepository(object):
-                self._reindexProxiesForObject(object)
+        # Proxy events
+        if ICPSProxy.providedBy(ob):
+            pplen = len(self.getPhysicalPath()) - 1
+            rpath = '/'.join(ob.getPhysicalPath()[pplen:])
+            if IObjectWillBeMovedEvent.providedBy(event):
+                if event.oldParent is not None:
+                    self._delProxy(rpath)
+            elif IObjectMovedEvent.providedBy(event):
+                if event.newParent is not None:
+                    self._addProxy(ob, rpath)
+            elif IObjectModifiedEvent.providedBy(event):
+                self._modifyProxy(ob, rpath)
+
+        # Repository modification events
+        elif IObjectModifiedEvent.providedBy(event):
+            repotool = getToolByName(self, 'portal_repository', None)
+            if repotool is None:
+                return
+            if repotool.isObjectInRepository(ob):
+                self._reindexProxiesForObject(ob)
 
     #
     # Management
