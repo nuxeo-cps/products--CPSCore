@@ -46,8 +46,8 @@ Tests
 Setup and basic tests.
 We'll use strings for sequence, it's easier to read::
 
-  >>> from CPSCore.treemodification import ADD, REMOVE, MODIFY
-  >>> from CPSCore.treemodification import TreeModification
+  >>> from Products.CPSCore.treemodification import ADD, REMOVE, MODIFY
+  >>> from Products.CPSCore.treemodification import TreeModification
 
   >>> TreeModification([])
   TreeModification([])
