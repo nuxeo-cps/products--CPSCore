@@ -44,15 +44,9 @@ class ObjectRepositoryToolTests(SecurityRequestTest, LogInterceptor):
 
     def setUp(self):
         SecurityRequestTest.setUp(self)
-
-        self.root = Folder()
-        self.root.id = 'root'
-        root = self.root
-
         ObjectRepositoryTool.constructContent = constructContent
         ortool = ObjectRepositoryTool()
-        root._setObject('portal_repository', ortool)
-
+        self.root._setObject('portal_repository', ortool)
 
     def tearDown(self):
         SecurityRequestTest.tearDown(self)
