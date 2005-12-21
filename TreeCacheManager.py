@@ -28,7 +28,8 @@ import zope.interface
 
 from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.BaseManager import BaseManager
-from Products.CPSCore.TransactionManager import get_transaction_manager
+from Products.CPSCore.TransactionManager import (
+    get_before_commit_subscribers_manager)
 
 from Products.CPSCore.treemodification import TreeModification
 from Products.CPSCore.treemodification import printable_op
@@ -111,6 +112,6 @@ def get_treecache_manager():
     txn = transaction.get()
     mgr = getattr(txn, _TXN_MGR_ATTRIBUTE, None)
     if mgr is None:
-        mgr = TreeCacheManager(get_transaction_manager())
+        mgr = TreeCacheManager(get_before_commit_subscribers_manager())
         setattr(txn, _TXN_MGR_ATTRIBUTE, mgr)
     return mgr

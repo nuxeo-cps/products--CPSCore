@@ -36,11 +36,9 @@ import zope.interface
 from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.BaseManager import BaseManager
 
-logger = logging.getLogger("CPSCore.TransactionManager")
+_CPS_BCH_TXN_ATTRIBUTE = '_cps_before_commit_hooks_manager'
 
-_CPS_TXN_ATTRIBUTE = '_cps_transaction_manager'
-
-class TransactionManager(BaseManager):
+class BeforeCommitSubscribersManager(BaseManager):
     """Holds hooks that will be executed at the end of the transaction.
     """
 
@@ -58,14 +56,14 @@ class TransactionManager(BaseManager):
         # registered.  Each time we append a tuple to _before_commit,
         # the current value of _before_commit_index is used for the
         # index, and then the latter is incremented by 1.
-        # TODO: in Python 2.4, change to collections.deque; lists can be
-        # inefficient for FIFO access of this kind.
         self._before_commit = []
         self._before_commit_index = 0
         txn.addBeforeCommitHook(self)
 
-    def addBeforeCommitHook(self, hook, args=(), kws=None, order=0):
-        """Register a hook to call before the transaction is committed.
+        self.log = logging.getLogger("CPSCore BeforeCommitSubscribersManager")
+
+    def addSubscriber(self, hook, args=(), kws=None, order=0):
+        """Register a subscriber to call before the transaction is committed.
 
         The specified hook function will be called after the transaction's
         commit method has been called, but before the commit process has been
@@ -104,7 +102,7 @@ class TransactionManager(BaseManager):
         # new one, and then be activated again and start adding some
         # again.
         if not self._status:
-            logger.debug("won't register %s with %s and %s with order %s"
+            self.log.debug("won't register %s with %s and %s with order %s"
                          %(repr(hook), args, kws, str(order)))
             return
 
@@ -115,12 +113,13 @@ class TransactionManager(BaseManager):
             kws = {}
 
         if self.isSynchronous():
-            logger.debug("executs %s with %s and %s" %(repr(hook), args, kws))
+            self.log.debug("executs %s with %s and %s" %
+                           (repr(hook), args, kws))
             hook(*args, **kws)
             return
 
-        logger.debug("register %s with %s and %s with order %s"
-                     %(repr(hook), args, kws, str(order)))
+        self.log.debug("register %s with %s and %s with order %s"
+                       %(repr(hook), args, kws, str(order)))
         bisect.insort(self._before_commit, (order, self._before_commit_index,
                                             hook, tuple(args), kws))
         self._before_commit_index += 1
@@ -132,29 +131,29 @@ class TransactionManager(BaseManager):
         hooks are executed by the TransactionManager itself and not by
         the transaction.
         """
-
-        logger.debug("__call__")
+        self.log.debug("__call__")
 
         while self._before_commit:
             order, index, hook, args, kws = self._before_commit.pop(0)
-            logger.debug("executs %s with %s and %s" %(repr(hook), args, kws))
+            self.log.debug("executs %s with %s and %s" %
+                           (repr(hook), args, kws))
             hook(*args, **kws)
         self._before_commit_index = 0
 
-        logger.debug("__call__ done")
+        self.log.debug("__call__ done")
 
-def del_transaction_manager():
+def del_before_commits_subscribers_manager():
     txn = transaction.get()
-    setattr(txn, _CPS_TXN_ATTRIBUTE, None)
+    setattr(txn, _CPS_BCH_TXN_ATTRIBUTE, None)
 
-def get_transaction_manager():
-    """Get the transaction manager.
+def get_before_commit_subscribers_manager():
+    """Get the before commit subscribers manager.
 
     Creates it if needed.
     """
     txn = transaction.get()
-    mgr = getattr(txn, _CPS_TXN_ATTRIBUTE, None)
+    mgr = getattr(txn, _CPS_BCH_TXN_ATTRIBUTE, None)
     if mgr is None:
-        mgr = TransactionManager(txn)
-        setattr(txn, _CPS_TXN_ATTRIBUTE, mgr)
+        mgr = BeforeCommitSubscribersManager(txn)
+        setattr(txn, _CPS_BCH_TXN_ATTRIBUTE, mgr)
     return mgr

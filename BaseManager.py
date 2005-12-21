@@ -43,7 +43,7 @@ class BaseManager(object):
     def __init__(self, mgr, order=0):
         self._sync = self.DEFAULT_SYNC
         self._status = self.DEFAULT_STATUS
-        mgr.addBeforeCommitHook(self, order=order)
+        mgr.addSubscriber(self, order=order)
 
     def setSynchronous(self, sync):
         """Set queuing mode."""

@@ -25,10 +25,13 @@ import unittest
 import transaction
 
 from Products.CPSCore.interfaces import IBaseManager
-from Products.CPSCore.TransactionManager import TransactionManager
-from Products.CPSCore.TransactionManager import _CPS_TXN_ATTRIBUTE
-from Products.CPSCore.TransactionManager import get_transaction_manager
-from Products.CPSCore.TransactionManager import del_transaction_manager
+from Products.CPSCore.TransactionManager import _CPS_BCH_TXN_ATTRIBUTE
+from Products.CPSCore.TransactionManager import BeforeCommitSubscribersManager
+from Products.CPSCore.TransactionManager import (
+    get_before_commit_subscribers_manager)
+from Products.CPSCore.TransactionManager import (
+    del_before_commits_subscribers_manager
+    )
 
 class FakeTransaction:
     def addBeforeCommitHook(self, hook):
@@ -41,15 +44,15 @@ def reset_log():
 def hook(arg='no_arg', kw1='no_kw1', kw2='no_kw2'):
     log.append("arg %r kw1 %r kw2 %r" % (arg, kw1, kw2))
 
-class TransactionManagerTest(unittest.TestCase):
+class BeforeCommitSubscribersManagerTest(unittest.TestCase):
 
     def test_interfaces(self):
         from zope.interface.verify import verifyClass
-        verifyClass(IBaseManager, TransactionManager)
+        verifyClass(IBaseManager, BeforeCommitSubscribersManager)
 
     def test_fixtures(self):
 
-        mgr = TransactionManager(FakeTransaction())
+        mgr = BeforeCommitSubscribersManager(FakeTransaction())
 
         self.assertEqual(mgr._before_commit, [])
         self.assertEqual(mgr._before_commit_index, 0)
@@ -60,7 +63,7 @@ class TransactionManagerTest(unittest.TestCase):
 
     def test_status_api(self):
 
-        mgr = TransactionManager(FakeTransaction())
+        mgr = BeforeCommitSubscribersManager(FakeTransaction())
 
         self.assertEqual(mgr._status, True)
         mgr.disable()
@@ -70,8 +73,8 @@ class TransactionManagerTest(unittest.TestCase):
 
     def test_async(self):
 
-        mgr = TransactionManager(FakeTransaction())
-        mgr.addBeforeCommitHook(hook, '1')
+        mgr = BeforeCommitSubscribersManager(FakeTransaction())
+        mgr.addSubscriber(hook, '1')
 
         self.assertEqual(log, [])
         mgr()
@@ -80,16 +83,16 @@ class TransactionManagerTest(unittest.TestCase):
 
     def test_sync(self):
 
-        mgr = TransactionManager(FakeTransaction())
+        mgr = BeforeCommitSubscribersManager(FakeTransaction())
         mgr.setSynchronous(True)
-        mgr.addBeforeCommitHook(hook, '1')
+        mgr.addSubscriber(hook, '1')
 
         self.assertEqual(log, ["arg '1' kw1 'no_kw1' kw2 'no_kw2'"])
         reset_log()
 
     def test_status_as_async(self):
 
-        mgr = TransactionManager(FakeTransaction())
+        mgr = BeforeCommitSubscribersManager(FakeTransaction())
 
         self.assertEqual(mgr._status, True)
         self.assertEqual(mgr._sync, False)
@@ -98,17 +101,17 @@ class TransactionManagerTest(unittest.TestCase):
         mgr.disable()
 
         # Register hooks
-        mgr.addBeforeCommitHook(hook, '1')
-        mgr.addBeforeCommitHook(hook, '2')
-        mgr.addBeforeCommitHook(hook, '3')
+        mgr.addSubscriber(hook, '1')
+        mgr.addSubscriber(hook, '2')
+        mgr.addSubscriber(hook, '3')
 
         # Enable subscriber
         mgr.enable()
         
-        mgr.addBeforeCommitHook(hook, '4')
-        mgr.addBeforeCommitHook(hook, '5')
-        mgr.addBeforeCommitHook(hook, '6')
-        mgr.addBeforeCommitHook(hook, '7')
+        mgr.addSubscriber(hook, '4')
+        mgr.addSubscriber(hook, '5')
+        mgr.addSubscriber(hook, '6')
+        mgr.addSubscriber(hook, '7')
 
         # Execute
         mgr()
@@ -125,7 +128,7 @@ class TransactionManagerTest(unittest.TestCase):
 
     def test_status_as_sync(self):
 
-        mgr = TransactionManager(FakeTransaction())
+        mgr = BeforeCommitSubscribersManager(FakeTransaction())
 
         self.assertEqual(mgr._status, True)
         self.assertEqual(mgr._sync, False)
@@ -137,17 +140,17 @@ class TransactionManagerTest(unittest.TestCase):
         mgr.disable()
 
         # Register hooks
-        mgr.addBeforeCommitHook(hook, '1')
-        mgr.addBeforeCommitHook(hook, '2')
-        mgr.addBeforeCommitHook(hook, '3')
+        mgr.addSubscriber(hook, '1')
+        mgr.addSubscriber(hook, '2')
+        mgr.addSubscriber(hook, '3')
 
         # Enable subscriber
         mgr.enable()
         
-        mgr.addBeforeCommitHook(hook, '4')
-        mgr.addBeforeCommitHook(hook, '5')
-        mgr.addBeforeCommitHook(hook, '6')
-        mgr.addBeforeCommitHook(hook, '7')
+        mgr.addSubscriber(hook, '4')
+        mgr.addSubscriber(hook, '5')
+        mgr.addSubscriber(hook, '6')
+        mgr.addSubscriber(hook, '7')
 
         # Nothing has been executed since it's disabled
         self.assertEqual(
@@ -161,16 +164,16 @@ class TransactionManagerTest(unittest.TestCase):
 
     def test_hooks_registration_without_order(self):
 
-        mgr = TransactionManager(FakeTransaction())
+        mgr = BeforeCommitSubscribersManager(FakeTransaction())
 
         # Register hooks
-        mgr.addBeforeCommitHook(hook, '1')
-        mgr.addBeforeCommitHook(hook, '2')
-        mgr.addBeforeCommitHook(hook, '3')
-        mgr.addBeforeCommitHook(hook, '4')
-        mgr.addBeforeCommitHook(hook, '5')
-        mgr.addBeforeCommitHook(hook, '6')
-        mgr.addBeforeCommitHook(hook, '7')
+        mgr.addSubscriber(hook, '1')
+        mgr.addSubscriber(hook, '2')
+        mgr.addSubscriber(hook, '3')
+        mgr.addSubscriber(hook, '4')
+        mgr.addSubscriber(hook, '5')
+        mgr.addSubscriber(hook, '6')
+        mgr.addSubscriber(hook, '7')
 
         # Execute
         mgr()
@@ -193,16 +196,16 @@ class TransactionManagerTest(unittest.TestCase):
         # Here, we test the ordering policy.
         # order of registration + order parameter
 
-        mgr = TransactionManager(FakeTransaction())
+        mgr = BeforeCommitSubscribersManager(FakeTransaction())
 
         # Register hooks
-        mgr.addBeforeCommitHook(hook, '1', order=0)
-        mgr.addBeforeCommitHook(hook, '2', order=-999999)
-        mgr.addBeforeCommitHook(hook, '3', order=999999)
-        mgr.addBeforeCommitHook(hook, '4', order=0)
-        mgr.addBeforeCommitHook(hook, '5', order=999999)
-        mgr.addBeforeCommitHook(hook, '6', order=-999999)
-        mgr.addBeforeCommitHook(hook, '7', order=0)
+        mgr.addSubscriber(hook, '1', order=0)
+        mgr.addSubscriber(hook, '2', order=-999999)
+        mgr.addSubscriber(hook, '3', order=999999)
+        mgr.addSubscriber(hook, '4', order=0)
+        mgr.addSubscriber(hook, '5', order=999999)
+        mgr.addSubscriber(hook, '6', order=-999999)
+        mgr.addSubscriber(hook, '7', order=0)
 
         # Execute
         mgr()
@@ -220,20 +223,20 @@ class TransactionManagerTest(unittest.TestCase):
 
         reset_log()
 
-class TransactionManagerIntegrationTest(unittest.TestCase):
+class BeforeCommitSubscribersManagerIntegrationTest(unittest.TestCase):
 
     # These really test the beforeCommitHook on a real transaction
 
     def test_transaction_mecanism(self):
         transaction.begin()
-        mgr = get_transaction_manager()
+        mgr = get_before_commit_subscribers_manager()
         transaction.commit()
         self.assertEqual(log, [])
 
     def test_transaction_with_a_hook(self):
         transaction.begin()
-        mgr = get_transaction_manager()
-        mgr.addBeforeCommitHook(hook, '1')
+        mgr = get_before_commit_subscribers_manager()
+        mgr.addSubscriber(hook, '1')
         transaction.commit()
         self.assertEqual(
             log, ["arg '1' kw1 'no_kw1' kw2 'no_kw2'"])
@@ -241,32 +244,33 @@ class TransactionManagerIntegrationTest(unittest.TestCase):
 
     def test_transaction_aborting(self):
         transaction.begin()
-        mgr = get_transaction_manager()
-        mgr.addBeforeCommitHook(hook, '1')
+        mgr = get_before_commit_subscribers_manager()
+        mgr.addSubscriber(hook, '1')
         transaction.abort()
         self.assertEqual(log, [])
 
-    def test_get_del_transaction_manager(self):
+    def test_get_del_before_commits_subscribers_manager(self):
         _marker = 'marker'
 
         # No transaction manager registred over there
         self.assertEqual(
-            getattr(transaction.get(), _CPS_TXN_ATTRIBUTE, _marker), _marker)
+            getattr(transaction.get(),
+                    _CPS_BCH_TXN_ATTRIBUTE, _marker), _marker)
 
         # This will check and add one
-        get_transaction_manager()
+        get_before_commit_subscribers_manager()
         self.assert_(
-            getattr(transaction.get(), _CPS_TXN_ATTRIBUTE, None))
+            getattr(transaction.get(), _CPS_BCH_TXN_ATTRIBUTE, None))
 
         # This will remove it
-        del_transaction_manager()
+        del_before_commits_subscribers_manager()
         self.assertEqual(
-            getattr(transaction.get(), _CPS_TXN_ATTRIBUTE, _marker), None)
+            getattr(transaction.get(), _CPS_BCH_TXN_ATTRIBUTE, _marker), None)
 
 def test_suite():
     return unittest.TestSuite((
-        unittest.makeSuite(TransactionManagerTest),
-        unittest.makeSuite(TransactionManagerIntegrationTest),
+        unittest.makeSuite(BeforeCommitSubscribersManagerTest),
+        unittest.makeSuite(BeforeCommitSubscribersManagerIntegrationTest),
         ))
 
 if __name__ == '__main__':

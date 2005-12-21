@@ -31,7 +31,8 @@ from Acquisition import aq_base
 
 from Products.CPSCore.interfaces import IBaseManager
 from Products.CPSCore.BaseManager import BaseManager
-from Products.CPSCore.TransactionManager import get_transaction_manager
+from Products.CPSCore.TransactionManager import (
+    get_before_commit_subscribers_manager)
 
 _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
 
@@ -167,6 +168,6 @@ def get_indexation_manager():
     txn = transaction.get()
     mgr = getattr(txn, _TXN_MGR_ATTRIBUTE, None)
     if mgr is None:
-        mgr = IndexationManager(get_transaction_manager())
+        mgr = IndexationManager(get_before_commit_subscribers_manager())
         setattr(txn, _TXN_MGR_ATTRIBUTE, mgr)
     return mgr

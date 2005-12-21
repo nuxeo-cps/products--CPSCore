@@ -33,8 +33,8 @@ class FakeTransaction:
     def addBeforeCommitHook(self, hook):
         pass
 
-class FakeTransactionManager:
-    def addBeforeCommitHook(self, hook, order):
+class FakeBeforeCommitSubscribersManager:
+    def addSubscriber(self, hook, order):
         pass
     
 class FakeRoot:
@@ -106,7 +106,8 @@ class Dummy2(Dummy):
 class IndexationManagerTest(unittest.TestCase):
 
     def get_stuff(self):
-        return IndexationManager(FakeTransactionManager()), root.addDummy()
+        return (IndexationManager(FakeBeforeCommitSubscribersManager()),
+                                  root.addDummy())
 
     def test_interfaces(self):
         from zope.interface.verify import verifyClass

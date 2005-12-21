@@ -372,14 +372,14 @@ I guess, this part could be shared at the Zope layer. I'll try to
 sketch a proposal someday on Zope3.
 
 
-TransactionManager
-..................
+BeforeCommitSubscribersManager
+........................
 
 - What is it?
 
-  Transaction manager for CPS that will be responsible for the
+  A transaction manager for CPS that will be responsible for the
   execution of ZODB transaction hooks registered by CPS. As well,
-  note that the transaction manager is responsible for the
+  note that this transaction manager is responsible for the
   execution of hooks (not the ZODB transaction itself !). This
   object will be registered as a ZODB before commit hook.
 
@@ -389,9 +389,12 @@ TransactionManager
   invoked from smallest `order` value to largest. `order` must be
   an integer, and defaults to 0.
 
-- API of the TransactionManager class::
+- API of the BeforeCommitSubscribersManager class::
 
-      >>> def addBeforeCommitHook(self, hook, args=(), kws=None, order=0):
+      BeforeCommitSubscribersManager implements IBaseManager (see above) and
+      define the following API
+
+      >>> def addSubscriber(self, hook, args=(), kws=None, order=0):
       ...     """Register a hook to call before the transaction is committed.
       ...
       ...     The specified hook function will be called after the
@@ -424,7 +427,7 @@ TransactionManager
       ...     called, and are discarded.  Calling a hook "consumes" its
       ...     registration too: hook registrations do not persist across
       ...     transactions.  If it's desired to call the same hook on
-      ...     every transaction commit, then addBeforeCommitHook() must
+      ...     every transaction commit, then addSubscriber() must
       ...     be called with that hook during every transaction; in such
       ...     a case consider registering a synchronizer object via a
       ...     TransactionManager's registerSynch() method instead.
@@ -432,12 +435,12 @@ TransactionManager
 
 
 The CPSCore.TransactionManager module provides an helper as well
-creating a TransactionManager instance, on the transaction itself, and
-registers it as a ZODB before commit hook.
+creating a BeforeCommitSubscribersManager instance, on the transaction
+itself, and registers it as a ZODB before commit hook.
 
   >>> from Products.CPSCore.TransactionManager import \
-  ... get_transaction_manager
-  >>> txn_manager = get_transaction_manager()
+  ... get_before_commit_subscribers_manager
+  >>> txn_manager = get_before_commit_subscribers_manager()
 
 Let's take an example::
 
@@ -449,18 +452,18 @@ Let's take an example::
   ...     log.append("arg %r kw1 %r kw2 %r" % (arg, kw1, kw2))
 
   >>> from Products.CPSCore.TransactionManager import \
-  ... get_transaction_manager
-  >>> mgr = get_transaction_manager()
+  ... get_before_commit_subscribers_manager
+  >>> mgr = get_before_commit_subscribers_manager()
 
 Register hooks::
 
-    >>> mgr.addBeforeCommitHook(hook, '1', order=0)
-    >>> mgr.addBeforeCommitHook(hook, '2', order=-999999)
-    >>> mgr.addBeforeCommitHook(hook, '3', order=999999)
-    >>> mgr.addBeforeCommitHook(hook, '4', order=0)
-    >>> mgr.addBeforeCommitHook(hook, '5', order=999999)
-    >>> mgr.addBeforeCommitHook(hook, '6', order=-999999)
-    >>> mgr.addBeforeCommitHook(hook, '7', order=0)
+    >>> mgr.addSubscriber(hook, '1', order=0)
+    >>> mgr.addSubscriber(hook, '2', order=-999999)
+    >>> mgr.addSubscriber(hook, '3', order=999999)
+    >>> mgr.addSubscriber(hook, '4', order=0)
+    >>> mgr.addSubscriber(hook, '5', order=999999)
+    >>> mgr.addSubscriber(hook, '6', order=-999999)
+    >>> mgr.addSubscriber(hook, '7', order=0)
 
 Execute::
 
@@ -694,12 +697,12 @@ be -101::
   ...         print ' '.join(self._queue)
   >>>
 
-As we saw in section3 , the CPS TransactionManager is responsible
-of the CPS subscriber execution. Thus we need to register the
+As we saw in section3 , the CPS BeforeCommitSubscribersManager is responsible
+of the CPS before commit hooks execution. Thus we need to register the
 MessageManager on the CPS TransactionManager::
 
   >>> from Products.CPSCore.TransactionManager import \
-  ... get_transaction_manager
+  ... get_before_commit_subscribers_manager
 
 As well, we need to create an instance of the Manager at some
 point. We choose to store it on the transaction itself. Don't
@@ -721,7 +724,7 @@ on the transaction itself::
   ...     txn = transaction.get()
   ...     mgr = getattr(txn, _TXN_MY_MANAGER, None)
   ...     if mgr is None:
-  ...         mgr = MessageManager(get_transaction_manager())
+  ...         mgr = MessageManager(get_before_commit_subscribers_manager())
   ...         setattr(txn, _TXN_MY_MANAGER, mgr)
   ...         return mgr
   >>>

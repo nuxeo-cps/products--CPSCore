@@ -32,8 +32,8 @@ from Products.CPSCore.treemodification import ADD
 
 import transaction
 
-class FakeTransactionManager:
-    def addBeforeCommitHook(self, hook, order):
+class FakeBeforeCommitSubscribersManager:
+    def addSubscriber(self, hook, order):
         pass
 
 class DummyTreeCache(SimpleItem):
@@ -50,7 +50,7 @@ class TreeCacheManagerTest(unittest.TestCase):
 
     def test_fixtures(self):
 
-        mgr = TreeCacheManager(FakeTransactionManager())
+        mgr = TreeCacheManager(FakeBeforeCommitSubscribersManager())
                 
         self.assertEqual(mgr._sync, False)
         self.assertEqual(mgr.isSynchronous(), False)
@@ -59,7 +59,7 @@ class TreeCacheManagerTest(unittest.TestCase):
 
     def test_status_api(self):
 
-        mgr = TreeCacheManager(FakeTransactionManager())
+        mgr = TreeCacheManager(FakeBeforeCommitSubscribersManager())
 
         self.assertEqual(mgr._status, True)
         mgr.disable()
@@ -68,7 +68,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         self.assertEqual(mgr._status, True)
 
     def test_simple(self):
-        mgr = TreeCacheManager(FakeTransactionManager())
+        mgr = TreeCacheManager(FakeBeforeCommitSubscribersManager())
         cache = DummyTreeCache()
 
         # Push it, reindexation not done yet.
@@ -87,7 +87,7 @@ class TreeCacheManagerTest(unittest.TestCase):
 
     def test_status_with_async_subscriber(self):
 
-        mgr = TreeCacheManager(FakeTransactionManager())
+        mgr = TreeCacheManager(FakeBeforeCommitSubscribersManager())
         cache = DummyTreeCache()
 
         self.assertEqual(mgr._status, True)
