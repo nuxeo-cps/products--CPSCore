@@ -63,12 +63,15 @@ The section 4 is a small devel FAQ.
 Note about the terms used in this document:
 
 - before commit hook: this is the before commit hooks that are
-  registered on the ZODB transaction itself. (see section 2)
+  registered on the ZODB transaction itself. (see section 2) The only
+  hook CPSCore is registering is the BeforeCommitSubsribersManager
+  object that will support CPS specific hooks also called subscribers
+  to avoid confusion
 
-- transaction subscriber: in the context of the CPSCore
-  transaction manager it refers to a commit hook that is
-  registered on the CPSCore transaction manager itself and not on
-  the ZODB. (see section 3)
+- transaction subscriber: in the context of the CPSCore before commit
+  hooks, it refers to a commit hook that is registered on the CPSCore
+  before commit subcribers manager itself and not on the ZODB. (see
+  section 3)
 
 
 ZODB before commit hooks
@@ -247,26 +250,27 @@ Simple ordering policy for subscriber execution
 -----------------------------------------------
 
 The ZODB transaction has an implicit policy dealing with the order of
-execution of its before commit hooks: it is the order in which they have
-been registered. Despite the fact that you can register several hooks on
-the transaction, you have no way to order them. In fact, you can rarely
-predict in which order the hooks will be registered at runtime.
+execution of its before commit hooks: it is the order in which they
+have been registered. Despite the fact that you can register several
+hooks on the transaction, you have no way to order them. In fact, you
+can rarely predict in which order the hooks will be registered at
+runtime.
 
-CPS transaction manager defines a trivial and sensible ordering policy
-using an order of registration as an integer value specifying the order
-level for each hook.
+CPS before commit subsribers manager defines a trivial and sensible
+ordering policy using an order of registration as an integer value
+specifying the order level for each subscriber.
 
-For instance, a hook registered with order=1 will be invoked after
-another hook registered with order=-1 and before another registered with
-order=2, regardless of which was registered first. When two hooks are
-registered with the same order, the first one registered is called
-first.
+For instance, a suberiber registered with order=1 will be invoked
+after another subscriber registered with order=-1 and before another
+registered with order=2, regardless of which was registered
+first. When two subscribers are registered with the same order, the
+first one registered is called first.
 
 
 CPS default subscribers and execution dependency
 ------------------------------------------------
 
-CPS defines and uses three (3) default hooks.
+CPS defines, registers and uses three (3) default susbcribers.
 
  o IndexationManager
  o TreeCacheManager
@@ -279,7 +283,7 @@ They are executed in the following order :
  3. EventSubsriptionsManager      (order 100)
 
 Remember this if you want to define, register and use your own
-manager (see last section, it contains an example of such a definition).
+subscriber (see last section, it contains an example of such a definition).
 
 Let's explain a bit why we choose this order of execution.
 
@@ -290,15 +294,16 @@ during the transaction. Thus, the EventSubscriptionsManager can be
 interested with the events the IndexationManager and the
 TreeCacheManager can throw on the channel.
 
-The IndexationManager is called first because the TreeCacheManager might
-have to query the catalog before rebuilding the tree.
+The IndexationManager is called first because the TreeCacheManager
+might have to query the catalog before rebuilding the tree. It's not
+supposed to be the case on the stock CPS though.
 
 ATTENTION ! An important point here is the fact that the above CPS
-managers are not registered on the ZODB transaction itself but on
-the CPS transaction manager. You need to understand that the only
-before commit hook that CPS is adding on the ZODB transaction
-itself is the CPS transaction manager, because it is the one
-defining the order of execution (see section 4 to see why the
+subscribers are not registered on the ZODB transaction itself but on
+the CPS before commit subscribers manager. You need to understand that
+the only before commit hook that CPS is adding on the ZODB transaction
+itself is the CPS before commmit subscribers manager, because it is
+the one defining the order of execution (see section 4 to see why the
 ZODB transaction doesn't deal with order of execution).
 
 
@@ -306,18 +311,19 @@ Design
 ------
 
 IBeforeCommitSubscriber / BeforeCommitSubscriber
-..........................
+................................................
 
-This is the default interface and base class for all the
-before commit hooks including the transaction manager (see below)
+This is the default interface and base class for all the before commit
+subscribers including the before commit subscribers itself. (see below)
 
 Here is the IBeforeCommitSubscriber interface definition.
 
     >>> import zope.interface
+
     >>> class IBeforeCommitSubscriber(zope.interface.Interface): 
-    ...     """Base before commit subscriber definition
+    ...     """Before commit susbscriber interface definition
     ...
-    ...     Provides a base interface for before commit hooks definitions
+    ...        Provides a base interface for before hook definitions
     ...     """
     ...
     ...     DEFAULT_SYNC = zope.interface.Attribute('DEFAULT_SYNC',
@@ -364,8 +370,8 @@ It provides the following behavior:
 
    - method that does the actual job.
 
-This is what you should be implementing if you want to define your
-own subscriber to benefit from the CPS integration. (sync, status,
+This is what you should be implementing if you want to define your own
+subscriber to benefit from the CPSCore integration. (sync, status,
 etc...)
 
 I guess, this part could be shared at the Zope layer. I'll try to
@@ -373,29 +379,30 @@ sketch a proposal someday on Zope3.
 
 
 BeforeCommitSubscribersManager
-........................
+..............................
 
 - What is it?
 
-  A transaction manager for CPS that will be responsible for the
-  execution of ZODB transaction hooks registered by CPS. As well,
-  note that this transaction manager is responsible for the
-  execution of hooks (not the ZODB transaction itself !). This
-  object will be registered as a ZODB before commit hook.
+  A manager for CPS that will be responsible for the execution of ZODB
+  transaction hooks registered by CPS. As well, note that this manager
+  is responsible for the execution of hooks (not the ZODB transaction
+  itself !). This object will be registered as a ZODB before commit
+  hook.
 
-  Multiple hooks can be registered and will be called in the order
-  they were registered (first registered, first called), except
-  that hooks registered with different `order` arguments are
-  invoked from smallest `order` value to largest. `order` must be
-  an integer, and defaults to 0.
+  Multiple subscribers can be registered and will be called in the
+  order they were registered (first registered, first called), except
+  that susbcribers registered with different `order` arguments are invoked
+  from smallest `order` value to largest. `order` must be an integer,
+  and defaults to 0.
 
 - API of the BeforeCommitSubscribersManager class::
 
       BeforeCommitSubscribersManager implements
       IBeforeCommitSubscriber (see above) and define the following API
 
-      >>> def addSubscriber(self, hook, args=(), kws=None, order=0):
-      ...     """Register a hook to call before the transaction is committed.
+      >>> def addSubscriber(self, susbcriber, args=(), kws=None, order=0):
+      ...     """Register a subscriber to call before the transaction is 
+      ...        commited.
       ...
       ...     The specified hook function will be called after the
       ...     transaction's commit method has been called, but before
@@ -562,8 +569,6 @@ TreeCacheManager
   the CPS event channel. The events can be thrown several times
   with different informations.
 
-XX to finish
-
 - CPSCore/TreeCacheManager
 
   Manager for tree cache that can be delayed until commit time.
@@ -572,6 +577,7 @@ XX to finish
       CPSCore/TreeCacheManager.py
       CPSCore/tests/test_treecache_manager.py
 
+XXX to finish
 
 EventSubscriptionsManager (CPSSubscriptions)
 -------------------------------
@@ -601,8 +607,9 @@ You can thus benefit from this extension using latest CPS-3.3.x
 with Zope-2.8.x.
 
 
-Why is the before commit hook ordering policy not part of the ZODB core transaction?
-------------------------------------------------------------------------------------
+Why is the before commit hook ordering policy not part of the ZODB
+core transaction?
+-------------------------------------------------------------------
 
 Why is the trivial before commit hook subscribers ordering policy,
 that CPS is providing, not part of the ZODB core transaction?
