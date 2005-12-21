@@ -24,7 +24,7 @@ import random
 import unittest
 from OFS.SimpleItem import SimpleItem
 
-from Products.CPSCore.interfaces import IBaseManager
+from Products.CPSCore.interfaces import IBeforeCommitSubscriber
 from Products.CPSCore.TreeCacheManager import TreeCacheManager
 from Products.CPSCore.TreeCacheManager import get_treecache_manager
 
@@ -46,7 +46,7 @@ class TreeCacheManagerTest(unittest.TestCase):
 
     def test_interfaces(self):
         from zope.interface.verify import verifyClass
-        verifyClass(IBaseManager, TreeCacheManager)
+        verifyClass(IBeforeCommitSubscriber, TreeCacheManager)
 
     def test_fixtures(self):
 

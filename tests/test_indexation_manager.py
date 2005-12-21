@@ -111,8 +111,8 @@ class IndexationManagerTest(unittest.TestCase):
 
     def test_interfaces(self):
         from zope.interface.verify import verifyClass
-        from Products.CPSCore.interfaces import IBaseManager
-        verifyClass(IBaseManager, IndexationManager)
+        from Products.CPSCore.interfaces import IBeforeCommitSubscriber
+        verifyClass(IBeforeCommitSubscriber, IndexationManager)
 
     def test_fixtures(self):
 

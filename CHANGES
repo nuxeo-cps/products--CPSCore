@@ -28,3 +28,6 @@ New internal features:
   are bridged to event tool notifications for BBB.
 - Made the Proxy Tool react to Zope 3 events instead of the event tool.
 - Added a tests setup to initialize the event framework.
+- API renamed :
+    o  IBaseManager ->  IBeforeCommitSubscriber
+    o  BaseManager -> BeforeCommitSusbcriber

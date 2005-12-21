@@ -17,9 +17,9 @@
 # 02111-1307, USA.
 #
 # $Id$
-""" Transaction Manager for CPS
+""" Commit hooks managers for CPS
 
-Transaction manager for CPS that will be responsible of the execution
+Manages for CPS that will be responsible of the execution
 of ZODB transaction hooks registred by CPS. It will deal with order of
 execution and defines a trivial and senseful ordering policy using the
 order of registration and an integer value speciying the order level
@@ -33,16 +33,57 @@ import bisect
 import transaction
 import zope.interface
 
-from Products.CPSCore.interfaces import IBaseManager
-from Products.CPSCore.BaseManager import BaseManager
+from Products.CPSCore.interfaces import IBeforeCommitSubscriber
+from Products.CPSCore.interfaces import IZODBBeforeCommitHook
+
+class BeforeCommitSubscriber(object):
+    """Base Manager definition
+    """
+
+    zope.interface.implements(IBeforeCommitSubscriber)
+
+    # Not synchronous by default
+    # XXX This may be monkey-patched by unit-tests.
+    DEFAULT_SYNC = False
+
+    # Enabled by default
+    DEFAULT_STATUS = True
+
+    def __init__(self, mgr, order=0):
+        self._sync = self.DEFAULT_SYNC
+        self._status = self.DEFAULT_STATUS
+        mgr.addSubscriber(self, order=order)
+
+    def setSynchronous(self, sync):
+        """Set queuing mode."""
+        if sync:
+            self()
+        self._sync = sync
+
+    def isSynchronous(self):
+        """Get queuing mode."""
+        return self._sync
+
+    def __call__(self):
+        raise NotImplementedError
+
+    def push(self, *args):
+
+        raise NotImplementedError
+
+    def enable(self):
+        self._status = True
+
+    def disable(self):
+        self._status = False
 
 _CPS_BCH_TXN_ATTRIBUTE = '_cps_before_commit_hooks_manager'
 
-class BeforeCommitSubscribersManager(BaseManager):
+class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
     """Holds hooks that will be executed at the end of the transaction.
     """
 
-    zope.interface.implements(IBaseManager)
+    zope.interface.implements(IBeforeCommitSubscriber, IZODBBeforeCommitHook)
 
     def __init__(self, txn):
         """Initialize and register this manager with the transaction.

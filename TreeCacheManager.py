@@ -26,10 +26,9 @@ import logging
 import transaction
 import zope.interface
 
-from Products.CPSCore.interfaces import IBaseManager
-from Products.CPSCore.BaseManager import BaseManager
-from Products.CPSCore.TransactionManager import (
-    get_before_commit_subscribers_manager)
+from Products.CPSCore.interfaces import IBeforeCommitSubscriber
+from Products.CPSCore.commithooks import BeforeCommitSubscriber
+from Products.CPSCore.commithooks import get_before_commit_subscribers_manager
 
 from Products.CPSCore.treemodification import TreeModification
 from Products.CPSCore.treemodification import printable_op
@@ -41,10 +40,10 @@ _TXN_MGR_ORDER = 0
 
 logger = logging.getLogger("CPSCore.TreeCacheManager")
 
-class TreeCacheManager(BaseManager):
+class TreeCacheManager(BeforeCommitSubscriber):
     """Holds data about treecache rebuilts to be done."""
 
-    zope.interface.implements(IBaseManager)
+    zope.interface.implements(IBeforeCommitSubscriber)
 
     def __init__(self, mgr):
         """Initialize and register this manager with the transaction manager

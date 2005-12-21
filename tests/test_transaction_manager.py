@@ -24,14 +24,11 @@ import unittest
 
 import transaction
 
-from Products.CPSCore.interfaces import IBaseManager
-from Products.CPSCore.TransactionManager import _CPS_BCH_TXN_ATTRIBUTE
-from Products.CPSCore.TransactionManager import BeforeCommitSubscribersManager
-from Products.CPSCore.TransactionManager import (
-    get_before_commit_subscribers_manager)
-from Products.CPSCore.TransactionManager import (
-    del_before_commits_subscribers_manager
-    )
+from Products.CPSCore.interfaces import IBeforeCommitSubscriber
+from Products.CPSCore.commithooks import _CPS_BCH_TXN_ATTRIBUTE
+from Products.CPSCore.commithooks import BeforeCommitSubscribersManager
+from Products.CPSCore.commithooks import get_before_commit_subscribers_manager
+from Products.CPSCore.commithooks import del_before_commits_subscribers_manager
 
 class FakeTransaction:
     def addBeforeCommitHook(self, hook):
@@ -48,7 +45,7 @@ class BeforeCommitSubscribersManagerTest(unittest.TestCase):
 
     def test_interfaces(self):
         from zope.interface.verify import verifyClass
-        verifyClass(IBaseManager, BeforeCommitSubscribersManager)
+        verifyClass(IBeforeCommitSubscriber, BeforeCommitSubscribersManager)
 
     def test_fixtures(self):
 

@@ -29,10 +29,9 @@ import zope.interface
 
 from Acquisition import aq_base
 
-from Products.CPSCore.interfaces import IBaseManager
-from Products.CPSCore.BaseManager import BaseManager
-from Products.CPSCore.TransactionManager import (
-    get_before_commit_subscribers_manager)
+from Products.CPSCore.interfaces import IBeforeCommitSubscriber
+from Products.CPSCore.commithooks import BeforeCommitSubscriber
+from Products.CPSCore.commithooks import get_before_commit_subscribers_manager
 
 _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
 
@@ -42,14 +41,14 @@ _TXN_MGR_ORDER = -100
 
 logger = logging.getLogger("CPSCore.IndexationManager")
 
-class IndexationManager(BaseManager):
+class IndexationManager(BeforeCommitSubscriber):
     """Holds data about reindexings to be done."""
 
-    zope.interface.implements(IBaseManager)
+    zope.interface.implements(IBeforeCommitSubscriber)
 
     def __init__(self, mgr):
         """Initialize and register this manager with the transaction."""
-        BaseManager.__init__(self, mgr, order=_TXN_MGR_ORDER)
+        BeforeCommitSubscriber.__init__(self, mgr, order=_TXN_MGR_ORDER)
         self._queue = []
         self._infos = {}
 

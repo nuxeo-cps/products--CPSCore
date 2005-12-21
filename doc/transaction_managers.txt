@@ -305,17 +305,17 @@ ZODB transaction doesn't deal with order of execution).
 Design
 ------
 
-IBaseManager / BaseManager
+IBeforeCommitSubscriber / BeforeCommitSubscriber
 ..........................
 
 This is the default interface and base class for all the
 before commit hooks including the transaction manager (see below)
 
-Here is the IBaseInterface interface definition.
+Here is the IBeforeCommitSubscriber interface definition.
 
     >>> import zope.interface
-    >>> class IBaseManager(zope.interface.Interface):
-    ...     """Base Manager definition
+    >>> class IBeforeCommitSubscriber(zope.interface.Interface): 
+    ...     """Base before commit subscriber definition
     ...
     ...     Provides a base interface for before commit hooks definitions
     ...     """
@@ -391,8 +391,8 @@ BeforeCommitSubscribersManager
 
 - API of the BeforeCommitSubscribersManager class::
 
-      BeforeCommitSubscribersManager implements IBaseManager (see above) and
-      define the following API
+      BeforeCommitSubscribersManager implements
+      IBeforeCommitSubscriber (see above) and define the following API
 
       >>> def addSubscriber(self, hook, args=(), kws=None, order=0):
       ...     """Register a hook to call before the transaction is committed.
@@ -434,11 +434,11 @@ BeforeCommitSubscribersManager
       ...     """
 
 
-The CPSCore.TransactionManager module provides an helper as well
+The CPSCore.commithooks module provides an helper as well
 creating a BeforeCommitSubscribersManager instance, on the transaction
 itself, and registers it as a ZODB before commit hook.
 
-  >>> from Products.CPSCore.TransactionManager import \
+  >>> from Products.CPSCore.commithooks import \
   ... get_before_commit_subscribers_manager
   >>> txn_manager = get_before_commit_subscribers_manager()
 
@@ -451,7 +451,7 @@ Let's take an example::
   >>> def hook(arg='no_arg', kw1='no_kw1', kw2='no_kw2'):
   ...     log.append("arg %r kw1 %r kw2 %r" % (arg, kw1, kw2))
 
-  >>> from Products.CPSCore.TransactionManager import \
+  >>> from Products.CPSCore.commithooks import \
   ... get_before_commit_subscribers_manager
   >>> mgr = get_before_commit_subscribers_manager()
 
@@ -630,7 +630,7 @@ After this the indexation will behave as if no subscriber had been
 registered for the indexation.
 
 Note, you can do this for all all the subscribers implementing
-IBaseManager.
+IBeforeCommitSubscriber
 
 
 How can I deactivate a given transaction subscriber?
@@ -660,10 +660,10 @@ How can I define, register and use my own subscriber?
 
 You can of course define and register your own subscribers.
 
-Define it. It implements IBaseManager::
+Define it. It implements IBeforeCommitSubscriber::
 
-  >>> from Products.CPSCore.interfaces import IBaseManager
-  >>> from Products.CPSCore.BaseManager import BaseManager
+  >>> from Products.CPSCore.interfaces import IBeforeCommitSubscriber
+  >>> from Products.CPSCore.commithooks import BeforeCommitSubscriber
   >>> import zope.interface
 
 This manager will be executed just before the IndexationManager.
@@ -672,15 +672,15 @@ be -101::
 
   >>> _TXN_MGR_ORDER = -101
 
-  >>> class MessageManager(BaseManager):
-  ...     zope.interface.implements(IBaseManager)
+  >>> class MessageManager(BeforeCommitSubscriber):
+  ...     zope.interface.implements(IBeforeCommitSubscriber)
   ...
   ...     def __init__(self, mgr):
   ...         """Initialize and register this manager within the
   ...         transaction.
   ...         Here, we specified the order of this subscriber
   ...         """
-  ...         BaseManager.__init__(self, mgr, order=_TXN_MGR_ORDER)
+  ...         BeforeCommitSubscriber.__init__(self, mgr, order=_TXN_MGR_ORDER)
   ...         self._queue = []
   ...
   ...     def push(self, str_):
@@ -699,9 +699,9 @@ be -101::
 
 As we saw in section3 , the CPS BeforeCommitSubscribersManager is responsible
 of the CPS before commit hooks execution. Thus we need to register the
-MessageManager on the CPS TransactionManager::
+MessageManager on the CPS commithooks::
 
-  >>> from Products.CPSCore.TransactionManager import \
+  >>> from Products.CPSCore.commithooks import \
   ... get_before_commit_subscribers_manager
 
 As well, we need to create an instance of the Manager at some
