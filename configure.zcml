@@ -14,7 +14,23 @@
       handler=".ProxyTool.handleObjectEvent"
       />
 
+  <!-- CMF deprecations -->
+
+  <five:deprecatedManageAddDelete
+      class="Products.CMFCore.CMFCatalogAware.CMFCatalogAware"/>
+  <five:deprecatedManageAddDelete
+      class="Products.CMFCore.CookieCrumbler.CookieCrumbler"/>
+
+  <!-- CPS deprecations -->
+
   <five:deprecatedManageAddDelete
       class="Products.CPSCore.EventServiceTool.SubscriberDef"/>
+
+  <!-- Misc other deprecations -->
+
+  <five:deprecatedManageAddDelete
+      class="Products.Localizer.Localizer.Localizer"/>
+  <five:deprecatedManageAddDelete
+      class="Products.PortalTransforms.zope.TransformTool.TransformTool"/>
 
 </configure>
