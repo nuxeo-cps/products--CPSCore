@@ -42,17 +42,17 @@ manager which was a real win for performance, since we ended up
 having an atomic indexation, whatever the transaction was dealing
 with.
 
-We realized soon after that we could use additional commit hooks
-to manage other non optimum internal CPS tasks. CPS extends the
-CMF and provides an event service machinery allowing to receive
-events, and dispatch them to interested parties. So we defined an
-event manager, dispatching user notifications based on events, and
-a tree cache manager, maintaining a tree cache for evident
+We realized soon after that we could use additional commit hooks to
+manage other non optimum internal CPS tasks. CPS extends the CMF and
+provides an event service machinery allowing to receive events, and
+dispatch them to interested parties. So we defined an event
+subscriptions manager, dispatching user notifications based on events,
+and a tree cache manager, maintaining a tree cache for evident
 performance issues. It seems that the Plone guys never really get
 that<wink>. The main idea is to sort, filter and process events as
-*less* as possible, being aware that events are sent several times
-in the event channel at runtime, without having a complete control
-on this flow: think about third party code.
+*less* as possible, being aware that events are sent several times in
+the event channel at runtime, without having a complete control on
+this flow: think about third party code.
 
 We defined a commit hook ordering policy for our CPS managers it
 was clear that we would be faced to subscriber execution
@@ -270,25 +270,25 @@ CPS defines and uses three (3) default hooks.
 
  o IndexationManager
  o TreeCacheManager
- o EventManager
+ o EventSubscriptionsManager
 
 They are executed in the following order :
 
  1. IndexationManager (order -100)
  2. TreeCacheManager  (order 0)
- 3. EventManager      (order 100)
+ 3. EventSubsriptionsManager      (order 100)
 
 Remember this if you want to define, register and use your own
 manager (see last section, it contains an example of such a definition).
 
 Let's explain a bit why we choose this order of execution.
 
-It's pretty clear that the EventManager should be executed after
-the IndexationManager and the TreeCacheManager since this manager
-deals with the results of all the events that were sent during the
-transaction. Thus, the EventManager can be interested with the
-events the IndexationManager and the TreeCacheManager can throw on
-the channel.
+It's pretty clear that the EventSubscriptionsManager should be
+executed after the IndexationManager and the TreeCacheManager since
+this manager deals with the results of all the events that were sent
+during the transaction. Thus, the EventSubscriptionsManager can be
+interested with the events the IndexationManager and the
+TreeCacheManager can throw on the channel.
 
 The IndexationManager is called first because the TreeCacheManager might
 have to query the catalog before rebuilding the tree.
@@ -573,14 +573,14 @@ XX to finish
       CPSCore/tests/test_treecache_manager.py
 
 
-EventManager (CPSSubscriptions)
+EventSubscriptionsManager (CPSSubscriptions)
 -------------------------------
 
 Manager for events with a delayed processing until commit time
 Order of execution::
 
-    CPSSubscriptions/EventManager.py
-    CPSSubscriptions/test_event_manager.py
+    CPSSubscriptions/EventSubscriptionsManager.py
+    CPSSubscriptions/test_event_subscriptions_manager.py
 
 XXX to finish
 
