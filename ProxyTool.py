@@ -42,7 +42,7 @@ from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.permissions import ViewArchivedRevisions
 from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
      REQUEST_LANGUAGE_KEY
-from Products.CPSUtil.session import sessionHasKey
+from Products.CPSUtil.session import sessionGet
 
 from zope.app.event.interfaces import IObjectModifiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
@@ -287,8 +287,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                     # 1.2/ check SESSION
                     if switcher is None:
                         check += ' SESSION'
-                        if sessionHasKey(REQUEST, SESSION_LANGUAGE_KEY):
-                            switcher = REQUEST.SESSION[SESSION_LANGUAGE_KEY]
+                        switcher = sessionGet(REQUEST, SESSION_LANGUAGE_KEY,
+                                              None)
                     if switcher is not None:
                         utool = getToolByName(self, 'portal_url')
                         rpath = utool.getRelativeUrl(proxy)
