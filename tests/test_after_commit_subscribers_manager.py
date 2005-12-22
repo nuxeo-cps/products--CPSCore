@@ -21,13 +21,17 @@
 """
 
 import unittest
-
 import transaction
+
+from Testing import ZopeTestCase
+from OFS.Folder import Folder
+from OFS.SimpleItem import SimpleItem
 
 from Products.CPSCore.interfaces import IAfterCommitSubscriber
 from Products.CPSCore.commithooks import _CPS_ACH_TXN_ATTRIBUTE
 from Products.CPSCore.commithooks import AfterCommitSubscribersManager
 from Products.CPSCore.commithooks import get_after_commit_subscribers_manager
+from Products.CPSCore.commithooks import get_before_commit_subscribers_manager
 from Products.CPSCore.commithooks import del_after_commits_subscribers_manager
 
 class FakeTransaction:
@@ -266,10 +270,61 @@ class AfterCommitSubscribersManagerIntegrationTest(unittest.TestCase):
         self.assertEqual(
             getattr(transaction.get(), _CPS_ACH_TXN_ATTRIBUTE, _marker), None)
 
+class AfterCommitSubscribersManagerAdvancedTest(ZopeTestCase.PortalTestCase):
+
+    def _setup(self):
+        self._setupUserFolder()
+        self._setupUser()
+        self.login()
+
+    def getPortal(self):
+        self.app.portal = Folder('portal')
+        return self.app.portal
+
+    def test_persistency(self):
+
+        def subscriber(status, portal):
+            # Subscriber trying to change a persitent object
+            item = getattr(portal, 'item')
+            item.title = 'changed'
+
+        transaction.begin()
+
+        portal = self.getPortal()
+        portal._setObject('item', SimpleItem('item'))
+        item = getattr(portal, 'item')
+        item.title = 'title'
+
+        # Register the subscriber
+        mgr = get_after_commit_subscribers_manager()
+        mgr.addSubscriber(subscriber, args=(portal,))
+
+        self.assertEqual(item.title, 'title')
+
+        transaction.commit()
+
+        # It doesn't change the title
+        self.assertEqual(item.title, 'title')
+
+    def test_commit_fails(self):
+
+        def bcsubscriber():
+            raise Exception
+
+        transaction.begin()
+        # Register the subscribers
+        get_before_commit_subscribers_manager().addSubscriber(bcsubscriber)
+        get_after_commit_subscribers_manager().addSubscriber(hook)
+
+        self.assertRaises(Exception, transaction.commit)
+        # This is not an internal commit error
+        self.assertEqual(log, [])
+
 def test_suite():
     return unittest.TestSuite((
         unittest.makeSuite(AfterCommitSubscribersManagerTest),
         unittest.makeSuite(AfterCommitSubscribersManagerIntegrationTest),
+        unittest.makeSuite(AfterCommitSubscribersManagerAdvancedTest),
         ))
 
 if __name__ == '__main__':
