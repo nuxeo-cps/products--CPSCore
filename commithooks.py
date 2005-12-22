@@ -19,12 +19,24 @@
 # $Id$
 """ Commit hooks managers for CPS
 
-Manages for CPS that will be responsible of the execution
+Managers for CPS that will be responsible of the execution
 of ZODB transaction hooks registred by CPS. It will deal with order of
-execution and defines a trivial and senseful ordering policy using the
+execution and defines a trivial and sensible ordering policy using the
 order of registration and an integer value speciying the order level
 for each hook. As well, note the transaction manager is responsible of
 the execution of the hooks. (not the ZODB transaction itself)
+
+This module defines two managers :
+
+ - BeforeCommitSubsribersManager
+ - AfterCommitSubscribersManager
+
+It defines as well two base classes that can be used to define new
+subcscribers :
+
+ - BeforeCommitHookSubscriber
+ - AfterCommitHookSubscriber
+
 """
 
 import logging
@@ -80,7 +92,7 @@ class BeforeCommitSubscriber(object):
 _CPS_BCH_TXN_ATTRIBUTE = '_cps_before_commit_hooks_manager'
 
 class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
-    """Holds hooks that will be executed at the end of the transaction.
+    """Holds subscribers that will be executed at the end of the transaction.
     """
 
     zope.interface.implements(IBeforeCommitSubscriber, IZODBBeforeCommitHook)
@@ -101,50 +113,55 @@ class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
         self._before_commit_index = 0
         txn.addBeforeCommitHook(self)
 
-        self.log = logging.getLogger("CPSCore BeforeCommitSubscribersManager")
+        self.log = logging.getLogger(
+            "CPSCore.commithooks.BeforeCommitSubscribersManager")
 
-    def addSubscriber(self, hook, args=(), kws=None, order=0):
+    def addSubscriber(self, subscriber, args=(), kws=None, order=0):
         """Register a subscriber to call before the transaction is committed.
 
-        The specified hook function will be called after the transaction's
-        commit method has been called, but before the commit process has been
-        started.  The hook will be passed the specified positional (`args`)
-        and keyword (`kws`) arguments.  `args` is a sequence of positional
-        arguments to be passed, defaulting to an empty tuple (no positional
-        arguments are passed).  `kws` is a dictionary of keyword argument
-        names and values to be passed, or the default None (no keyword
+        The specified subscriber function will be called after the
+        transaction's commit method has been called, but before the
+        commit process has been started.  The subscriber will be
+        passed the specified positional (`args`) and keyword (`kws`)
+        arguments.  `args` is a sequence of positional arguments to be
+        passed, defaulting to an empty tuple (no positional arguments
+        are passed).  `kws` is a dictionary of keyword argument names
+        and values to be passed, or the default None (no keyword
         arguments are passed).
 
-        Multiple hooks can be registered and will be called in the order they
-        were registered (first registered, first called), except that
-        hooks registered with different `order` arguments are invoked from
-        smallest `order` value to largest.  `order` must be an integer,
-        and defaults to 0.
+        Multiple subscribers can be registered and will be called in
+        the order they were registered (first registered, first
+        called), except that subscribers registered with different
+        `order` arguments are invoked from smallest `order` value to
+        largest.  `order` must be an integer, and defaults to 0.
 
-        For instance, a hook registered with order=1 will be invoked after
-        another hook registered with order=-1 and before another registered
-        with order=2, regardless of which was registered first.  When two
-        hooks are registered with the same order, the first one registered is
-        called first.
+        For instance, a subscriber registered with order=1 will be
+        invoked after another subscriber registered with order=-1 and
+        before another registered with order=2, regardless of which
+        was registered first.  When two subscribers are registered
+        with the same order, the first one registered is called first.
 
-        Hooks are called only for a top-level commit.  A subtransaction
-        commit or savepoint creation does not call any hooks.  If the
-        transaction is aborted, hooks are not called, and are discarded.
-        Calling a hook "consumes" its registration too:  hook registrations
-        do not persist across transactions.  If it's desired to call the same
-        hook on every transaction commit, then addBeforeCommitHook() must be
-        called with that hook during every transaction; in such a case
-        consider registering a synchronizer object via a TransactionManager's
-        registerSynch() method instead.
+        Subscribers are called only for a top-level commit.  A
+        subtransaction commit or savepoint creation does not call any
+        subscribers.  If the transaction is aborted, subscribers are
+        not called, and are discarded.
+
+        Calling a subscriber"consumes" its registration too: subscriber
+        registrations do not persist across
+        transactions.  If it's desired to call the same subscriber on
+        every transaction commit, then addSubscriber()
+        must be called with that subscriber during every transaction;
+        in such a case consider registering a synchronizer object via
+        a TransactionManager's registerSynch() method instead.
         """
 
-        # When the manager is disabled it won't add new hooks. It
+        # When the manager is disabled it won't add new subscribers. It
         # means, it can be deactiveted for a while, thus won't add any
         # new one, and then be activated again and start adding some
         # again.
         if not self._status:
             self.log.debug("won't register %s with %s and %s with order %s"
-                         %(repr(hook), args, kws, str(order)))
+                         %(repr(subscriber), args, kws, str(order)))
             return
 
         if not isinstance(order, int):
@@ -155,30 +172,32 @@ class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
 
         if self.isSynchronous():
             self.log.debug("executs %s with %s and %s" %
-                           (repr(hook), args, kws))
-            hook(*args, **kws)
+                           (repr(subscriber), args, kws))
+            subscriber(*args, **kws)
             return
 
         self.log.debug("register %s with %s and %s with order %s"
-                       %(repr(hook), args, kws, str(order)))
+                       %(repr(subscriber), args, kws, str(order)))
         bisect.insort(self._before_commit, (order, self._before_commit_index,
-                                            hook, tuple(args), kws))
+                                            subscriber, tuple(args), kws))
         self._before_commit_index += 1
 
     def __call__(self):
-        """Execute the registred hooks
+
+        """Execute the registred subscribers
 
         This method is called by the transaction. Note, the registred
-        hooks are executed by the TransactionManager itself and not by
-        the transaction.
+        subscribers are executed by the the
+        BeforeCommitSubscribersManager itself and not by the
+        transaction.
         """
         self.log.debug("__call__")
 
         while self._before_commit:
-            order, index, hook, args, kws = self._before_commit.pop(0)
+            order, index, subscriber, args, kws = self._before_commit.pop(0)
             self.log.debug("executs %s with %s and %s" %
-                           (repr(hook), args, kws))
-            hook(*args, **kws)
+                           (repr(subscriber), args, kws))
+            subscriber(*args, **kws)
         self._before_commit_index = 0
 
         self.log.debug("__call__ done")
