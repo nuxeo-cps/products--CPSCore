@@ -72,6 +72,7 @@ class IAfterCommitSubscriber(ICommitSubscriber):
 
     Provides a marker inteface for after commit subscriber
     """
+
     def __call__(status=True):
         """Do the actual job
 
