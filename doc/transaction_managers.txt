@@ -329,8 +329,7 @@ Here is the IBeforeCommitSubscriber interface definition.
     ...     DEFAULT_SYNC = zope.interface.Attribute('DEFAULT_SYNC',
     ...     "Default sync mode")
     ...
-    ...     DEFAULT_STATUS = zope.interface.Attribute('DEFAULT_STATUS',
-    ...     "Default status")
+    ...     enabled = zope.interface.Attribute('enable', "Default is True")
     ...
     ...     def setSynchronous(sync):
     ...         """Set queuing mode.
@@ -692,7 +691,7 @@ be -101::
   ...
   ...     def push(self, str_):
   ...         """Push the string within the queue."""
-  ...         if not self._status:
+  ...         if not self.enabled:
   ...             return
   ...         if self._sync:
   ...             print str_

@@ -39,7 +39,7 @@ class ICommitSubscriber(Interface):
     """
 
     DEFAULT_SYNC = Attribute('DEFAULT_SYNC', "Default sync mode")
-    DEFAULT_STATUS = Attribute('DEFAULT_STATUS', "Default status")
+    enabled = Attribute('enabled', "Default is True")
 
     def setSynchronous(sync):
         """Set queuing mode.

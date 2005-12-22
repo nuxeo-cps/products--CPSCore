@@ -60,17 +60,17 @@ class AfterCommitSubscribersManagerTest(unittest.TestCase):
         self.assertEqual(mgr._sync, False)
         self.assertEqual(mgr.isSynchronous(), False)
         self.assertEqual(mgr.isSynchronous(), mgr._sync)
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
 
     def test_status_api(self):
 
         mgr = AfterCommitSubscribersManager(FakeTransaction())
 
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
         mgr.disable()
-        self.assertEqual(mgr._status, False)
+        self.assertEqual(mgr.enabled, False)
         mgr.enable()
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
 
     def test_async(self):
 
@@ -97,7 +97,7 @@ class AfterCommitSubscribersManagerTest(unittest.TestCase):
 
         mgr = AfterCommitSubscribersManager(FakeTransaction())
 
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
         self.assertEqual(mgr._sync, False)
 
         # Disable subscriber
@@ -133,7 +133,7 @@ class AfterCommitSubscribersManagerTest(unittest.TestCase):
 
         mgr = AfterCommitSubscribersManager(FakeTransaction())
 
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
         self.assertEqual(mgr._sync, False)
 
         # Sync = True

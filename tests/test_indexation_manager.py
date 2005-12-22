@@ -121,7 +121,7 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEqual(mgr._sync, False)
         self.assertEqual(mgr.isSynchronous(), False)
         self.assertEqual(mgr.isSynchronous(), mgr._sync)
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
 
     def test_simple(self):
         mgr, dummy = self.get_stuff()
@@ -253,17 +253,17 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), ["idxs %s ['d']"%dummy.id])
         root.clear()
 
-    def test_status_api(self):
+    def test_enabled_api(self):
 
         mgr, dummy = self.get_stuff()
 
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
         mgr.disable()
-        self.assertEqual(mgr._status, False)
+        self.assertEqual(mgr.enabled, False)
         mgr.enable()
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
 
-    def test_status_with_async_subscriber(self):
+    def test_enabled_with_async_subscriber(self):
 
         mgr, dummy = self.get_stuff()
 
@@ -302,7 +302,7 @@ class IndexationManagerTest(unittest.TestCase):
 
         root.clear()
 
-    def test_status_with_sync_subscriber(self):
+    def test_enabled_with_sync_subscriber(self):
 
         mgr, dummy = self.get_stuff()
 

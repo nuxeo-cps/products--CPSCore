@@ -62,7 +62,7 @@ class IndexationManager(BeforeCommitSubscriber):
         # When the manager is disabled it won't queue anything. It means, it
         # can be deactiveted for a while, thus won't queue, and then be
         # activated again and start queuing again.
-        if not self._status:
+        if not self.enabled:
             logger.debug("is DISABLED. object %r won't be processed" % ob)
             return
 

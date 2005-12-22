@@ -55,17 +55,17 @@ class TreeCacheManagerTest(unittest.TestCase):
         self.assertEqual(mgr._sync, False)
         self.assertEqual(mgr.isSynchronous(), False)
         self.assertEqual(mgr.isSynchronous(), mgr._sync)
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
 
     def test_status_api(self):
 
         mgr = TreeCacheManager(FakeBeforeCommitSubscribersManager())
 
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
         mgr.disable()
-        self.assertEqual(mgr._status, False)
+        self.assertEqual(mgr.enabled, False)
         mgr.enable()
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
 
     def test_simple(self):
         mgr = TreeCacheManager(FakeBeforeCommitSubscribersManager())
@@ -90,7 +90,7 @@ class TreeCacheManagerTest(unittest.TestCase):
         mgr = TreeCacheManager(FakeBeforeCommitSubscribersManager())
         cache = DummyTreeCache()
 
-        self.assertEqual(mgr._status, True)
+        self.assertEqual(mgr.enabled, True)
         self.assertEqual(mgr._sync, False)
 
         # Disable subscriber

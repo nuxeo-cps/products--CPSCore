@@ -68,7 +68,7 @@ class TreeCacheManager(BeforeCommitSubscriber):
         # When the manager is disabled it won't queue anything. It means, it
         # can be deactiveted for a while, thus won't queue, and then be
         # activated again and start queuing again.
-        if not self._status:
+        if not self.enabled:
             logger.debug(
                 "is DISABLED. push for %s: %s %s %r will *not* be done"
                 % (cache.getId(), printable_op(op), '/'.join(path), info))

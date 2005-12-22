@@ -31,3 +31,4 @@ New internal features:
 - API renamed :
     o  IBaseManager ->  IBeforeCommitSubscriber
     o  BaseManager -> BeforeCommitSusbcriber
+- AfterCommitSubscribersManager on top of the ZODB transaction

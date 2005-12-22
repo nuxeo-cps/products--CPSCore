@@ -67,12 +67,9 @@ class CommitSubscriber(object):
     # XXX This may be monkey-patched by unit-tests.
     DEFAULT_SYNC = False
 
-    # Enabled by default
-    DEFAULT_STATUS = True
-
     def __init__(self, mgr, order=0):
         self._sync = self.DEFAULT_SYNC
-        self._status = self.DEFAULT_STATUS
+        self.enabled = True
         mgr.addSubscriber(self, order=order)
 
     def setSynchronous(self, sync):
@@ -90,10 +87,10 @@ class CommitSubscriber(object):
         raise NotImplementedError
 
     def enable(self):
-        self._status = True
+        self.enabled = True
 
     def disable(self):
-        self._status = False
+        self.enabled = False
 
 class BeforeCommitSubscriber(CommitSubscriber):
     """Before commit subscriber definition
@@ -122,7 +119,7 @@ class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
         """Initialize and register this manager with the transaction.
         """
         self._sync = self.DEFAULT_SYNC
-        self._status = self.DEFAULT_STATUS
+        self.enabled = True
 
         # List of (order, index, hook, args, kws) tuples added by
         # addbeforeCommitHook().  `index` is used to resolve ties on equal
@@ -180,7 +177,7 @@ class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
         # means, it can be deactiveted for a while, thus won't add any
         # new one, and then be activated again and start adding some
         # again.
-        if not self._status:
+        if not self.enabled:
             self.log.debug("won't register %s with %s and %s with order %s"
                          %(repr(subscriber), args, kws, str(order)))
             return
@@ -233,7 +230,7 @@ class AfterCommitSubscribersManager(AfterCommitSubscriber):
         """Initialize and register this manager with the transaction.
         """
         self._sync = self.DEFAULT_SYNC
-        self._status = self.DEFAULT_STATUS
+        self.enabled = True
 
         # List of (order, index, hook, args, kws) tuples added by
         # addAfterCommitHook().  `index` is used to resolve ties on equal
@@ -296,7 +293,7 @@ class AfterCommitSubscribersManager(AfterCommitSubscriber):
         # means, it can be deactiveted for a while, thus won't add any
         # new one, and then be activated again and start adding some
         # again.
-        if not self._status:
+        if not self.enabled:
             self.log.debug("won't register %s with %s and %s with order %s"
                          %(repr(subscriber), args, kws, str(order)))
             return
