@@ -34,10 +34,8 @@ class ICPSProxy(Interface):
     """
     # XXX TODO
 
-class IBeforeCommitSubscriber(Interface):
-    """Before commit susbscriber interface definition
-
-    Provides a base interface for before hook definitions
+class ICommitSubscriber(Interface):
+    """Base interface for before commits
     """
 
     DEFAULT_SYNC = Attribute('DEFAULT_SYNC', "Default sync mode")
@@ -51,12 +49,6 @@ class IBeforeCommitSubscriber(Interface):
         """Get queuing mode.
         """
 
-    def __call__():
-        """Called when transaction commits.
-
-        Does the actual manager work.
-        """
-
     def enable():
         """Enable the manager
         """
@@ -65,10 +57,35 @@ class IBeforeCommitSubscriber(Interface):
         """Disable the manager
         """
 
+class IBeforeCommitSubscriber(ICommitSubscriber):
+    """Before commit susbscriber interface definition
+
+    Provides a marker insterface for before hook definitions
+    """
+
+    def __call__():
+        """ Do the actual job
+        """
+
+class IAfterCommitSubscriber(ICommitSubscriber):
+    """Base After Commit Subscriber interface definition
+
+    Provides a marker inteface for after commit subscriber
+    """
+    def __call__(status=True):
+        """Do the actual job
+
+        Status is the status of the transaction commit.
+
+        true if succeded or false of aborted (or not done for use in
+        CPS if we use sync mode.)
+        """
+        raise NotImplementedError
+
 class IZODBBeforeCommitHook(IBeforeCommitSubscriber):
     """Before commit subcriber base interface
     """
-    
+
     def addSubscriber(hook, args=(), kws=None, order=0):
         """Register a subscriber to call before the transaction is committed.
 
@@ -103,3 +120,51 @@ class IZODBBeforeCommitHook(IBeforeCommitSubscriber):
         consider registering a synchronizer object via a TransactionManager's
         registerSynch() method instead.
         """
+
+class IZODBAfterCommitHook(IAfterCommitSubscriber):
+    """After commit subcriber base interface
+    """
+
+    def addSubscriber(subscriber, args=(), kws=None, order=0):
+        """Register a subscriber to call after a transaction commit attempt.
+
+         The specified subscriber function will be called after the
+         transaction commit succeeds or aborts.  The first argument
+         passed to the subscriber is a Boolean value, true if the
+         commit succeeded, or false if the commit aborted.  `args`
+         specifies additional positional, and `kws` keyword, arguments
+         to pass to the subscriber.  `args` is a sequence of
+         positional arguments to be passed, defaulting to an empty
+         tuple (only the true/false success argument is passed).
+         `kws` is a dictionary of keyword argument names and values to
+         be passed, or the default None (no keyword arguments are
+         passed).
+
+         Multiple subscribers can be registered and will be called in
+         the order they were registered (first registered, first
+         called). except that hooks registered with different `order`
+         arguments are invoked from smallest `order` value to largest.
+         `order` must be an integer, and defaults to 0.
+
+         For instance, a hook registered with order=1 will be invoked
+         after another hook registered with order=-1 and before
+         another registered with order=2, regardless of which was
+         registered first.  When two hooks are registered with the
+         same order, the first one registered is called first.
+
+         This method can also be called from a subscriber:
+         an executing subscriber can register more subscribers.
+         Applications should take care to avoid creating infinite
+         loops by recursively registering subscribers.
+
+         Subscribers are called only for a top-level commit.  A
+         subtransaction commit or savepoint creation does not call any
+         subscribers.  Calling a subscriber"consumes" its registration:
+         subscriber registrations do not persist across transactions.
+
+         If it's desired to call the same subscriber on every
+         transaction commit, then addSubscriber() must be called with
+         that subscriber during every transaction; in such a case
+         consider registering a synchronizer object via a
+         TransactionManager's registerSynch() method instead.
+         """
