@@ -39,6 +39,9 @@ from transaction._transaction import Status
 from transaction._transaction import _marker
 from transaction._transaction import Savepoint
 
+from ZODB.loglevels import TRACE
+
+
 if True:
 
     def getAfterCommitHooks(self):
@@ -126,7 +129,7 @@ if True:
         self._extension = {}
 
         self.log = logging.getLogger("txn.%d" % thread.get_ident())
-        self.log.debug("new transaction")
+        self.log.log(TRACE, "new transaction")
 
         # If a commit fails, the traceback is saved in _failure_traceback.
         # If another attempt is made to commit, TransactionFailedError is
@@ -181,7 +184,7 @@ if True:
                 self._manager.free(self)
             self._synchronizers.map(lambda s: s.afterCompletion(self))
             self._callAfterCommitHooks(status=True)
-        self.log.debug("commit")
+        self.log.log(TRACE, "commit")
     Transaction.commit = commit
 
     def savepoint(self, optimistic=False):
