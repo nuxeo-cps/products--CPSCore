@@ -19,8 +19,8 @@
 """Trees Tool, that caches some information about the site's hierarchies.
 """
 
-from zLOG import LOG, DEBUG, ERROR
-
+import logging
+from ZODB.loglevels import TRACE
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
 from AccessControl import getSecurityManager
@@ -66,7 +66,7 @@ class UnrestrictedUser(BaseUnrestrictedUser):
         """Return the ID of the user."""
         return self.getUserName()
 
-
+logger = logging.getLogger('CPSCore.TreesTool')
 
 
 class TreesTool(UniqueObject, Folder):
@@ -104,8 +104,7 @@ class TreesTool(UniqueObject, Folder):
             return
 
         path = ob.getPhysicalPath()
-        LOG('TreesTool', DEBUG, "Got %s for %s" %
-            (event_type, '/'.join(path)))
+        logger.log(TRACE, "Got %s for %s", event_type, '/'.join(path))
         for cache in self.objectValues():
             if cache.isCandidate(ob):
                 if event_type in ('sys_add_cmf_object', 'sys_add_object'):
@@ -249,8 +248,7 @@ class TreeCacheUpdater(object):
                     setSecurityManager(old_sm)
 
                 if not isinstance(info, dict):
-                    LOG('TreeCache', ERROR,
-                        "getNodeInfo returned non-dict %s" % `info`)
+                    logger.error("getNodeInfo returned non-dict %r", info)
                     info = {}
         info.update({
             'id': ob.getId(),
@@ -412,8 +410,8 @@ class TreeCacheUpdater(object):
         and REMOVE.
         """
         for op, path, info in tree.get():
-            LOG('TreeCacheUpdater', DEBUG, "  replaying %s %s %s" %
-                (printable_op(op), '/'.join(path), info))
+            logger.log(TRACE, "  replaying %s %s %s",
+                       printable_op(op), '/'.join(path), info)
             if op == ADD:
                 # First, delete old info about it
                 self.deleteNodesUnderPath(path)
@@ -479,7 +477,7 @@ class TreeCache(SimpleItemWithProperties):
 
     def _upgrade(self):
         """Upgrade from the old format."""
-        LOG('TreeCache', DEBUG, 'Upgrading tree %s' % self.getId())
+        logger.info("Upgrading tree %s", self.getId())
         delattr(self, '_tree')
         delattr(self, '_pointers')
         delattr(self, '_flat')
@@ -514,8 +512,7 @@ class TreeCache(SimpleItemWithProperties):
             return
         root_ob = portal.unrestrictedTraverse(root, None)
         if root_ob is None:
-            LOG('TreeCache', ERROR, "Rebuild %s: bad root %r" %
-                (self.getId(), root))
+            logger.error("Rebuild %s: bad root %r", self.getId(), root)
             return
         TreeCacheUpdater(self).makeTree(root_ob)
 
