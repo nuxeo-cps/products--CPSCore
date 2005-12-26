@@ -44,6 +44,7 @@ import bisect
 
 import transaction
 import zope.interface
+from ZODB.loglevels import TRACE
 
 from Products.CPSCore.interfaces import ICommitSubscriber
 from Products.CPSCore.interfaces import IBeforeCommitSubscriber
@@ -53,6 +54,15 @@ from Products.CPSCore.interfaces import IZODBAfterCommitHook
 
 _CPS_BCH_TXN_ATTRIBUTE = '_cps_before_commit_hooks_manager'
 _CPS_ACH_TXN_ATTRIBUTE = '_cps_after_commit_hooks_manager'
+
+
+class Logger(object):
+    """Logger that knows how to log at TRACE level.
+    """
+    def __init__(self, logger):
+        self.logger = logger
+    def trace(self, *args):
+        self.logger.log(TRACE, *args)
 
 #
 # Commit subsriber definitions
@@ -131,8 +141,9 @@ class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
         self._before_commit_index = 0
         txn.addBeforeCommitHook(self)
 
-        self.log = logging.getLogger(
+        logger = logging.getLogger(
             "CPSCore.commithooks.BeforeCommitSubscribersManager")
+        self.log = Logger(logger)
 
     def addSubscriber(self, subscriber, args=(), kws=None, order=0):
         """Register a subscriber to call before the transaction is committed.
@@ -178,7 +189,7 @@ class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
         # new one, and then be activated again and start adding some
         # again.
         if not self.enabled:
-            self.log.debug("won't register %s with %s and %s with order %s"
+            self.log.trace("Won't register %s with %s and %s with order %s"
                          %(repr(subscriber), args, kws, str(order)))
             return
 
@@ -189,12 +200,12 @@ class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
             kws = {}
 
         if self.isSynchronous():
-            self.log.debug("executs %s with %s and %s" %
+            self.log.trace("Executes %s with %s and %s" %
                            (repr(subscriber), args, kws))
             subscriber(*args, **kws)
             return
 
-        self.log.debug("register %s with %s and %s with order %s"
+        self.log.trace("Register %s with %s and %s with order %s"
                        %(repr(subscriber), args, kws, str(order)))
         bisect.insort(self._before_commit, (order, self._before_commit_index,
                                             subscriber, tuple(args), kws))
@@ -209,16 +220,16 @@ class BeforeCommitSubscribersManager(BeforeCommitSubscriber):
         BeforeCommitSubscribersManager itself and not by the
         transaction.
         """
-        self.log.debug("__call__")
+        self.log.trace("__call__")
 
         while self._before_commit:
             order, index, subscriber, args, kws = self._before_commit.pop(0)
-            self.log.debug("executs %s with %s and %s" %
+            self.log.trace("Executes %s with %s and %s" %
                            (repr(subscriber), args, kws))
             subscriber(*args, **kws)
         self._before_commit_index = 0
 
-        self.log.debug("__call__ done")
+        self.log.trace("__call__ done")
 
 class AfterCommitSubscribersManager(AfterCommitSubscriber):
     """Holds subscribers that will be executed after the
@@ -294,7 +305,7 @@ class AfterCommitSubscribersManager(AfterCommitSubscriber):
         # new one, and then be activated again and start adding some
         # again.
         if not self.enabled:
-            self.log.debug("won't register %s with %s and %s with order %s"
+            self.log.trace("Won't register %s with %s and %s with order %s"
                          %(repr(subscriber), args, kws, str(order)))
             return
 
@@ -305,13 +316,13 @@ class AfterCommitSubscribersManager(AfterCommitSubscriber):
             kws = {}
 
         if self.isSynchronous():
-            self.log.debug("executs %s with %s and %s" %
+            self.log.trace("Executes %s with %s and %s" %
                            (repr(subscriber), args, kws))
             # False for the fact the the transaction hasn't been commited
             subscriber(False, *args, **kws)
             return
 
-        self.log.debug("register %s with %s and %s with order %s"
+        self.log.trace("Register %s with %s and %s with order %s"
                        %(repr(subscriber), args, kws, str(order)))
         bisect.insort(self._after_commit, (order, self._after_commit_index,
                                            subscriber, tuple(args), kws))
@@ -327,16 +338,16 @@ class AfterCommitSubscribersManager(AfterCommitSubscriber):
 
         status is the status of the
         """
-        self.log.debug("__call__")
+        self.log.trace("__call__")
 
         while self._after_commit:
             order, index, subscriber, args, kws = self._after_commit.pop(0)
-            self.log.debug("executs %s with %s and %s" %
+            self.log.trace("Executes %s with %s and %s" %
                            (repr(subscriber), args, kws))
             subscriber(status, *args, **kws)
         self._after_commit_index = 0
 
-        self.log.debug("__call__ done")
+        self.log.trace("__call__ done")
 
 #
 # CPS Helpers
