@@ -253,8 +253,9 @@ class AfterCommitSubscribersManager(AfterCommitSubscriber):
         self._after_commit_index = 0
         txn.addAfterCommitHook(self)
 
-        self.log = logging.getLogger(
+        logger = logging.getLogger(
             "CPSCore.commithooks.AfterCommitSubscribersManager")
+        self.log = Logger(logger)
 
     def addSubscriber(self, subscriber, args=(), kws=None, order=0):
         """Register a subscriber to call after a transaction commit attempt.
