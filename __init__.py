@@ -46,6 +46,7 @@ import ObjectRepositoryTool
 import TreesTool
 import CPSRegistrationTool
 import URLTool
+from Products.CPSCore.setup import CPSSetupTool
 
 import ProxyBase
 
@@ -56,6 +57,7 @@ tools = (
     TreesTool.TreesTool,
     CPSRegistrationTool.CPSRegistrationTool,
     URLTool.URLTool,
+    CPSSetupTool,
 )
 
 contentClasses = (ProxyBase.ProxyFolder,
