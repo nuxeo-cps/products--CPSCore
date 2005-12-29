@@ -46,7 +46,7 @@ import ObjectRepositoryTool
 import TreesTool
 import CPSRegistrationTool
 import URLTool
-from Products.CPSCore.setup import CPSSetupTool
+from Products.CPSCore.setuptool import CPSSetupTool
 
 import ProxyBase
 
