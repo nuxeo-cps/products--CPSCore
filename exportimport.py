@@ -59,7 +59,7 @@ def importTreeTool(context):
     """Import tool and tree caches as a set of XML files.
     """
     site = context.getSite()
-    tool = getToolByName(site, TOOL)
+    tool = getToolByName(site, TREE_TOOL)
     importObjects(tool, '', context)
 
 
