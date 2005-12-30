@@ -48,5 +48,7 @@
       class="Products.Localizer.Localizer.Localizer"/>
   <five:deprecatedManageAddDelete
       class="Products.PortalTransforms.zope.TransformTool.TransformTool"/>
+  <five:deprecatedManageAddDelete
+      class="Products.PortalTransforms.zope.Transform.Transform"/>
 
 </configure>
