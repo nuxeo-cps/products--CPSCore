@@ -59,6 +59,10 @@ def intersects(a, b):
             return True
     return False
 
+from zope.interface import implements
+from Products.CPSCore.interfaces import ITreeTool
+from Products.CPSCore.interfaces import ITreeCache
+
 
 class UnrestrictedUser(BaseUnrestrictedUser):
     """Unrestricted user that still has an id."""
@@ -72,6 +76,8 @@ logger = logging.getLogger('CPSCore.TreesTool')
 class TreesTool(UniqueObject, Folder):
     """Trees Tool that caches information about the site's hierarchies.
     """
+
+    implements(ITreeTool)
 
     id = 'portal_trees'
     meta_type = 'CPS Trees Tool'
@@ -436,6 +442,9 @@ class TreeCacheUpdater(object):
 class TreeCache(SimpleItemWithProperties):
     """Tree cache object, caches information about one hierarchy.
     """
+
+    implements(ITreeCache)
+
     meta_type = 'CPS Tree Cache'
 
     security = ClassSecurityInfo()

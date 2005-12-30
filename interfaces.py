@@ -34,6 +34,14 @@ class ICPSProxy(Interface):
     """
     # XXX TODO
 
+class ITreeTool(Interface):
+    """Tree Tool.
+    """
+
+class ITreeCache(Interface):
+    """Tree Cache.
+    """
+
 class ICommitSubscriber(Interface):
     """Base interface for before commits
     """

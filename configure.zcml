@@ -2,6 +2,22 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:five="http://namespaces.zope.org/five">
 
+  <adapter
+      factory=".exportimport.TreeToolXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      for="Products.CPSCore.interfaces.ITreeTool
+           Products.GenericSetup.interfaces.ISetupEnviron"
+      />
+
+  <adapter
+      factory=".exportimport.TreeCacheXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      for="Products.CPSCore.interfaces.ITreeCache
+           Products.GenericSetup.interfaces.ISetupEnviron"
+      />
+
+  <!-- Bascic event subscribers -->
+
   <subscriber
       for="OFS.interfaces.IItem
            zope.app.event.interfaces.IObjectEvent"
