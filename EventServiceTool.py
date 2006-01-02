@@ -59,6 +59,7 @@ CPSEventServiceTool_type = 'CPS Event Service Tool'
 class FakeEventService:
     def notify(self, *args, **kw):
         pass
+    notifyEvent = notify
 
 fake_event_service = FakeEventService()
 
