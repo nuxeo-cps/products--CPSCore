@@ -24,6 +24,7 @@ from zope.interface import Interface
 from zope.interface import Attribute
 
 from zope.app.event.interfaces import IModificationDescription
+from OFS.interfaces import IPropertyManager
 
 class ISecurityModificationDescription(IModificationDescription):
     """Modification of an object's security.
@@ -41,6 +42,15 @@ class ITreeTool(Interface):
 class ITreeCache(Interface):
     """Tree Cache.
     """
+
+class IEventServiceTool(Interface):
+    """Event Service Tool.
+    """
+
+class IEventSubscriber(IPropertyManager):
+    """Event Subscriber.
+    """
+
 
 class ICommitSubscriber(Interface):
     """Base interface for before commits

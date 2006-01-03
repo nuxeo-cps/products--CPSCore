@@ -16,6 +16,20 @@
            Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
+  <adapter
+      factory=".exportimport.EventServiceToolXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      for="Products.CPSCore.interfaces.IEventServiceTool
+           Products.GenericSetup.interfaces.ISetupEnviron"
+      />
+
+  <adapter
+      factory=".exportimport.EventSubscriberBodyAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      for="Products.CPSCore.interfaces.IEventSubscriber
+           Products.GenericSetup.interfaces.ISetupEnviron"
+      />
+
   <!-- Bascic event subscribers -->
 
   <subscriber

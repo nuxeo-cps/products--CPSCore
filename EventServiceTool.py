@@ -44,6 +44,9 @@ from zope.app.container.contained import ContainerModifiedEvent
 from zope.app.event.objectevent import ObjectModifiedEvent
 from OFS.event import ObjectWillBeRemovedEvent
 
+from zope.interface import implements
+from Products.CPSCore.interfaces import IEventServiceTool
+from Products.CPSCore.interfaces import IEventSubscriber
 
 from Products.CMFCore.utils import UniqueObject, SimpleItemWithProperties
 from Products.CMFCore.utils import getToolByName
@@ -90,6 +93,8 @@ class SubscriberDef(SimpleItemWithProperties):
 
     It just defines a subscriber to notify on some event.
     """
+
+    implements(IEventSubscriber)
 
     meta_type = CPSSubscriberDefinition_type
 
@@ -138,8 +143,10 @@ class SubscriberDef(SimpleItemWithProperties):
 
     activated = True
 
-    def __init__(self, id, subscriber, action, meta_type, event_type,
-                 notification_type, compressed, activated):
+    def __init__(self, id, subscriber='', action='',
+                 meta_type='*', event_type=('*',),
+                 notification_type='synchronous',
+                 compressed=False, activated=True):
         self.id = id
         self.subscriber = subscriber
         self.action = action
@@ -202,6 +209,8 @@ InitializeClass(SubscriberDef)
 class EventServiceTool(UniqueObject, OrderedFolder):
     """Event service is used to dispatch notifications to subscribers.
     """
+
+    implements(IEventServiceTool)
 
     id = 'portal_eventservice'
     meta_type = CPSEventServiceTool_type
