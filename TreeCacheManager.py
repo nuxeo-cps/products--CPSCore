@@ -83,7 +83,7 @@ class TreeCacheManager(BeforeCommitSubscriber):
             self._caches[cache_path] = cache
         else:
             tree = self._trees[cache_path]
-        tree.do(op, path, info)
+        tree.do(op, path, info, strict=False)
 
     def _getModificationTree(self, cache):
         """Debugging: get the modification tree for a tree cache.
