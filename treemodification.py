@@ -131,6 +131,36 @@ And you can't remove something that's sure to not exist anymore::
   ...
   TreeModificationError: REMOVE 'A' after REMOVE 'A'
 
+If you're not strict, you can remove something under something already
+removed, this is useful for processes where events are generated
+top-down::
+
+  >>> tree = TreeModification([(REMOVE, 'A')])
+  >>> tree.do(REMOVE, 'AB', strict=True)
+  Traceback (most recent call last):
+  ...
+  TreeModificationError: REMOVE 'AB' after REMOVE 'A'
+  >>> tree.do(REMOVE, 'AB', strict=False)
+  >>> tree
+  TreeModification([(REMOVE, 'A')])
+
+But even when not strict, you can't remove the same object twice, or do
+other incoherent operations::
+
+  >>> tree = TreeModification([(REMOVE, 'A')])
+  >>> tree.do(REMOVE, 'A', strict=False)
+  Traceback (most recent call last):
+  ...
+  TreeModificationError: REMOVE 'A' after REMOVE 'A'
+  >>> tree.do(MODIFY, 'A', strict=False)
+  Traceback (most recent call last):
+  ...
+  TreeModificationError: MODIFY 'A' after REMOVE 'A'
+  >>> tree.do(ADD, 'AB', strict=False)
+  Traceback (most recent call last):
+  ...
+  TreeModificationError: ADD 'AB' after REMOVE 'A'
+
 Of course all this is used with tuple paths in real life::
 
   >>> TreeModification([(ADD, ('root', 'bob')), (ADD, ('root',))])
@@ -294,7 +324,7 @@ class TreeModification(object):
             res.update(new)
             return res
 
-    def do(self, op, path, info=None):
+    def do(self, op, path, info=None, strict=True):
         """Do an operation on the tree.
 
         ``op`` can be one of ``ADD``, ``REMOVE`` or ``MODIFY``.
@@ -303,6 +333,9 @@ class TreeModification(object):
 
         ``info`` is a mapping, or None. It represents additional
         information about ``MODIFY`` operations
+
+        If ``strict`` is False, then a REMOVE after a higher REMOVE is
+        allowed.
         """
         if not path:
             return TreeModificationError("Empty path forbidden")
@@ -317,7 +350,9 @@ class TreeModification(object):
             if step in tree:
                 old_op, old_info, subtree = tree[step]
                 if old_op == REMOVE:
-                    # REMOVE higher in the tree, error
+                    # REMOVE higher in the tree, error when strict
+                    if op == REMOVE and not strict:
+                        return
                     raise TreeModificationError(
                         "%s %r after REMOVE %r" %
                         (printable_op(op), path, path[:i+1]))
