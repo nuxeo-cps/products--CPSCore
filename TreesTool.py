@@ -676,7 +676,10 @@ class TreeCache(SimpleItemWithProperties):
                     if done.has_key(rpath):
                         continue
                     done[rpath] = None
-                    info = infos[rpath]
+                    info = infos.get(rpath)
+                    if info is None:
+                        # Inconsistent tree, don't break completely
+                        continue
 
                     # Check depth
                     depth = info['depth']
