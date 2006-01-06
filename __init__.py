@@ -21,7 +21,6 @@
 from zLOG import LOG, DEBUG, TRACE
 
 import Products.CPSCompat
-import PatchZODBTransaction
 
 #
 # Monkey patching starts here
