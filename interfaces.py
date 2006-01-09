@@ -30,6 +30,10 @@ class ISecurityModificationDescription(IModificationDescription):
     """Modification of an object's security.
     """
 
+class ICPSSite(Interface):
+    """CPS Site.
+    """
+
 class ICPSProxy(Interface):
     """CPS Proxy.
     """
