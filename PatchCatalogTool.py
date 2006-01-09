@@ -144,7 +144,7 @@ class IndexableObjectWrapper:
         """Return the object position in the container."""
         ob = self.__ob
         container = aq_parent(aq_inner(ob))
-        if hasattr(container, 'getObjectPosition'):
+        if getattr(aq_base(container), 'getObjectPosition', None) is not None:
             try:
                 return container.getObjectPosition(ob.getId())
             except ValueError, err:
