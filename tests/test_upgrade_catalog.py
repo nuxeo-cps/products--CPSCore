@@ -103,7 +103,7 @@ class Upgrade335to336TestCase(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, catalog.indexObject, portal.obb)
 
         # Fixup the catalog
-        res = upgrade_335_336_catalog(portal)
+        res = upgrade_335_336_catalog_unicode(portal)
         self.assertEquals(res, "Cleaned up: 1 index entries, 1 metadata entries, "
                           "1 lexicon entries, 1 objects")
 
