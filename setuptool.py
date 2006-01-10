@@ -128,8 +128,6 @@ class CPSSetupTool(UniqueObject, SetupTool):
             info['step'].doStep(portal)
 
         # Update last_upgraded_version
-        current = portal.getProperty('last_upgraded_version')
-        current = tuple(current.split('.'))
         if None in dests:
             del dests[None]
         dests = dests.keys()
@@ -140,7 +138,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
             if dest in skipped:
                 break
             next = dest
-        if next is not None and next > current:
+        if next is not None and next > self._getCurrentVersion():
             self._setCurrentVersion(next)
 
     #
