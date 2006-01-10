@@ -17,11 +17,90 @@
 #
 # $Id$
 
+import random
+
+_upgrade_registry = {} # id -> step
+
+class UpgradeStep(object):
+    """A step to upgrade a component.
+    """
+    def __init__(self, title, source, dest, handler,
+                 checker=None, sortkey=0):
+        self.id = str(abs(hash('%s%s%s%s' % (title, source, dest, sortkey))))
+        self.title = title
+        if source == '*':
+            source = None
+        elif isinstance(source, basestring):
+            source = tuple(source.split('.'))
+        self.source = source
+        if dest == '*':
+            dest = None
+        elif isinstance(dest, basestring):
+            dest = tuple(dest.split('.'))
+        self.dest = dest
+        self.handler = handler
+        self.checker = checker
+        self.sortkey = sortkey
+
+    def versionMatch(self, portal, source):
+        return (source is None or
+                self.source is None or
+                source <= self.source)
+
+    def isProposed(self, portal, source):
+        """Check if a step can be applied.
+
+        False means already applied or does not apply.
+        True means can be applied.
+        """
+        checker = self.checker
+        if checker is None:
+            checker = self.versionMatch
+        return checker(portal, source)
+
+    def doStep(self, portal):
+        self.handler(portal)
+
+
+def _registerUpgradeStep(step):
+    _upgrade_registry[step.id] = step
+
+def upgradeStep(_context, title, handler, source='*', destination='*',
+                sortkey=0, checker=None):
+    step = UpgradeStep(title, source, destination, handler, checker, sortkey)
+    _context.action(
+        discriminator = ('upgradeStep', source, destination, handler, sortkey),
+        callable = _registerUpgradeStep,
+        args = (step,),
+        )
+
+def listUpgradeSteps(portal, source):
+    """Lists upgrade steps available from a given version.
+    """
+    res = []
+    for id, step in _upgrade_registry.items():
+        proposed = step.isProposed(portal, source)
+        if not proposed and not step.versionMatch(portal, source):
+            continue
+        info = {
+            'id': id,
+            'step': step,
+            'title': step.title,
+            'source': step.source,
+            'dest': step.dest,
+            'proposed': proposed,
+            }
+        res.append(((step.source or '', step.sortkey, proposed), info))
+    res.sort()
+    res = [i[1] for i in res]
+    return res
+
+
+######################################################################
+
 from Products.PluginIndexes.common.UnIndex import UnIndex
 
-
-
-def upgrade_334_335_repository(context):
+def upgrade_334_335_repository_security(context):
     """Upgrade the repository to remove security synthesis remnants.
 
     Removes all local roles on the contained objects.
@@ -48,9 +127,8 @@ def upgrade_334_335_repository(context):
     return "%s repository objects updated" % count
 
 
-
-def upgrade_335_336_catalog(context):
-    """Upgrade the catalog to cleanup catalogof unicode.
+def upgrade_335_336_catalog_unicode(context):
+    """Upgrade the catalog to clean it up of unicode.
 
     Fixes indexes, metadata and lexicons.
     Also fixes bad objects that still have unicode titles.

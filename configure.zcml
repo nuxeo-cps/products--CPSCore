@@ -2,6 +2,8 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:five="http://namespaces.zope.org/five">
 
+  <include file="upgrade.zcml"/>
+
   <adapter
       factory=".exportimport.TreeToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"

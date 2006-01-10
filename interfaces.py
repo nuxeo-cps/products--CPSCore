@@ -22,9 +22,41 @@
 
 from zope.interface import Interface
 from zope.interface import Attribute
+import zope.schema
+from zope.configuration.fields import GlobalObject
 
 from zope.app.event.interfaces import IModificationDescription
 from OFS.interfaces import IPropertyManager
+
+
+
+class IUpgradeStepDirective(Interface):
+    """Register an upgrade setup.
+    """
+    title = zope.schema.TextLine(
+        title=u"Title",
+        required=True)
+
+    source = zope.schema.ASCII(
+        title=u"Source version",
+        required=False)
+
+    destination = zope.schema.ASCII(
+        title=u"Destination version",
+        required=False)
+
+    sortkey = zope.schema.Int(
+        title=u"Sort key",
+        required=False)
+
+    handler = GlobalObject(
+        title=u"Upgrade handler",
+        required=True)
+
+    checker = GlobalObject(
+        title=u"Upgrade checker",
+        required=False)
+
 
 class ISecurityModificationDescription(IModificationDescription):
     """Modification of an object's security.
