@@ -52,6 +52,7 @@ class EventTest(placelesssetup.PlacelessSetup):
         file('event.zcml', Products.Five, execute=False, context=zcml)
         file('deprecated.zcml', Products.Five, execute=False, context=zcml)
         #file('configure.zcml', Products.CMFCore, execute=False, context=zcml)
+        file('meta.zcml', Products.CPSCore, execute=False, context=zcml)
         file('configure.zcml', Products.CPSCore, execute=False, context=zcml)
         self._zcml = zcml
 
