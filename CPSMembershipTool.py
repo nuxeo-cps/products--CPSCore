@@ -125,6 +125,13 @@ class CPSMembershipTool(MembershipTool):
 
     security = ClassSecurityInfo()
 
+    security.declarePublic('assertViewable')
+    def assertViewable(self, context):
+        """Raise Unauthorized if member doesn't have the View permission."""
+
+        if not _checkPermission(View, context):
+            raise Unauthorized
+
     security.declarePublic('canMemberChangeLocalRoles')
     def canMemberChangeLocalRoles(self, context):
         """Can the authenticated member change the local roles
