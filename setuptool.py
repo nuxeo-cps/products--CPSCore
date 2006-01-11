@@ -19,9 +19,10 @@
 """CPS Setup Tool.
 """
 
+import logging
 from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass
-import logging
+from Acquisition import aq_base
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import UniqueObject
