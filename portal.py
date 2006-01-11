@@ -44,7 +44,7 @@ class CPSSite(CMFSite):
         {'id': 'available_languages', 'type': 'tokens',
          'label': 'Available languages', 'mode': 'w'},
         )
-    last_upgraded_version = '.'.join(map(str, cps_version[1:]))
+    last_upgraded_version = '' # Initialized by installer or updater
     available_languages = ('en', 'fr') # Use by Localizer config XXX dehardcode
 
     _properties_ignored_by_genericsetup = (
@@ -58,8 +58,16 @@ class CPSSite(CMFSite):
 
     security.declarePublic('getCPSVersion')
     def getCPSVersion(self):
-        """ returns cps version
+        """Get CPS version as a tuple.
         """
         return self.cps_version
+
+    def _setDefaultUpgradedVersion(self):
+        """Set the default last_upgraded_version.
+
+        Called by installer.
+        """
+        version = self.cps_version[1:] # skip 'CPS' part
+        self.last_upgraded_version = '.'.join(map(str, version))
 
 InitializeClass(CPSSite)
