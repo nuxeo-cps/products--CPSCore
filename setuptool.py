@@ -64,7 +64,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
         Returns a list of info mappings. Base profile is listed first,
         extensions are sorted.
 
-        Used by ZMI tool properties form.
+        Used by ZMI tool properties form (called by listContextInfos).
         """
         base = []
         ext = []
@@ -145,11 +145,10 @@ class CPSSetupTool(UniqueObject, SetupTool):
     # ZMI
     #
 
-    manage_options = (SetupTool.manage_options[1:2] + # props
-                      ({'label' : 'Upgrades',
+    manage_options = (({'label' : 'Upgrades',
                         'action' : 'manage_upgrades'
                        },) +
-                      SetupTool.manage_options[2:5] + # I/O, snapshot
+                      SetupTool.manage_options[1:5] + # props, I/O, snapshot
                       SetupTool.manage_options[:1] + # content
                       SetupTool.manage_options[5:]) # comparison, etc...
 
