@@ -85,14 +85,15 @@ class CPSSetupTool(UniqueObject, SetupTool):
 
     def _getCurrentVersion(self):
         portal = getToolByName(self, 'portal_url').getPortalObject()
-        current = portal.getProperty('last_upgraded_version', DEFAULT_VERSION)
+        current = getattr(aq_base(portal), 'last_upgraded_version', '')
+        current = current or DEFAULT_VERSION
         return tuple(current.split('.'))
 
     def _setCurrentVersion(self, version):
         portal = getToolByName(self, 'portal_url').getPortalObject()
         version = '.'.join(version)
         portal.last_upgraded_version = version
-        LOG.info("Upgrading portal to %s", version)
+        return version
 
     security.declareProtected(ManagePortal, 'listUpgrades')
     def listUpgrades(self):
@@ -139,7 +140,8 @@ class CPSSetupTool(UniqueObject, SetupTool):
                 break
             next = dest
         if next is not None and next > self._getCurrentVersion():
-            self._setCurrentVersion(next)
+            version = self._setCurrentVersion(next)
+            LOG.info("Upgrading portal to %s", version)
 
     #
     # ZMI

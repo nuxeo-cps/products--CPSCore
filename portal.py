@@ -16,10 +16,9 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""Base  portal for CPS
+"""Base site for CPS.
 """
 
-from zLOG import LOG, INFO, DEBUG
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 
@@ -47,6 +46,10 @@ class CPSSite(CMFSite):
         )
     last_upgraded_version = '.'.join(map(str, cps_version[1:]))
     available_languages = ('en', 'fr') # Use by Localizer config XXX dehardcode
+
+    _properties_ignored_by_genericsetup = (
+        'last_upgraded_version',
+        )
 
     # Override default OrderSupport behavior for ZMI convenience
     _default_sort_key = 'id'

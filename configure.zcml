@@ -5,6 +5,13 @@
   <include file="upgrade.zcml"/>
 
   <adapter
+      factory=".exportimport.SitePropertiesXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      for="Products.CPSCore.interfaces.ICPSSite
+           Products.GenericSetup.interfaces.ISetupEnviron"
+      />
+
+  <adapter
       factory=".exportimport.TreeToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       for="Products.CPSCore.interfaces.ITreeTool
