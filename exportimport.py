@@ -188,11 +188,12 @@ class EventServiceToolXMLAdapter(XMLAdapterBase, ObjectManagerHelpers):
             if child.nodeName != 'object':
                 continue
             id = str(child.getAttribute('name'))
-            meta_type = str(child.getAttribute('meta_type'))
-            if meta_type != CPSSubscriberDefinition_type:
-                raise ValueError(meta_type)
-            ob = SubscriberDef(id)
-            tool._setObject(id, ob)
+            if not tool.hasObject(id):
+                meta_type = str(child.getAttribute('meta_type'))
+                if meta_type != CPSSubscriberDefinition_type:
+                    raise ValueError(meta_type)
+                ob = SubscriberDef(id)
+                tool._setObject(id, ob)
             ob = tool._getOb(id)
             importer = zapi.queryMultiAdapter((ob, self.environ), INode)
             if not importer:
