@@ -44,11 +44,17 @@ class CPSSite(CMFSite):
         {'id': 'available_languages', 'type': 'tokens',
          'label': 'Available languages', 'mode': 'w'},
         )
-    last_upgraded_version = '' # Initialized by installer or updater
-    available_languages = ('en', 'fr') # Use by Localizer config XXX dehardcode
+    last_upgraded_version = ''    # Initialized by installer or upgrader
+    available_languages = ('en',) # Initialized by installer or importer
 
-    _properties_ignored_by_genericsetup = (
+    # The following properties are treated specially by GenericSetup
+    # in the SitePropertiesXMLAdapter
+    _properties_genericsetup_noexport = (
         'last_upgraded_version',
+        )
+    _properties_genericsetup_nopurge = (
+        'last_upgraded_version',
+        'available_languages',
         )
 
     # Override default OrderSupport behavior for ZMI convenience

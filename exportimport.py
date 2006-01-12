@@ -267,8 +267,7 @@ class SitePropertiesXMLAdapter(XMLAdapterBase, PropertyManagerHelpers):
         self._logger.info("Site properties imported.")
 
     def _extractProperties(self):
-        ignored = getattr(self.context,
-                          '_properties_ignored_by_genericsetup', ())
+        ignored = getattr(self.context, '_properties_genericsetup_noexport',())
         fragment = super(SitePropertiesXMLAdapter, self)._extractProperties()
         res = self._doc.createDocumentFragment()
         for node in fragment.childNodes:
@@ -280,8 +279,7 @@ class SitePropertiesXMLAdapter(XMLAdapterBase, PropertyManagerHelpers):
         return res
 
     def _purgeProperties(self):
-        ignored = getattr(self.context,
-                          '_properties_ignored_by_genericsetup', ())
+        ignored = getattr(self.context, '_properties_genericsetup_nopurge', ())
         for prop_map in self.context._propertyMap():
             mode = prop_map.get('mode', 'wd')
             if 'w' not in mode:
