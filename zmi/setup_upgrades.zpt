@@ -6,7 +6,7 @@
 <p class="form-help">
   The portal is currently upgraded to version
   <span tal:define="portal context/portal_url/getPortalObject"
-        tal:content="python:portal.getProperty('last_upgraded_version', '?')">
+        tal:content="python:portal.getProperty('last_upgraded_version') or 'unknown'">
     VERSION
   </span>.
 </p>
