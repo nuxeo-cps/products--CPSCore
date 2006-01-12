@@ -7,35 +7,35 @@
   <adapter
       factory=".exportimport.SitePropertiesXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for="Products.CPSCore.interfaces.ICPSSite
+      for=".interfaces.ICPSSite
            Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.TreeToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for="Products.CPSCore.interfaces.ITreeTool
+      for=".interfaces.ITreeTool
            Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.TreeCacheXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for="Products.CPSCore.interfaces.ITreeCache
+      for=".interfaces.ITreeCache
            Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.EventServiceToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for="Products.CPSCore.interfaces.IEventServiceTool
+      for=".interfaces.IEventServiceTool
            Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.EventSubscriberBodyAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for="Products.CPSCore.interfaces.IEventSubscriber
+      for=".interfaces.IEventSubscriber
            Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
@@ -63,7 +63,7 @@
   <!-- CPS deprecations -->
 
   <five:deprecatedManageAddDelete
-      class="Products.CPSCore.EventServiceTool.SubscriberDef"/>
+      class=".EventServiceTool.SubscriberDef"/>
 
   <!-- Misc other deprecations -->
 
