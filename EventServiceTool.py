@@ -360,6 +360,9 @@ class EventServiceTool(UniqueObject, OrderedFolder):
         notification_dict = {}
         for id in ids:
             sub_def = getattr(self, id)
+            if not sub_def.subscriber:
+                # Subscriber not fully initialized (event during its creation)
+                continue
             event_lists = sub_def.event_type
             for ev_type in event_lists:
                 event_def = notification_dict.setdefault(ev_type, {})
