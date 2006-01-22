@@ -81,6 +81,7 @@ class ObjectRepositoryTool(UniqueObject,
     portal_type = meta_type
 
     security = ClassSecurityInfo()
+    security.declareObjectPrivate()
 
     def __init__(self):
         BTreeFolder2.__init__(self, self.id)
