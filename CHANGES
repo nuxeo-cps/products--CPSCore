@@ -1,36 +1,12 @@
 Requires:
 ~~~~~~~~~
-- Zope 2.9b1
+-
 New features:
 ~~~~~~~~~~~~~
-- API : enable / disable transaction before commit hook subscribers
+-
 Bug fixes:
 ~~~~~~~~~~
-- Fixed CMF File and Image indexing. This gets rid of the "unsuccessfully
-  attempted to uncatalog an object" messages.
-- Fixed IndexableObjectWrapper for item within btree based container
-  that don't have ordering support
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- PatchCatalogTool new wrapper index position_in_container and match_languages
-  used by getCatalogFolderContents.
-- new Proxy method isCPSFolderish to filter documents in the navigation
-  or listing representation.
-- Zope level users and anonymous users are explicitely homeless
-- Added ignore_event flag on trees tool and proxies tool.
-- Use zope.interface within interfaces.py
-- txn managers cleanups
-  o use logging instead of the zLOG
-  o use zope.interface
-- CPSCore housekeeping
-- Uses standard Zope 2.9 Five events instead of our own patching of OFS.
-- Event tool notifications are briged to Zope 3 events, and Zope 3 events
-  are bridged to event tool notifications for BBB.
-- Made the Proxy Tool react to Zope 3 events instead of the event tool.
-- Added a tests setup to initialize the event framework.
-- API renamed :
-    o  IBaseManager ->  IBeforeCommitSubscriber
-    o  BaseManager -> BeforeCommitSusbcriber
-- AfterCommitSubscribersManager on top of the ZODB transaction
-- Improved session behaviour by avoiding potential conflicts when nothing
-  interesting is actually in the session.
+-
