@@ -3,8 +3,8 @@
 Simple test for event service
 """
 
-import Testing.ZopeTestCase.ZopeLite as Zope
 from Testing import ZopeTestCase
+
 ZopeTestCase.installProduct('CMFCore', quiet=1)
 ZopeTestCase.installProduct('CMFDefault', quiet=1)
 ZopeTestCase.installProduct('MailHost', quiet=1)
@@ -21,39 +21,13 @@ from Products.CMFCore.tests.base.security \
 
 from Products.CPSCore.EventServiceTool import EventServiceTool
 
-try:
-    import transaction
-except ImportError: # BBB: for Zope 2.7
-    from Products.CMFCore.utils import transaction
-
-
-class EventServiceToolTest(unittest.TestCase):
+class EventServiceToolTest(ZopeTestCase.ZopeTestCase):
     """
     Test event service
     """
 
-    # XXX: refactor this using ZopeTestCase
-    def setUp(self):
-        transaction.begin()
-        self._policy = PermissiveSecurityPolicy()
-        self._oldPolicy = setSecurityPolicy(self._policy)
-        self.connection = Zope.DB.open()
-        self.root = self.connection.root()['Application']
-        newSecurityManager(None, AnonymousUser().__of__(self.root))
-        self.root = makerequest(self.root)
-
-        from Products.CMFDefault.Portal import manage_addCMFSite
-        manage_addCMFSite(self.root, 'testsite')
-
-    def tearDown(self):
-        self.root.REQUEST.close()
-        transaction.abort()
-        self.connection.close()
-        noSecurityManager()
-        setSecurityPolicy(self._oldPolicy)
-
     def _make_tool(self):
-        portal = self.root.testsite
+        portal = self.folder
         tool = EventServiceTool()
         portal._setObject(tool.getId(), tool)
 
@@ -62,7 +36,7 @@ class EventServiceToolTest(unittest.TestCase):
 
     def test_1_add_subscriber(self):
         self._make_tool()
-        portal = self.root.testsite
+        portal = self.folder
         evtool = portal.portal_eventservice
         evtool.manage_addSubscriber(
             subscriber='portal_subscriber',
@@ -77,7 +51,7 @@ class EventServiceToolTest(unittest.TestCase):
 
     def test_11_add_subscriber_without_activation_specified(self):
         self._make_tool()
-        portal = self.root.testsite
+        portal = self.folder
         evtool = portal.portal_eventservice
         evtool.manage_addSubscriber(
             subscriber='portal_subscriber',
@@ -93,7 +67,7 @@ class EventServiceToolTest(unittest.TestCase):
 
     def test_2_del_subscriber(self):
         self._make_tool()
-        portal = self.root.testsite
+        portal = self.folder
         evtool = portal.portal_eventservice
 
         # Subscriber 1
@@ -144,7 +118,7 @@ class EventServiceToolTest(unittest.TestCase):
 
     def test_2_getSubscriberByName(self):
         self._make_tool()
-        portal = self.root.testsite
+        portal = self.folder
         evtool = portal.portal_eventservice
 
         # Subscriber 1
@@ -195,7 +169,7 @@ class EventServiceToolTest(unittest.TestCase):
         # XXX: assuming events are distributed in the order given by
         # getSubscribers() method
         self._make_tool()
-        portal = self.root.testsite
+        portal = self.folder
         evtool = portal.portal_eventservice
 
         # Subscriber 1
