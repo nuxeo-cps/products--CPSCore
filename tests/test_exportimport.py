@@ -66,8 +66,6 @@ class TreesToolExportImportTest(ExportImportTestCase):
         # profiles registration
         self.registerProfile('trees', "Trees", "Minimal profile with trees",
                              'tests/profiles/minimal_trees', 'CPSCore')
-        self.registerProfile('trees_changed', "Trees", "Minimal profile with trees",
-                             'tests/profiles/minimal_trees_changed', 'CPSCore')
         # create the root of the tree cache
         self.folder._setObject("root", CachedFolder("root"))
         self.real_root = self.folder.root
@@ -105,7 +103,8 @@ class TreesToolExportImportTest(ExportImportTestCase):
 
 
     def test_import_with_content(self):
-        # create content that will have to be indexed (or not) in the tree cache
+        # create content that will have to be indexed (or not) in the tree
+        # cache
         self.real_root._setObject("cached", CachedFolder("cached"))
         self.real_root._setObject("uncached", UnCachedFolder("uncached"))
 
@@ -124,22 +123,32 @@ class TreesToolExportImportTest(ExportImportTestCase):
         new_infos = tree_root._infos
         self.assertEquals(infos, new_infos)
 
-        # import again (without purging but with property modifications)
-        self.importProfile('CPSCore:trees_changed', purge_old=False)
-        # check tree cache properties
+        # change properties, need to rebuild manually
+        new_type_names = ('Cached Folder Type', 'Uncached Folder Type')
+        tree_root.manage_changeProperties(type_names=new_type_names)
+        self.assertEquals(list(new_infos),
+                          ['root', 'root/cached'])
+        tree_root.rebuild()
+        new_infos = tree_root._infos
+        self.assertEquals(list(new_infos),
+                          ['root', 'root/cached', 'root/uncached'])
+
+        # import again (without purging)
+        self.importProfile('CPSCore:trees', purge_old=False)
+        # check tree cache properties are reset
         property_items = [
             ('title', "Bloody Root"),
             ('root', 'root'),
-            ('type_names', ('Cached Folder Type', 'Uncached Folder Type')),
+            ('type_names', ('Cached Folder Type',)),
             ('meta_types', ('Folder Meta Type',)),
             ('excluded_rpaths', ()),
             ('info_method', 'getFolderInfo'),
             ]
         self.assertEquals(tree_root.propertyItems(), property_items)
-        # check tree cache infos,  tree has been rebuilt
+        # check tree cache infos, tree has been rebuilt
         newer_infos = tree_root._infos
-        self.assertNotEquals(infos, newer_infos)
-        self.assertEquals(list(newer_infos), ['root', 'root/cached', 'root/uncached'])
+        self.assertNotEquals(new_infos, newer_infos)
+        self.assertEquals(list(newer_infos), ['root', 'root/cached'])
 
     def test_export(self):
         self.importProfile('CPSCore:trees')
