@@ -120,7 +120,12 @@ class TreeCacheXMLAdapter(XMLAdapterBase, PropertyManagerHelpers):
         """
         if self.environ.shouldPurge():
             self._purgeProperties()
+        props_before = self.context.propertyItems()
         self._initProperties(node)
+        props_after = self.context.propertyItems()
+        if props_before != props_after:
+            # rebuild tree if properties have changed
+            self.context.manage_rebuild()
         self._logger.info("%s tree cache imported." % self.context.getId())
 
 

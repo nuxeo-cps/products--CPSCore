@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<object name="root" meta_type="CPS Tree Cache">
+ <property name="title">Bloody Root</property>
+ <property name="root">root</property>
+ <property name="type_names">
+  <element value="Cached Folder Type"/>
+ </property>
+ <property name="meta_types">
+  <element value="Folder Meta Type"/>
+ </property>
+ <property name="excluded_rpaths"/>
+ <property name="info_method">getFolderInfo</property>
+</object>

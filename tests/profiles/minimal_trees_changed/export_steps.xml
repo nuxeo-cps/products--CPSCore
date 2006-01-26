@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<export-steps>
+ <export-step id="step_registries"
+              handler="Products.GenericSetup.tool.exportStepRegistries"
+              title="Export import / export steps.">
+  Export current contents of import step registry and export step registry.
+ </export-step>
+ <export-step id="trees"
+              handler="Products.CPSCore.exportimport.exportTreeTool"
+              title="Tree Tool">
+  Export tree tool and tree caches.
+ </export-step>
+</export-steps>
