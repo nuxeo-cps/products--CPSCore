@@ -158,6 +158,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
     security.declareProtected(ManagePortal, 'manage_upgrades')
     manage_upgrades = PageTemplateFile('zmi/setup_upgrades', globals())
 
+    # FIXME: shouldn't manage_doUpgrades be protected?
     def manage_doUpgrades(self, REQUEST, upgrades=()):
         """Do upgrades.
         """
