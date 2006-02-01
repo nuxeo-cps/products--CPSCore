@@ -36,7 +36,7 @@ class FakeTransaction:
 class FakeBeforeCommitSubscribersManager:
     def addSubscriber(self, hook, order):
         pass
-    
+
 class FakeRoot:
 
     __objects__ = {}
@@ -50,17 +50,17 @@ class FakeRoot:
     def unrestrictedTraverse(self, path, default):
         dummy, id = path
         assert dummy == ''
-        return self.getDummy(int(id))
+        return self.getContent(int(id))
 
-    def addDummy(self, cls=None):
+    def addContent(self, cls=None):
         id = self.generateId()
         if cls is None:
-            cls = Dummy
+            cls = FakeContent
         ob = cls(id)
         self.__objects__[id] = ob
         return ob
 
-    def getDummy(self, id):
+    def getContent(self, id):
         return self.__objects__.get(id)
 
     def clear(self):
@@ -68,7 +68,7 @@ class FakeRoot:
 
 root = FakeRoot()
 
-class Dummy:
+class FakeContent:
 
     def __init__(self, id):
         self.id = id
@@ -93,21 +93,21 @@ class Dummy:
         self.log.append('secu %s %r' % (self.id, skip_self))
 
 
-class Dummy2(Dummy):
+class FakeContentCausingReindex(FakeContent):
 
     def _reindexObject(self, idxs=[]):
         if idxs == ['nest']:
             # While reindexing, provoke another indexing
             get_indexation_manager().push(self, idxs=['bob'])
             get_indexation_manager().push(self.other, idxs=['bob'])
-        Dummy._reindexObject(self, idxs)
+        FakeContent._reindexObject(self, idxs)
 
 
 class IndexationManagerTest(unittest.TestCase):
 
     def get_stuff(self):
         return (IndexationManager(FakeBeforeCommitSubscribersManager()),
-                                  root.addDummy())
+                root.addContent())
 
     def test_interfaces(self):
         from zope.interface.verify import verifyClass
@@ -341,7 +341,7 @@ class TransactionIndexationManagerTest(unittest.TestCase):
     def test_transaction(self):
         transaction.begin()
         mgr = get_indexation_manager()
-        dummy = root.addDummy()
+        dummy = root.addContent()
         mgr.push(dummy, idxs=['bar'])
         self.assertEquals(dummy.getLog(), [])
         transaction.commit()
@@ -351,7 +351,7 @@ class TransactionIndexationManagerTest(unittest.TestCase):
     def test_transaction_aborting(self):
         transaction.begin()
         mgr = get_indexation_manager()
-        dummy = root.addDummy()
+        dummy = root.addContent()
         mgr.push(dummy, idxs=['bar'])
         self.assertEquals(dummy.getLog(), [])
         transaction.abort()
@@ -363,8 +363,8 @@ class TransactionIndexationManagerTest(unittest.TestCase):
         mgr = get_indexation_manager()
         # This one, when reindexed, provokes additional reindexings,
         # which must be processed too.
-        dummy = root.addDummy(cls=Dummy2)
-        other = root.addDummy()
+        dummy = root.addContent(cls=FakeContentCausingReindex)
+        other = root.addContent()
         dummy.other = other
         mgr.push(dummy, idxs=['nest'])
         self.assertEquals(dummy.getLog(), [])
