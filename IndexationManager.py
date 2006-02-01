@@ -120,7 +120,7 @@ class IndexationManager(BeforeCommitSubscriber):
 
         # Currently the data structures are such that this is not needed
         # (see unit tests).
-        #_remove_indexation_manager()
+        #del_indexation_manager()
 
         logger.debug("__call__")
 
