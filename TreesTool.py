@@ -20,7 +20,7 @@
 """
 
 import logging
-from ZODB.loglevels import TRACE
+from ZODB.loglevels import TRACE, BLATHER
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
 from AccessControl import getSecurityManager
@@ -521,7 +521,9 @@ class TreeCache(SimpleItemWithProperties):
             return
         root_ob = portal.unrestrictedTraverse(root, None)
         if root_ob is None:
-            logger.error("Rebuild %s: bad root %r", self.getId(), root)
+            # Root not present, actually legal (and common during installation)
+            logger.log(BLATHER, "Root %r not present when rebuilding %s",
+                       root, self.getId())
             return
         TreeCacheUpdater(self).makeTree(root_ob)
 
