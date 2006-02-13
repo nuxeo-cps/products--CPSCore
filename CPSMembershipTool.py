@@ -507,7 +507,7 @@ class CPSMembershipTool(MembershipTool):
                 member_area_id = self.getHomeFolderId(id)
                 folder = members._getOb(member_area_id)
                 return 1
-            except AttributeError:
+            except (AttributeError, KeyError):
                 return 0
 
     security.declarePrivate('listActions')
