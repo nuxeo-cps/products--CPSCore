@@ -19,7 +19,10 @@
 """CPS Setup Tool.
 """
 
+import time
 import logging
+from urllib import urlencode
+
 from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass
 from Acquisition import aq_base
@@ -145,6 +148,90 @@ class CPSSetupTool(UniqueObject, SetupTool):
             LOG.info("Upgrading portal to %s", version)
 
     #
+    # Improved I/O
+    #
+
+    security.declarePrivate('_mangleTimestampName')
+    def _mangleTimestampName(self, prefix, ext=None):
+        """Create a mangled ID using a timestamp.
+        """
+        timestamp = time.gmtime()
+        items = (prefix,) + timestamp[:6]
+        if ext is None:
+            fmt = '%s-%4d%02d%02d-%02d%02d%02d'
+        else:
+            fmt = '%s-%4d%02d%02d-%02d%02d%02d.%s'
+            items += (ext,)
+        return fmt % items
+
+    security.declarePrivate('_makeReport')
+    def _makeReport(self, prefix, context_id, result):
+        """Create a report from some import results.
+        """
+        if context_id.startswith('profile-'):
+            id = context_id[len('profile-'):]
+            id = id.replace(':', '-')
+            if id.endswith('-default'):
+                id = id[:-len('-default')]
+        else:
+            id = 'snapshot'
+        name = self._mangleTimestampName(prefix+'-'+id, 'log')
+        self._createReport(name, result['steps'], result['messages'])
+
+    security.declareProtected(ManagePortal, 'listContextInfos')
+    def listContextInfos(self, only_bases=False):
+        """List registered profiles and snapshots.
+        """
+        p_infos = [{'id': 'profile-%s' % info['id'], 'title': info['title']}
+                   for info in self.listProfileInfo()
+                   if info.get('type', BASE) == BASE or not only_bases]
+        s_infos = [{'id': 'snapshot-%s' % info['id'], 'title': info['title']}
+                   for info in self.listSnapshotInfo()]
+        return tuple(p_infos + s_infos)
+
+    security.declareProtected(ManagePortal, 'listBaseContextInfos')
+    def listBaseContextInfos(self):
+        """List base profiles and snapshots.
+        """
+        return self.listContextInfos(only_bases=True)
+
+    security.declarePrivate('reinstallProfile')
+    def reinstallProfile(self, context_id, create_report=True):
+        """Reinstall a profile, with purge.
+        """
+        # Import, with purge
+        old_context_id = self.getImportContextID()
+        self.setImportContext(context_id)
+        result = self.runAllImportSteps(purge_old=True)
+        steps_run = "Steps run: %s" % ', '.join(result['steps'])
+
+        # Create a report
+        if create_report:
+            self._makeReport('reinstall', context_id, result)
+
+        # Keep context as current if it's not a snapshot
+        if not context_id.startswith('profile-'):
+            self.setImportContext(old_context_id)
+
+    security.declarePrivate('importProfile')
+    def importProfile(self, context_id, create_report=True):
+        """Import a profile, without purge.
+        """
+        # Import, without purge
+        old_context_id = self.getImportContextID()
+        self.setImportContext(context_id)
+        result = self.runAllImportSteps(purge_old=False)
+        steps_run = "Steps run: %s" % ', '.join(result['steps'])
+
+        # Create a report
+        if create_report:
+            self._makeReport('import', context_id, result)
+
+        # Keep context as current if it's not a snapshot
+        if not context_id.startswith('profile-'):
+            self.setImportContext(old_context_id)
+
+    #
     # ZMI
     #
 
@@ -160,6 +247,110 @@ class CPSSetupTool(UniqueObject, SetupTool):
 
     security.declareProtected(ManagePortal, 'manage_upgrades')
     manage_upgrades = PageTemplateFile('zmi/setup_upgrades', globals())
+
+    security.declareProtected(ManagePortal, 'manage_tool')
+    manage_tool = PageTemplateFile('zmi/sutProperties', globals())
+
+    security.declareProtected(ManagePortal, 'manage_importSteps')
+    manage_importSteps = PageTemplateFile('zmi/sutImportSteps', globals())
+
+    security.declareProtected(ManagePortal, 'manage_reinstallProfile')
+    def manage_reinstallProfile(self, context_id, REQUEST):
+        """Reinstall a profile.
+        """
+        if not context_id:
+            msg = "Please select a profile."
+            REQUEST.RESPONSE.redirect(REQUEST.URL1+'/manage_tool?'+
+                                      urlencode({'manage_tabs_message': msg}))
+            return
+
+        self.reinstallProfile(context_id)
+
+        # Result message
+        for info in self.listContextInfos():
+            if info['id'] == context_id:
+                title = info['title']
+                break
+        else:
+            title = '?'
+        msg = "Profile '%s' reinstalled." % info['title']
+        REQUEST.RESPONSE.redirect(REQUEST.URL1+'/manage_tool?'+
+                                  urlencode({'manage_tabs_message': msg}))
+
+    security.declareProtected(ManagePortal, 'manage_importProfile')
+    def manage_importProfile(self, context_id, REQUEST):
+        """Import a profile in non-purge mode.
+        """
+        if not context_id:
+            msg = "Please select a profile."
+            REQUEST.RESPONSE.redirect(REQUEST.URL1+'/manage_tool?'+
+                                      urlencode({'manage_tabs_message': msg}))
+            return
+
+        self.importProfile(context_id)
+
+        # Result message
+        for info in self.listContextInfos():
+            if info['id'] == context_id:
+                title = info['title']
+                break
+        else:
+            title = '?'
+        msg = "Profile '%s' imported." % info['title']
+        REQUEST.RESPONSE.redirect(REQUEST.URL1+'/manage_tool?'+
+                                  urlencode({'manage_tabs_message': msg}))
+
+
+    security.declareProtected(ManagePortal, 'manage_importSelectedSteps')
+    def manage_importAllSteps(self, create_report=True, context_id=None):
+        """ Import all steps.
+        """
+        if context_id is not None:
+            self.setImportContext(context_id)
+        else:
+            context_id = self.getImportContextID()
+
+        result = self.runAllImportSteps(purge_old=False)
+        steps_run = "Steps run: %s" % ', '.join(result['steps'])
+
+        if create_report:
+            self._makeReport('import', context_id, result)
+
+        return self.manage_importSteps(manage_tabs_message=steps_run,
+                                       messages=result['messages'],
+                                       management_view='Import')
+
+    security.declareProtected(ManagePortal, 'manage_importSelectedSteps')
+    def manage_importSelectedSteps(self, ids, run_dependencies,
+                                   create_report=True, context_id=None):
+        """Import the steps selected by the user.
+        """
+        if context_id is not None:
+            self.setImportContext(context_id)
+        else:
+            context_id = self.getImportContextID()
+
+        messages = {}
+        if not ids:
+            summary = "No steps selected."
+        else:
+            steps_run = []
+            for step_id in ids:
+                result = self.runImportStep(step_id,
+                                            run_dependencies=run_dependencies,
+                                            purge_old=False)
+                steps_run.extend(result['steps'])
+                messages.update(result['messages'])
+
+            summary = "Steps run: %s" % ', '.join(steps_run)
+
+            if create_report:
+                self._makeReport('import-selected', context_id, result)
+
+        return self.manage_importSteps(manage_tabs_message=summary,
+                                       messages=messages,
+                                       management_view='Import')
+
 
     security.declareProtected(ManagePortal, 'manage_doUpgrades')
     def manage_doUpgrades(self, REQUEST, upgrades=()):

@@ -1,0 +1,111 @@
+<h1 tal:replace="structure context/manage_page_header">PAGE HEADER</h1>
+<h2 tal:define="manage_tabs_message options/manage_tabs_message | nothing;
+                management_view options/management_view | nothing"
+    tal:replace="structure context/manage_tabs">TABS</h2>
+
+<h3>Site Configuration Import Steps</h3>
+
+<p class="form-help">
+You can run individual steps of the site setup procedure, in order to
+pick up changes since the site was created.
+</p>
+
+<form action="." method="POST"
+      tal:attributes="action context/absolute_url" >
+<input type="hidden" name="ids:default:tokens" value="" />
+
+<table cellspacing="0" cellpadding="4">
+
+ <thead>
+  <tr class="list-header">
+   <td class="list-item">&nbsp;</td>
+   <td class="list-item">Title &amp; Description</td>
+   <td class="list-item">Handler</td>
+  </tr>
+ </thead>
+
+ <tbody tal:define="registry context/getImportStepRegistry;
+                    infos python:[registry.getStepMetadata(step_id)
+                                  for step_id in registry.sortSteps()];
+                    dummy python:infos.sort(key=lambda info: info['title']);
+                   ">
+  <tal:loop tal:repeat="info infos">
+  <tr valign="top"
+      tal:define="step_id info/id">
+   <td class="list-item" width="16">
+    <input type="checkbox" name="ids:list" value="STEP_ID"
+           tal:attributes="value step_id; id step_id" />
+   </td>
+   <td class="list-item">
+     <label for="FOR" tal:attributes="for step_id">
+       <strong tal:content="info/title">STEP TITLE</strong><br />
+       <em tal:content="info/description">STEP DESCRIPTION</em>
+     </label>
+   </td>
+   <td class="list-item">
+     <small tal:content="info/handler">DOTTED.NAME</small>
+   </td>
+  </tr>
+  </tal:loop>
+
+  <tr valign="top" class="list-header">
+   <td colspan="3">&nbsp;</td>
+  </tr>
+
+  <tr valign="top">
+   <td />
+   <td>
+     <span class="form-help">Profile:</span>
+     <select name="context_id"
+             tal:define="context_id context/getImportContextID">
+      <option value="CONTEXT_ID"
+         tal:repeat="context_info context/listContextInfos"
+         tal:attributes="selected python:context_id == context_info['id'];
+                         value context_info/id"
+         tal:content="context_info/title"
+      >CONTEXT_TITLE</option>
+     </select>
+   </td>
+   <td>
+    <input class="form-element" type="submit"
+           name="manage_importSelectedSteps:method"
+           value=" Import selected steps " />
+    <input type="hidden" name="run_dependencies:int:default" value="0" />
+    <input class="form-element" type="checkbox" id="run_dependencies"
+           name="run_dependencies:boolean" value="1" />
+    <label for="run_dependencies" class="form-help">
+      Include dependencies?
+    </label>
+    <br/>
+    <input style="margin-top: 0.5em"
+        class="form-element" type="submit"
+           name="manage_importAllSteps:method"
+           value=" Import all steps " />
+   </td>
+  </tr>
+
+
+ </tbody>
+</table>
+
+<table cellspacing="0" cellpadding="4"
+       tal:condition="options/messages | nothing">
+
+ <thead>
+  <tr class="list-header">
+   <td colspan="2">Message Log</td>
+  </tr>
+ </thead>
+
+ <tbody>
+  <tr valign="top" tal:repeat="item options/messages/items">
+   <td tal:content="python: item[0]">STEP</td>
+   <td tal:content="structure python: item[1].replace('\n', '&lt;br />')"
+       >MESSAGE</td>
+  </tr>
+ </tbody>
+
+</table>
+</form>
+
+<h1 tal:replace="structure context/manage_page_footer">PAGE FOOTER</h1>
