@@ -7,36 +7,26 @@
   <adapter
       factory=".exportimport.SitePropertiesXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for=".interfaces.ICPSSite
-           Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.TreeToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for=".interfaces.ITreeTool
-           Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.TreeCacheXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for=".interfaces.ITreeCache
-           Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.EventServiceToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for=".interfaces.IEventServiceTool
-           Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.EventSubscriberBodyAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for=".interfaces.IEventSubscriber
-           Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <!-- Bascic event subscribers -->
