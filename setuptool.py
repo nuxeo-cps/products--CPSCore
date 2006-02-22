@@ -199,8 +199,10 @@ class CPSSetupTool(UniqueObject, SetupTool):
     def reinstallProfile(self, context_id, create_report=True):
         """Reinstall a profile, with purge.
         """
+        # Wipe out old registries
+        self.__init__()
+
         # Import, with purge
-        old_context_id = self.getImportContextID()
         self.setImportContext(context_id)
         result = self.runAllImportSteps(purge_old=True)
         steps_run = "Steps run: %s" % ', '.join(result['steps'])
@@ -208,10 +210,6 @@ class CPSSetupTool(UniqueObject, SetupTool):
         # Create a report
         if create_report:
             self._makeReport('reinstall', context_id, result)
-
-        # Keep context as current if it's not a snapshot
-        if not context_id.startswith('profile-'):
-            self.setImportContext(old_context_id)
 
     security.declarePrivate('importProfile')
     def importProfile(self, context_id, create_report=True):
