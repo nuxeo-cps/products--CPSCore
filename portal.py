@@ -38,14 +38,21 @@ class CPSSite(CMFSite):
 
     cps_version = ('CPS', 3, 4, 0)
 
-    _properties = CMFSite._properties + (
+    _properties = (
+        {'id': 'title', 'type': 'string',
+         'label': 'Title', 'mode': 'w'},
+        {'id': 'description', 'type': 'text',
+         'label': 'Description', 'mode': 'w'},
         {'id': 'last_upgraded_version', 'type': 'string',
          'label': 'Last upgraded version', 'mode': 'w'},
         {'id': 'available_languages', 'type': 'tokens',
          'label': 'Available languages', 'mode': 'w'},
+        {'id': 'default_charset', 'type': 'string',
+         'label': 'Default portal charset', 'mode': 'w'},
         )
     last_upgraded_version = ''    # Initialized by installer or upgrader
     available_languages = ('en',) # Initialized by installer or importer
+    default_charset = 'iso-8859-15'
 
     # The following properties are treated specially by GenericSetup
     # in the SitePropertiesXMLAdapter

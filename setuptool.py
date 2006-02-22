@@ -123,7 +123,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
         portal = getToolByName(self, 'portal_url').getPortalObject()
         dests = {} # possible dest versions
         skipped = {} # some skipped upgrades for dest version
-        for info in self.listUpgrades():
+        for info in self.listUpgrades(show_old=show_old):
             dest = info['dest']
             dests[dest] = True
             if info['id'] not in upgrades:
