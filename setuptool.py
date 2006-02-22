@@ -100,11 +100,14 @@ class CPSSetupTool(UniqueObject, SetupTool):
         return version
 
     security.declareProtected(ManagePortal, 'listUpgrades')
-    def listUpgrades(self):
+    def listUpgrades(self, show_old=False):
         """Get the list of available upgrades.
         """
         portal = getToolByName(self, 'portal_url').getPortalObject()
-        source = self._getCurrentVersion()
+        if show_old:
+            source = None
+        else:
+            source = self._getCurrentVersion()
         upgrades = listUpgradeSteps(portal, source)
         res = []
         for info in upgrades:
@@ -116,7 +119,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
         return res
 
     security.declarePrivate('doUpgrades')
-    def doUpgrades(self, upgrades):
+    def doUpgrades(self, upgrades, show_old=False):
         portal = getToolByName(self, 'portal_url').getPortalObject()
         dests = {} # possible dest versions
         skipped = {} # some skipped upgrades for dest version
@@ -351,10 +354,10 @@ class CPSSetupTool(UniqueObject, SetupTool):
 
 
     security.declareProtected(ManagePortal, 'manage_doUpgrades')
-    def manage_doUpgrades(self, REQUEST, upgrades=()):
+    def manage_doUpgrades(self, REQUEST, upgrades=(), show_old=False):
         """Do upgrades.
         """
-        self.doUpgrades(upgrades)
+        self.doUpgrades(upgrades, show_old=show_old)
         REQUEST.RESPONSE.redirect(REQUEST.URL1+'/manage_upgrades')
 
 InitializeClass(CPSSetupTool)

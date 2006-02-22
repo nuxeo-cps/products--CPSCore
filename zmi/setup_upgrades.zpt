@@ -5,18 +5,22 @@
 
 <p class="form-help">
   The portal is currently upgraded to version
-  <span tal:define="portal context/portal_url/getPortalObject"
-        tal:content="python:portal.getProperty('last_upgraded_version') or 'unknown'">
+  <strong tal:define="portal context/portal_url/getPortalObject"
+          tal:content="python:portal.getProperty('last_upgraded_version')
+                              or 'unknown'">
     VERSION
-  </span>.
+  </strong>.
 </p>
 
+<tal:block define="show_old request/show_old | python:0;
+                   upgrades python:context.listUpgrades(show_old=show_old)">
+
+<form method="post" action="manage_doUpgrades" tal:condition="upgrades">
 <p class="form-help">
   Available upgrades:
 </p>
-
-<tal:block define="upgrades context/listUpgrades">
-<form method="post" action="manage_doUpgrades" tal:condition="upgrades">
+<input type="hidden" name="show_old:int" value="VALUE"
+       tal:attributes="value show_old" />
 <table>
   <tr valign="top" tal:repeat="info upgrades">
     <td>
@@ -31,7 +35,7 @@
     </td>
     <td class="form-help">
       <div tal:condition="info/haspath"
-           tal:content="string:(${info/ssource} to ${info/sdest})">PATH</div>
+           tal:content="structure string:(${info/ssource} &amp;#8594; ${info/sdest})">PATH</div>
     </td>
     <td class="form-help">
       <div tal:condition="not:info/proposed"
@@ -46,9 +50,20 @@
   </tr>
 </table>
 </form>
-<div tal:condition="not:upgrades">
+
+<p tal:condition="not:upgrades">
   No upgrade available.
-</div>
+</p>
+
+<form method="post" action="manage_upgrades" tal:condition="not:show_old">
+<p class="form-help">
+  Show old upgrades:
+  <input type="submit" value="Show" />
+  <input type="hidden" name="show_old:int" value="1" />
+</p>
+</form>
+
+
 </tal:block>
 
 <h1 tal:replace="structure context/manage_page_footer">PAGE FOOTER</h1>

@@ -80,7 +80,9 @@ def listUpgradeSteps(portal, source):
     res = []
     for id, step in _upgrade_registry.items():
         proposed = step.isProposed(portal, source)
-        if not proposed and not step.versionMatch(portal, source):
+        if (not proposed
+            and source is not None
+            and (step.source is None or source > step.source)):
             continue
         info = {
             'id': id,
