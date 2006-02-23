@@ -55,8 +55,9 @@ class UpgradeStep(object):
         """
         checker = self.checker
         if checker is None:
-            checker = self.versionMatch
-        return checker(portal, source)
+            return self.versionMatch(portal, source)
+        else:
+            return checker(portal)
 
     def doStep(self, portal):
         self.handler(portal)
