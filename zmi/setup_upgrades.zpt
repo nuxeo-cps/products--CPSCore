@@ -27,7 +27,7 @@
       <input type="checkbox" name="upgrades:list"
              value="VALUE" checked="CHECKED"
              tal:attributes="value info/id;
-                             checked info/proposed;
+                             checked python:info['proposed'] and not show_old;
                              "/>
     </td>
     <td>
