@@ -236,11 +236,11 @@ class CPSSetupTool(UniqueObject, SetupTool):
     # ZMI
     #
 
-    manage_options = (({'label' : 'Profiles',
-                        'action' : 'manage_tool'
-                       },
-                       {'label' : 'Upgrades',
+    manage_options = (({'label' : 'Upgrades',
                         'action' : 'manage_upgrades'
+                       },
+                       {'label' : 'Profiles',
+                        'action' : 'manage_tool'
                        }) +
                       SetupTool.manage_options[2:5] + # I/O, snapshot
                       SetupTool.manage_options[:1] + # content
