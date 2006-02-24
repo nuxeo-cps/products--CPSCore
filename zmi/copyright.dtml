@@ -14,7 +14,7 @@
 
 <a name="ZPL">
 
-<h2>Zope Public License (ZPL) Version 2.0</h2>
+<h2>Zope Public License (ZPL) Version 2.1</h2>
 
 
 <h3>This software is Copyright &copy;
@@ -34,39 +34,46 @@ following conditions are met:
 </p>
 
 <ol>
-<li>Redistributions in source code must retain the above
-   copyright notice, this list of conditions, and the following
-   disclaimer.
 
-<li> Redistributions in binary form must reproduce the above
-   copyright notice, this list of conditions, and the following
-   disclaimer in the documentation and/or other materials
-   provided with the distribution.
-
-<li> The name Zope Corporation must not be used to
+<li>
+Redistributions in source code must retain the
+   accompanying copyright notice, this list of conditions,
+   and the following disclaimer.
+</li>
+<li>
+Redistributions in binary form must reproduce the accompanying
+   copyright notice, this list of conditions, and the
+   following disclaimer in the documentation and/or other
+   materials provided with the distribution.
+</li>
+<li>
+Names of the copyright holders must not be used to
    endorse or promote products derived from this software
-   without prior written permission from Zope Corporation.
-
-<li> The right to distribute this software or to use it for
-   any purpose does not give you the right to use Servicemarks
-   (sm) or Trademarks (tm) of Zope Corporation. Use of
-   them is covered in a separate agreement (see
-   <a href="http://www.zope.com/Marks">http://www.zope.com/Marks</a>).
-
-<li> If any files are modified, you must cause the modified
+   without prior written permission from the copyright
+   holders.
+</li>
+<li>
+The right to distribute this software or to use it for
+   any purpose does not give you the right to use
+   Servicemarks (sm) or Trademarks (tm) of the copyright
+   holders. Use of them is covered by separate agreement
+   with the copyright holders.
+</li>
+<li>
+If any files are modified, you must cause the modified
    files to carry prominent notices stating that you changed
    the files and the date of any change.
+</li>
 </ol>
 
 <h3>Disclaimer</h3>
-
 <p>
 <strong>
-  THIS SOFTWARE IS PROVIDED BY ZOPE CORPORATION ``AS IS''
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS''
   AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
   NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
   AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
-  NO EVENT SHALL ZOPE CORPORATION OR ITS CONTRIBUTORS BE
+  NO EVENT SHALL THE COPYRIGHT HOLDERS BE
   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -78,6 +85,7 @@ following conditions are met:
   DAMAGE.
 </strong>
 </p>
+
 
 <p>
 This software consists of contributions made by Zope
@@ -235,7 +243,7 @@ This software is powered by
 
 <p>
 <strong>
-Nuxeo CPS is copyright 2002-2004 <a href="http://www.nuxeo.com/">Nuxeo SARL</a>
+Nuxeo CPS is copyright 2002-2006 <a href="http://www.nuxeo.com/">Nuxeo SAS</a>
 and several of its customers (see the source files headers for a full list
 of the copyright holders).
 </strong>
@@ -323,7 +331,7 @@ patent must be licensed for everyone's free use or not licensed at all.
 
   The precise terms and conditions for copying, distribution and
 modification follow.
-
+
 		    GNU GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
@@ -378,7 +386,7 @@ above, provided that you also meet all of these conditions:
     License.  (Exception: if the Program itself is interactive but
     does not normally print such an announcement, your work based on
     the Program is not required to print an announcement.)
-
+
 These requirements apply to the modified work as a whole.  If
 identifiable sections of that work are not derived from the Program,
 and can be reasonably considered independent and separate works in
@@ -436,7 +444,7 @@ access to copy from a designated place, then offering equivalent
 access to copy the source code from the same place counts as
 distribution of the source code, even though third parties are not
 compelled to copy the source along with the object code.
-
+
   4. You may not copy, modify, sublicense, or distribute the Program
 except as expressly provided under this License.  Any attempt
 otherwise to copy, modify, sublicense or distribute the Program is
@@ -493,7 +501,7 @@ impose that choice.
 
 This section is intended to make thoroughly clear what is believed to
 be a consequence of the rest of this License.
-
+
   8. If the distribution and/or use of the Program is restricted in
 certain countries either by patents or by copyrighted interfaces, the
 original copyright holder who places the Program under this License
@@ -546,7 +554,7 @@ PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES.
 
 		     END OF TERMS AND CONDITIONS
-
+
 	    How to Apply These Terms to Your New Programs
 
   If you develop a new program, and you want it to be of the greatest
@@ -609,7 +617,7 @@ Public License instead of this License.
 </pre>
 
 <p>
-Stefane Fermigier, CEO, Nuxeo <a href="mailto:sf@nuxeo.com">sf@nuxeo.com</a>.
+St&eacute;fane Fermigier, CEO, Nuxeo <a href="mailto:sf@nuxeo.com">sf@nuxeo.com</a>.
 </p>
 
 </body>
