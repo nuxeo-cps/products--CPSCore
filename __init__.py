@@ -36,7 +36,7 @@ import AllowModules
 
 # Patches
 import PatchCMFCore
-import CopyrightPatch
+import PatchCopyright
 
 import EventServiceTool
 import EventServicePatches

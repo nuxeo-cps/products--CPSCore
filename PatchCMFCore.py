@@ -17,17 +17,16 @@
 # $Id$
 """This file contains all patches for the CMFCore product."""
 
-from zLOG import LOG, DEBUG, INFO, DEBUG
+from zLOG import LOG, TRACE
 
 
 #############################################################
 # Patch mergedLocalRoles to use aclu mergedLocalRoles if any
 #
 from Products.CMFCore import utils
-from utils import mergedLocalRoles
+from Products.CPSCore.utils import mergedLocalRoles
 
-LOG('PatchCMFCore.utils', INFO,
-    'CPSCore Patch mergedLocalRoles to use aclu')
+LOG('PatchCMFCore', TRACE, "Patched mergedLocalRoles to use aclu")
 utils.mergedLocalRoles = mergedLocalRoles
 utils._mergedLocalRoles = mergedLocalRoles
 
@@ -35,23 +34,10 @@ utils._mergedLocalRoles = mergedLocalRoles
 #############################################################
 # Patch TypesTool so that TypeInformation's properties are editable.
 #
-import TypesToolPatches               # XXX rename into PatchCMFCoreTypesTool
+import PatchCMFCoreTypesTool
 
 
 #############################################################
 # Patching CatalogTool to handle proxies search
 #
-import PatchCatalogTool               # XXX rename into PatchCMFCoreCatalogTool
-
-
-#############################################################
-# Patching UndoTool to remove undo action
-#
-from Products.CMFCore.UndoTool import UndoTool
-
-LOG('PatchCMFCore.UndoTool', INFO,
-    'CPSCore Patch _actions to remove undo action')
-_actions = []
-UndoTool._actions = _actions
-
-
+import PatchCMFCoreCatalogTool
