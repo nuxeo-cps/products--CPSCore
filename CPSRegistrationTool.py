@@ -41,6 +41,8 @@ class CPSRegistrationTool(RegistrationTool, PropertyManager):
     """CPS Registration tool.
     """
 
+    implements(IRegistrationTool)
+
     meta_type = 'CPS Registration Tool'
 
     _properties = (
