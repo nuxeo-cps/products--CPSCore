@@ -42,6 +42,9 @@ from AccessControl.User import UnrestrictedUser
 from Acquisition import aq_base, aq_parent, aq_inner
 from ZODB.POSException import ConflictError
 
+from zope.interface import implements
+from Products.CMFCore.interfaces import IMembershipTool
+
 from Products.CMFCore.permissions import View, ManagePortal
 from Products.CMFCore.permissions import ListPortalMembers
 from AccessControl.Permissions import manage_users as ManageUsers
@@ -69,52 +72,30 @@ class CPSUnrestrictedUser(UnrestrictedUser):
 class CPSMembershipTool(MembershipTool):
     """ Replace MonkeyPatch of Membershiptool by real object use."""
 
-    #
-    # Actions for CPS
-    #
-    _actions = [
-      AI(id='login',
-         title='Login',
-         description='Click here to Login',
-         action=Expression(text='python:"%s/login_form?%s" % (portal_url, modules["urllib"].urlencode({"came_from": request.URL}))'),
-         permissions=(View,),
-         category='user',
-         condition=Expression(text='not: member'),
-         visible=1),
-      AI(id='logout',
-         title='Log out',
-         description='Click here to logout',
-         action=Expression(text='string:${portal_url}/logout'),
-         permissions=(View,),
-         category='user',
-         condition=Expression(text='member'),
-         visible=1),
-      AI(id='mystuff',
-         title='My stuff',
-         description='Goto your home folder',
-         action=Expression(text='string:${portal/portal_membership'
-                           + '/getHomeUrl}/folder_contents'),
-         permissions=(View,),
-         category='user',
-         condition=Expression(text='python: member and '
-                              + 'portal.portal_membership.getHomeFolder()'),
-         visible=1),
-    ]
+    implements(IMembershipTool)
+
+    _actions = ()
 
     meta_type = 'CPS Membership Tool'
 
     _properties = (
+        {'id': 'membersfolder_id', 'type': 'string', 'mode': 'w',
+         'label': 'Members folder relative path'},
+        {'id': 'memberareaCreationFlag', 'type': 'boolean', 'mode': 'w',
+         'label': 'Member folder created at login'},
+        {'id': 'memberfolder_portal_type', 'type': 'string', 'mode': 'w',
+         'label': 'Member folder portal type'},
+        {'id': 'memberfolder_roles', 'type': 'tokens', 'mode': 'w',
+         'label': 'Member folder owner local roles'},
         {'id': 'pending_members', 'type': 'lines', 'mode': 'w',
          'label': 'Recently deleted members'},
         )
+    memberareaCreationFlag = True
+    membersfolder_id = 'Members'
+    memberfolder_portal_type = 'Folder'
+    memberfolder_roles = ('Owner',)
     pending_members = ()
 
-    # XXX AT: Since there is now a membership tool in CPSDefault, these
-    # variables could be initialized with more 'standard' values here, and
-    # overloaded with CPS specific values in CPSDefault/MembershipTool.py
-    membersfolder_id = 'workspaces/members' # Members
-    memberfolder_portal_type = 'Workspace' # Folder
-    memberfolder_roles = ('Owner', 'WorkspaceManager') # Owner
 
     # XXX this is slightly better than what was done before (hardcoded roles
     # in each method) as this one centralises the allowed roles declaration

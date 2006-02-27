@@ -36,6 +36,8 @@ from Products.GenericSetup.interfaces import INode
 from Products.GenericSetup.interfaces import IBody
 from Products.GenericSetup.interfaces import ISetupEnviron
 
+from Products.CMFCore.interfaces import IMembershipTool
+from Products.CMFCore.interfaces import IRegistrationTool
 from Products.CPSCore.interfaces import ICPSSite
 from Products.CPSCore.interfaces import ITreeTool
 from Products.CPSCore.interfaces import ITreeCache
@@ -52,6 +54,10 @@ TREE_TOOL = 'portal_trees'
 TREE_NAME = 'trees'
 EVENT_SERVICE_TOOL = 'portal_eventservice'
 EVENT_SERVICE_NAME = 'eventservice'
+MEMBERSHIP_TOOL = 'portal_membership'
+MEMBERSHIP_NAME = 'membership'
+REGISTRATION_TOOL = 'portal_registration'
+REGISTRATION_NAME = 'registration'
 
 
 def exportTreeTool(context):
@@ -304,3 +310,93 @@ class SitePropertiesXMLAdapter(XMLAdapterBase, PropertyManagerHelpers):
                 else:
                     prop_value = ''
                 self.context._updateProperty(prop_id, prop_value)
+
+
+def exportMembershipTool(context):
+    """Export membership tool as an XML file.
+    """
+    site = context.getSite()
+    tool = getToolByName(site, MEMBERSHIP_TOOL, None)
+    if tool is None:
+        logger = context.getLogger(MEMBERSHIP_NAME)
+        logger.info("Nothing to export.")
+        return
+    exportObjects(tool, '', context)
+
+def importMembershipTool(context):
+    """Import membership tool as an XML file.
+    """
+    site = context.getSite()
+    tool = getToolByName(site, MEMBERSHIP_TOOL)
+    importObjects(tool, '', context)
+
+
+class MembershipToolXMLAdapter(XMLAdapterBase, PropertyManagerHelpers):
+    """XML importer and exporter for membership tool.
+    """
+    adapts(IMembershipTool, ISetupEnviron)
+    implements(IBody)
+
+    _LOGGER_ID = MEMBERSHIP_NAME
+    name = MEMBERSHIP_NAME
+
+    def _exportNode(self):
+        """Export the object as a DOM node.
+        """
+        node = self._getObjectNode('object')
+        node.appendChild(self._extractProperties())
+        self._logger.info("Membership tool exported.")
+        return node
+
+    def _importNode(self, node):
+        """Import the object from the DOM node.
+        """
+        if self.environ.shouldPurge():
+            self._purgeProperties()
+        self._initProperties(node)
+        self._logger.info("Membership tool imported.")
+
+
+def exportRegistrationTool(context):
+    """Export registration tool as an XML file.
+    """
+    site = context.getSite()
+    tool = getToolByName(site, REGISTRATION_TOOL, None)
+    if tool is None:
+        logger = context.getLogger(REGISTRATION_NAME)
+        logger.info("Nothing to export.")
+        return
+    exportObjects(tool, '', context)
+
+def importRegistrationTool(context):
+    """Import registration tool as an XML file.
+    """
+    site = context.getSite()
+    tool = getToolByName(site, REGISTRATION_TOOL)
+    importObjects(tool, '', context)
+
+
+class RegistrationToolXMLAdapter(XMLAdapterBase, PropertyManagerHelpers):
+    """XML importer and exporter for registration tool.
+    """
+    adapts(IRegistrationTool, ISetupEnviron)
+    implements(IBody)
+
+    _LOGGER_ID = REGISTRATION_NAME
+    name = REGISTRATION_NAME
+
+    def _exportNode(self):
+        """Export the object as a DOM node.
+        """
+        node = self._getObjectNode('object')
+        node.appendChild(self._extractProperties())
+        self._logger.info("Registration tool exported.")
+        return node
+
+    def _importNode(self, node):
+        """Import the object from the DOM node.
+        """
+        if self.environ.shouldPurge():
+            self._purgeProperties()
+        self._initProperties(node)
+        self._logger.info("Registration tool imported.")

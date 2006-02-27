@@ -27,44 +27,41 @@ from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass, DTMLFile
 from OFS.PropertyManager import PropertyManager
 
+from zope.interface import implements
+from Products.CMFCore.interfaces import IRegistrationTool
+
 from Products.CMFCore.permissions import AddPortalMember
 from Products.CMFCore.ActionInformation import ActionInformation
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import getToolByName
 from Products.CMFDefault.RegistrationTool import RegistrationTool
 
-# Patching the class
 
 class CPSRegistrationTool(RegistrationTool, PropertyManager):
-    """Replace MonkeyPatch of RegistrationTool by real object use."""
+    """CPS Registration tool.
+    """
 
     meta_type = 'CPS Registration Tool'
-    # allow e-mail-like ids
-    allowed_member_id_pattern = "^[a-zA-Z][a-zA-Z0-9@\-\._]*$"
 
     _properties = (
-        {'id': 'allowed_member_id_pattern', 'type': 'string', 'mode': 'w',
-         'label': "Allowed member id pattern"},
-    )
+        {'id': 'enable_portal_joining', 'type': 'boolean',
+         'label': 'Enable portal joining', 'mode': 'w'},
+        {'id': 'validate_email', 'type': 'boolean',
+         'label': 'Validate email when joining', 'mode': 'w'},
+        {'id': 'allowed_member_id_pattern', 'type': 'string',
+         'label': "Allowed member id pattern", 'mode': 'w',
+         },
+        )
+    enable_portal_joining = False
+    validate_email = False
+    allowed_member_id_pattern = "^[a-zA-Z][a-zA-Z0-9@\-\._]*$"
 
-    _actions = (
-        ActionInformation(
-            id='join',
-            title='Join',
-            description='Click here to Join',
-            action=Expression( text='string:${portal_url}/join_form'),
-            permissions=(AddPortalMember,),
-            category='user',
-            condition=Expression('python:'
-                'portal.portal_properties.enable_portal_joining and not member'),
-            visible=1
-        ),
-    )
+    _actions = ()
 
-    manage_options = (PropertyManager.manage_options +
-                      RegistrationTool.manage_options)
-
-    manage_overview = DTMLFile('zmi/explainCPSRegistrationTool', globals())
+    manage_options = (PropertyManager.manage_options +      # Properties
+                      RegistrationTool.manage_options[:1] + # Actions
+                      RegistrationTool.manage_options[3:]   # Undo, etc.
+                      )
 
     security = ClassSecurityInfo()
 
@@ -84,7 +81,15 @@ class CPSRegistrationTool(RegistrationTool, PropertyManager):
             return 0
         return 1
 
+    security.declarePublic('mailPassword')
+    def mailPassword(self, forgotten_userid, REQUEST=None):
+        """Delegate password emailing to the membership tool.
+        """
+        mtool = getToolByName(self, 'portal_membership')
+        return mtool.mailPassword(forgotten_userid, REQUEST)
+
 InitializeClass(CPSRegistrationTool)
+
 
 def addCPSRegistrationTool(dispatcher, **kw):
     """Add a membership tool"""

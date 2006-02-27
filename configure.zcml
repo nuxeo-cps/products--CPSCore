@@ -29,6 +29,16 @@
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
+  <adapter
+      factory=".exportimport.MembershipToolXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      />
+
+  <adapter
+      factory=".exportimport.RegistrationToolXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      />
+
   <!-- Bascic event subscribers -->
 
   <subscriber
