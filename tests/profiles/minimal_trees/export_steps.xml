@@ -6,7 +6,7 @@
   Export current contents of import step registry and export step registry.
  </export-step>
  <export-step id="trees"
-              handler="Products.CPSCore.exportimport.exportTreeTool"
+              handler="Products.CPSCore.exportimport.trees.exportTreeTool"
               title="Tree Tool">
   Export tree tool and tree caches.
  </export-step>

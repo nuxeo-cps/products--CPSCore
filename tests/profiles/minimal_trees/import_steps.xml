@@ -7,7 +7,7 @@
   forbidden ones.
  </import-step>
  <import-step id="trees" version="20051230-01"
-              handler="Products.CPSCore.exportimport.importTreeTool"
+              handler="Products.CPSCore.exportimport.trees.importTreeTool"
               title="Tree Tool">
   <dependency step="toolset"/>
   Import tree tool and tree caches.
