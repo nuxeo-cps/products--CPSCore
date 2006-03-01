@@ -5,37 +5,37 @@
   <include file="upgrade.zcml"/>
 
   <adapter
-      factory=".exportimport.SitePropertiesXMLAdapter"
+      factory=".exportimport.properties.SitePropertiesXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
   <adapter
-      factory=".exportimport.TreeToolXMLAdapter"
+      factory=".exportimport.trees.TreeToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
   <adapter
-      factory=".exportimport.TreeCacheXMLAdapter"
+      factory=".exportimport.trees.TreeCacheXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
   <adapter
-      factory=".exportimport.EventServiceToolXMLAdapter"
+      factory=".exportimport.eventservice.EventServiceToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
   <adapter
-      factory=".exportimport.EventSubscriberBodyAdapter"
+      factory=".exportimport.eventservice.EventSubscriberBodyAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
   <adapter
-      factory=".exportimport.MembershipToolXMLAdapter"
+      factory=".exportimport.membership.MembershipToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
   <adapter
-      factory=".exportimport.RegistrationToolXMLAdapter"
+      factory=".exportimport.registration.RegistrationToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
