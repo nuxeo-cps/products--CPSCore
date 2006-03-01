@@ -7,7 +7,7 @@ New features:
 - Updated server ident to CPS/3.4.
 Bug fixes:
 ~~~~~~~~~~
--
+- #1457: catalog reinstall lost all documents in indexes
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

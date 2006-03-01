@@ -10,6 +10,11 @@
       />
 
   <adapter
+      factory=".exportimport.catalog.CatalogToolXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      />
+
+  <adapter
       factory=".exportimport.trees.TreeToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       />
