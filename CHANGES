@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- The TreesTool assumed that the caches have an _infos attribute, which is not
+  true for CPS 3.2, which prevented upgrades from 3.2.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

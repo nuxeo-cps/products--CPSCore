@@ -196,7 +196,7 @@ class TreeCacheUpdater(object):
     """
     def __init__(self, cache):
         self.cache = cache
-        self.infos = cache._infos
+        self.infos = getattr(cache, '_infos', None)
         self.portal = getToolByName(cache, 'portal_url').getPortalObject()
         self.plen = len(self.portal.getPhysicalPath())
         self.info_method = cache.info_method
