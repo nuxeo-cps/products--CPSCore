@@ -1,4 +1,21 @@
 *******************************************
+** CPSCore V3.32.0 [R1 build 2006/03/03-17:27 by ben]
+** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 33854
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Improved GenericSetup Profiles and Import tabs.
+- Updated server ident to CPS/3.4.
+Bug fixes:
+~~~~~~~~~~
+- #1457: catalog reinstall lost all documents in indexes
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.31.1 [R1 build 2006/02/17-20:16 by fermigier]
 ** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 32986
 Requires:
