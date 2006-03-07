@@ -55,8 +55,7 @@ class CatalogToolXMLAdapter(ZCatalogXMLAdapter):
         self._initIndexes(node)
         self._initColumns(node)
 
-        if self.environ.shouldPurge():
-            self._refreshCatalog()
+        self._refreshCatalog()
 
         self._logger.info("Catalog tool imported.")
 

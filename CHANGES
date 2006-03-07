@@ -8,6 +8,8 @@ Bug fixes:
 ~~~~~~~~~~
 - The TreesTool assumed that the caches have an _infos attribute, which is not
   true for CPS 3.2, which prevented upgrades from 3.2.
+- When importing the catalog the catalog must always be refeshed, to populate
+  the new indexes.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
