@@ -579,7 +579,7 @@ TreeCacheManager
 XXX to finish
 
 EventSubscriptionsManager (CPSSubscriptions)
--------------------------------
+--------------------------------------------
 
 Manager for events with a delayed processing until commit time
 Order of execution::
