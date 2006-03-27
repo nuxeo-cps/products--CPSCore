@@ -12,4 +12,4 @@ Bug fixes:
   the new indexes.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- urllib.quote is now authorized in restricted code
