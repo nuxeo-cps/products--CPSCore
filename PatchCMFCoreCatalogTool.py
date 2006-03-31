@@ -290,3 +290,9 @@ def cat_listAllowedRolesAndUsers(self, user):
 CatalogTool._listAllowedRolesAndUsers = cat_listAllowedRolesAndUsers
 LOG('PatchCatalogTool', TRACE,
     "Patching CMF CatalogTool._listAllowedRolesAndUsers")
+
+# Adding an 'export' tab in ZMI (view defined in CPSUtil)
+old_options = CatalogTool.manage_options
+CatalogTool.manage_options = old_options + (
+        {'label': 'Export', 'action': 'manage_export'},
+        )
