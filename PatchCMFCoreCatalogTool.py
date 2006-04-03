@@ -294,5 +294,5 @@ LOG('PatchCatalogTool', TRACE,
 # Adding an 'export' tab in ZMI (view defined in CPSUtil)
 old_options = CatalogTool.manage_options
 CatalogTool.manage_options = old_options + (
-        {'label': 'Export', 'action': 'manage_export'},
+        {'label': 'Export', 'action': 'manage_genericSetupExport.html'},
         )
