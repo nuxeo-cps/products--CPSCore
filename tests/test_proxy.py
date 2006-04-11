@@ -217,11 +217,11 @@ class ProxyBaseTest(ZopeTestCase):
 
         # it calls the proxy tool
         self.assert_(getattr(proxy1, 'frozen', False))
-            
+
         # Unauthorized because it's TTW
         self.failUnlessRaises(Unauthorized, proxy1.freezeProxy,
                               REQUEST=self.app.REQUEST)
-        
+
 
 class ProxyFolderTest(ZopeTestCase, WarningInterceptor):
 
