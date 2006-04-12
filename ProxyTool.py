@@ -43,6 +43,13 @@ from Products.CPSCore.permissions import ViewArchivedRevisions
 from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
      REQUEST_LANGUAGE_KEY
 from Products.CPSUtil.session import sessionGet
+from Products.CPSUtil.integration import isProductPresent
+try:
+    from Products.CPSSchemas.DataModel import DataModel
+except ImportError:
+    DATAMODEL_PRESENT = False
+else:
+    DATAMODEL_PRESENT = True
 
 from zope.app.event.interfaces import IObjectModifiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
@@ -164,6 +171,12 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 from_rev = language_revs[proxy.getDefaultLanguage()]
             ob, rev = repotool.copyRevision(docid, from_rev)
         else:
+            dm = kw.get('datamodel')
+            if dm is None and DATAMODEL_PRESENT:
+                dm = DataModel(None)
+                kw['datamodel'] = dm
+            if dm is not None:
+                dm._setObject(None, proxy=proxy)
             ob, rev = repotool.createRevision(docid, type_name, *args, **kw)
         if hasattr(aq_base(ob), 'setLanguage'):
             ob.setLanguage(lang)

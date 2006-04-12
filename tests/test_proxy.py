@@ -33,9 +33,14 @@ from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
 
 from Products.CPSCore.ProxyTool import ProxyTool
+from Products.CPSCore.ProxyTool import DATAMODEL_PRESENT
 from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolder
 
-from dummy import DummyPortalUrl, DummyWorkflowTool, DummyRoot
+from dummy import DummyPortalUrl
+from dummy import DummyWorkflowTool
+from dummy import DummyRoot
+from dummy import DummyTypesTool
+from dummy import DummyObjectRepositoryTool
 
 from Products.CMFCore.permissions import View
 from Products.CPSCore.permissions import ViewArchivedRevisions
@@ -77,7 +82,6 @@ class PlacefulProxy(ProxyBase, Folder):
     def __init__(self, id, **kw):
         self.id = id
         ProxyBase.__init__(self, **kw)
-
 
 def sortinfos(infos):
     tosort = [(i['rpath'], i) for i in infos]
@@ -263,9 +267,11 @@ class ProxyToolTest(ZopeTestCase, LogInterceptor):
         self.root = DummyRoot()
         root = self.root
 
+        root._setObject('portal_repository', DummyObjectRepositoryTool())
         root._setObject('portal_proxies', ProxyTool())
         root._setObject('portal_url', DummyPortalUrl())
         root._setObject('portal_workflow', DummyWorkflowTool())
+        root._setObject('portal_types', DummyTypesTool())
 
         root.docs = Folder()
         docs = root.docs
@@ -338,6 +344,43 @@ class ProxyToolTest(ZopeTestCase, LogInterceptor):
               'language_revs': {'fr': 33, 'en': 78}}])
 
         self.assertRaises(KeyError, ptool.getProxyInfosFromDocid, 'blah')
+
+    def test_createRevision(self):
+        # see #1608
+        ptool = self.root.portal_proxies
+        ptool.ignore_events = True # Dummy repotool cannot cope
+
+        proxy = ProxyBase(1357, language_revs={'en': 78})
+
+        # preparing the proxy to insulate what's being tested
+        def getPortalTypeName():
+            return 'Dummy Content'
+        def dontReindex():
+            pass
+        proxy.getPortalTypeName = getPortalTypeName
+        proxy.proxyChanged = dontReindex
+
+        # call
+        rev = ptool.createRevision(proxy, 'fr')
+
+        if not DATAMODEL_PRESENT:
+            return
+
+        # datamodel was constructed and tied to the proxy
+        passed = self.root.portal_repository._last_calls['createRevision']
+        dm = passed['kw'].get('datamodel')
+        self.assert_(dm is not None)
+        self.assertEquals(dm.getProxy(), proxy)
+
+        # previous datamodel stays the same, but is now tied to the proxy
+        from Products.CPSCore.ProxyTool import DataModel
+        dm = DataModel(None)
+        rev = ptool.createRevision(proxy, 'fr2', datamodel=dm)
+        passed = self.root.portal_repository._last_calls['createRevision']
+        passed_dm = passed['kw'].get('datamodel')
+        self.assert_(passed_dm is dm)
+        self.assertEquals(dm.getProxy(), proxy)
+
 
 
 def test_suite():

@@ -64,3 +64,28 @@ class DummyTypesTool(SimpleItem):
             getattr(ob, 'meta_type', None) == 'Dummy'):
             return DummyTypeInfo('Dummy Content')
         return None
+
+class DummyObjectRepositoryTool(Folder):
+    _last_calls = {}
+
+    def createRevision(self, docid, type_name, *args, **kw):
+        self._last_calls['createRevision'] = {'docid': docid,
+                                              'type_name': type_name,
+                                              'args': args,
+                                              'kw': kw}
+        rev = 17
+
+        id = 'ob_%s_%s' % (docid, rev)  #Copy/Paste from DummyProxyTool
+        if id not in self.objectIds():
+            doc = SimpleItem(id)
+            doc._setId(id)
+            doc.portal_type = 'Some Type'
+            self._setObject(id, doc)
+        return self._getOb(id), rev
+
+    def getFreeDocid(self):
+        return 'a free docid from repotool'
+
+    def isObjectInRepository(self, ob):
+        return ob in self.objectValues()
+

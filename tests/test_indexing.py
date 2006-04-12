@@ -69,7 +69,7 @@ class DummyOb(SimpleItem, CMFCatalogAware):
 
 class FakeTI:
     _isTypeInformation = True
-    def _constructInstance(self, container, id):
+    def _constructInstance(self, container, id, **kw):
         ob = DummyOb(id)
         container._setObject(id, ob)
         return container._getOb(id)
