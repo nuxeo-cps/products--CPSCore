@@ -17,8 +17,6 @@
 #
 # $Id$
 
-import random
-
 _upgrade_registry = {} # id -> step
 
 class UpgradeStep(object):

@@ -29,7 +29,7 @@ from DateTime import DateTime
 from zLOG import LOG, ERROR, DEBUG
 
 from Globals import InitializeClass, DTMLFile
-from Acquisition import aq_parent, aq_inner, aq_base
+from Acquisition import aq_parent, aq_inner
 from AccessControl import ClassSecurityInfo
 from AccessControl import ModuleSecurityInfo
 from AccessControl import Unauthorized

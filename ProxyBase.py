@@ -31,7 +31,6 @@ from ComputedAttribute import ComputedAttribute
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
-from AccessControl.PermissionRole import rolesForPermissionOn
 import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
@@ -50,7 +49,7 @@ from Products.CPSCore.permissions import ViewArchivedRevisions
 from Products.CPSCore.permissions import ChangeSubobjectsOrder
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
-from Products.CPSUtil.timeoutcache import TimeoutCache, getCache
+from Products.CPSUtil.timeoutcache import getCache
 from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \

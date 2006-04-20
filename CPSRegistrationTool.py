@@ -24,15 +24,13 @@
 from re import match
 
 from AccessControl import ClassSecurityInfo
-from Globals import InitializeClass, DTMLFile
+from Globals import InitializeClass
 from OFS.PropertyManager import PropertyManager
 
 from zope.interface import implements
 from Products.CMFCore.interfaces import IRegistrationTool
 
 from Products.CMFCore.permissions import AddPortalMember
-from Products.CMFCore.ActionInformation import ActionInformation
-from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import getToolByName
 from Products.CMFDefault.RegistrationTool import RegistrationTool
 

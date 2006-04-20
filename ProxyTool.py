@@ -23,9 +23,7 @@ from zLOG import LOG, ERROR, DEBUG, TRACE
 from Globals import InitializeClass, DTMLFile
 from types import DictType
 from Acquisition import aq_base, aq_parent, aq_inner
-from AccessControl import Unauthorized
 from AccessControl import ClassSecurityInfo
-from AccessControl.PermissionRole import rolesForPermissionOn
 from BTrees.OOBTree import OOBTree
 
 from Products.CMFCore.permissions import View
@@ -39,11 +37,9 @@ from Products.CMFCore.TypesTool import FactoryTypeInformation
 from Products.CMFCore.TypesTool import ScriptableTypeInformation
 
 from Products.CPSCore.EventServiceTool import getEventService
-from Products.CPSCore.permissions import ViewArchivedRevisions
 from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
      REQUEST_LANGUAGE_KEY
 from Products.CPSUtil.session import sessionGet
-from Products.CPSUtil.integration import isProductPresent
 try:
     from Products.CPSSchemas.DataModel import DataModel
 except ImportError:

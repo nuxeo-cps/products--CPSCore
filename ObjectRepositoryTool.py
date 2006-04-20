@@ -28,7 +28,6 @@ from Globals import InitializeClass, DTMLFile
 from cStringIO import StringIO
 from Acquisition import aq_base, aq_parent, aq_inner, aq_get
 from AccessControl import ClassSecurityInfo
-from AccessControl.Permission import Permission, name_trans
 
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import getToolByName

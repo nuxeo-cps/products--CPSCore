@@ -38,7 +38,6 @@ from copy import deepcopy
 from Acquisition import aq_base, aq_parent, aq_inner
 from AccessControl.PermissionRole import rolesForPermissionOn
 from Products import CMFCore
-from random import randrange
 from warnings import warn
 from Products.CPSUtil.id import generateId
 

@@ -48,8 +48,6 @@ from Products.CMFCore.interfaces import IMembershipTool
 from Products.CMFCore.permissions import View, ManagePortal
 from Products.CMFCore.permissions import ListPortalMembers
 from AccessControl.Permissions import manage_users as ManageUsers
-from Products.CMFCore.ActionsTool import ActionInformation as AI
-from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import _getAuthenticatedUser

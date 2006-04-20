@@ -27,7 +27,7 @@ from AccessControl import getSecurityManager
 from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.SecurityManagement import setSecurityManager
 from AccessControl.User import UnrestrictedUser as BaseUnrestrictedUser
-from Acquisition import aq_base, aq_parent, aq_inner
+from Acquisition import aq_base, aq_inner
 from BTrees.OOBTree import OOBTree
 from Globals import InitializeClass, DTMLFile
 from OFS.Folder import Folder

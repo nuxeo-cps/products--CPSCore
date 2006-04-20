@@ -32,7 +32,7 @@ from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.permissions import ManagePortal
 from Products.GenericSetup.tool import SetupTool
 from Products.GenericSetup.registry import _profile_registry
-from Products.GenericSetup import BASE, EXTENSION
+from Products.GenericSetup import BASE
 
 from Products.CPSCore.upgrade import listUpgradeSteps
 from Products.CPSCore.interfaces import ICPSSite
