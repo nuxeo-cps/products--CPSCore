@@ -11,5 +11,5 @@ def test_suite():
     loader = unittest.TestLoader()
     return loader.loadTestsFromTestCase(TestMisc)
 
-if __name__=='__main__':
+if __name__ == '__main__':
     unittest.TextTestRunner().run(test_suite())

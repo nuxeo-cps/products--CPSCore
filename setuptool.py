@@ -80,7 +80,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
                 base.append(info)
             else:
                 ext.append(info)
-        ext.sort(lambda x,y: cmp(x['id'], y['id']))
+        ext.sort(lambda x, y: cmp(x['id'], y['id']))
         return base + ext
 
     #

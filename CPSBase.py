@@ -25,7 +25,8 @@ from types import StringType, UnicodeType
 
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
-from AccessControl.Permissions import manage_properties, access_contents_information
+from AccessControl.Permissions \
+    import manage_properties, access_contents_information
 from Acquisition import aq_parent, aq_inner
 
 from OFS.ObjectManager import ObjectManager
@@ -191,7 +192,8 @@ class CPSBaseFolder(TypeConstructor, TypeContainer, CPSBaseDocument):
         """ Move specified sub-objects to bottom of container.
         """
         warnings.warn('The naming of OrderSupport methods have changed. '
-                      '"move_object_to_bottom" is now called "moveObjectsToBottom"',
+                      '"move_object_to_bottom" is now called '
+                      '"moveObjectsToBottom"',
                       DeprecationWarning)
         return self.moveObjectsToBottom(ids, subset_ids)
 
@@ -210,7 +212,8 @@ class CPSBaseFolder(TypeConstructor, TypeContainer, CPSBaseDocument):
         """ Move specified object to absolute position.
         """
         warnings.warn('The naming of OrderSupport methods have changed. '
-                      '"move_object_to_position" is now called "moveObjectToPosition"',
+                      '"move_object_to_position" is now called '
+                      '"moveObjectToPosition"',
                       DeprecationWarning)
         self.moveObjectToPosition(id, position)
 

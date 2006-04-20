@@ -377,5 +377,5 @@ def test_suite():
             tests.append(unittest.makeSuite(obj))
     return unittest.TestSuite(tests)
 
-if __name__=="__main__":
+if __name__ == "__main__":
     unittest.main(defaultTest='test_suite')

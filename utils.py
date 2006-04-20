@@ -21,9 +21,9 @@
 
 The only role-related functions that should be imported by external code
 are:
-  - mergedLocalRoles(object, withgroups=0)
-  - mergedLocalRolesWithPath(object, withgroups=0)
-  - getAllowedRolesAndUsersOfObject(object)
+  - mergedLocalRoles(obj, withgroups=0)
+  - mergedLocalRolesWithPath(obj, withgroups=0)
+  - getAllowedRolesAndUsersOfObject(obj)
   - getAllowedRolesAndUsersOfUser(user)
 
 This code uses if possible the following methods on the user folder:
@@ -71,44 +71,45 @@ def bhasattr(ob, attr):
 # Main functions
 #
 
-def mergedLocalRoles(object, withgroups=0):
-    """Return a merging of object and its ancestors' local roles
+def mergedLocalRoles(obj, withgroups=0):
+    """Return a merging of obj and its ancestors' local roles
 
     When called with withgroups=1, the keys are
     of the form user:foo and group:bar.
     """
-    aclu = getattr(object, 'acl_users', None)
+    aclu = getattr(obj, 'acl_users', None)
     if aclu is not None and bhasattr(aclu, 'mergedLocalRoles'):
-        return aclu.mergedLocalRoles(object, withgroups)
+        return aclu.mergedLocalRoles(obj, withgroups)
     # Default implementation:
     merged = {}
-    object = getattr(object, 'aq_inner', object)
+    obj = getattr(obj, 'aq_inner', obj)
     while 1:
-        if hasattr(object, '__ac_local_roles__'):
-            dict = object.__ac_local_roles__ or {}
-            if callable(dict): dict = dict()
-            for k, v in dict.items():
+        if hasattr(obj, '__ac_local_roles__'):
+            d = obj.__ac_local_roles__ or {}
+            if callable(d):
+                d = d()
+            for k, v in d.items():
                 if withgroups:
                     k = 'user:' + k
                 if merged.has_key(k):
                     merged[k] = merged[k] + v
                 elif v:
                     merged[k] = v
-        if hasattr(object, 'aq_parent'):
-            object = object.aq_parent
-            object = getattr(object, 'aq_inner', object)
+        if hasattr(obj, 'aq_parent'):
+            obj = obj.aq_parent
+            obj = getattr(obj, 'aq_inner', obj)
             continue
-        if hasattr(object, 'im_self'):
-            object = object.im_self
-            object = getattr(object, 'aq_inner', object)
+        if hasattr(obj, 'im_self'):
+            obj = obj.im_self
+            obj = getattr(obj, 'aq_inner', obj)
             continue
         break
     return deepcopy(merged)
 
-def mergedLocalRolesWithPath(object, withgroups=0):
-    aclu = getattr(object, 'acl_users', None)
+def mergedLocalRolesWithPath(obj, withgroups=0):
+    aclu = getattr(obj, 'acl_users', None)
     if aclu is not None and bhasattr(aclu, 'mergedLocalRolesWithPath'):
-        return aclu.mergedLocalRolesWithPath(object, withgroups)
+        return aclu.mergedLocalRolesWithPath(obj, withgroups)
     # Default implementation:
     return {}
 
@@ -138,7 +139,7 @@ def getAllowedRolesAndUsersOfUser(user):
     return result
 
 def getAllowedRolesAndUsersOfObject(ob):
-    """Get the roles and users that can View this object."""
+    """Get the roles and users that can View this obj."""
     aclu = getattr(ob, 'acl_users', None)
     if bhasattr(aclu, 'getAllowedRolesAndUsersOfObject'):
         return aclu.getAllowedRolesAndUsersOfObject(ob)
