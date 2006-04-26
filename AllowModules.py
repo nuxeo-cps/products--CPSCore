@@ -38,6 +38,10 @@ ModuleSecurityInfo('urllib').declarePublic('quote')
 ModuleSecurityInfo('urllib').declarePublic('unquote')
 ModuleSecurityInfo('cgi').declarePublic('escape')
 ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG', 'INFO')
+from logging import Logger
+allow_class(Logger)
+ModuleSecurityInfo('logging').declarePublic('getLogger')
+ModuleSecurityInfo('logging').declarePublic('Logger')
 ModuleSecurityInfo('AccessControl').declarePublic('Unauthorized')
 ModuleSecurityInfo('types').declarePublic('IntType', 'StringType',
                                           'ListType', 'DictType',

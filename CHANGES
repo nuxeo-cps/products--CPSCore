@@ -13,3 +13,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - urllib.quote is now authorized in restricted code
+- logging.getLogger and logging.Logger are now authorized in restricted code
