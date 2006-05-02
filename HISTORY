@@ -1,4 +1,24 @@
 *******************************************
+** CPSCore V3.32.1 [R1 build 2006/05/02-15:46 by gracinet]
+** SVN URL: http://svn/pub/CPSCore/trunk Revision: 45148
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- The TreesTool assumed that the caches have an _infos attribute, which is not
+  true for CPS 3.2, which prevented upgrades from 3.2.
+- When importing the catalog the catalog must always be refeshed, to populate
+  the new indexes.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- urllib.quote is now authorized in restricted code
+- logging.getLogger and logging.Logger are now authorized in restricted code
+
+*******************************************
 ** CPSCore V3.32.0 [R1 build 2006/03/03-17:27 by ben]
 ** SVN URL: https://svn.nuxeo.org/pub/CPSCore/trunk Revision: 33854
 Requires:
