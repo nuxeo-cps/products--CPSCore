@@ -148,8 +148,6 @@ class IndexationManager(BeforeCommitSubscriber):
             return
         if idxs is not None:
             logger.debug("reindexObject %r idxs=%r" % (ob, idxs))
-            if not hasattr(ob, '_reindexObject'):
-                import pdb;pdb.set_trace()
             ob._reindexObject(idxs=idxs)
         if secu:
             skip_self = (idxs == [] or
