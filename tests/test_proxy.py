@@ -35,6 +35,9 @@ from OFS.Folder import Folder
 from Products.CPSCore.ProxyTool import ProxyTool
 from Products.CPSCore.ProxyTool import DATAMODEL_PRESENT
 from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolder
+from Products.CPSCore.ProxyBase import ProxyDocument, ProxyFolderishDocument
+from Products.CPSCore.ProxyBase import ProxyBTreeFolder
+from Products.CPSCore.ProxyBase import ProxyBTreeFolderishDocument
 
 from dummy import DummyPortalUrl
 from dummy import DummyWorkflowTool
@@ -258,6 +261,44 @@ class ProxyFolderTest(ZopeTestCase, WarningInterceptor):
         ids = self.folder.proxyfolder.objectIds()
         self.assertEqual(ids, ['object3', 'object2', 'object1'])
 
+class ProxyThisTest(ZopeTestCase):
+    """Tests the thisXXX methods of the proxies"""
+
+    def afterSetUp(self):
+        ZopeTestCase.afterSetUp(self)
+        self.root = DummyRoot()
+        root = self.root
+        root._setObject('folder', ProxyFolder('folder'))
+        folder = root.folder
+        folder._setObject('doc', ProxyDocument('doc'))
+        folder._setObject('folderish', ProxyFolderishDocument('folderish'))
+        folder._setObject('subfolder', ProxyBTreeFolder('subfolder'))
+
+        folderish = folder.folderish
+        folderish._setObject('subdoc', ProxyDocument('subdoc'))
+        folderish._setObject('subfolderish', 
+                             ProxyBTreeFolderishDocument('subfolderish'))
+        subfolder = folder.subfolder
+        subfolder._setObject('subfolderdoc', ProxyDocument('subfolderdoc'))
+
+    def test_this(self):
+        self.assert_(self.root.folder.thisProxyFolder().aq_base is 
+                     self.root.folder.aq_base)
+        self.assert_(self.root.folder.doc.thisProxyFolder().aq_base is 
+                     self.root.folder.aq_base)
+        self.assert_(self.root.folder.folderish.thisProxyFolder().aq_base is 
+                     self.root.folder.aq_base)
+        self.assert_(self.root.folder.folderish.subdoc.thisProxyFolder(
+                     ).aq_base is self.root.folder.aq_base)
+        self.assert_(self.root.folder.folderish.subfolderish.thisProxyFolder(
+                     ).aq_base is self.root.folder.aq_base)
+        
+        self.assert_(self.root.folder.subfolder.thisProxyFolder().aq_base is 
+                     self.root.folder.subfolder.aq_base)
+        self.assert_(self.root.folder.subfolder.subfolderdoc.thisProxyFolder(
+                     ).aq_base is self.root.folder.subfolder.aq_base)
+    
+    
 class ProxyToolTest(ZopeTestCase, LogInterceptor):
     """Test CPS Proxy Tool."""
 
@@ -389,6 +430,7 @@ def test_suite():
     suite.addTest(loader.loadTestsFromTestCase(ProxyBaseTest))
     suite.addTest(loader.loadTestsFromTestCase(ProxyFolderTest))
     suite.addTest(loader.loadTestsFromTestCase(ProxyToolTest))
+    suite.addTest(loader.loadTestsFromTestCase(ProxyThisTest))
     return suite
 
 if __name__ == '__main__':

@@ -1359,6 +1359,14 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
         else:
             return current.cps_custom_css
 
+    security.declareProtected(View, 'thisProxyFolder')
+    def thisProxyFolder(self):
+        """Get the closest proxy folder from a context.
+        
+        Used by acquisition.
+        """
+        return self
+        
     manage_options = (CPSBaseFolder.manage_options[:1] +
                       ProxyBase.proxybase_manage_options +
                       CPSBaseFolder.manage_options[1:]
@@ -1436,6 +1444,14 @@ class ProxyFolderishDocument(ProxyFolder):
         except AttributeError:
             return self
 
+    security.declareProtected(View, 'thisProxyFolder')
+    def thisProxyFolder(self):
+        """Get the closest proxy folder from a context.
+        
+        Used by acquisition.
+        """
+        return self.aq_parent.thisProxyFolder()
+
     #
     # Freezing
     #
@@ -1468,6 +1484,8 @@ class ProxyBTreeFolder(ProxyBase, CPSBaseBTreeFolder):
 
     meta_type = 'CPS Proxy BTree Folder'
 
+    security = ClassSecurityInfo()
+
     def __init__(self, id, **kw):
         CPSBaseBTreeFolder.__init__(self, id)
         ProxyBase.__init__(self, **kw)
@@ -1499,6 +1517,14 @@ class ProxyBTreeFolder(ProxyBase, CPSBaseBTreeFolder):
             return ""
         else:
             return current.cps_custom_css
+
+    security.declareProtected(View, 'thisProxyFolder')
+    def thisProxyFolder(self):
+        """Get the closest proxy folder from a context.
+        
+        Used by acquisition.
+        """
+        return self
 
     manage_options = (CPSBaseFolder.manage_options[:1] +
                       ProxyBase.proxybase_manage_options +
@@ -1542,6 +1568,14 @@ class ProxyBTreeFolderishDocument(ProxyBTreeFolder):
             return container.topProxyFolderishDocument()
         except AttributeError:
             return self
+
+    security.declareProtected(View, 'thisProxyFolder')
+    def thisProxyFolder(self):
+        """Get the closest proxy folder from a context.
+        
+        Used by acquisition.
+        """
+        return self.aq_parent.thisProxyFolder()
 
     #
     # Freezing
