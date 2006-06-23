@@ -17,13 +17,33 @@
 #
 # $Id$
 
+from logging import getLogger
+from inspect import currentframe
+logger = getLogger('CPSCore.upgrade')
+
 _upgrade_registry = {} # id -> step
+# id -> dict with keys: title, portal_attr, floor_version
+_categories_registry = {}
+
 
 class UpgradeStep(object):
     """A step to upgrade a component.
     """
-    def __init__(self, title, source, dest, handler,
-                 checker=None, sortkey=0):
+    def __init__(self, category, title, source, dest, handler,
+                 checker=None, sortkey=0, requires=None):
+        """
+        >>> ups = UpgradeStep('cpsgroupware', 'title', '1.0.0', '1.2', None,
+        ...                   requires='cpsplatform-3.4.1')
+        >>> ups.category
+        'cpsgroupware'
+        >>> ups.source
+        ('1', '0', '0')
+        >>> ups.dest
+        ('1', '2')
+        >>> ups.requires
+        ('cpsplatform', ('3', '4', '1'))
+        """
+
         self.id = str(abs(hash('%s%s%s%s' % (title, source, dest, sortkey))))
         self.title = title
         if source == '*':
@@ -39,13 +59,21 @@ class UpgradeStep(object):
         self.handler = handler
         self.checker = checker
         self.sortkey = sortkey
+        self.category = category
+        if requires:
+            spl_req = requires.rsplit('-')
+            requires = (spl_req[0], tuple(spl_req[1].split('.')),)
+        self.requires = requires
 
     def versionMatch(self, portal, source):
+        logger.debug("vmatch source=%s", source)
+        if 'news' in self.title:
+            import pdb; pdb.set_trace()
         return (source is None or
                 self.source is None or
                 source <= self.source)
 
-    def isProposed(self, portal, source):
+    def isProposed(self, portal, cat, source):
         """Check if a step can be applied.
 
         False means already applied or does not apply.
@@ -65,20 +93,50 @@ def _registerUpgradeStep(step):
     _upgrade_registry[step.id] = step
 
 def upgradeStep(_context, title, handler, source='*', destination='*',
-                sortkey=0, checker=None):
-    step = UpgradeStep(title, source, destination, handler, checker, sortkey)
+                category = 'cpsplatform', sortkey=0, checker=None, requires=None):
+    step = UpgradeStep(category, title, source, destination, handler, checker, sortkey, requires)
     _context.action(
-        discriminator = ('upgradeStep', source, destination, handler, sortkey),
+        discriminator = ('upgradeStep',
+                         category, source, destination, handler, sortkey),
         callable = _registerUpgradeStep,
         args = (step,),
         )
+    logger.debug('Registered step %s', step.__dict__)
 
-def listUpgradeSteps(portal, source):
-    """Lists upgrade steps available from a given version.
+def registerUpgradeCategory(cid, title='', floor_version='',
+                            portal_attribute='', description=''):
+    if not title:
+        title = cid
+    if not floor_version:
+        floor_version = '0.0.0'
+    if not portal_attribute:
+        raise ValueError('Missing portal_attribute keyword argument.')
+
+    if cid in _categories_registry:
+        raise ValueError(
+            "There's already a category with id %s registered in %s" %
+            (cid, _categores_registry[cid]['defined_in']))
+
+    filename = currentframe(1).f_code.co_filename
+    info = {'title': title,
+            'floor_version': floor_version,
+            'portal_attr': portal_attribute,
+            'defined_in': filename,
+            'description': description,
+    }
+    _categories_registry[cid] = info
+    logger.info('registered category %s with info %s', cid, info)
+
+def listUpgradeSteps(portal, category, source):
+    """Lists upgrade steps from given category available from a given version.
     """
     res = []
     for id, step in _upgrade_registry.items():
-        proposed = step.isProposed(portal, source)
+        if step.category != category:
+            continue
+
+        proposed = step.isProposed(portal, category, source)
+        # GR: obscure condition. what's the use case ?
         if (not proposed
             and source is not None
             and (step.source is None or source > step.source)):
@@ -91,11 +149,15 @@ def listUpgradeSteps(portal, source):
             'dest': step.dest,
             'proposed': proposed,
             }
+        if step.requires is not None:
+            info['requires'] = step.requires
+            
         res.append(((step.source or '', step.sortkey, proposed), info))
+
     res.sort()
     res = [i[1] for i in res]
-    return res
 
+    return res
 
 ######################################################################
 

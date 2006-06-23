@@ -1,0 +1,272 @@
+=============
+Upgrade steps
+=============
+
+:Revision: $Id$
+
+.. contents:: :depth: 1
+.. sectnum::
+
+It will be convenient for examples to have a pretty printer::
+
+    >>> from pprint import PrettyPrinter
+    >>> pretty_print=PrettyPrinter(width=50).pprint
+
+
+Categories registration
+-----------------------
+
+    The CPSCore product has already registered a category::
+
+    >>> from Products.CPSCore.upgrade import _categories_registry
+    >>> pretty_print(_categories_registry)
+    {'cpsplatform': {'defined_in': '/Users/zopes/29-scratch/Products/CPSCore/__init__.py',
+                     'description': '',
+                     'floor_version': '3.2.0',
+                     'portal_attr': 'last_upgraded_version',
+                     'title': 'CPS Platform'}}
+
+
+    Let's add one as if we were managing a side component.
+
+    >>> from Products.CPSCore.upgrade import registerUpgradeCategory
+    >>> registerUpgradeCategory('my_app',
+    ...                 title='My Application',
+    ...                 floor_version='0.5',
+    ...                 description='My very cool app on top of CPS',
+    ...                 portal_attribute='my_app_up_version')
+    >>> pretty_print(_categories_registry['my_app'])
+    {'defined_in': '<doctest ...>',
+     'description': 'My very cool app on top of CPS',
+     'floor_version': '0.5',
+     'portal_attr': 'my_app_up_version',
+     'title': 'My Application'}
+
+
+Upgrade steps registration
+--------------------------
+
+In python
+~~~~~~~~~
+
+    >>> class SimplestConfigurationContext:
+    ...     def action(self, discriminator, callable=None, args=()):
+    ...         """Do it now!"""
+    ...         if callable is not None:
+    ...             callable(*args)
+
+    >>> context = SimplestConfigurationContext()
+    >>> from Products.CPSCore.upgrade import upgradeStep, _upgrade_registry
+
+    So, let's register a step for 'My Application'::
+
+    >>> def up_my_app_1_0_1_1(portal):
+    ...     print "my_app: 1.0 -> 1.1"
+    >>> upgradeStep(context, 'Test Step 1', up_my_app_1_0_1_1,
+    ...             category='my_app',
+    ...             source='1.0',
+    ...             destination='1.1', sortkey=10)
+
+    Now, let's see if we can find it in the list of proposed steps 'My
+    Application'::
+
+    >>> from Products.CPSCore.upgrade import listUpgradeSteps
+    >>> portal = None
+    >>> [step['title'] for step in listUpgradeSteps(portal, 'my_app', (1, 0))]
+    ['Test Step 1']
+
+
+In ZCML
+~~~~~~~
+
+    Use the <cps:upgradeStep> element. Mandatory attributes 'title'
+    and 'handlers' corrspond to positional args of the upgradeStep function,
+    while others correspond to kwargs (see also various examples
+    within CPS configuration)
+
+
+Listing
+~~~~~~~
+    >>> def up_my_app_1_1_1_2(portal):
+    ...     print "my_app: 1.1 -> 1.2"
+    >>> upgradeStep(context, 'Test Step 3', up_my_app_1_1_1_2,
+    ...             category='my_app',
+    ...             source='1.1',
+    ...             destination='1.2', sortkey=10)
+
+    >>> def up_my_app_1_1_1_2first(portal):
+    ...     print "my_app: 1.1 -> 1.2 (first)"
+    >>> upgradeStep(context, 'Test Step 2', up_my_app_1_1_1_2first,
+    ...             category='my_app',
+    ...             source='1.1',
+    ...             destination='1.2', sortkey=6)
+
+    >>> def up_my_app_1_2_2_0(portal):
+    ...     print "my_app: 1.2 -> 2.0"
+    >>> upgradeStep(context, 'Test Step 4', up_my_app_1_2_2_0,
+    ...             category='my_app',
+    ...             source='1.2',
+    ...             destination='2.0', sortkey=10,
+    ...             requires='cpsplatform-3.4.5')
+
+
+    >>> steps = listUpgradeSteps(None, 'my_app', (1,0))
+
+    Let's remove some human non friendly data and display the ordered
+    list of proposed steps::
+
+    >>> for step in steps:
+    ...     del step['id']
+    ...     del step['step']
+    >>> pretty_print(steps)
+    [{'dest': ('1', '1'),
+      'proposed': True,
+      'source': ('1', '0'),
+      'title': 'Test Step 1'},
+     {'dest': ('1', '2'),
+      'proposed': True,
+      'source': ('1', '1'),
+      'title': 'Test Step 2'},
+     {'dest': ('1', '2'),
+      'proposed': True,
+      'source': ('1', '1'),
+      'title': 'Test Step 3'},
+     {'dest': ('2', '0'),
+      'proposed': True,
+      'requires': ('cpsplatform', ('3', '4', '5')),
+      'source': ('1', '2'),
+      'title': 'Test Step 4'}]
+
+
+
+Setup Tool
+----------
+
+    >>> class FakePortal:
+    ...     pass
+    >>> portal = FakePortal()
+    >>> class FakeUrlTool:
+    ...     def getPortalObject(self):
+    ...         return portal
+    >>> portal.portal_url = FakePortal()
+    >>> from Products.CPSCore.setuptool import CPSSetupTool
+    >>> tool = CPSSetupTool()
+    >>> tool.portal_url = FakeUrlTool()
+
+    The version is kept as a property on the portal object. If
+    missing, the category's floor version is used::
+
+    >>> tool._getCurrentVersion('my_app')
+    ('0', '5')
+
+    The tool provides an API to update the version number.
+    >>> tool._setCurrentVersion('my_app', ('1', '0'))
+    '1.0'
+    >>> tool._getCurrentVersion('my_app')
+    ('1', '0')
+
+    >>> pretty_print(tool._getUpgradeCategoryDisplayInfo('my_app'))
+    {'description': 'My very cool app on top of CPS',
+     'id': 'my_app',
+     'title': 'My Application',
+     'version': '1.0'}
+
+    Views have to use the following method::
+
+    >>> pretty_print(tool.listUpgradeCategories())
+    [{'description': '',
+      'id': 'cpsplatform',
+      'title': 'CPS Platform',
+      'version': '3.2.0'},
+     {'description': 'My very cool app on top of CPS',
+      'id': 'my_app',
+      'title': 'My Application',
+      'version': '1.0'}]
+
+Upgrades proposals
+~~~~~~~~~~~~~~~~~~
+
+    >>> list_ups = tool.listUpgrades(category='my_app')
+    >>> [up['title'] for up in list_ups]
+    ['Test Step 1', 'Test Step 2', 'Test Step 3']
+
+    Our test step 4 was not proposed because it requires (the upgrade of)
+    CPSPlatform to 3.4.5. Let's see what info is provided for each step::
+
+    >>> pretty_print(list_ups[0].keys())
+    ['source',
+     'step',
+     'proposed',
+     'title',
+     'dest',
+     'haspath',
+     'ssource',
+     'id',
+     'sdest']
+
+
+    Now, let's do as if we were on 1.1: step 1 shouldn't be presented anymore::
+
+    >>> tool._setCurrentVersion('my_app', ('1', '1'))
+    '1.1'
+    >>> list_ups = tool.listUpgrades(category='my_app')
+    >>> [up['title'] for up in list_ups]
+    ['Test Step 2', 'Test Step 3']
+    >>> tool._setCurrentVersion('my_app', ('1', '2'))
+    '1.2'
+    >>> tool.listUpgrades(category='my_app')
+    []
+
+    Now we pretend that CPSPlatform has been upgraded to the required
+    version for step 4::
+
+    >>> tool._setCurrentVersion('cpsplatform', ('3', '4', '5'))
+    '3.4.5'
+    >>> list_ups = tool.listUpgrades(category='my_app')
+    >>> [up['title'] for up in list_ups]
+    ['Test Step 4']
+
+    The result would be the same for a later version::
+
+    >>> tool._setCurrentVersion('cpsplatform', ('3', '5'))
+    '3.5'
+    >>> list_ups = tool.listUpgrades(category='my_app')
+    >>> [up['title'] for up in list_ups]
+    ['Test Step 4']
+
+    Dependency requirement is implicit for all steps after one that
+    has some::
+
+    >>> def up_my_app_2_0_3_0():
+    ...     print "my_app: 2.0 -> 3.0"
+    >>> upgradeStep(context, 'Test Step 5', up_my_app_2_0_3_0,
+    ...             category='my_app',
+    ...             source='2.0',
+    ...             destination='3.0')
+    >>> tool._setCurrentVersion('cpsplatform', ('3', '4', '4'))
+    '3.4.4'
+    >>> tool.listUpgrades(category='my_app')
+    []
+
+Launching the upgrades
+----------------------
+
+    >>> tool._setCurrentVersion('my_app', ('1', '1'))
+    '1.1'
+    >>> list_ups = tool.listUpgrades(category='my_app')
+    >>> ids = [up['id'] for up in list_ups]
+    >>> tool.doUpgrades(ids, 'my_app')
+    my_app: 1.1 -> 1.2 (first)
+    my_app: 1.1 -> 1.2
+
+    The stored version was updated:
+
+    >>> tool._getCurrentVersion('my_app')
+    ('1', '2')
+
+.. Emacs
+.. Local Variables:
+.. mode: rst
+.. End:
+.. Vim
+.. vim: set filetype=rst:

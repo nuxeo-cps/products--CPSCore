@@ -35,9 +35,8 @@ from Products.GenericSetup.registry import _profile_registry
 from Products.GenericSetup import BASE
 
 from Products.CPSCore.upgrade import listUpgradeSteps
+from Products.CPSCore.upgrade import _categories_registry
 from Products.CPSCore.interfaces import ICPSSite
-
-DEFAULT_VERSION = '3.2.0' # If we've never upgraded, start there
 
 LOG = logging.getLogger('CPSCore.setuptool')
 
@@ -87,43 +86,51 @@ class CPSSetupTool(UniqueObject, SetupTool):
     # Upgrades management
     #
 
-    def _getCurrentVersion(self):
+    def _getCurrentVersion(self, category):
         portal = getToolByName(self, 'portal_url').getPortalObject()
-        current = getattr(aq_base(portal), 'last_upgraded_version', '')
-        current = current or DEFAULT_VERSION
+        cat_info = _categories_registry[category]
+        current = getattr(aq_base(portal), cat_info['portal_attr'], '')
+        if not current:
+            current = cat_info['floor_version']
         return tuple(current.split('.'))
 
-    def _setCurrentVersion(self, version):
+    def _setCurrentVersion(self, category, version):
         portal = getToolByName(self, 'portal_url').getPortalObject()
         version = '.'.join(version)
-        portal.last_upgraded_version = version
+        cat_info = _categories_registry[category]
+        setattr(portal, cat_info['portal_attr'], version)
         return version
 
     security.declareProtected(ManagePortal, 'listUpgrades')
-    def listUpgrades(self, show_old=False):
+    def listUpgrades(self, show_old=False, category='cpsplatform'):
         """Get the list of available upgrades.
         """
         portal = getToolByName(self, 'portal_url').getPortalObject()
+        version = self._getCurrentVersion(category)
         if show_old:
             source = None
         else:
-            source = self._getCurrentVersion()
-        upgrades = listUpgradeSteps(portal, source)
+            source = version
+        upgrades = listUpgradeSteps(portal, category, source)
         res = []
         for info in upgrades:
+            req = info.get('requires')
+            if req is not None and req[1] > self._getCurrentVersion(req[0]):
+                break # requirement is implicite for forthcoming steps too
+                
             info = info.copy()
-            info['haspath'] = info['source'] and info['dest']
+            info['haspath'] = bool(info['source'] and info['dest'])
             info['ssource'] = '.'.join(info['source'] or ('all',))
             info['sdest'] = '.'.join(info['dest'] or ('all',))
             res.append(info)
         return res
 
     security.declarePrivate('doUpgrades')
-    def doUpgrades(self, upgrades, show_old=False):
+    def doUpgrades(self, upgrades, category, show_old=False):
         portal = getToolByName(self, 'portal_url').getPortalObject()
         dests = {} # possible dest versions
         skipped = {} # some skipped upgrades for dest version
-        for info in self.listUpgrades(show_old=show_old):
+        for info in self.listUpgrades(category=category, show_old=show_old):
             dest = info['dest']
             dests[dest] = True
             if info['id'] not in upgrades:
@@ -136,6 +143,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
             info['step'].doStep(portal)
 
         # Update last_upgraded_version
+        version = self._getCurrentVersion(category)
         if None in dests:
             del dests[None]
         dests = dests.keys()
@@ -146,9 +154,27 @@ class CPSSetupTool(UniqueObject, SetupTool):
             if dest in skipped:
                 break
             next = dest
-        if next is not None and next > self._getCurrentVersion():
-            version = self._setCurrentVersion(next)
-            LOG.info("Upgrading portal to %s", version)
+        if next is not None and next > self._getCurrentVersion(category):
+            version = self._setCurrentVersion(category, next)
+            cat_title = _categories_registry[category]['title']
+            LOG.info("Upgraded portal to %s-%s", cat_title, version)
+
+    def _getUpgradeCategoryDisplayInfo(self, cat_id):
+        cat = _categories_registry[cat_id]
+        keys = ['title', 'description']
+        res = dict((key, cat[key]) for key in keys)
+        res['id'] = cat_id
+        res['version'] = '.'.join(self._getCurrentVersion(cat_id))
+        return res
+
+    def listUpgradeCategories(self):
+
+        # build the list. CPS-Platform must be first
+        c_ids = [c_id for c_id in _categories_registry.keys()
+                 if c_id != 'cpsplatform']
+        c_ids.insert(0, 'cpsplatform')
+
+        return [self._getUpgradeCategoryDisplayInfo(c_id) for c_id in c_ids]
 
     #
     # Improved I/O
@@ -354,10 +380,11 @@ class CPSSetupTool(UniqueObject, SetupTool):
 
 
     security.declareProtected(ManagePortal, 'manage_doUpgrades')
-    def manage_doUpgrades(self, REQUEST, upgrades=(), show_old=False):
-        """Do upgrades.
+    def manage_doUpgrades(self, REQUEST, upgrades=(),
+                          category='cpsplatform', show_old=False):
+        """Do upgrades for a given category
         """
-        self.doUpgrades(upgrades, show_old=show_old)
+        self.doUpgrades(upgrades, category=category, show_old=show_old)
         REQUEST.RESPONSE.redirect(REQUEST.URL1+'/manage_upgrades')
 
 InitializeClass(CPSSetupTool)

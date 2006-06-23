@@ -37,6 +37,10 @@ class IUpgradeStepDirective(Interface):
         title=u"Title",
         required=True)
 
+    category = zope.schema.ASCII(
+        title=u"Category",
+        required=False)
+
     source = zope.schema.ASCII(
         title=u"Source version",
         required=False)

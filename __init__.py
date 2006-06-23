@@ -46,6 +46,12 @@ import TreesTool
 import CPSRegistrationTool
 import URLTool
 from Products.CPSCore.setuptool import CPSSetupTool
+from Products.CPSCore.upgrade import registerUpgradeCategory
+
+registerUpgradeCategory('cpsplatform',
+                        title='CPS Platform',
+                        floor_version='3.2.0',
+                        portal_attribute='last_upgraded_version')
 
 import ProxyBase
 

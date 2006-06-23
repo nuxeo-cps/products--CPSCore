@@ -3,6 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
+- #1665 upgrade steps for side components
 - Added a thisProxyFolder method in parallell to the 
   thisProxyFolderishDocument method, to easily find the current folder in 
   a hierarchy. FolderishDocuments will return the parent folder, 
