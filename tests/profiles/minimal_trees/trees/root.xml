@@ -10,4 +10,5 @@
  </property>
  <property name="excluded_rpaths"/>
  <property name="info_method">getFolderInfo</property>
+ <property name="terminal_nodes"/>
 </object>

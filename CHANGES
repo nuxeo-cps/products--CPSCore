@@ -12,4 +12,5 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- added a new terminal_nodes property on the tree caches to prevent to flag
+  some portal types as final nodes and avoid testing all their children

@@ -327,6 +327,28 @@ class TreeCacheTest(SecurityRequestTest):
         self.assertEquals([d['title'] for d in l],
                           ['Foo', 'NewBar', 'Baz'])
 
+    def test_event_sys_add_terminal_cmf_object(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        tool = cmf.portal_trees
+        cache = tool.cache
+
+        # 'ThePortalType' is flagged as terminal node
+        cache.terminal_nodes = ('ThePortalType',)
+
+        # Add children to foo
+        cmf.root.foo._setObject('bar', DummyObject('bar', title='Bar'))
+        cmf.root.foo._setObject('baz', DummyObject('baz', title='Baz'))
+
+        # Add the root, children are not added
+        tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
+        tool.flushEvents()
+        l = cache.getList(filter=False)
+        self.assertEquals([d['rpath'] for d in l], ['root/foo'])
+        self.assertEquals([d['depth'] for d in l], [0])
+        self.assertEquals([d['title'] for d in l], ['Foo'])
+        self.assertEquals([d['nb_children'] for d in l], [0])
+
     def test_event_sys_del_object(self):
         self.makeInfrastructure()
         cmf = self.app.cmf

@@ -308,10 +308,12 @@ class TreeCacheUpdater(object):
             # Parent is outside of the tree
             return
         children = []
-        for subob in ob.objectValues():
-            if self.isCandidate(subob):
-                subrpath = self.getRpath(subob)
-                children.append(subrpath)
+        ptype = getattr(aq_base(ob), 'portal_type', None)
+        if ptype not in self.cache.terminal_nodes:
+            for subob in ob.objectValues():
+                if self.isCandidate(subob):
+                    subrpath = self.getRpath(subob)
+                    children.append(subrpath)
         info['children'] = children
         info['nb_children'] = len(children)
         self.infos[rpath] = info
@@ -331,10 +333,12 @@ class TreeCacheUpdater(object):
         info = self.getNodeInfo(ob)
         subdepth = depth+1
         children = []
-        for subob in ob.objectValues():
-            if self.isCandidate(subob):
-                subrpath = self._makeTree(subob, subdepth)
-                children.append(subrpath)
+        ptype = getattr(aq_base(ob), 'portal_type', None)
+        if ptype not in self.cache.terminal_nodes:
+            for subob in ob.objectValues():
+                if self.isCandidate(subob):
+                    subrpath = self._makeTree(subob, subdepth)
+                    children.append(subrpath)
         info['depth'] = depth
         info['children'] = children
         info['nb_children'] = len(children)
@@ -463,6 +467,8 @@ class TreeCache(SimpleItemWithProperties):
          'label': 'Excluded rpaths'},
         {'id': 'info_method', 'type': 'string', 'mode': 'w',
          'label': 'Info Method'},
+        {'id': 'terminal_nodes', 'type': 'lines', 'mode': 'w',
+         'label': "Portal types of terminal nodes (children won't be cached)"},
         )
 
     title = ''
@@ -471,6 +477,7 @@ class TreeCache(SimpleItemWithProperties):
     meta_types = ()
     excluded_rpaths = ()
     info_method = ''
+    terminal_nodes = ()
 
     def __init__(self, id, **kw):
         self._setId(id)

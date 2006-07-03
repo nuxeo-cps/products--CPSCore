@@ -95,6 +95,7 @@ class TreesToolExportImportTest(ExportImportTestCase):
             ('meta_types', ('Folder Meta Type',)),
             ('excluded_rpaths', ()),
             ('info_method', 'getFolderInfo'),
+            ('terminal_nodes', ()),
             ]
         self.assertEquals(tree_root.propertyItems(), property_items)
 
@@ -143,6 +144,7 @@ class TreesToolExportImportTest(ExportImportTestCase):
             ('meta_types', ('Folder Meta Type',)),
             ('excluded_rpaths', ()),
             ('info_method', 'getFolderInfo'),
+            ('terminal_nodes', ()),
             ]
         self.assertEquals(tree_root.propertyItems(), property_items)
         # check tree cache infos, tree has been rebuilt
