@@ -20,7 +20,7 @@ Categories registration
 
     >>> from Products.CPSCore.upgrade import _categories_registry
     >>> pretty_print(_categories_registry)
-    {'cpsplatform': {'defined_in': '/Users/zopes/29-scratch/Products/CPSCore/__init__.py',
+    {'cpsplatform': {'defined_in': '.../Products/CPSCore/__init__.py',
                      'description': '',
                      'floor_version': '3.2.0',
                      'portal_attr': 'last_upgraded_version',
