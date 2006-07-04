@@ -1,4 +1,24 @@
 *******************************************
+** CPSCore V3.33.0 [R1 build 2006/07/04-17:25 by gracinet]
+** SVN URL: http://svn/pub/CPS3/products/CPSCore/trunk Revision: 46919
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- #1665 upgrade steps for side components
+- Added a thisProxyFolder method in parallell to the 
+  thisProxyFolderishDocument method, to easily find the current folder in 
+  a hierarchy. FolderishDocuments will return the parent folder, 
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- added a new terminal_nodes property on the tree caches to prevent to flag
+  some portal types as final nodes and avoid testing all their children
+
+*******************************************
 ** CPSCore V3.32.1 [R1 build 2006/05/02-15:46 by gracinet]
 ** SVN URL: http://svn/pub/CPSCore/trunk Revision: 45148
 Requires:
