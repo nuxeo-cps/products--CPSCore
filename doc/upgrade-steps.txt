@@ -20,8 +20,7 @@ Categories registration
 
     >>> from Products.CPSCore.upgrade import _categories_registry
     >>> pretty_print(_categories_registry)
-    {'cpsplatform': {'defined_in': '.../Products/CPSCore/__init__.py',
-                     'description': '',
+    {'cpsplatform': {'description': '',
                      'floor_version': '3.2.0',
                      'portal_attr': 'last_upgraded_version',
                      'title': 'CPS Platform'}}
@@ -36,12 +35,45 @@ Categories registration
     ...                 description='My very cool app on top of CPS',
     ...                 portal_attribute='my_app_up_version')
     >>> pretty_print(_categories_registry['my_app'])
-    {'defined_in': '<doctest ...>',
-     'description': 'My very cool app on top of CPS',
+    {'description': 'My very cool app on top of CPS',
      'floor_version': '0.5',
      'portal_attr': 'my_app_up_version',
      'title': 'My Application'}
 
+    We can also specify a reference product for the upgrade
+    category by means of the ``ref_product`` keyword argument. The
+    current code version will be stored as well.
+
+    We need to cheat a bit to avoid the example to rely on CPSCore's
+    version at the time of this writing::
+
+    >>> import os
+    >>> from Products.CPSCore import upgrade
+    >>> upgrade.VERSION_FILE = os.path.join('tests', 'data', 'VERSION.sample')
+
+    Now let's go::
+
+    >>> registerUpgradeCategory('my_app2',
+    ...                 title='My Application',
+    ...                 floor_version='0.1',
+    ...                 ref_product='CPSCore',
+    ...                 description='My very cool app on top of CPS',
+    ...                 portal_attribute='my_app2_up_version')
+    >>> pretty_print(_categories_registry['my_app2'])
+    {'code_version': '19.0.0',
+     'description': 'My very cool app on top of CPS',
+     'floor_version': '0.1',
+     'portal_attr': 'my_app2_up_version',
+     'ref_product': 'CPSCore',
+     'title': 'My Application'}
+    >>> del _categories_registry['my_app2']
+
+
+   ``code_version`` can be used, e.g., by site factories to set the
+   database version at site creation time. It is normally read from the
+   VERSION file that should sit at the topmost level of the reference
+   product. Without the above monkey patching, we would have gotten
+   CPSCore's version.
 
 Upgrade steps registration
 --------------------------

@@ -17,14 +17,17 @@
 #
 # $Id$
 
+import os
 from logging import getLogger
-from inspect import currentframe
+from Products.GenericSetup.utils import _resolveDottedName
+
 logger = getLogger('CPSCore.upgrade')
 
 _upgrade_registry = {} # id -> step
 # id -> dict with keys: title, portal_attr, floor_version
 _categories_registry = {}
 
+VERSION_FILE = 'VERSION'
 
 class UpgradeStep(object):
     """A step to upgrade a component.
@@ -104,7 +107,9 @@ def upgradeStep(_context, title, handler, source='*', destination='*',
     logger.debug('Registered step %s', step.__dict__)
 
 def registerUpgradeCategory(cid, title='', floor_version='',
-                            portal_attribute='', description=''):
+                            portal_attribute='', description='',
+                            ref_product=''):
+
     if not title:
         title = cid
     if not floor_version:
@@ -117,13 +122,30 @@ def registerUpgradeCategory(cid, title='', floor_version='',
             "There's already a category with id %s registered in %s" %
             (cid, _categores_registry[cid]['defined_in']))
 
-    filename = currentframe(1).f_code.co_filename
     info = {'title': title,
             'floor_version': floor_version,
             'portal_attr': portal_attribute,
-            'defined_in': filename,
             'description': description,
     }
+
+    if ref_product:
+        info['ref_product'] = ref_product
+        # Zope2 centric
+        module = _resolveDottedName('Products.' + ref_product)
+        product_dir = os.path.split(module.__file__)[0]
+        try:
+            version_file = open(os.path.join(product_dir, VERSION_FILE), 'r')
+        except OSError:
+            raise # catch later
+        else:
+            lines = [l.strip() for l in version_file.readlines()]
+            version_file.close()
+            pref = 'PKG_VERSION='
+            for l in lines:
+                if l.startswith(pref):
+                    info['code_version'] = l[len(pref):]
+
+
     _categories_registry[cid] = info
     logger.info('registered category %s with info %s', cid, info)
 
@@ -151,7 +173,7 @@ def listUpgradeSteps(portal, category, source):
             }
         if step.requires is not None:
             info['requires'] = step.requires
-            
+
         res.append(((step.source or '', step.sortkey, proposed), info))
 
     res.sort()
