@@ -95,9 +95,19 @@ class CPSSetupTool(UniqueObject, SetupTool):
         return tuple(current.split('.'))
 
     def _setCurrentVersion(self, category, version):
+        """Set version for a given category.
+
+        If version is None and the category has a 'code_version', the latter
+        will be used, otherwise, nothing's done
+        """
         portal = getToolByName(self, 'portal_url').getPortalObject()
-        version = '.'.join(version)
         cat_info = _categories_registry[category]
+        if version is None:
+            version = cat_info.get('code_version')
+            if version is None:
+                return
+        else:
+            version = '.'.join(version)
         setattr(portal, cat_info['portal_attr'], version)
         return version
 
