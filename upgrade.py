@@ -19,7 +19,6 @@
 
 import os
 from logging import getLogger
-from Products.GenericSetup.utils import _resolveDottedName
 
 logger = getLogger('CPSCore.upgrade')
 
@@ -130,9 +129,8 @@ def registerUpgradeCategory(cid, title='', floor_version='',
 
     if ref_product:
         info['ref_product'] = ref_product
-        # Zope2 centric
-        module = _resolveDottedName('Products.' + ref_product)
-        product_dir = os.path.split(module.__file__)[0]
+        # very Zope2 centric
+        product_dir = os.path.join(INSTANCE_HOME, 'Products', ref_product)
         try:
             version_file = open(os.path.join(product_dir, VERSION_FILE), 'r')
         except OSError:
