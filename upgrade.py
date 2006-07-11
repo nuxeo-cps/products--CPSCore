@@ -119,7 +119,7 @@ def registerUpgradeCategory(cid, title='', floor_version='',
     if cid in _categories_registry:
         raise ValueError(
             "There's already a category with id %s registered in %s" %
-            (cid, _categores_registry[cid]['defined_in']))
+            (cid, _categories_registry[cid]['defined_in']))
 
     info = {'title': title,
             'floor_version': floor_version,
