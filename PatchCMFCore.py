@@ -17,8 +17,9 @@
 # $Id$
 """This file contains all patches for the CMFCore product."""
 
-from zLOG import LOG, TRACE
-
+from ZODB.loglevels import TRACE
+from logging import getLogger
+logger = getLogger('CPSCore.PatchCMFCore')
 
 #############################################################
 # Patch mergedLocalRoles to use aclu mergedLocalRoles if any
@@ -26,7 +27,7 @@ from zLOG import LOG, TRACE
 from Products.CMFCore import utils
 from Products.CPSCore.utils import mergedLocalRoles
 
-LOG('PatchCMFCore', TRACE, "Patched mergedLocalRoles to use aclu")
+logger.log(TRACE, "Patched mergedLocalRoles to use aclu")
 utils.mergedLocalRoles = mergedLocalRoles
 utils._mergedLocalRoles = mergedLocalRoles
 

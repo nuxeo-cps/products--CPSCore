@@ -17,22 +17,22 @@
 # $Id$
 """Patch CMF CatalogTool
 """
-from zLOG import LOG, DEBUG, INFO, TRACE, WARNING
+from ZODB.loglevels import TRACE
+from logging import getLogger
+
 from Acquisition import aq_base, aq_parent, aq_inner
 from Products.ZCatalog.ZCatalog import ZCatalog
 from Products.CMFCore.interfaces.portal_catalog import \
      IndexableObjectWrapper as IIndexableObjectWrapper
 from Products.CMFCore.CatalogTool import CatalogTool
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
-from Products.CMFCore.utils import getToolByName, _getAuthenticatedUser, \
-     _checkPermission
-from Products.CMFCore.permissions import AccessInactivePortalContent
+from Products.CMFCore.utils import getToolByName
 from Products.CPSCore.utils import getAllowedRolesAndUsersOfObject, \
      getAllowedRolesAndUsersOfUser
-from Products.CPSCore.utils import KEYWORD_SWITCH_LANGUAGE, \
-     KEYWORD_VIEW_LANGUAGE, SESSION_LANGUAGE_KEY, ALL_LOCALES
+from Products.CPSCore.utils import KEYWORD_VIEW_LANGUAGE, ALL_LOCALES
 from Products.CPSCore.ProxyBase import ProxyBase
 
+logger = getLogger('CPSCore.PatchCMFCoreCatalogTool')
 
 # We're monkey patching CMFCatalogAware here because it's
 # really related to cataloging
@@ -45,6 +45,9 @@ class IndexableObjectWrapper:
     """This is a CPS adaptation of
     CMFCore.CatalogTool.IndexableObjectWrapper"""
     __implements__ = IIndexableObjectWrapper
+
+    _cps_patch_logger = getLogger(
+        'CPSCore.PatchCMFCoreCatalogTool.IndexableObjectWrapper')
 
     def __init__(self, vars, ob, lang=None, uid=None):
         self.__vars = vars
@@ -149,14 +152,14 @@ class IndexableObjectWrapper:
                 return container.getObjectPosition(ob.getId())
             except ValueError, err:
                 # Trying to index a doc before it is created ?
-                LOG('position_in_container', WARNING,
-                    'got a Value Error %s' % err)
+                self._cps_patch_logger.warning('position_in_container: '
+                                               'got a ValueError %s', err)
                 return 0
             except AttributeError, err:
                 # Container without ordering support such as
                 # BTreeFolder based folders. (proxy or not)
-                LOG('position_in_container', WARNING,
-                    'got an AttributeError %s' % err)
+                self._cps_patch_logger.warning('position_in_container: '
+                                               'got an AttributeError %s', err)
                 return 0
         return 0
 
@@ -191,8 +194,7 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=
     else:
         pgharg = (pghandler,)
 
-    LOG('PatchCatalogTool.catalog_object', TRACE, 'index uid %s  obj %s' % (
-        uid, object))
+    logger.log(TRACE, 'cat_catalog_object: index uid %s  obj %s', uid, object)
     wf = getattr(self, 'portal_workflow', None)
     if wf is not None:
         vars = wf.getCatalogVariablesFor(object)
@@ -259,7 +261,7 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=
 
 
 CatalogTool.catalog_object = cat_catalog_object
-LOG('PatchCatalogTool', TRACE, "Patching CMF CatalogTool.catalog_object")
+logger.log(TRACE, "Patching CMF CatalogTool.catalog_object")
 
 
 #XXX should be a patch of uncatalog_object
@@ -280,7 +282,7 @@ def cat_unindexObject(self, object):
             self.uncatalog_object(uid)
 
 CatalogTool.unindexObject = cat_unindexObject
-LOG('PatchCatalogTool', TRACE, "Patching CMF CatalogTool.unindexObject")
+logger.log(TRACE, "Patching CMF CatalogTool.unindexObject")
 
 
 def cat_listAllowedRolesAndUsers(self, user):
@@ -288,8 +290,7 @@ def cat_listAllowedRolesAndUsers(self, user):
     return getAllowedRolesAndUsersOfUser(user)
 
 CatalogTool._listAllowedRolesAndUsers = cat_listAllowedRolesAndUsers
-LOG('PatchCatalogTool', TRACE,
-    "Patching CMF CatalogTool._listAllowedRolesAndUsers")
+logger.log(TRACE, "Patching CMF CatalogTool._listAllowedRolesAndUsers")
 
 # Adding an 'export' tab in ZMI (view defined in CPSUtil)
 old_options = CatalogTool.manage_options
