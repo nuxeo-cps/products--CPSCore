@@ -17,13 +17,12 @@
 #
 # $Id$
 
-import os.path
-from zLOG import LOG, ERROR, DEBUG, TRACE
+import os
+from logging import getLogger
 from types import DictType
 from ExtensionClass import Base
 from cPickle import Pickler, Unpickler
 from cStringIO import StringIO
-import os
 import tempfile
 from zipfile import ZipFile
 from struct import pack, unpack
@@ -66,6 +65,8 @@ from Products.CPSCore.IndexationManager import get_indexation_manager
 PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
 CACHE_ZIP_VIEW_KEY = 'CPS_ZIP_VIEW'
 CACHE_ZIP_VIEW_TIMEOUT = 7200           # time to cache in second
+
+logger = getLogger('CPSCore.ProxyBase')
 
 class ProxyBase(Base):
     """Mixin class for proxy types.
@@ -373,9 +374,8 @@ class ProxyBase(Base):
             if k.startswith('_') and k.endswith('_Permission'):
                 stuff[k] = v
                 continue
-            LOG('ProxyBase', DEBUG,
-                "Warning: serialize of %s found unknown %s=%s"
-                % (self.getId(), k, v))
+            logger.debug("Warning: serialize of %s found unknown %s=%s",
+                         self.getId(), k, v)
             stuff[k] = v # Serialize it anyway
         # now serialize stuff
         f = StringIO()
@@ -393,8 +393,8 @@ class ProxyBase(Base):
 
     def _reindexObject(self, idxs=[]):
         """Called to reindex when the object has changed."""
-        LOG('ProxyBase', DEBUG, "reindex idxs=%s for %s"
-            % (idxs, '/'.join(self.getPhysicalPath())))
+        logger.debug("reindex idxs=%s for %s", idxs,
+                     '/'.join(self.getPhysicalPath()))
         if 'allowedRolesAndUsers' in idxs:
             # Both must be updated
             idxs.append('localUsersWithRoles')
@@ -414,8 +414,8 @@ class ProxyBase(Base):
 
     def _reindexObjectSecurity(self, skip_self=False):
         """Called to security-related indexes."""
-        LOG('ProxyBase', DEBUG, "reindex security for %s"
-            % '/'.join(self.getPhysicalPath()))
+        logger.debug("reindex security for %s",
+                     '/'.join(self.getPhysicalPath()))
         # Notify that this proxy's security has changed.
         # Listeners will have to recurse if necessary.
         # (The notification for the object repo is done by the repo.)
@@ -656,6 +656,8 @@ class FileDownloader(Acquisition.Explicit):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
+    logger = getLogger('CPSCore.ProxyBase.FileDownloader')
+
     def __init__(self, ob, proxy):
         """
         Init the FileDownloader with the document and proxy to which it pertains.
@@ -685,14 +687,12 @@ class FileDownloader(Acquisition.Explicit):
         if state == 0:
             # First call, swallow attribute
             if not hasattr(aq_base(ob), name):
-                LOG('FileDownloader.getitem', DEBUG,
-                    "Not a base attribute: '%s'" % name)
+                logger.debug("Not a base attribute: '%s'", name)
                 raise KeyError(name)
             file = getattr(ob, name)
             if file is not None and not isinstance(file, File):
-                LOG('FileDownloader.getitem', DEBUG,
-                    "Attribute '%s' is not a File but %s" %
-                    (name, `file`))
+                logger.debug("Attribute '%s' is not a File but %s",
+                             name, `file`)
                 raise KeyError(name)
             self.attrname = name
             self.file = file
@@ -783,9 +783,9 @@ class FileDownloader(Acquisition.Explicit):
     security.declareProtected(ModifyPortalContent, 'PUT')
     def PUT(self, REQUEST, RESPONSE):
         """Handle HTTP (and presumably FTP?) PUT requests (WebDAV)."""
-        LOG('FileDownloader', DEBUG, "PUT()")
+        self.logger.debug("PUT()")
         if self.state != 2:
-            LOG('ProxyBase', DEBUG, "BadRequest: Cannot PUT with state != 2")
+            self.logger.debug("BadRequest: Cannot PUT with state != 2")
             raise 'BadRequest', "Cannot PUT with state != 2"
         document = self.proxy.getEditableContent()
         file = getattr(document, self.attrname)
@@ -803,9 +803,9 @@ class FileDownloader(Acquisition.Explicit):
     security.declareProtected(ModifyPortalContent, 'LOCK')
     def LOCK(self, REQUEST, RESPONSE):
         """Handle HTTP (and presumably FTP?) LOCK requests (WebDAV)."""
-        LOG('FileDownloader', DEBUG, "LOCK()")
+        self.logger.debug("LOCK()")
         if self.state != 2:
-            LOG('ProxyBase', DEBUG, "BadRequest: Cannot LOCK with state != 2")
+            self.logger.debug("BadRequest: Cannot LOCK with state != 2")
             raise 'BadRequest', "Cannot LOCK with state != 2"
         document = self.proxy.getEditableContent()
         file = getattr(document, self.attrname)
@@ -814,9 +814,9 @@ class FileDownloader(Acquisition.Explicit):
     security.declareProtected(ModifyPortalContent, 'UNLOCK')
     def UNLOCK(self, REQUEST, RESPONSE):
         """Handle HTTP (and presumably FTP?) UNLOCK requests (WebDAV)."""
-        LOG('FileDownloader', DEBUG, "UNLOCK()")
+        self.logger("UNLOCK()")
         if self.state != 2:
-            LOG('ProxyBase', DEBUG, "BadRequest: Cannot UNLOCK with state != 2")
+            self.logger.debug("BadRequest: Cannot UNLOCK with state != 2")
             raise 'BadRequest', "Cannot UNLOCK with state != 2"
         document = self.proxy.getEditableContent()
         file = getattr(document, self.attrname)
@@ -824,9 +824,9 @@ class FileDownloader(Acquisition.Explicit):
 
     def wl_lockValues(self, killinvalids=0):
         """Handle HTTP (and presumably FTP?) wl_lockValues requests (WebDAV)."""
-        LOG('FileDownloader', DEBUG, "wl_lockValues()")
+        self.logger("wl_lockValues()")
         if self.state != 2:
-            LOG('ProxyBase', DEBUG, "BadRequest: Cannot wl_lockValues with state != 2")
+            self.logger.debug("BadRequest: Cannot wl_lockValues with state != 2")
             raise 'BadRequest', "Cannot wl_lockValues with state != 2"
         document = self.proxy.getEditableContent()
         file = getattr(document, self.attrname)
@@ -834,9 +834,9 @@ class FileDownloader(Acquisition.Explicit):
 
     def wl_isLocked(self):
         """Handle HTTP (and presumably FTP?) wl_isLocked requests (WebDAV)."""
-        LOG('FileDownloader', DEBUG, "wl_isLocked()")
+        self.logger.debug("wl_isLocked()")
         if self.state != 2:
-            LOG('ProxyBase', DEBUG, "BadRequest: Cannot wl_isLocked with state != 2")
+            self.logger.debug("BadRequest: Cannot wl_isLocked with state != 2")
             raise 'BadRequest', "Cannot wl_isLocked with state != 2"
         document = self.proxy.getEditableContent()
         file = getattr(document, self.attrname)
@@ -944,6 +944,8 @@ class RevisionSwitcher(Acquisition.Explicit):
     # Never viewable, so skipped by breadcrumbs.
     _View_Permission = ()
 
+    logger = getLogger("CPSCore.ProxyBase.RevisionSwitcher")
+
     def __init__(self, proxy):
         self.proxy = proxy
         self.id = KEYWORD_ARCHIVED_REVISION
@@ -955,8 +957,7 @@ class RevisionSwitcher(Acquisition.Explicit):
         try:
             rev = int(rev)
         except ValueError:
-            LOG('RevisionSwitcher.getitem', DEBUG,
-                "Invalid revision %s" % `rev`)
+            self.logger.debug("Invalid revision %r", rev)
             raise KeyError(rev)
 
         proxy = self.proxy
@@ -964,8 +965,7 @@ class RevisionSwitcher(Acquisition.Explicit):
         pxtool = getToolByName(proxy, 'portal_proxies')
         ob = pxtool.getContentByRevision(docid, rev)
         if ob is None:
-            LOG('RevisionSwitcher.getitem', DEBUG,
-                "Unknown revision %s" % rev)
+            self.logger.debug("Unknown revision %s", rev)
             raise KeyError(rev)
 
         # Find language
@@ -1054,6 +1054,8 @@ class ViewZip(Acquisition.Explicit):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
+    logger = getLogger('CPSCore.ProxyBase.ViewZip')
+
     def __init__(self, ob, proxy):
         """
         Init the ViewZip with the document and proxy to which it pertains.
@@ -1083,14 +1085,12 @@ class ViewZip(Acquisition.Explicit):
         if state == 0:
             # First call, swallow attribute which should be a zipfile
             if not hasattr(aq_base(ob), name):
-                LOG('ViewZip.getitem', DEBUG,
-                    "Not a base attribute: '%s'" % name)
+                self.logger.debug("Not a base attribute: '%s'", name)
                 raise KeyError(name)
             file = getattr(ob, name)
             if file is not None and not isinstance(file, File):
-                LOG('ViewZip.getitem', DEBUG,
-                    "Attribute '%s' is not a File but %s" %
-                    (name, `file`))
+                self.logger.debug("Attribute '%s' is not a File but %r",
+                                  name, file)
                 raise KeyError(name)
             self.attrname = name
             self.file = file
@@ -1128,7 +1128,7 @@ class ViewZip(Acquisition.Explicit):
         last_modified = int(self.proxy.getContent().modified())
         content = zip_cache.get(key, min_date=last_modified)
         if content is None:
-            LOG('ViewZip', DEBUG, 'extract %s from %s' % (filepath, filename))
+            self.logger.debug('extract %s from %s', filepath, filename)
             # XXX this is very ineficiant as str(file.data) load all the
             # content in memory, ofs file should implement a file-like object
             # with all stdio methods seek, tell, read, close...
@@ -1137,8 +1137,7 @@ class ViewZip(Acquisition.Explicit):
             try:
                 content = zipfile.read(filepath)
             except KeyError:
-                LOG('ViewZip', DEBUG,
-                    'not found %s: %s' % (filename, filepath))
+                self.logger.debug('not found %s: %s', filename, filepath)
                 content = 0
             # cache for next access
             zip_cache[key] = content
@@ -1180,8 +1179,7 @@ def unserializeProxy(ser, ob=None):
         elif class_name == 'ProxyFolderishDocument':
             ob = ProxyFolderishDocument('')
         else:
-            LOG('ProxyBase', ERROR, 'unserialize got class_name=%s' %
-                class_name)
+            logger.error('unserialize got class_name=%s', class_name)
             return None
     ob.__dict__.update(stuff)
     return ob
