@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- URLTool can return breadcrumbs filtered by view permission
 Bug fixes:
 ~~~~~~~~~~
 -

@@ -167,7 +167,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         return url
 
     security.declarePublic("getBreadCrumbs")
-    def getBreadCrumbs(self, context=None, only_parents=0):
+    def getBreadCrumbs(self, context=None, only_parents=0, restricted=False):
         """Return parents for context
 
         If only_parents is set to 1, the object itself is not returned in bread
@@ -193,7 +193,8 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         while 1:
             parent = aq_parent(aq_inner(current))
             if parent not in (vr, portal, root):
-                parents.append(parent)
+                if not restricted or _checkPermission(View, parent):
+                    parents.append(parent)
                 current = parent
             else:
                 break
