@@ -68,9 +68,6 @@ class UpgradeStep(object):
         self.requires = requires
 
     def versionMatch(self, portal, source):
-        logger.debug("vmatch source=%s", source)
-        if 'news' in self.title:
-            import pdb; pdb.set_trace()
         return (source is None or
                 self.source is None or
                 source <= self.source)
