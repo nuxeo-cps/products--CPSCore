@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.34.0 [R1 build 2006/07/31-21:12 by gracinet]
+** SVN URL: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk Revision: 47695
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- URLTool can return breadcrumbs filtered by view permission
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- some replacements of zLOG by logging
+
+*******************************************
 ** CPSCore V3.33.0 [R1 build 2006/07/04-17:25 by gracinet]
 ** SVN URL: http://svn/pub/CPS3/products/CPSCore/trunk Revision: 46919
 Requires:
