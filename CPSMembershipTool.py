@@ -306,7 +306,7 @@ class CPSMembershipTool(MembershipTool):
     def deleteMemberArea(self, member_id):
         """Delete member area of member specified by member_id."""
         members = self.getMembersFolder()
-        if not members:
+        if members is None:
             return 0
         if hasattr(aq_base(members), member_id):
             members.manage_delObjects(member_id)
@@ -325,7 +325,7 @@ class CPSMembershipTool(MembershipTool):
         if not self.getMemberareaCreationFlag():
             return None
         members = self.getMembersFolder()
-        if not members:
+        if members is None:
             return None
         if self.isAnonymousUser():
             return None
@@ -341,7 +341,8 @@ class CPSMembershipTool(MembershipTool):
             return None
 
         member_area_id = self.getHomeFolderId(member_id)
-        if hasattr(aq_base(members), member_area_id):
+        member_area = members._getOb(member_area_id, default=None)
+        if member_area is not None:
             return None
         if member_id == user_id:
             member = user
