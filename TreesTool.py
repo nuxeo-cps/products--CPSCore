@@ -709,8 +709,9 @@ class TreeCache(SimpleItemWithProperties):
 
                     res.append(info)
 
-                    # Next, process children in order (depth first)
-                    todo = children + todo
+                    # Next, process children in order (depth first) if appropriate
+                    if depth < stop_depth:
+                        todo = children + todo
 
         if count_children and (filter or stop_depth != 999):
             # Compute nb_children for each level
