@@ -1,4 +1,20 @@
 *******************************************
+** CPSCore V3.34.2 [R1 build 2006/08/03-09:12 by fermigier]
+** SVN URL: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk Revision: 47820
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- More robust member area code.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.34.1 [R1 build 2006/08/03-09:10 by fermigier]
 ** SVN URL: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk Revision: 47779
 Requires:
