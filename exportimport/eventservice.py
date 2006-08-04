@@ -104,6 +104,10 @@ class EventServiceToolXMLAdapter(XMLAdapterBase, ObjectManagerHelpers):
 
     def _initSubscribers(self, node):
         tool = self.context
+
+        after_clean = False
+        before_ids = tool.objectIds()
+        to_del = []
         for child in node.childNodes:
             if child.nodeName != 'object':
                 continue
@@ -114,12 +118,25 @@ class EventServiceToolXMLAdapter(XMLAdapterBase, ObjectManagerHelpers):
                     raise ValueError(meta_type)
                 ob = SubscriberDef(id)
                 tool._setObject(id, ob)
+                after_clean = True
             ob = tool._getOb(id)
             importer = zapi.queryMultiAdapter((ob, self.environ), INode)
             if not importer:
                 raise ValueError(id)
             importer.node = child
-        pass
+
+            # clean tool from possible duplicate subscriber: old one
+            # with same subscriber and action (ZMI creation has random ids)
+            if id == 'subscriber_trees':
+                import pdb; pdb.set_trace()
+            if after_clean:
+                discr = (ob.subscriber, ob.action)
+                for b_id in before_ids:
+                    b_ob = tool._getOb(b_id)
+                    if (b_ob.subscriber, b_ob.action) == discr:
+                        to_del.append(b_id)
+
+        tool.manage_delObjects(to_del)
 
 class EventSubscriberBodyAdapter(BodyAdapterBase, PropertyManagerHelpers):
     """Node importer and exporter for an event subscriber, no body.

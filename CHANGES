@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Event Subscriber importer did not check properly prior existence, leading
+  to errors in trees tool when notification was made twice
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
