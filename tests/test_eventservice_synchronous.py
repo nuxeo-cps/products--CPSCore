@@ -25,9 +25,25 @@ import time
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.Folder import Folder as OFS_Folder
 
-from Products.CMFCore.tests.base.testcase import LogInterceptor
+from Products.CPSCore import EventServiceTool as EventServiceModule
 from Products.CPSCore.EventServiceTool import EventServiceTool
 
+class FakeErrorLogger:
+
+    def __init__(self):
+        self._flush()
+
+    def _flush(self):
+        self.errors = []
+
+    def error(self, msg, *args, **kw):
+        self.errors.append(msg)
+
+    def debug(self, msg, *args, **kw):
+        pass
+
+    info = debug
+    warn = debug
 
 class Folder(OFS_Folder):
     def __init__(self, id):
@@ -74,8 +90,15 @@ class Class2(Class1):
     id = 'instance2'
 
 
-class SynchronousNotificationsTest(unittest.TestCase, LogInterceptor):
+class SynchronousNotificationsTest(unittest.TestCase):
     """Test portal_elements"""
+
+    def setUp(self):
+        self._saved_logger = EventServiceModule.logger
+        EventServiceModule.logger = self._logger = FakeErrorLogger()
+
+    def tearDown(self):
+        EventServiceModule.logger = self._saved_logger
 
     def makeInfrastructure(self):
         portal = self.portal = Folder('portal')
@@ -239,13 +262,10 @@ class SynchronousNotificationsTest(unittest.TestCase, LogInterceptor):
         self.assert_(buggy.time < subscriber.time)
 
         # Make the buggy one raise an exception
-        from zLOG import ERROR
-        self._catch_log_errors(ERROR)
-        self.logged = None
         self.assertRaises(SomeException, tool.notify,
                           'an_event', object, {'bug': 1})
-        self.assert_(self.logged)
-        self._ignore_log_errors()
+        # something was logged at error level
+        self.assert_(self._logger.errors)
 
         # Check that the other subscriber was notified.
         self.assertEqual(subscriber.notified, 2)

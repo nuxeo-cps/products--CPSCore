@@ -24,9 +24,10 @@ The Event Service receives events and dispatches them to interested parties.
 
 import sys
 import random
+import logging
+
 from types import StringType
 from DateTime import DateTime
-from zLOG import LOG, ERROR, DEBUG
 
 from Globals import InitializeClass, DTMLFile
 from Acquisition import aq_parent, aq_inner
@@ -54,7 +55,7 @@ from Products.CMFCore.permissions import ViewManagementScreens
 
 from Products.CPSCore.events import securityModificationEvent
 
-
+logger = logging.getLogger('CPSCore.EventServiceTool')
 CPSSubscriberDefinition_type = 'CPS Subscriber Definition'
 CPSEventServiceTool_type = 'CPS Event Service Tool'
 
@@ -284,8 +285,7 @@ class EventServiceTool(UniqueObject, OrderedFolder):
                         subscriber_id = sub_def['subscriber']
                         subscriber = getattr(portal, subscriber_id, None)
                         if subscriber is None:
-                            LOG('EventServiceTool', ERROR, 'No subscriber %s'
-                                % subscriber_id)
+                            logger.error('No subscriber %s', subscriber_id)
                             continue
                         action = sub_def['action']
                         try:
@@ -294,13 +294,13 @@ class EventServiceTool(UniqueObject, OrderedFolder):
                         except ConflictError:
                             raise
                         except:
-                            error = sys.exc_info()
-                            LOG('EventServiceTool.notify', ERROR,
-                                "Exception in subscriber", error=error)
+                            logger.error("Exception in subscriber",
+                                         subscriber_id,
+                                         exc_info=True)
                             if exc_info is None:
                                 # Store this exception for later reraise
+                                error = sys.exc_info()
                                 exc_info = error
-                            error = None
             # If there were exceptions, reraise the first one
             if exc_info is not None:
                 raise exc_info[0], exc_info[1], exc_info[2]
