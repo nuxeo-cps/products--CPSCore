@@ -127,8 +127,6 @@ class EventServiceToolXMLAdapter(XMLAdapterBase, ObjectManagerHelpers):
 
             # clean tool from possible duplicate subscriber: old one
             # with same subscriber and action (ZMI creation has random ids)
-            if id == 'subscriber_trees':
-                import pdb; pdb.set_trace()
             if after_clean:
                 discr = (ob.subscriber, ob.action)
                 for b_id in before_ids:
