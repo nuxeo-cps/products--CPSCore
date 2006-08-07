@@ -170,6 +170,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             if dm is None and DATAMODEL_PRESENT:
                 dm = DataModel(None)
                 kw['datamodel'] = dm
+                kw['Language'] = lang_ # cannot put in dm yet.
             if dm is not None:
                 dm._setObject(None, proxy=proxy)
             ob, rev = repotool.createRevision(docid, type_name, *args, **kw)
