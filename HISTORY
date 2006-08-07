@@ -1,4 +1,22 @@
 *******************************************
+** CPSCore V3.34.3 [R1 build 2006/08/07-16:34 by fermigier]
+** SVN URL: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk Revision: 48074
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Event Subscriber importer did not check properly prior existence, leading
+  to errors in trees tool when notification was made twice
+- #1714: put l10n titles info in trees
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.34.2 [R1 build 2006/08/03-09:12 by fermigier]
 ** SVN URL: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk Revision: 47820
 Requires:

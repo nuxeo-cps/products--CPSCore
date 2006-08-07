@@ -6,9 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Event Subscriber importer did not check properly prior existence, leading
-  to errors in trees tool when notification was made twice
-- #1714: put l10n titles info in trees
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
