@@ -52,6 +52,7 @@ from zope.app.event.interfaces import IObjectModifiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
 from zope.app.container.interfaces import IContainerModifiedEvent
 from OFS.interfaces import IObjectWillBeMovedEvent
+from interfaces import ICPSProxy
 
 def intersects(a, b):
     for v in a:
@@ -261,6 +262,8 @@ class TreeCacheUpdater(object):
             'rpath': self.getRpath(ob),
             'portal_type': ob.portal_type,
             })
+        if ICPSProxy.providedBy(ob):
+            info['l10_titles'] = ob.getL10nTitles()
         info.update(self.getNodeSecurityInfo(ob))
         return info
 

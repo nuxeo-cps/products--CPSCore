@@ -28,7 +28,7 @@ from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
 from OFS.OrderedFolder import OrderedFolder
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
-from Products.CPSCore.TreesTool import TreesTool, TreeCache
+from Products.CPSCore.TreesTool import TreesTool, TreeCache, TreeCacheUpdater
 from Products.CPSCore.treemodification import ADD, REMOVE, MODIFY
 
 class DummyTreeCache(SimpleItem):
@@ -496,6 +496,65 @@ class TreeCacheTest(SecurityRequestTest):
             'title': 'NewBar',
             'visible': False,
             })
+
+    def test_getNodeInfo(self):
+        self.makeInfrastructure()
+        cmf = self.app.cmf
+        tool = cmf.portal_trees
+        cache = tool.cache
+        cache_upd = TreeCacheUpdater(cache)
+
+        # test on ordinary object
+        info = cache_upd.getNodeInfo(cmf.root.foo)
+        self.assertEquals(info,
+                          {'allowed_roles_and_users': ['Manager'],
+                           'title': 'Foo',
+                           'local_roles': {'user:Anonymous User': ('Owner',)},
+                           'rpath': 'root/foo',
+                           'portal_type': 'ThePortalType',
+                           'id': 'foo'})
+
+        # test on proxy
+        from Products.CPSCore.ProxyBase import ProxyFolder
+        cmf.root._setObject('bar', ProxyFolder('bar'))
+
+        class DummyObjectTitle(DummyObject):
+            # subclass was preferd to adding the method to DummyObject
+            # in order to be sure not to void tests of info_method system
+
+            def Title(self):
+                return self.title
+
+        cmf.root._setObject('bar_en', DummyObjectTitle('bar_en',
+                                                  title='English title'))
+        cmf.root._setObject('bar_fr', DummyObjectTitle('bar_fr',
+                                                  title='French title'))
+        cmf.root.bar.portal_type = cmf.root.bar_en.portal_type
+
+        # monkey patch of bar's getContent to avoid proxy and repo tool faking
+        def getContent(lang='default', **kw):
+            if lang in ['default', 'en']:
+                return cmf.root.bar_en
+            elif lang == 'fr':
+                return cmf.root.bar_fr
+
+        def getProxyLanguages():
+            return ['fr', 'en']
+
+        bar = cmf.root.bar
+        bar.getContent = getContent
+        bar.getProxyLanguages = getProxyLanguages
+
+        info = cache_upd.getNodeInfo(cmf.root.bar)
+        self.assertEquals(info, {'allowed_roles_and_users': ['Manager'],
+                                 'local_roles': {
+            'user:Anonymous User': ('Owner',)},
+                                 'title': 'English title',
+                                 'l10_titles': {'fr': 'French title',
+                                                'en': 'English title'},
+                                 'rpath': 'root/bar',
+                                 'portal_type': 'ThePortalType',
+                                 'id': 'bar'})
 
     def makeDeepStructure(self):
         self.makeInfrastructure()
