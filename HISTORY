@@ -1,4 +1,21 @@
 *******************************************
+** CPSCore V3.34.4 [R1 build 2006/08/08-14:31 by gracinet]
+** SVN URL: http://svn/pub/CPS3/products/CPSCore/trunk Revision: 48174
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Version number fetching in upgrade steps category was done in INSTANCE_HOME/Products which
+  did broke Zope startup in some setups.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSCore V3.34.3 [R1 build 2006/08/07-16:34 by fermigier]
 ** SVN URL: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk Revision: 48074
 Requires:
