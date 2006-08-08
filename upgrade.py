@@ -19,6 +19,8 @@
 
 import os
 from logging import getLogger
+from os.path import abspath
+import Products
 
 logger = getLogger('CPSCore.upgrade')
 
@@ -127,18 +129,25 @@ def registerUpgradeCategory(cid, title='', floor_version='',
     if ref_product:
         info['ref_product'] = ref_product
         # very Zope2 centric
-        product_dir = os.path.join(INSTANCE_HOME, 'Products', ref_product)
-        try:
-            version_file = open(os.path.join(product_dir, VERSION_FILE), 'r')
-        except OSError:
-            raise # catch later
-        else:
-            lines = [l.strip() for l in version_file.readlines()]
-            version_file.close()
-            pref = 'PKG_VERSION='
-            for l in lines:
-                if l.startswith(pref):
-                    info['code_version'] = l[len(pref):]
+        ProductsPath = [ abspath(ppath)  for ppath in Products.__path__ ]
+        flag = False
+        for ppath in ProductsPath:
+            version_path = os.path.join(ppath, ref_product, VERSION_FILE)
+            logger.debug('Fetching current version number for %s from file %s' % (
+                ref_product, version_path))
+            abs_path = version_path
+            if os.path.exists(abs_path):
+                version_file = open(version_path, 'r')
+                lines = [l.strip() for l in version_file.readlines()]
+                version_file.close()
+                pref = 'PKG_VERSION='
+                for l in lines:
+                    if l.startswith(pref):
+                        info['code_version'] = l[len(pref):]
+                flag = True
+                break
+        if not flag:
+            raise OSError('File %s not found for %s Product' % (VERSION_FILE, info['title']) )
 
 
     _categories_registry[cid] = info

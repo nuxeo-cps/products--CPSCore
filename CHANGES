@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Version number fetching in upgrade steps category was done in INSTANCE_HOME/Products which
+  did broke Zope startup in some setups.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
