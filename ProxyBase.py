@@ -814,7 +814,7 @@ class FileDownloader(Acquisition.Explicit):
     security.declareProtected(ModifyPortalContent, 'UNLOCK')
     def UNLOCK(self, REQUEST, RESPONSE):
         """Handle HTTP (and presumably FTP?) UNLOCK requests (WebDAV)."""
-        self.logger("UNLOCK()")
+        self.logger.debug("UNLOCK()")
         if self.state != 2:
             self.logger.debug("BadRequest: Cannot UNLOCK with state != 2")
             raise 'BadRequest', "Cannot UNLOCK with state != 2"
@@ -824,7 +824,7 @@ class FileDownloader(Acquisition.Explicit):
 
     def wl_lockValues(self, killinvalids=0):
         """Handle HTTP (and presumably FTP?) wl_lockValues requests (WebDAV)."""
-        self.logger("wl_lockValues()")
+        self.logger.debug("wl_lockValues()")
         if self.state != 2:
             self.logger.debug("BadRequest: Cannot wl_lockValues with state != 2")
             raise 'BadRequest', "Cannot wl_lockValues with state != 2"
