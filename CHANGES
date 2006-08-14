@@ -6,7 +6,9 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
+- #1731: Error editing files with external editor
 -
+
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
