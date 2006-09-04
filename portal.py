@@ -36,7 +36,7 @@ class CPSSite(CMFSite):
     meta_type = 'CPS Site'
     portal_type = 'Portal'
 
-    cps_version = ('CPS', 3, 4, 0)
+    cps_version = ('CPS', 3, 4, 3)
 
     _properties = (
         {'id': 'title', 'type': 'string',
