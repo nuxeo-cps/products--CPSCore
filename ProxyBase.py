@@ -797,7 +797,7 @@ class FileDownloader(Acquisition.Explicit):
         # We shouldn't use the file.PUT() method but it is helpful to get the
         # needed response object.
         if getattr(aq_base(document), '_has_generic_edit_method', 0):
-            document.edit({self.attrname: file})
+            document.edit({self.attrname: file}, proxy=self.proxy)
         return response
 
     security.declareProtected(ModifyPortalContent, 'LOCK')
