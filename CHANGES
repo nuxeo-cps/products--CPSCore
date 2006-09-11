@@ -9,6 +9,10 @@ Bug fixes:
 - #1731: Error editing files with external editor
 - added the proxy optional arg to the 'document.edit' call of the PUT method of
   the FileDownloader class
+- disabling MA's Zipping workaround for old buggy OO 1.1 / IE plugin that was
+  unable to open sxw/sxc files under authenticated sessions. Recent (2.0.x)
+  versions of the pluging now works correctly, thus we can directly download and
+  open those kind of files.
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~

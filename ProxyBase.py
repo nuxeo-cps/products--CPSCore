@@ -62,7 +62,13 @@ from Products.CPSCore.CPSBase import CPSBaseBTreeFolder
 from Products.CPSCore.IndexationManager import get_indexation_manager
 
 
-PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
+PROBLEMATIC_FILES_SUFFIXES = ('.exe',)
+# OG: Old versions (1.1.x) of OpenOffice IE plugin also had a problem opening
+# those files with authenticated sessions (see below). As the new version
+# (2.0.x) works alright, the zip workaround is now deactivated. To reactivate
+# it, uncomment the following line:
+#PROBLEMATIC_FILES_SUFFIXES = ('.exe', '.sxw', '.sxc')
+
 CACHE_ZIP_VIEW_KEY = 'CPS_ZIP_VIEW'
 CACHE_ZIP_VIEW_TIMEOUT = 7200           # time to cache in second
 
