@@ -13,7 +13,6 @@ Bug fixes:
   unable to open sxw/sxc files under authenticated sessions. Recent (2.0.x)
   versions of the pluging now works correctly, thus we can directly download and
   open those kind of files.
-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Removed deprecated _isinstance use.

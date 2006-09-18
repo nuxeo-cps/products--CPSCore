@@ -165,19 +165,6 @@ def getAllowedRolesAndUsersOfObject(ob):
 CMFCore.utils.mergedLocalRoles = mergedLocalRoles
 CMFCore.utils._mergedLocalRoles = mergedLocalRoles
 
-#
-# Utility functions
-#
-
-# XXX this is deprecated and will be removed.
-def _isinstance(ob, cls):
-    try:
-        return isinstance(ob, cls)
-    except TypeError:
-        # In python 2.1 isinstance() raises TypeError
-        # instead of returning 0 for ExtensionClasses.
-        return 0
-
 # Note: this code must be kept in sync with ProxyTool.getBestRevision
 def resetSessionLanguageSelection(REQUEST):
     """Clear documents language selection done by switchLanguage"""
