@@ -85,6 +85,10 @@ class TreesTool(UniqueObject, Folder):
 
     security = ClassSecurityInfo()
 
+    manage_options = Folder.manage_options + (
+    {'label': 'Export', 'action': 'manage_genericSetupExport.html'},
+                    )
+
     _properties = Folder._properties + (
         {'id': 'ignore_events', 'type': 'boolean', 'mode': 'w',
          'label': "Ignore events"},
@@ -743,7 +747,9 @@ class TreeCache(SimpleItemWithProperties):
         {'label': 'Tree',
          'action': 'manage_listTree',
          },
-        ) + SimpleItemWithProperties.manage_options
+        ) + SimpleItemWithProperties.manage_options + (
+        {'label': 'Export', 'action': 'manage_genericSetupExport.html'},
+                )
 
     security.declareProtected(ViewManagementScreens, 'manage_listTree')
     manage_listTree = DTMLFile('zmi/tree_content', globals())

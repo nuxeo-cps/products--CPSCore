@@ -24,6 +24,12 @@
       provides="Products.GenericSetup.interfaces.IBody"
       />
 
+  <five:traversable
+      class=".TreesTool.TreeCache"/>
+
+  <five:traversable
+      class=".TreesTool.TreesTool"/>
+
   <adapter
       factory=".exportimport.eventservice.EventServiceToolXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"

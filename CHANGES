@@ -6,6 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
+- ZMI XML export tab for Trees objects
 - #1731: Error editing files with external editor
 - added the proxy optional arg to the 'document.edit' call of the PUT method of
   the FileDownloader class
