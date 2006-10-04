@@ -87,6 +87,8 @@ class CPSMembershipTool(MembershipTool):
          'label': 'Member folder owner local roles'},
         {'id': 'pending_members', 'type': 'lines', 'mode': 'w',
          'label': 'Recently deleted members'},
+        {'id': 'roles_managing_local_roles', 'type': 'lines', 'mode': 'w',
+         'label': 'Roles required to manage local roles'},
         )
     memberareaCreationFlag = True
     membersfolder_id = 'Members'

@@ -17,3 +17,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Removed deprecated _isinstance use.
+- made roles_managing_local_roles a property of the membership tool
