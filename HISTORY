@@ -1,3 +1,31 @@
+===========================================================
+Package: CPSCore 3.35.0
+===========================================================
+First release built by: ogrisel at: 2006-10-04T21:17:25
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.35.0
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@49321
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- ZMI XML export tab for Trees objects
+- #1731: Error editing files with external editor
+- added the proxy optional arg to the 'document.edit' call of the PUT method of
+  the FileDownloader class
+- disabling MA's Zipping workaround for old buggy OO 1.1 / IE plugin that was
+  unable to open sxw/sxc files under authenticated sessions. Recent (2.0.x)
+  versions of the pluging now works correctly, thus we can directly download and
+  open those kind of files.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Removed deprecated _isinstance use.
+- made roles_managing_local_roles a property of the membership tool
+
 *******************************************
 ** CPSCore V3.34.4 [R1 build 2006/08/08-14:31 by gracinet]
 ** SVN URL: http://svn/pub/CPS3/products/CPSCore/trunk Revision: 48174
