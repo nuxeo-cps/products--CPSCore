@@ -6,7 +6,8 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- made the FileDownloader work even if the file is computed by a field read
+  expression
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

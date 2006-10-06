@@ -692,16 +692,13 @@ class FileDownloader(Acquisition.Explicit):
         ob = self.ob
         if state == 0:
             # First call, swallow attribute
-            if not hasattr(aq_base(ob), name):
-                logger.debug("Not a base attribute: '%s'", name)
-                raise KeyError(name)
-            file = getattr(ob, name)
-            if file is not None and not isinstance(file, File):
+            file_ = self._getFile(ob, name)
+            if file_ is not None and not isinstance(file_, File):
                 logger.debug("Attribute '%s' is not a File but %s",
-                             name, `file`)
+                             name, `file_`)
                 raise KeyError(name)
             self.attrname = name
-            self.file = file
+            self.file = file_
             self.state = 1
             return self
         elif state == 1:
@@ -794,8 +791,8 @@ class FileDownloader(Acquisition.Explicit):
             self.logger.debug("BadRequest: Cannot PUT with state != 2")
             raise 'BadRequest', "Cannot PUT with state != 2"
         document = self.proxy.getEditableContent()
-        file = getattr(document, self.attrname)
-        response = file.PUT(REQUEST, RESPONSE)
+        file_ = self._getFile(document, self.attrname)
+        response = file_.PUT(REQUEST, RESPONSE)
         # If the considered document is a CPSDocument we must use the edit()
         # method since this method does important things such as setting dirty
         # flags on modified fields.
@@ -803,7 +800,7 @@ class FileDownloader(Acquisition.Explicit):
         # We shouldn't use the file.PUT() method but it is helpful to get the
         # needed response object.
         if getattr(aq_base(document), '_has_generic_edit_method', 0):
-            document.edit({self.attrname: file}, proxy=self.proxy)
+            document.edit({self.attrname: file_}, proxy=self.proxy)
         return response
 
     security.declareProtected(ModifyPortalContent, 'LOCK')
@@ -814,8 +811,8 @@ class FileDownloader(Acquisition.Explicit):
             self.logger.debug("BadRequest: Cannot LOCK with state != 2")
             raise 'BadRequest', "Cannot LOCK with state != 2"
         document = self.proxy.getEditableContent()
-        file = getattr(document, self.attrname)
-        return file.LOCK(REQUEST, RESPONSE)
+        file_ = self._getFile(document, self.attrname)
+        return file_.LOCK(REQUEST, RESPONSE)
 
     security.declareProtected(ModifyPortalContent, 'UNLOCK')
     def UNLOCK(self, REQUEST, RESPONSE):
@@ -825,8 +822,8 @@ class FileDownloader(Acquisition.Explicit):
             self.logger.debug("BadRequest: Cannot UNLOCK with state != 2")
             raise 'BadRequest', "Cannot UNLOCK with state != 2"
         document = self.proxy.getEditableContent()
-        file = getattr(document, self.attrname)
-        return file.UNLOCK(REQUEST, RESPONSE)
+        file_ = self._getFile(document, self.attrname)
+        return file_.UNLOCK(REQUEST, RESPONSE)
 
     def wl_lockValues(self, killinvalids=0):
         """Handle HTTP (and presumably FTP?) wl_lockValues requests (WebDAV)."""
@@ -835,8 +832,8 @@ class FileDownloader(Acquisition.Explicit):
             self.logger.debug("BadRequest: Cannot wl_lockValues with state != 2")
             raise 'BadRequest', "Cannot wl_lockValues with state != 2"
         document = self.proxy.getEditableContent()
-        file = getattr(document, self.attrname)
-        return file.wl_lockValues(killinvalids)
+        file_ = self._getFile(document, self.attrname)
+        return file_.wl_lockValues(killinvalids)
 
     def wl_isLocked(self):
         """Handle HTTP (and presumably FTP?) wl_isLocked requests (WebDAV)."""
@@ -845,8 +842,18 @@ class FileDownloader(Acquisition.Explicit):
             self.logger.debug("BadRequest: Cannot wl_isLocked with state != 2")
             raise 'BadRequest', "Cannot wl_isLocked with state != 2"
         document = self.proxy.getEditableContent()
-        file = getattr(document, self.attrname)
-        return file.wl_isLocked()
+        file_ = self._getFile(document, self.attrname)
+        return file_.wl_isLocked()
+
+    def _getFile(self, document, name):
+        if hasattr(aq_base(document), name):
+            # fast: usually file is stored as a subobject by the storage
+            # adapter
+            return getattr(document, name)
+        else:
+            # make it work when file is computed by a field read expression
+            return document.getDataModel(proxy=self.proxy)[name]
+
 
 InitializeClass(FileDownloader)
 
@@ -1366,11 +1373,11 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
     security.declareProtected(View, 'thisProxyFolder')
     def thisProxyFolder(self):
         """Get the closest proxy folder from a context.
-        
+
         Used by acquisition.
         """
         return self
-        
+
     manage_options = (CPSBaseFolder.manage_options[:1] +
                       ProxyBase.proxybase_manage_options +
                       CPSBaseFolder.manage_options[1:]
@@ -1451,7 +1458,7 @@ class ProxyFolderishDocument(ProxyFolder):
     security.declareProtected(View, 'thisProxyFolder')
     def thisProxyFolder(self):
         """Get the closest proxy folder from a context.
-        
+
         Used by acquisition.
         """
         return self.aq_parent.thisProxyFolder()
@@ -1525,7 +1532,7 @@ class ProxyBTreeFolder(ProxyBase, CPSBaseBTreeFolder):
     security.declareProtected(View, 'thisProxyFolder')
     def thisProxyFolder(self):
         """Get the closest proxy folder from a context.
-        
+
         Used by acquisition.
         """
         return self
@@ -1576,7 +1583,7 @@ class ProxyBTreeFolderishDocument(ProxyBTreeFolder):
     security.declareProtected(View, 'thisProxyFolder')
     def thisProxyFolder(self):
         """Get the closest proxy folder from a context.
-        
+
         Used by acquisition.
         """
         return self.aq_parent.thisProxyFolder()
