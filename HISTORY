@@ -1,4 +1,25 @@
 ===========================================================
+Package: CPSCore 3.35.1
+===========================================================
+First release built by: ogrisel at: 2006-10-10T11:43:32
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.35.1
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@49442
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- made the FileDownloader work even if the file is computed by a field read
+  expression
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.35.0
 ===========================================================
 First release built by: ogrisel at: 2006-10-04T21:17:25
