@@ -186,7 +186,7 @@ class TreesTool(UniqueObject, Folder):
     security.declareProtected(ViewManagementScreens, 'manage_addCPSTreeCache')
     def manage_addCPSTreeCache(self, id, REQUEST=None):
         """Add a tree cache."""
-        ob = TreeCache(id)
+	ob = TreeCache(id)
         id = ob.getId()
         self._setObject(id, ob)
         ob = self._getOb(id)
@@ -697,8 +697,15 @@ class TreeCache(SimpleItemWithProperties):
                         # Inconsistent tree, don't break completely
                         continue
 
-                    # Check depth
+                    # update todo list if appropriate before any filering
+                    # so that discarding doesn't break order
+                    # Process children in order (depth first)
                     depth = info['depth']
+                    children = info['children']
+                    if depth < stop_depth:
+                        todo = children + todo
+                    
+                    # Check depth (second statement there for safety)
                     if depth < start_depth or depth > stop_depth:
                         continue
 
@@ -711,14 +718,11 @@ class TreeCache(SimpleItemWithProperties):
                     # Keep it
                     info = info.copy()
                     info['visible'] = visible
-                    children = info['children']
                     del info['children']
 
                     res.append(info)
 
-                    # Next, process children in order (depth first) if appropriate
-                    if depth < stop_depth:
-                        todo = children + todo
+
 
         if count_children and (filter or stop_depth != 999):
             # Compute nb_children for each level

@@ -646,7 +646,7 @@ class TreeCacheTest(SecurityRequestTest):
                            ])
 
         # depth and prefix filtering
-        l = cache.getList(filter=False, order=False, count_children=False,
+	l = cache.getList(filter=False, order=False, count_children=False,
                           prefix='root/foo/bar/b')
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo/bar/b',
@@ -664,6 +664,7 @@ class TreeCacheTest(SecurityRequestTest):
                            'root/foo/bar/b/d/d2',
                            'root/foo/bar/b/z',
                            ])
+
         l = cache.getList(filter=False, order=False, count_children=False,
                           start_depth=2, stop_depth=3)
         self.assertEquals([d['rpath'] for d in l],
@@ -679,6 +680,18 @@ class TreeCacheTest(SecurityRequestTest):
                            ('root/foo/baz',   0),
                            ])
 
+        # depth filtering doesn't break order
+        l = cache.getList(filter=False, order=True, count_children=False,
+                          start_depth=1)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo/baz',
+                           'root/foo/bar',
+                           'root/foo/bar/b',
+                           'root/foo/bar/b/z',
+                           'root/foo/bar/b/d',
+                           'root/foo/bar/b/d/d2',
+                           'root/foo/bar/b/d/d1',
+                           ])
 
     def test_deep_with_filtering(self):
         # With visibility filtering, not visible starting from d
@@ -741,6 +754,18 @@ class TreeCacheTest(SecurityRequestTest):
                            ('root/foo/bar/b', 0),
                            ('root/foo/baz',   0),
                            ])
+
+        # with order and start_depth
+        # one should also test that visible subnodes of hidden ones
+        # are in order (was very likely to be broken)
+        l = cache.getList(filter=True, order=True, count_children=False,
+                          start_depth=1, stop_depth=2)
+        self.assertEquals([d['rpath'] for d in l],
+                          ['root/foo/baz',
+                           'root/foo/bar',  
+                           'root/foo/bar/b',
+                           ])
+
 
     def test_compression_1(self):
         self.makeInfrastructure()
