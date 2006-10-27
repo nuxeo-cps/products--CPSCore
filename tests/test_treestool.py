@@ -646,7 +646,7 @@ class TreeCacheTest(SecurityRequestTest):
                            ])
 
         # depth and prefix filtering
-	l = cache.getList(filter=False, order=False, count_children=False,
+        l = cache.getList(filter=False, order=False, count_children=False,
                           prefix='root/foo/bar/b')
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo/bar/b',
@@ -762,7 +762,7 @@ class TreeCacheTest(SecurityRequestTest):
                           start_depth=1, stop_depth=2)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo/baz',
-                           'root/foo/bar',  
+                           'root/foo/bar',
                            'root/foo/bar/b',
                            ])
 

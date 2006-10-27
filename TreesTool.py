@@ -704,7 +704,7 @@ class TreeCache(SimpleItemWithProperties):
                     children = info['children']
                     if depth < stop_depth:
                         todo = children + todo
-                    
+
                     # Check depth (second statement there for safety)
                     if depth < start_depth or depth > stop_depth:
                         continue
