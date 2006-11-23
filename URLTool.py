@@ -167,10 +167,11 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         return url
 
     security.declarePublic("getBreadCrumbs")
-    def getBreadCrumbs(self, context=None, only_parents=0, restricted=False):
+    def getBreadCrumbs(self, context=None, only_parents=False, show_root=None,
+                       restricted=False):
         """Return parents for context
 
-        If only_parents is set to 1, the object itself is not returned in bread
+        If only_parents is set to True, the object itself is not returned in bread
         crumbs.
         """
         root = self.getPhysicalRoot()
@@ -190,7 +191,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             parents = [context]
 
         current = context
-        while 1:
+        while True:
             parent = aq_parent(aq_inner(current))
             if parent not in (vr, portal, root):
                 if not restricted or _checkPermission(View, parent):
@@ -200,7 +201,11 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                 break
 
         # add virtual root
-        if self.breadcrumbs_show_root:
+        if show_root is None:
+            breadcrumbs_show_root = self.breadcrumbs_show_root
+        else:
+            breadcrumbs_show_root = show_root
+        if breadcrumbs_show_root:
             if len(parents) == 0 or parents[-1] != vr:
                 parents.append(vr)
 
@@ -209,13 +214,14 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         return parents
 
     security.declarePublic("getBreadCrumbsInfo")
-    def getBreadCrumbsInfo(self, context=None, only_parents=0, title_size=20):
+    def getBreadCrumbsInfo(self, context=None, only_parents=False,
+                           show_root=None, title_size=20):
+        """Title is truncated so that its size is 20 characters (middle truncture)
         """
-        Title is truncated so that its size is 20 characters (middle truncture)
-        """
-        parents = self.getBreadCrumbs(context, only_parents)
+        parents = self.getBreadCrumbs(context, only_parents=only_parents,
+                                      show_root=show_root)
         items = []
-        first_loop = 1
+        first_loop = True
         for obj in parents:
             visible = _checkPermission(View, obj)
             if visible or self.breadcrumbs_show_invisible:
@@ -248,7 +254,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                               'url': url,
                               'rpath': rpath,
                               })
-            first_loop = 0
+            first_loop = False
         return items
 
 InitializeClass(URLTool)

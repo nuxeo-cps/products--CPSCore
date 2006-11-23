@@ -9,4 +9,5 @@ Bug fixes
 -
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
-- 
+- Added the "show_root" options to the getBreadCrumbs and getBreadCrumbsInfo
+  methods.
