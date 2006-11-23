@@ -1,4 +1,25 @@
 ===========================================================
+Package: CPSCore 3.36.0
+===========================================================
+First release built by: gracinet at: 2006-11-23T21:01:00
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.36.0
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@50246
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+-
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- Added the "show_root" options to the getBreadCrumbs and getBreadCrumbsInfo
+  methods.
+
+===========================================================
 Package: CPSCore 3.35.2
 ===========================================================
 First release built by: gracinet at: 2006-11-16T18:15:05
