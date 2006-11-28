@@ -113,6 +113,11 @@ def handleObjectEvent(ob, event):
     elif IContainerModifiedEvent.providedBy(event):
         event_type = 'sys_order_object'
     elif IObjectModifiedEvent.providedBy(event):
+        if (len(event.descriptions) == 1 and
+            ISecurityModificationDescription.providedBy(event.descriptions[0])
+            ):
+            # don't turn a sys_modify_security into a sys_modify_object
+            return
         event_type = 'sys_modify_object'
     else:
         return
