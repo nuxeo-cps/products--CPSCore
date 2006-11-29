@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSCore 3.36.1
+===========================================================
+First release built by: gracinet at: 2006-11-29T01:52:31
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.36.1
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@50353
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- speed up reindexObjectSecurity by fixing sys_modify_security dispatching
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.36.0
 ===========================================================
 First release built by: gracinet at: 2006-11-23T21:01:00

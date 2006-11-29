@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- speed up reindexObjectSecurity by fixing sys_modify_security dispatching
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
