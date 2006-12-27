@@ -35,6 +35,7 @@ from Products.CMFCore.permissions import AddPortalContent, ManagePortal
 import AllowModules
 
 # Patches
+import PatchPropertyManager
 import PatchCMFCore
 import PatchCopyright
 
