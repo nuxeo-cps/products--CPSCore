@@ -3,7 +3,7 @@ Requires
 -
 New features
 ~~~~~~~~~~~~
--
+- i18n unicode utf-8 support in progress
 Bug fixes
 ~~~~~~~~~
 -
