@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSCore 3.36.2
+===========================================================
+First release built by: gracinet at: 2007-02-08T18:30:18
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.36.2
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@51046
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #1812: Purge Local Roles doesn't work with CPSUserFolder
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.36.1
 ===========================================================
 First release built by: gracinet at: 2006-11-29T01:52:31
