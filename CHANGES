@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #1812: Purge Local Roles doesn't work with CPSUserFolder
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
