@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSCore 3.37.0-rel1271525924
+===========================================================
+First release built by: ben at: 2007-02-21T16:44:29
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.37.0-rel1271525924
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/branches/rel1271525924@51183
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+- i18n unicode utf-8 support in progress
+Bug fixes
+~~~~~~~~~
+-
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.36.1
 ===========================================================
 First release built by: gracinet at: 2006-11-29T01:52:31
