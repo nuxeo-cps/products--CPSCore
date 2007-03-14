@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSCore 3.36.3
+===========================================================
+First release built by: div at: 2007-03-14T12:23:53
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.36.3
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@51329
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- Improved documentation in EventServiceTool.
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.36.2
 ===========================================================
 First release built by: gracinet at: 2007-02-08T18:30:18
