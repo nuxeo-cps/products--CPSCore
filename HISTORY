@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSCore 3.37.0
+===========================================================
+First release built by: madarche at: 2007-04-18T14:55:50
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.37.0
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@51558
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+-
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- Allow zExceptions Forbidden.
+
+===========================================================
 Package: CPSCore 3.36.3
 ===========================================================
 First release built by: div at: 2007-03-14T12:23:53
