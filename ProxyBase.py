@@ -273,6 +273,9 @@ class ProxyBase(Base):
                 raise KeyError(name)
             viewer = LanguageViewer(self)
             return viewer.__of__(self)
+        if getattr(self, name, None) is not None:
+            # Acquire skins first, needed in Zope >= 2.9.5
+            return getattr(self, name)
         ob = self._getContent()
         if ob is None:
             raise KeyError(name)
