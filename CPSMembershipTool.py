@@ -1,4 +1,4 @@
-# (C) Copyright 2002-2005 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002-2007 Nuxeo SAS <http://nuxeo.com>
 # Authors:
 # Florent Guillaume <fg@nuxeo.com>
 # Alexandre Fernandez <alex@nuxeo.com>
@@ -19,18 +19,13 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 #
-#
-# Replace MonkeyPatch of Membershiptool by real object use
-#
 # $Id$
 
 import sys
-
-# python sets from 2.3 onward
-try: set
-except NameError: from sets import Set as set
-
 from types import StringType
+
+from zLOG import LOG, DEBUG, PROBLEM, ERROR
+from zope.interface import implements
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
@@ -39,15 +34,13 @@ from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.SecurityManagement import setSecurityManager
 from AccessControl.User import nobody
 from AccessControl.User import UnrestrictedUser
+from AccessControl.Permissions import manage_users as ManageUsers
 from Acquisition import aq_base, aq_parent, aq_inner
 from ZODB.POSException import ConflictError
-
-from zope.interface import implements
 from Products.CMFCore.interfaces import IMembershipTool
 
 from Products.CMFCore.permissions import View, ManagePortal
 from Products.CMFCore.permissions import ListPortalMembers
-from AccessControl.Permissions import manage_users as ManageUsers
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import _getAuthenticatedUser
@@ -57,7 +50,6 @@ from Products.CMFCore.MemberDataTool import MemberDataTool
 from Products.CPSUtil.id import generateId
 from utils import mergedLocalRoles, mergedLocalRolesWithPath
 
-from zLOG import LOG, DEBUG, PROBLEM, ERROR
 
 
 class CPSUnrestrictedUser(UnrestrictedUser):
