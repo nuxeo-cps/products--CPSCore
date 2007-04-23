@@ -1,12 +1,12 @@
 Requires
 ~~~~~~~~
--
+- Zope >= 2.9.5
 New features
 ~~~~~~~~~~~~
 -
 Bug fixes
 ~~~~~~~~~
--
+- fixing ProxyBase getitems to work with Zope >= 2.9.5
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - Preparing version number for CPS 3.4.5. 
