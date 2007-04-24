@@ -21,10 +21,10 @@
 #
 # $Id$
 
+from logging import getLogger
 import sys
 from types import StringType
 
-from zLOG import LOG, DEBUG, PROBLEM, ERROR
 from zope.interface import implements
 from Globals import InitializeClass, DTMLFile
 from AccessControl import ClassSecurityInfo
@@ -182,7 +182,7 @@ class CPSMembershipTool(MembershipTool):
                     obj.manage_setLocalRoles(member_id, new_roles)
 
     security.declareProtected(View, 'deleteLocalRoles')
-    def deleteLocalRoles(self, obj, member_ids, reindex=1, recursive=0,
+    def deleteLocalRoles(self, obj, member_ids, reindex=True, recursive=False,
                          member_role=''):
         """ Delete local roles for members member_ids """
         member = self.getAuthenticatedMember()
@@ -503,6 +503,7 @@ class CPSMembershipTool(MembershipTool):
         Provides an opportunity for a portal_memberdata tool to retrieve and
         store member data independently of the user object.
         """
+        logger = getLogger('CPSCore.CPSMembershipTool.wrapUser')
         b = getattr(u, 'aq_base', None)
         if b is None:
             # u isn't wrapped at all.  Wrap it in self.acl_users.
@@ -528,8 +529,7 @@ class CPSMembershipTool(MembershipTool):
             except ConflictError: # Bugfix
                 raise
             except:
-                LOG('CPSCore.CPSMembershipTool', ERROR,
-                    'Error during wrapUser', error=sys.exc_info())
+                logger.error('Error during wrapUser', error=sys.exc_info())
         return u
 
     # CMF 1.5 method plus check_permission argument
@@ -591,30 +591,58 @@ class CPSMembershipTool(MembershipTool):
         return tuple(member_ids)
 
     security.declareProtected(ManageUsers, 'purgeDeletedMembersLocalRoles')
-    def purgeDeletedMembersLocalRoles(self):
-        """Trigger the purge of localroles of member_ids stored in
-        pending_members
+    def purgeDeletedMembersLocalRoles(self, lazy=True):
+        """Purge the localroles corresponding to now deleted users.
 
-        return the list of ids that where cleaned
+        If lazy is set to True it finds the deleted users through the
+        "pending_members" property. Set lazy to False when :
+        - there has been a desynchronisation of the pending_members
+        - the used combination of UserFolder and CPSDirectories does not
+          fill the pending_members
 
-        WARNING: This can take a while (security reindexing)
+        Return the list of ids that were cleaned.
+
+        WARNING: This can take a while (security reindexing) especially if lazy
+        is set to False.
         """
-        # Remove duplicates
-        pending_members = set(self.getProperty('pending_members'))
-
-        # Filter out the member_ids that correspond to actual members
-        pending_members = [mid for mid in pending_members
-                           if self.getMemberById(mid) is None]
-
-        # Purge
+        logger = getLogger('CPSCore.CPSMembershipTool.purgeDeletedMembersLocalRoles')
         utool = getToolByName(self, 'portal_url')
-        self.deleteLocalRoles(utool.getPortalObject(), pending_members,
-                reindex=1, recursive=1)
+        portal_catalog = getToolByName(self, 'portal_catalog')
+        portal = utool.getPortalObject()
+        if lazy:
+            # Retrieving members ids' awaiting to be deleted
+            # and make sure there isn't any duplicates in this list.
+            pending_members_ids = set(self.getProperty('pending_members'))
+        else:
+            pending_members_ids = set()
+            path = '/'.join(portal.getPhysicalPath())
+            brains = portal_catalog(path=path,
+                                    portal_type=('Workspace', 'Section'),
+                                    cps_filter_sets='default_languages',
+                                    )
+            for brain in brains:
+                proxy = brain.getObject()
+                logger.debug("Checking roles on = %s" % utool.getRpath(proxy))
+                roles_defs = proxy.__ac_local_roles__
+                logger.debug("roles = %s" % str(roles_defs))
+                for id in roles_defs.keys():
+                    pending_members_ids.add(id)
+
+        # Keeping only the members ids of now non-existing users
+        logger.debug("pending_members_ids = %s" % pending_members_ids)
+        members_ids_to_delete = [member_id
+                                 for member_id in pending_members_ids
+                                 if self.getMemberById(member_id) is None]
+        logger.debug("members_ids_to_delete = %s" % members_ids_to_delete)
+
+        # Doing the actual purge
+        self.deleteLocalRoles(portal, members_ids_to_delete,
+                              reindex=True, recursive=True)
 
         # Updating the pending_members property
         self.pending_members = ()
 
-        return pending_members
+        return members_ids_to_delete
 
     #
     #   ZMI interface methods
@@ -643,11 +671,11 @@ class CPSMembershipTool(MembershipTool):
                                       '?manage_tabs_message=%s' % message)
 
     security.declareProtected(ManagePortal, 'manage_purgeLocalRoles')
-    def manage_purgeLocalRoles(self, REQUEST=None):
+    def manage_purgeLocalRoles(self, lazy=True, REQUEST=None):
         """Call 'purgeDeletedMembersLocalRoles' to clean localroles for ids
         stored in the pending_members property
         """
-        ids = self.purgeDeletedMembersLocalRoles()
+        ids = self.purgeDeletedMembersLocalRoles(lazy)
         if ids:
             message = "Ids %s cleaned." % ids
         else:

@@ -6,7 +6,8 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- fixing ProxyBase getitems to work with Zope >= 2.9.5
+- Fixing ProxyBase getitems to work with Zope >= 2.9.5.
+- Partial fix for #1812: "Purge Local Roles doesn't work with CPSUserFolder".
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - Preparing version number for CPS 3.4.5. 
