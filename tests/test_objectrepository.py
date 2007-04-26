@@ -20,6 +20,7 @@
 """Tests for the object repository
 """
 
+import logging
 import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
 
@@ -112,8 +113,8 @@ class ObjectRepositoryToolTests(SecurityRequestTest, LogInterceptor):
         ortool.createRevision('foo', 'DummyContent', 'moo')
 
         # Check getObjectRevision
-        from zLOG import ERROR
-        self._catch_log_errors(ERROR)
+        self._catch_log_errors(ignored_level=logging.ERROR,
+                               subsystem='CPSCore.ObjectRepositoryTool')
         self.logged = None
         self.assertRaises(KeyError, ortool.getObjectRevision, 'foo', 99)
         self.assert_(self.logged)
