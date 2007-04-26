@@ -22,7 +22,8 @@ The object repository tool stores versions of documents.
 It also stores workflow-related information for those documents.
 """
 
-from zLOG import LOG, ERROR, DEBUG, TRACE
+
+from logging import getLogger
 import random
 from Globals import InitializeClass, DTMLFile
 from cStringIO import StringIO
@@ -42,6 +43,7 @@ from Products.CPSWorkflow.workflowtool import Config_id
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
 from Products.CPSCore.EventServiceTool import getEventService
 
+logger = getLogger('CPSCore.ObjectRepositoryTool')
 
 class NoWorkflowConfiguration:
     """Class for a workflow configuration object that denies
@@ -159,8 +161,7 @@ class ObjectRepositoryTool(UniqueObject,
         try:
             return self._getOb(id)
         except KeyError:
-            LOG('ObjectRepositoryTool', ERROR,
-                'Did not find expected document %s' % id)
+            logger.error('Did not find expected document %s' % id)
             raise
 
     # XXX unused except by unit tests
@@ -345,7 +346,7 @@ class ObjectRepositoryTool(UniqueObject,
         if self.hasObject(id):
             self._delObject(id)
         self._setObject(id, ob)
-        LOG('ObjectRepositoryTool', DEBUG, 'importObject id=%s' % id)
+        logger.debug('importObject id=%s' % id)
 
     #
     # Management
@@ -384,8 +385,7 @@ class ObjectRepositoryTool(UniqueObject,
         for id in self.objectIds():
             docid, rev = self._splitId(id)
             if docid is None:
-                LOG('ObjectRepositoryTool', DEBUG,
-                    "Bad id in repository: '%s'" % id)
+                logger.debug("Bad id in repository: '%s'" % id)
                 continue
             nb_revs += 1
             docids_d[docid] = None
@@ -419,7 +419,7 @@ class ObjectRepositoryTool(UniqueObject,
     def purgeDeletedRevisions(self):
         infos = self.getManagementInformation()
         ids_to_del = infos['ids_unused_revs_docids']
-        LOG('purgeDeletedRevisions', DEBUG, 'deleting %s' % ids_to_del)
+        logger.debug('purgeDeletedRevisions deleting %s' % ids_to_del)
         self.manage_delObjects(ids_to_del)
 
     security.declareProtected(ManagePortal, 'purgeArchivedRevisions')
@@ -451,8 +451,8 @@ class ObjectRepositoryTool(UniqueObject,
                 revids = revids[:-keep_max]
             for rev, id in revids:
                 ids_to_del.append(id)
-        LOG('purgeArchivedRevisions', DEBUG, 'keep_max=%s, deleting %s'
-            % (keep_max, ids_to_del))
+        logger.debug('purgeArchivedRevisions keep_max=%s, deleting %s'
+                     % (keep_max, ids_to_del))
         self.manage_delObjects(ids_to_del)
 
     #
@@ -472,7 +472,7 @@ class ObjectRepositoryTool(UniqueObject,
             docid, rev = id.split('__')
             rev = int(rev)
         except ValueError:
-            LOG('ObjectRepositoryTool', ERROR, 'Cannot split id %s' % id)
+            logger.error('Cannot split id %s' % id)
             return (None, None)
         else:
             return (docid, rev)
