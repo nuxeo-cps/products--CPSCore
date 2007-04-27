@@ -143,8 +143,9 @@ class CPSMembershipTool(MembershipTool):
             return member_roles
 
     security.declareProtected(View, 'setLocalRoles')
-    def setLocalRoles(self, obj, member_ids, member_role, reindex=1):
-        """ Set local roles on an item """
+    def setLocalRoles(self, obj, member_ids, member_role, reindex=True):
+        """Set local roles on obj for the members designated by member_ids.
+        """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
         has_proper_role = 0
@@ -165,26 +166,13 @@ class CPSMembershipTool(MembershipTool):
             # thus PortalContent and PortalFolder.
             obj.reindexObjectSecurity()
 
-    security.declarePrivate('_deleteLocalRoles')
-    def _deleteLocalRoles(self, obj, member_ids, member_role=''):
-        """Delete local roles or member_role  on obj for member_ids
-        """
-        if not member_role:
-            obj.manage_delLocalRoles(userids=member_ids)
-        else:
-            for member_id in member_ids:
-                current_roles = list(obj.get_local_roles_for_userid(
-                    userid=member_id))
-                new_roles = [role for role in current_roles
-                             if role != member_role]
-                obj.manage_delLocalRoles(userids=[member_id])
-                if new_roles:
-                    obj.manage_setLocalRoles(member_id, new_roles)
-
     security.declareProtected(View, 'deleteLocalRoles')
     def deleteLocalRoles(self, obj, member_ids, reindex=True, recursive=False,
-                         member_role=''):
-        """ Delete local roles for members member_ids """
+                         member_role=None):
+        """Delete local roles for members member_ids.
+
+        If member_role is None, delete all roles, otherwise delete only this one.
+        """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
         has_proper_role = 0
@@ -208,10 +196,26 @@ class CPSMembershipTool(MembershipTool):
         if reindex:
             obj.reindexObjectSecurity()
 
+    security.declarePrivate('_deleteLocalRoles')
+    def _deleteLocalRoles(self, obj, member_ids, member_role=None):
+        """Delete local roles or member_role on obj for member_ids.
+        """
+        if not member_role:
+            obj.manage_delLocalRoles(userids=member_ids)
+        else:
+            for member_id in member_ids:
+                current_roles = list(obj.get_local_roles_for_userid(
+                    userid=member_id))
+                new_roles = [role for role in current_roles
+                             if role != member_role]
+                obj.manage_delLocalRoles(userids=[member_id])
+                if new_roles:
+                    obj.manage_setLocalRoles(member_id, new_roles)
 
     security.declareProtected(View, 'setLocalGroupRoles')
-    def setLocalGroupRoles(self, obj, ids, role, reindex=1):
-        """Set local group roles on an item."""
+    def setLocalGroupRoles(self, obj, ids, role, reindex=True):
+        """Set local roles on obj for the groups designated by ids.
+        """
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
         has_proper_role = 0
@@ -229,8 +233,9 @@ class CPSMembershipTool(MembershipTool):
             obj.reindexObjectSecurity()
 
     security.declareProtected(View, 'deleteLocalGroupRoles')
-    def deleteLocalGroupRoles(self, obj, ids, role=None, reindex=1):
-        """Delete local group roles for members ids.
+    def deleteLocalGroupRoles(self, obj, ids, role=None,
+                              reindex=True, recursive=False):
+        """Delete local roles for groups designated by ids.
 
         If role is None, delete all roles, otherwise delete only this one.
         Never deletes the roles a user doesn't already have,
@@ -241,12 +246,12 @@ class CPSMembershipTool(MembershipTool):
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
         if 'Manager' in my_roles:
-            has_managing_role = 1
+            has_managing_role = True
         else:
-            has_managing_role = 0
+            has_managing_role = False
             for r in self.roles_managing_local_roles:
                 if r in my_roles:
-                    has_managing_role = 1
+                    has_managing_role = True
                     break
         if role is None:
             if has_managing_role:
@@ -258,8 +263,28 @@ class CPSMembershipTool(MembershipTool):
                 removed_roles = [role]
             else:
                 # Cannot change anything
-                return 0
-        changed = 0
+                return False
+
+        changed = False
+        if recursive:
+            path = '/'.join(obj.getPhysicalPath())
+            portal_catalog = getToolByName(self, 'portal_catalog')
+            results = portal_catalog(cps_filter_sets='searchable', path=path,
+                                     # TODO : The criteria here should be
+                                     # the folderish-ness.
+                                     portal_type=('Workspace', 'Section'),
+                                     )
+            for brain in results:
+                ob = brain.getObject()
+                changed = changed or self._deleteLocalGroupRoles(ob, ids, removed_roles)
+        else:
+            changed = _deleteLocalGroupRoles(obj, ids, removed_roles)
+        if changed and reindex:
+            obj.reindexObjectSecurity()
+
+    security.declarePrivate('_deleteLocalGroupRoles')
+    def _deleteLocalGroupRoles(self, obj, ids, removed_roles):
+        changed = False
         for id in ids:
             current_roles = list(obj.get_local_roles_for_groupid(id))
             if removed_roles is None: # all
@@ -267,14 +292,13 @@ class CPSMembershipTool(MembershipTool):
             else:
                 roles = [r for r in current_roles if r not in removed_roles]
             if roles != current_roles:
-                changed = 1
+                changed = True
                 if roles:
                     obj.manage_setLocalGroupRoles(id, roles)
                 else:
                     obj.manage_delLocalGroupRoles([id])
-        if changed and reindex:
-            obj.reindexObjectSecurity()
         return changed
+
 
     security.declareProtected(ManagePortal, 'setMembersFolderById')
     def setMembersFolderById(self, id=''):
@@ -606,27 +630,49 @@ class CPSMembershipTool(MembershipTool):
         is set to False.
         """
         logger = getLogger('CPSCore.CPSMembershipTool.purgeDeletedMembersLocalRoles')
+        logger.debug("starting ...")
         utool = getToolByName(self, 'portal_url')
         portal_catalog = getToolByName(self, 'portal_catalog')
         portal = utool.getPortalObject()
+        aclu = portal.acl_users
         if lazy:
             # Retrieving members ids' awaiting to be deleted
             # and make sure there isn't any duplicates in this list.
             pending_members_ids = set(self.getProperty('pending_members'))
         else:
             pending_members_ids = set()
+            pending_groups_ids = set()
             path = '/'.join(portal.getPhysicalPath())
             brains = portal_catalog(path=path,
+                                    # TODO : The criteria here should be
+                                    # the folderish-ness.
                                     portal_type=('Workspace', 'Section'),
-                                    cps_filter_sets='default_languages',
+                                    # Only retrieve one proxy by document and
+                                    # not one proxy for each language version.
+                                    # Unfortunately this doesn't seem to work.
+                                    #cps_filter_sets='default_languages',
                                     )
+            # Since cps_filter_sets='default_languages' doesnt' work
+            # ensuring we only check a proxy once since?
+            proxies_map = {}
             for brain in brains:
                 proxy = brain.getObject()
-                logger.debug("Checking roles on = %s" % utool.getRpath(proxy))
-                roles_defs = proxy.__ac_local_roles__
-                logger.debug("roles = %s" % str(roles_defs))
-                for id in roles_defs.keys():
-                    pending_members_ids.add(id)
+                proxy_rpath = utool.getRpath(proxy)
+                logger.debug("Checking roles on = %s" % proxy_rpath)
+                proxies_map[proxy_rpath] = proxy
+
+            for proxy_rpath, proxy in proxies_map.items():
+                members_roles_defs = proxy.__ac_local_roles__
+                logger.debug("roles = %s" % str(members_roles_defs))
+                for member_id in members_roles_defs.keys():
+                    pending_members_ids.add(member_id)
+
+                groups_roles_defs = getattr(
+                    proxy, '__ac_local_group_roles__', None)
+                if groups_roles_defs is None:
+                    continue
+                for group_id in groups_roles_defs.keys():
+                    pending_groups_ids.add(group_id)
 
         # Keeping only the members ids of now non-existing users
         logger.debug("pending_members_ids = %s" % pending_members_ids)
@@ -635,13 +681,23 @@ class CPSMembershipTool(MembershipTool):
                                  if self.getMemberById(member_id) is None]
         logger.debug("members_ids_to_delete = %s" % members_ids_to_delete)
 
+        logger.debug("pending_groups_ids = %s" % pending_groups_ids)
+        groups_ids_to_delete = [group_id
+                                for group_id in pending_groups_ids
+                                if aclu.getGroupById(group_id, default=None)
+                                is None]
+        logger.debug("groups_ids_to_delete = %s" % groups_ids_to_delete)
+
         # Doing the actual purge
         self.deleteLocalRoles(portal, members_ids_to_delete,
                               reindex=True, recursive=True)
+        self.deleteLocalGroupRoles(portal, groups_ids_to_delete,
+                                   reindex=True, recursive=True)
 
         # Updating the pending_members property
         self.pending_members = ()
 
+        logger.debug("DONE")
         return members_ids_to_delete
 
     #
