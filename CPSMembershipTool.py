@@ -278,7 +278,7 @@ class CPSMembershipTool(MembershipTool):
                 ob = brain.getObject()
                 changed = changed or self._deleteLocalGroupRoles(ob, ids, removed_roles)
         else:
-            changed = _deleteLocalGroupRoles(obj, ids, removed_roles)
+            changed = self._deleteLocalGroupRoles(obj, ids, removed_roles)
         if changed and reindex:
             obj.reindexObjectSecurity()
 
