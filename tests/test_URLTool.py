@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-15 -*-
-# (C) Copyright 2003 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2003-2007 Nuxeo SAS <http://nuxeo.com>
 # Author: Stéfane Fermigier <sf@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,25 +17,21 @@
 # 02111-1307, USA.
 #
 # $Id$
-#
 
+import transaction
+from OFS.Folder import Folder
 import unittest
 from Testing.makerequest import makerequest
 import Testing.ZopeTestCase.ZopeLite as Zope2
 from Testing import ZopeTestCase
-ZopeTestCase.installProduct('CMFCore', quiet=1)
-ZopeTestCase.installProduct('SiteAccess', quiet=1)
-
-
-from OFS.Folder import Folder
-
-from Products.CPSCore.URLTool import URLTool
-from Products.CPSCore.CPSMembershipTool import CPSMembershipTool
 
 from Products.SiteAccess.VirtualHostMonster import VirtualHostMonster
 
-import transaction
+from Products.CPSCore.URLTool import URLTool
 
+
+ZopeTestCase.installProduct('CMFCore', quiet=1)
+ZopeTestCase.installProduct('SiteAccess', quiet=1)
 
 class URLToolTests(unittest.TestCase):
 
