@@ -639,6 +639,8 @@ class CPSMembershipTool(MembershipTool):
             # Retrieving members ids' awaiting to be deleted
             # and make sure there isn't any duplicates in this list.
             pending_members_ids = set(self.getProperty('pending_members'))
+            # Purge of deleted groups local roles cannot be done in lazy mode
+            pending_groups_ids = set()
         else:
             pending_members_ids = set()
             pending_groups_ids = set()
@@ -662,13 +664,14 @@ class CPSMembershipTool(MembershipTool):
                 proxies_map[proxy_rpath] = proxy
 
             for proxy_rpath, proxy in proxies_map.items():
-                members_roles_defs = proxy.__ac_local_roles__
-                logger.debug("roles = %s" % str(members_roles_defs))
+                members_roles_defs = getattr(proxy, '__ac_local_roles__', None)
+                if members_roles_defs is None:
+                    continue
                 for member_id in members_roles_defs.keys():
                     pending_members_ids.add(member_id)
 
-                groups_roles_defs = getattr(
-                    proxy, '__ac_local_group_roles__', None)
+                groups_roles_defs = getattr(proxy,
+                                            '__ac_local_group_roles__', None)
                 if groups_roles_defs is None:
                     continue
                 for group_id in groups_roles_defs.keys():
