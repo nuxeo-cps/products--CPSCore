@@ -519,43 +519,6 @@ class CPSMembershipTool(MembershipTool):
         """Search the membership."""
         return MembershipTool.searchMembers(self, search_param, search_term)
 
-    # Bugfix included in 1.4 branch and HEAD of CMF:
-    security.declarePrivate('wrapUser')
-    def wrapUser(self, u, wrap_anon=0):
-        """Set up the correct acquisition wrappers for a user object.
-
-        Provides an opportunity for a portal_memberdata tool to retrieve and
-        store member data independently of the user object.
-        """
-        logger = getLogger('CPSCore.CPSMembershipTool.wrapUser')
-        b = getattr(u, 'aq_base', None)
-        if b is None:
-            # u isn't wrapped at all.  Wrap it in self.acl_users.
-            b = u
-            u = u.__of__(self.acl_users)
-        if (b is nobody and not wrap_anon) or hasattr(b, 'getMemberId'):
-            # This user is either not recognized by acl_users or it is
-            # already registered with something that implements the
-            # member data tool at least partially.
-            return u
-
-        # Apply any role mapping if we have it
-        if hasattr(self, 'role_map'):
-            for portal_role in self.role_map.keys():
-                if (self.role_map.get(portal_role) in u.roles and
-                        portal_role not in u.roles):
-                    u.roles.append(portal_role)
-
-        mdtool = getToolByName(self, 'portal_memberdata', None)
-        if mdtool:
-            try:
-                u = mdtool.wrapUser(u)
-            except ConflictError: # Bugfix
-                raise
-            except:
-                logger.error('Error during wrapUser', error=sys.exc_info())
-        return u
-
     # CMF 1.5 method plus check_permission argument
     security.declareProtected(ManageUsers, 'deleteMembers')
     def deleteMembers(self, member_ids, delete_memberareas=1,
