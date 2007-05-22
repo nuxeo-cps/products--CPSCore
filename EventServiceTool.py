@@ -1,6 +1,7 @@
-# (C) Copyright 2002-2005 Nuxeo SARL <http://nuxeo.com>
-# Authors: Julien Jalon
-#          Florent Guillaume <fg@nuxeo.com>
+# (C) Copyright 2002-2007 Nuxeo SAS <http://nuxeo.com>
+# Authors:
+# Julien Jalon
+# Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -247,9 +248,44 @@ class EventServiceTool(UniqueObject, OrderedFolder):
     #
     # API
     #
+    security.declarePublic('notifyEvent')
+    def notifyEvent(self, event_type, object, infos):
+        """Notifies subscribers of an event
+
+        This method is public, so it cannot notify of system events.
+        """
+        if event_type.startswith('sys_'):
+            raise Unauthorized, event_type
+        return self.notify(event_type, object, infos)
+
+    # BBB will be removed in CPS 3.5
+    security.declarePrivate('notify')
+    def notify(self, event_type, ob, infos):
+        """Notifies subscribers of an event the CPS way and the Zope3 way.
+
+        This features backward compatibility method for notifications and
+        redispatches as events the Zope3 way.
+        """
+        # Older CPS event tool subscribers notification
+        self.notifyCompat(event_type, ob, infos)
+
+        # Re-send as Zope3 event
+        if event_type == 'sys_del_object':
+            parent = aq_parent(aq_inner(ob))
+            zope.event.notify(ObjectWillBeRemovedEvent(ob, parent, ob.getId()))
+        elif event_type in ('sys_add_object', 'sys_add_cmf_object'):
+            parent = aq_parent(aq_inner(ob))
+            zope.event.notify(ObjectAddedEvent(ob, parent, ob.getId()))
+        elif event_type == 'sys_order_object':
+            zope.event.notify(ContainerModifiedEvent(ob))
+        elif event_type in ('sys_modify_object', 'modify_object'):
+            zope.event.notify(ObjectModifiedEvent(ob))
+        elif event_type == 'sys_modify_security':
+            self._notifySecurityRecursively(ob)
+
     security.declarePrivate('notifyCompat')
     def notifyCompat(self, event_type, object, infos):
-        """Notifies subscribers of an event
+        """Notifies subscribers of an event the CPS way.
 
         infos is a dictionary with keys:
           rpath
@@ -307,40 +343,6 @@ class EventServiceTool(UniqueObject, OrderedFolder):
         finally:
             # Cleanup potential reference to traceback object
             exc_info = None
-
-    security.declarePublic('notifyEvent')
-    def notifyEvent(self, event_type, object, infos):
-        """Notifies subscribers of an event
-
-        This method is public, so it cannot notify of system events.
-        """
-        if event_type.startswith('sys_'):
-            raise Unauthorized, event_type
-        return self.notify(event_type, object, infos)
-
-    # BBB will be removed in CPS 3.5
-    security.declarePrivate('notify')
-    def notify(self, event_type, ob, infos):
-        """Backward compatibility method for notifications.
-
-        Does old processing and also redispatches as an event.
-        """
-        # Older CPS event tool subscribers notification
-        self.notifyCompat(event_type, ob, infos)
-
-        # Re-send as event
-        if event_type == 'sys_del_object':
-            parent = aq_parent(aq_inner(ob))
-            zope.event.notify(ObjectWillBeRemovedEvent(ob, parent, ob.getId()))
-        elif event_type in ('sys_add_object', 'sys_add_cmf_object'):
-            parent = aq_parent(aq_inner(ob))
-            zope.event.notify(ObjectAddedEvent(ob, parent, ob.getId()))
-        elif event_type == 'sys_order_object':
-            zope.event.notify(ContainerModifiedEvent(ob))
-        elif event_type in ('sys_modify_object', 'modify_object'):
-            zope.event.notify(ObjectModifiedEvent(ob))
-        elif event_type == 'sys_modify_security':
-            self._notifySecurityRecursively(ob)
 
     def _notifySecurityRecursively(self, ob):
         # Backward compat for old notify not dispatched to sublocations,

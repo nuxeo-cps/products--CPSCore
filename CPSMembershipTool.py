@@ -611,8 +611,8 @@ class CPSMembershipTool(MembershipTool):
         pending_members = set(self.getProperty('pending_members'))
 
         # Filter out the member_ids that correspond to actual members
-        member_ids = self.listMemberIds()
-        pending_members = [id for id in pending_members if id not in member_ids]
+        pending_members = [mid for mid in pending_members
+                           if self.getMemberById(mid) is None]
 
         # Purge
         utool = getToolByName(self, 'portal_url')

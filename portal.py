@@ -1,4 +1,4 @@
-# (C) Copyright 2006 Nuxeo SAS <http://nuxeo.com>
+# (C) Copyright 2006-2007 Nuxeo SAS <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,7 @@ class CPSSite(CMFSite):
     meta_type = 'CPS Site'
     portal_type = 'Portal'
 
-    cps_version = ('CPS', 3, 4, 3)
+    cps_version = ('CPS', 3, 4, 4)
 
     _properties = (
         {'id': 'title', 'type': 'ustring',

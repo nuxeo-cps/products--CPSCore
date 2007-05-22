@@ -33,6 +33,7 @@ allow_type(type(re.compile('x')))
 allow_type(type(re.match('x', 'x')))
 allow_type(type(re.sub('x', 'x', 'x')))
 
+ModuleSecurityInfo('zExceptions').declarePublic('Forbidden')
 ModuleSecurityInfo('urllib').declarePublic('urlencode')
 ModuleSecurityInfo('urllib').declarePublic('quote')
 ModuleSecurityInfo('urllib').declarePublic('unquote')
@@ -47,10 +48,10 @@ ModuleSecurityInfo('types').declarePublic('IntType', 'StringType',
                                           'ListType', 'DictType',
                                           'TupleType')
 ModuleSecurityInfo('DateTime.DateTime').declarePublic('DateTimeError')
-ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
-        'resetSessionLanguageSelection')
 ModuleSecurityInfo(
     'Products.CMFCore.WorkflowCore').declarePublic('WorkflowException')
+ModuleSecurityInfo('Products.CPSCore.utils').declarePublic(
+        'resetSessionLanguageSelection')
 
 try:
     ModuleSecurityInfo(
