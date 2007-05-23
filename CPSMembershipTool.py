@@ -513,23 +513,15 @@ class CPSMembershipTool(MembershipTool):
         """List actions available through the tool."""
         return self._actions
 
-    # We redefine this to fix a security declaration problem in CMF <= 1.4.1.
-    security.declareProtected(ListPortalMembers, 'searchMembers')
-    def searchMembers(self, search_param, search_term):
-        """Search the membership."""
-        return MembershipTool.searchMembers(self, search_param, search_term)
-
-    # CMF 1.5 method plus check_permission argument
     security.declareProtected(ManageUsers, 'deleteMembers')
     def deleteMembers(self, member_ids, delete_memberareas=1,
                       delete_localroles=0, check_permission=1):
         """Delete members specified by member_ids.
 
-        XXX does not call local roles deletion by default but stores their
-        ids in the pending_members property. Use purgeDeletedMembersLocalRoles()
-        to delete them
+        This method does not call local roles deletion by default but stores
+        their ids in the pending_members property. Use
+        purgeDeletedMembersLocalRoles() to delete them.
         """
-
         # Delete members in acl_users.
         acl_users = self.acl_users
         # Don't know why CMF needs to check permission here ?
@@ -553,24 +545,24 @@ class CPSMembershipTool(MembershipTool):
                         "The underlying User Folder "
                         "doesn't support deleting members.")
 
-        # Delete member data in portal_memberdata.
+        # Delete member data in portal_memberdata
         mdtool = getToolByName(self, 'portal_memberdata', None)
         if mdtool:
             for member_id in member_ids:
                 mdtool.deleteMemberData(member_id)
 
-        # Delete members' home folders including all content items.
+        # Delete members' home folders including all content items
         if delete_memberareas:
             for member_id in member_ids:
                 self.deleteMemberArea(member_id)
 
-        # Delete members' local roles.
+        # Delete members' local roles
         if delete_localroles:
             utool = getToolByName(self, 'portal_url')
             self.deleteLocalRoles(utool.getPortalObject(), member_ids,
                                   reindex=1, recursive=1)
         # Or stores their ids in the pending_members property for a
-        # delayed purge
+        # delayed purge.
         else:
             already_pending =  set(self.getProperty('pending_members'))
             self.pending_members = tuple(already_pending.union(member_ids))
