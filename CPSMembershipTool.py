@@ -332,7 +332,6 @@ class CPSMembershipTool(MembershipTool):
         else:
             return 0
 
-    # Based on CVS 1.5 (HEAD) method.
     security.declarePublic(ManagePortal, 'createMemberArea')
     def createMemberArea(self, member_id=''):
         """Create a member area for member_id or authenticated user.
@@ -522,7 +521,7 @@ class CPSMembershipTool(MembershipTool):
         their ids in the pending_members property. Use
         purgeDeletedMembersLocalRoles() to delete them.
         """
-        # Delete members in acl_users.
+        # Delete members in acl_users
         acl_users = self.acl_users
         # Don't know why CMF needs to check permission here ?
         if check_permission and not _checkPermission(ManageUsers, acl_users):
@@ -532,14 +531,16 @@ class CPSMembershipTool(MembershipTool):
             if type(member_ids) is StringType:
                 member_ids = (member_ids,)
             member_ids = list(member_ids)
-            for member_id in member_ids[:]:
+            member_ids_to_delete = list(member_ids)
+
+            for member_id in member_ids_to_delete[:]:
                 if not acl_users.getUserById(member_id, None):
-                    member_ids.remove(member_id)
+                    member_ids_to_delete.remove(member_id)
             if hasattr(acl_users, '_doDelUsers'):
-                acl_users._doDelUsers(member_ids)
+                acl_users._doDelUsers(member_ids_to_delete)
             else:
                 try:
-                    acl_users.userFolderDelUsers(member_ids)
+                    acl_users.userFolderDelUsers(member_ids_to_delete)
                 except (NotImplementedError, 'NotImplemented'):
                     raise NotImplementedError(
                         "The underlying User Folder "
