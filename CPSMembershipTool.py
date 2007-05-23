@@ -646,13 +646,14 @@ class CPSMembershipTool(MembershipTool):
                                  for member_id in pending_members_ids
                                  if self.getMemberById(member_id) is None]
         logger.debug("members_ids_to_delete = %s" % members_ids_to_delete)
+        print("members_ids_to_delete = %s" % members_ids_to_delete)
 
-        logger.debug("pending_groups_ids = %s" % pending_groups_ids)
         groups_ids_to_delete = [group_id
                                 for group_id in pending_groups_ids
                                 if aclu.getGroupById(group_id, default=None)
                                 is None]
         logger.debug("groups_ids_to_delete = %s" % groups_ids_to_delete)
+        print("groups_ids_to_delete = %s" % groups_ids_to_delete)
 
         # Doing the actual purge
         self.deleteLocalRoles(portal, members_ids_to_delete,
