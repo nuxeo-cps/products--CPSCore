@@ -886,7 +886,7 @@ class LanguageSwitcher(Acquisition.Explicit):
         # store information by the time of the request to change the
         # language used for viewing the current document,
         # bypassing translation_service
-        if REQUEST:
+        if REQUEST is not None:
             if not REQUEST.has_key('SESSION'):
                 # unrestricted traverse pass a fake REQUEST without SESSION
                 REQUEST = getattr(self.proxy, 'REQUEST')
