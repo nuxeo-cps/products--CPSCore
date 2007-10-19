@@ -1,17 +1,12 @@
 Requires
 ~~~~~~~~
-- Zope >= 2.9.5
+-
 New features
 ~~~~~~~~~~~~
 -
 Bug fixes
 ~~~~~~~~~
-- Fixing ProxyBase getitems to work with Zope >= 2.9.5.
-- Partial fix for #1812: "Purge Local Roles doesn't work with CPSUserFolder" by
-  making the deleted members roles be purged through a "hard" search.
-- Partial fix for #1812: "Purge Local Roles doesn't work with CPSUserFolder" by
-  making the deleted groups roles be purged through a "hard" search.
-- Removed the "wrapUser" method which is fixed in the newer CMF CPS now uses.
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
-- Preparing version number for CPS 3.4.5. 
+- 
