@@ -496,12 +496,12 @@ class CPSMembershipTool(MembershipTool):
         return id
 
     security.declarePublic('homeFolderExists')
-    def homeFolderExists(self, id):
+    def homeFolderExists(self, member_id):
         """"""
         members = self.getMembersFolder()
         if members:
             try:
-                member_area_id = self.getHomeFolderId(id)
+                member_area_id = self.getHomeFolderId(member_id)
                 folder = members._getOb(member_area_id)
                 return 1
             except (AttributeError, KeyError):
