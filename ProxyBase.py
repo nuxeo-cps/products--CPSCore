@@ -1,4 +1,4 @@
-# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2002-2007 Nuxeo SAS <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -404,6 +404,15 @@ class ProxyBase(Base):
         """Called to reindex when the object has changed."""
         logger.debug("reindex idxs=%s for %s", idxs,
                      '/'.join(self.getPhysicalPath()))
+        # Update the effective date
+        # Optim: we only modify the effective_date if this is a global
+        # reindexing, ie after the object has been modified,
+        # and not in case of a catalog reindexing.
+        if idxs == []:
+            content = self._getContent()
+            if content is not None:
+                effective_date = self._getContent().effective_date
+                self.effective_date = effective_date
         if 'allowedRolesAndUsers' in idxs:
             # Both must be updated
             idxs.append('localUsersWithRoles')
