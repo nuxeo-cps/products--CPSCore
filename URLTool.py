@@ -1,6 +1,8 @@
 # -*- coding: iso-8859-15 -*-
-# (C) Copyright 2005 Nuxeo SARL <http://nuxeo.com>
-# Author: Anahide Tchertchian <at@nuxeo.com>
+# (C) Copyright 2005-2008 Nuxeo SAS <http://nuxeo.com>
+# Authors:
+# Anahide Tchertchian <at@nuxeo.com>
+# M.-A. Darche <madarche@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -84,7 +86,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         """
         return self.getRelativeContentURL(content)
 
-    security.declarePublic("getBaseUrl")
+    security.declarePublic('getBaseUrl')
     def getBaseUrl(self):
         """Get base url for the portal; handles virtual hosting.
 
@@ -97,7 +99,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             base_url += '/'
         return base_url
 
-    security.declarePrivate("getVirtualRootPhysicalPath")
+    security.declarePrivate('getVirtualRootPhysicalPath')
     def getVirtualRootPhysicalPath(self):
         """Get the virtual root physical path
 
@@ -110,7 +112,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             vr = ('',)
         return vr
 
-    security.declarePrivate("getVirtualHostPhysicalPath")
+    security.declarePrivate('getVirtualHostPhysicalPath')
     def getVirtualHostPhysicalPath(self):
         """Get the virtual host physical path
 
@@ -124,7 +126,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             path = tuple(aup.split('/'))
         return path
 
-    security.declarePublic("getRpathFromPath")
+    security.declarePublic('getRpathFromPath')
     def getRpathFromPath(self, path):
         """Get the object relative path from its physical path
 
@@ -138,7 +140,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         rpath = '/'.join(rpath)
         return rpath
 
-    security.declarePublic("getUrlFromRpath")
+    security.declarePublic('getUrlFromRpath')
     def getUrlFromRpath(self, rpath):
         """Guess the object absolute url from the relative url
         """
@@ -166,13 +168,17 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         #    url = ''
         return url
 
-    security.declarePublic("getBreadCrumbs")
+    security.declarePublic('getBreadCrumbs')
     def getBreadCrumbs(self, context=None, only_parents=False, show_root=None,
-                       restricted=False):
+                       restricted=False, show_hidden_folders=True,
+                       first_item=None):
         """Return parents for context
 
         If only_parents is set to True, the object itself is not returned in bread
         crumbs.
+
+        first_item is for specifying to not return all the parent-children list,
+        but only a subset of it starting at first_item.
         """
         root = self.getPhysicalRoot()
         portal = self.getPortalObject()
@@ -194,13 +200,17 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         while True:
             parent = aq_parent(aq_inner(current))
             if parent not in (vr, portal, root):
+                if not show_hidden_folders:
+                    content = parent.getContent()
+                    if getattr(content.aq_inner.aq_explicit, 'hidden_folder', False):
+                        continue
                 if not restricted or _checkPermission(View, parent):
                     parents.append(parent)
                 current = parent
             else:
                 break
 
-        # add virtual root
+        # Add virtual root
         if show_root is None:
             breadcrumbs_show_root = self.breadcrumbs_show_root
         else:
@@ -210,16 +220,24 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                 parents.append(vr)
 
         parents.reverse()
+        if first_item is not None:
+            parents = parents[first_item:]
 
         return parents
 
-    security.declarePublic("getBreadCrumbsInfo")
+    security.declarePublic('getBreadCrumbsInfo')
     def getBreadCrumbsInfo(self, context=None, only_parents=False,
-                           show_root=None, title_size=20):
-        """Title is truncated so that its size is 20 characters (middle truncture)
+                           show_root=None, restricted=False,
+                           show_hidden_folders=True, first_item=None,
+                           title_size=20):
+        """Provide breadcrumbs, translated and truncated (middle truncture).
         """
+        mcat = getToolByName(self, 'translation_service')
         parents = self.getBreadCrumbs(context, only_parents=only_parents,
-                                      show_root=show_root)
+                                      show_root=show_root,
+                                      restricted=restricted,
+                                      show_hidden_folders=show_hidden_folders,
+                                      first_item=first_item)
         items = []
         first_loop = True
         for obj in parents:
@@ -229,7 +247,6 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                 if (first_loop
                     and self.breadcrumbs_show_root
                     and self.breadcrumbs_root_name):
-                    mcat = getToolByName(self, 'translation_service')
                     title = mcat(self.breadcrumbs_root_name,
                                  default=self.breadcrumbs_root_name)
                 else:
@@ -239,8 +256,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                     except AttributeError:
                         is_archived = 0
                     if is_archived:
-                        # XXX i18n
-                        title = 'v%s (%s)' % (obj.getRevision(), title)
+                        title = 'v%s (%s)' % (obj.getRevision(), mcat(title, title))
                 # url, rpath
                 if not visible:
                     url = ''

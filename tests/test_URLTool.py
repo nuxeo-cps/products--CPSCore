@@ -1,6 +1,7 @@
-# -*- coding: iso-8859-15 -*-
-# (C) Copyright 2003-2007 Nuxeo SAS <http://nuxeo.com>
-# Author: Stéfane Fermigier <sf@nuxeo.com>
+# (C) Copyright 2003-2008 Nuxeo SAS <http://nuxeo.com>
+# Authors:
+# Stefane Fermigier <sf@nuxeo.com>
+# M.-A. Darche <madarche@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -169,11 +170,25 @@ class URLToolTests(unittest.TestCase):
                                                       only_parents=0),
                          [self.portal, self.folder, self.doc])
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=True,
+                                                      ),
+                         [self.portal, self.folder, self.doc])
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
                                                       only_parents=1),
                          [self.portal, self.folder])
 
     def test_getBreadCrumbsWithoutRoot(self):
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=False,
+                                                      ),
+                         [self.folder, self.doc])
+
+        # The tests below check that the good interaction between
+        # the property breadcrumbs_show_root and the parameter show_root.
         self.url_tool.manage_changeProperties(breadcrumbs_show_root=False)
+
         # portal
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.portal,
                                                       only_parents=0),
@@ -195,6 +210,42 @@ class URLToolTests(unittest.TestCase):
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
                                                       only_parents=1),
                          [self.folder])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=True,
+                                                      ),
+                         [self.portal, self.folder, self.doc])
+
+    def test_getBreadCrumbsWithoutHiddenFolders(self):
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=True,
+                                                      show_hidden_folders=False,
+                                                      ),
+                         [self.portal, self.folder, self.doc])
+
+    def test_getBreadCrumbsWithFirstItem(self):
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=True,
+                                                      first_item=0,
+                                                      ),
+                         [self.portal, self.folder, self.doc])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=True,
+                                                      first_item=1,
+                                                      ),
+                         [self.folder, self.doc])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=True,
+                                                      first_item=2,
+                                                      ),
+                         [self.doc])
 
 
 class URLToolTestsVHB(URLToolTests):
@@ -356,6 +407,11 @@ class URLToolTests6(URLToolTests):
                                                       only_parents=1),
                          [])
 
+    def test_getBreadCrumbsWithoutHiddenFolders(self):
+        pass
+
+    def test_getBreadCrumbsWithFirstItem(self):
+        pass
 
 class URLToolTests6VHB(URLToolTests6):
 
