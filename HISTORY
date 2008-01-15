@@ -1,4 +1,26 @@
 ===========================================================
+Package: CPSCore 3.38.1
+===========================================================
+First release built by: madarche at: 2008-01-15T12:16:48
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.38.1
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@52414
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #1874: "A CPS Proxy should have its effective_date set".
+- Preparing the version number for the next release.
+- #1880: Some CPSPortlets code duplicates CPSCore.URLTool.getBreadCrumbsInfo.
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.38.0
 ===========================================================
 First release built by: madarche at: 2007-10-19T12:18:56

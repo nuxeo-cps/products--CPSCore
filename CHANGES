@@ -6,9 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- #1874: "A CPS Proxy should have its effective_date set".
-- Preparing the version number for the next release.
-- #1880: Some CPSPortlets code duplicates CPSCore.URLTool.getBreadCrumbsInfo.
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
