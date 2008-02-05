@@ -215,13 +215,15 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             breadcrumbs_show_root = self.breadcrumbs_show_root
         else:
             breadcrumbs_show_root = show_root
+
+        if first_item:
+            parents = parents[:-first_item]
+
         if breadcrumbs_show_root:
             if len(parents) == 0 or parents[-1] != vr:
                 parents.append(vr)
 
         parents.reverse()
-        if first_item is not None:
-            parents = parents[first_item:]
 
         return parents
 
