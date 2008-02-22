@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSCore 3.38.2
+===========================================================
+First release built by: madarche at: 2008-02-22T15:56:47
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.38.2
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@52586
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- Finally fixed the first_item behavior of URLTool.getBreadCrumbs method.
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.38.1
 ===========================================================
 First release built by: madarche at: 2008-01-15T12:16:48
