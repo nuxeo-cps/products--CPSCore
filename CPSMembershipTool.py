@@ -334,9 +334,12 @@ class CPSMembershipTool(MembershipTool):
 
     security.declarePublic(ManagePortal, 'createMemberArea')
     def createMemberArea(self, member_id=''):
-        """Create a member area for member_id or authenticated user.
+        """Create a member area for member_id or current authenticated user.
 
-        Called during login phase to create missing member areas.
+        Creates member area only if needed, so it can be called without doing
+        any check before.
+
+        Called during the login phase.
         """
 
         if not self.getMemberareaCreationFlag():
