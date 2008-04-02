@@ -7,6 +7,8 @@ New features
 Bug fixes
 ~~~~~~~~~
 - Improved code doc.
+- Allowed the use of operator.itemgetter and operator.attrgetter in restricted
+  code.
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
