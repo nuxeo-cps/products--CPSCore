@@ -1,4 +1,4 @@
-# (C) Copyright 2002-2007 Nuxeo SAS <http://nuxeo.com>
+# (C) Copyright 2002-2008 Nuxeo SAS <http://nuxeo.com>
 # Authors:
 # Florent Guillaume <fg@nuxeo.com>
 # Alexandre Fernandez <alex@nuxeo.com>
@@ -50,6 +50,7 @@ from Products.CMFCore.MemberDataTool import MemberDataTool
 from Products.CPSUtil.id import generateId
 from utils import mergedLocalRoles, mergedLocalRolesWithPath
 
+LOG_KEY = 'CPSCore.CPSMembershipTool'
 
 
 class CPSUnrestrictedUser(UnrestrictedUser):
@@ -332,7 +333,7 @@ class CPSMembershipTool(MembershipTool):
         else:
             return 0
 
-    security.declarePublic(ManagePortal, 'createMemberArea')
+    security.declarePublic('createMemberArea')
     def createMemberArea(self, member_id=''):
         """Create a member area for member_id or current authenticated user.
 
@@ -341,6 +342,8 @@ class CPSMembershipTool(MembershipTool):
 
         Called during the login phase.
         """
+        logger = getLogger(LOG_KEY + '.createMemberArea')
+        logger.debug("...")
 
         if not self.getMemberareaCreationFlag():
             return None
@@ -356,6 +359,7 @@ class CPSMembershipTool(MembershipTool):
         if not member_id:
             member_id = user_id
 
+        logger.debug("Checking for member_id = %s ..." % member_id)
         if member_id == user_id and self.isHomeless():
             # Check if authenticated user is homeless.
             return None
@@ -588,7 +592,7 @@ class CPSMembershipTool(MembershipTool):
         WARNING: This can take a while (security reindexing) especially if lazy
         is set to False.
         """
-        logger = getLogger('CPSCore.CPSMembershipTool.purgeDeletedMembersLocalRoles')
+        logger = getLogger(LOG_KEY + '.purgeDeletedMembersLocalRoles')
         logger.debug("starting ...")
         utool = getToolByName(self, 'portal_url')
         portal_catalog = getToolByName(self, 'portal_catalog')
