@@ -6,6 +6,8 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
+- #1901: CPS method createMemberArea doesn't work when called with a user
+  different from member_id.
 - Improved code doc.
 - Allowed the use of operator.itemgetter and operator.attrgetter in restricted
   code.

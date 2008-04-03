@@ -44,8 +44,9 @@ from Products.CMFCore.permissions import ListPortalMembers
 from Products.CMFCore.utils import _checkPermission
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import _getAuthenticatedUser
-from Products.CMFDefault.MembershipTool import MembershipTool
+from Products.CMFCore.interfaces import IMemberData
 from Products.CMFCore.MemberDataTool import MemberDataTool
+from Products.CMFDefault.MembershipTool import MembershipTool
 
 from Products.CPSUtil.id import generateId
 from utils import mergedLocalRoles, mergedLocalRolesWithPath
@@ -333,52 +334,50 @@ class CPSMembershipTool(MembershipTool):
         else:
             return 0
 
+
     security.declarePublic('createMemberArea')
     def createMemberArea(self, member_id=''):
-        """Create a member area for member_id or current authenticated user.
+        """Create a member area for member_id or for the current authenticated user.
 
         Creates member area only if needed, so it can be called without doing
         any check before.
 
-        Called during the login phase.
+        If member_id is not given, the method is executed for the
+        current authenticated user, who thus must already be authenticated.
+
+        If member_id is given, the caller must have the ManageUsers role.
         """
         logger = getLogger(LOG_KEY + '.createMemberArea')
-        logger.debug("...")
+        logger.debug("member_id = %s ..." % member_id)
 
+        # Getting the members folder
         if not self.getMemberareaCreationFlag():
             return None
         members = self.getMembersFolder()
         if members is None:
             return None
-        if self.isAnonymousUser():
-            return None
-        # Note: We can't use getAuthenticatedMember() and getMemberById()
-        # because they might be wrapped by MemberDataTool.
-        user = _getAuthenticatedUser(self)
-        user_id = user.getId()
+
+        # Getting the corresponding member
         if not member_id:
+            if self.isAnonymousUser():
+                return None
+            # Note: We can't use getAuthenticatedMember() and getMemberById()
+            # because they might be wrapped by MemberDataTool.
+            user = _getAuthenticatedUser(self)
+            user_id = user.getId()
             member_id = user_id
+            member = user
+            logger.debug("will use current member_id = %s" % member_id)
 
-        logger.debug("Checking for member_id = %s ..." % member_id)
-        if member_id == user_id and self.isHomeless():
-            # Check if authenticated user is homeless.
+        # Check if the member is homeless
+        if self.isHomeless(member):
             return None
 
+        # Check the member area presence
         member_area_id = self.getHomeFolderId(member_id)
         member_area = members._getOb(member_area_id, default=None)
         if member_area is not None:
             return None
-        if member_id == user_id:
-            member = user
-        else:
-            if _checkPermission(ManageUsers, self):
-                member = self.acl_users.getUserById(member_id, None)
-                if member:
-                    member = member.__of__(self.acl_users)
-                else:
-                    raise ValueError("Member %s does not exist" % member_id)
-            else:
-                return None
 
         # Setup a temporary security manager so that creation is not
         # hampered by insufficient roles.
@@ -391,11 +390,10 @@ class CPSMembershipTool(MembershipTool):
         newSecurityManager(None, tmp_user)
 
         try:
-            # Create member area.
+            # Create member area
             members.invokeFactory(self.memberfolder_portal_type,
                                   member_area_id)
             member_area = members._getOb(member_area_id)
-            # TODO set workspace properties ? title ..
             member_area.changeOwnership(member)
             member_area.manage_setLocalRoles(member_id,
                                              list(self.memberfolder_roles))
@@ -409,10 +407,81 @@ class CPSMembershipTool(MembershipTool):
 
         self._createMemberContent(member, member_id, member_area)
 
+        # Setting the member workspace title and other properties
         self._notifyMemberAreaCreated(member, member_id, member_area)
 
     security.declarePublic('createMemberarea')
     createMemberarea = createMemberArea
+
+
+    security.declarePrivate('createMemberAreaUnrestricted')
+    def createMemberAreaUnrestricted(self, member_id=''):
+        """Create a member area for member_id.
+
+        Creates member area only if needed, so it can be called without doing
+        any check before.
+        """
+        logger = getLogger(LOG_KEY + '.createMemberAreaUnrestricted')
+        logger.debug("member_id = %s ..." % member_id)
+
+        # Getting the members folder
+        if not self.getMemberareaCreationFlag():
+            return None
+        members = self.getMembersFolder()
+        if members is None:
+            return None
+
+        # Getting the corresponding member
+        member = self.acl_users.getUserById(member_id, None)
+        if member:
+            member = member.__of__(self.acl_users)
+        else:
+            raise ValueError("Member %s does not exist" % member_id)
+
+        # Check if the member is homeless
+        if self.isHomeless(member):
+            return None
+
+        # Check the member area presence
+        member_area_id = self.getHomeFolderId(member_id)
+        member_area = members._getOb(member_area_id, default=None)
+        if member_area is not None:
+            return None
+
+        # Setup a temporary security manager so that creation is not
+        # hampered by insufficient roles.
+
+        # Use member_id so that the Owner role is set for it.
+        tmp_user = CPSUnrestrictedUser(member_id, '',
+                                       ['Manager', 'Member'], '')
+        tmp_user = tmp_user.__of__(self.acl_users)
+        old_sm = getSecurityManager()
+        newSecurityManager(None, tmp_user)
+
+        try:
+            # Create member area
+            members.invokeFactory(self.memberfolder_portal_type,
+                                  member_area_id)
+            member_area = members._getOb(member_area_id)
+            member_area.changeOwnership(member)
+            member_area.manage_setLocalRoles(member_id,
+                                             list(self.memberfolder_roles))
+            member_area.reindexObjectSecurity()
+
+            self._createMemberContentAsManager(member, member_id, member_area)
+
+        finally:
+            # Revert to original user.
+            setSecurityManager(old_sm)
+
+        self._createMemberContent(member, member_id, member_area)
+
+        # Setting the member workspace title and other properties
+        self._notifyMemberAreaCreated(member, member_id, member_area)
+
+    security.declarePublic('createMemberarea')
+    createMemberarea = createMemberArea
+
 
     # Can be overloaded by subclasses.
     security.declarePrivate('_createMemberContentAsManager')
@@ -427,7 +496,7 @@ class CPSMembershipTool(MembershipTool):
     security.declarePrivate('_createMemberContent')
     def _createMemberContent(self, member, member_id, member_folder):
         """Create the content of the member area."""
-        # Member is in fact a user object, it's not wrapped in the
+        # Member is in fact a user object, it's not wrapped by the
         # memberdata tool.
         # Create Member's initial content, skinnable.
         if hasattr(self, 'createMemberContent'):
@@ -453,8 +522,12 @@ class CPSMembershipTool(MembershipTool):
             member = self.getAuthenticatedMember()
         if member.getUserName() == "Anonymous User":
             return 1
-        # users registered above the portal level are homeless
-        member_acl_users = aq_parent(aq_inner(member.getUser()))
+
+        # Users registered above the portal level are homeless
+        # Unwrapping the user if wrapped by MemberDataTool
+        if IMemberData.providedBy(member):
+            member = member.getUser()
+        member_acl_users = aq_parent(aq_inner(member))
         if aq_base(member_acl_users) is not aq_base(self.acl_users):
             return 1
 
