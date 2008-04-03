@@ -513,15 +513,15 @@ class CPSMembershipTool(MembershipTool):
 
     security.declarePublic('isHomeless')
     def isHomeless(self, member=None):
-        """Return 1 if member have no home using homeless attribute.
+        """Return True if member have no home using homeless attribute.
 
         Anonymous users and users registered above CPS level are homeless.
         """
-        ret = 0
+        ret = False
         if member is None:
             member = self.getAuthenticatedMember()
         if member.getUserName() == "Anonymous User":
-            return 1
+            return True
 
         # Users registered above the portal level are homeless
         # Unwrapping the user if wrapped by MemberDataTool
@@ -529,14 +529,14 @@ class CPSMembershipTool(MembershipTool):
             member = member.getUser()
         member_acl_users = aq_parent(aq_inner(member))
         if aq_base(member_acl_users) is not aq_base(self.acl_users):
-            return 1
+            return True
 
         if hasattr(member, 'getProperty'):
-            ret = member.getProperty('homeless', 0)
+            ret = member.getProperty('homeless', False)
             if ret and ret != '0':
-                ret = 1
+                ret = True
             else:
-                ret = 0
+                ret = False
 
         return ret
 
