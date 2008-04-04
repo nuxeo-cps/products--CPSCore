@@ -119,9 +119,18 @@ class ProxyBase(Base):
         """
         self._docid = docid
 
+    security.declareProtected(View, 'getLanguage')
+    def getLanguage(self, lang=None):
+        """Get the current language for the proxy."""
+        pxtool = getToolByName(self, 'portal_proxies')
+        return pxtool.getBestRevision(self, lang=lang)[0]
+
     security.declareProtected(View, 'getDefaultLanguage')
     def getDefaultLanguage(self):
-        """Get the default language for this proxy."""
+        """The language to default to when there is no other choice.
+
+        This is the language with which the proxy has firt been created.
+        """
         return self._default_language
 
     security.declarePrivate('setDefaultLanguage')
@@ -183,12 +192,6 @@ class ProxyBase(Base):
     def setTag(self, tag):
         """Set the tag for this proxy."""
         self._tag = tag
-
-    security.declareProtected(View, 'getLanguage')
-    def getLanguage(self, lang=None):
-        """Get the selected language for a proxy."""
-        pxtool = getToolByName(self, 'portal_proxies')
-        return pxtool.getBestRevision(self, lang=lang)[0]
 
     security.declareProtected(View, 'getRevision')
     def getRevision(self, lang=None):
