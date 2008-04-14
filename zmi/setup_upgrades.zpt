@@ -27,11 +27,13 @@
 	      <input type="checkbox" name="upgrades:list"
 		     value="VALUE" checked="CHECKED"
 		     tal:attributes="value info/id;
+                                     id python:'selection-' + info['id'];
 				     checked python:info['proposed'] and not show_old;
 				     "/>
 	    </td>
 	    <td>
-	      <div tal:replace="info/title">INFO</div>
+	      <label tal:attributes="for python:'selection-' + info['id']"
+                     tal:content="info/title">INFO</label>
 	    </td>
 	    <td class="form-help">
 	      <div tal:condition="info/haspath"
