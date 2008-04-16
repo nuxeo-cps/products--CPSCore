@@ -1,4 +1,4 @@
-# Copyright 2005 Nuxeo SARL <http://nuxeo.com>
+# Copyright 2005-2008 Nuxeo SAS <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -47,7 +47,6 @@ class UpgradeStep(object):
         >>> ups.requires
         ('cpsplatform', ('3', '4', '1'))
         """
-
         self.id = str(abs(hash('%s%s%s%s' % (title, source, dest, sortkey))))
         self.title = title
         if source == '*':
@@ -69,10 +68,8 @@ class UpgradeStep(object):
             requires = (spl_req[0], tuple(spl_req[1].split('.')),)
         self.requires = requires
 
-    def versionMatch(self, portal, source):
-        return (source is None or
-                self.source is None or
-                source <= self.source)
+    def doStep(self, portal):
+        self.handler(portal)
 
     def isProposed(self, portal, cat, source):
         """Check if a step can be applied.
@@ -86,15 +83,22 @@ class UpgradeStep(object):
         else:
             return checker(portal)
 
-    def doStep(self, portal):
-        self.handler(portal)
+    def versionMatch(self, portal, source):
+        """Check if a step should be applied relatively to its version.
+
+        Return True if the source of the step is greater than the portal version
+        number.
+        """
+        return (source is None or
+                self.source is None or
+                source <= self.source)
 
 
 def _registerUpgradeStep(step):
     _upgrade_registry[step.id] = step
 
 def upgradeStep(_context, title, handler, source='*', destination='*',
-                category = 'cpsplatform', sortkey=0, checker=None, requires=None):
+                category='cpsplatform', sortkey=0, checker=None, requires=None):
     step = UpgradeStep(category, title, source, destination, handler, checker, sortkey, requires)
     _context.action(
         discriminator = ('upgradeStep',
@@ -162,7 +166,7 @@ def listUpgradeSteps(portal, category, source):
             continue
 
         proposed = step.isProposed(portal, category, source)
-        # GR: obscure condition. what's the use case ?
+        # TODO: (GR) Document this obscure condition. what's the use case ?
         if (not proposed
             and source is not None
             and (step.source is None or source > step.source)):
