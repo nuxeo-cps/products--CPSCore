@@ -1,4 +1,30 @@
 ===========================================================
+Package: CPSCore 3.38.3
+===========================================================
+First release built by: madarche at: 2008-04-18T12:56:40
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.38.3
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@52768
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #1901: CPS method createMemberArea doesn't work when called with a user
+  different from member_id.
+- Improved code doc.
+- Allowed the use of operator.itemgetter and operator.attrgetter in restricted
+  code.
+- Modified zmi/setup_upgrades.zpt so that it is easier to select upgrade steps
+  by just clicking on the upgrade step label.
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.38.2
 ===========================================================
 First release built by: madarche at: 2008-02-22T15:56:47

@@ -6,13 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- #1901: CPS method createMemberArea doesn't work when called with a user
-  different from member_id.
-- Improved code doc.
-- Allowed the use of operator.itemgetter and operator.attrgetter in restricted
-  code.
-- Modified zmi/setup_upgrades.zpt so that it is easier to select upgrade steps
-  by just clicking on the upgrade step label.
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
