@@ -345,10 +345,21 @@ class CPSMembershipTool(MembershipTool):
         If member_id is not given, the method is executed for the
         current authenticated user, who thus must already be authenticated.
 
-        If member_id is given, the caller must have the ManageUsers role.
+        If member_id is given, the caller must have the ManageUsers role,
+        unless member_id is the id of the current authenticated user
+        who thus must already be authenticated.
         """
-        logger = getLogger(LOG_KEY + '.createMemberArea')
-        logger.debug("member_id = %s ..." % member_id)
+        self.createMemberAreaUnrestricted(member_id, check_permission=True)
+
+    security.declarePrivate('createMemberAreaUnrestricted')
+    def createMemberAreaUnrestricted(self, member_id='', check_permission=False):
+        """Same as createMemberArea but to be used from unrestricted code.
+
+        If check_permission is True, will check that the caller has the
+        "Manage users" permission.
+        """
+        logger = getLogger(LOG_KEY + '.createMemberAreaUnrestricted')
+        logger.debug("Given member_id = %s ..." % member_id)
 
         # Getting the members folder
         if not self.getMemberareaCreationFlag():
@@ -358,85 +369,25 @@ class CPSMembershipTool(MembershipTool):
             return None
 
         # Getting the corresponding member
-        if not member_id:
-            if self.isAnonymousUser():
-                return None
+        if not self.isAnonymousUser():
             # Note: We can't use getAuthenticatedMember() and getMemberById()
             # because they might be wrapped by MemberDataTool.
             user = _getAuthenticatedUser(self)
             user_id = user.getId()
-            member_id = user_id
-            member = user
-            logger.debug("will use current member_id = %s" % member_id)
-
-        # Check if the member is homeless
-        if self.isHomeless(member):
-            return None
-
-        # Check the member area presence
-        member_area_id = self.getHomeFolderId(member_id)
-        member_area = members._getOb(member_area_id, default=None)
-        if member_area is not None:
-            return None
-
-        # Setup a temporary security manager so that creation is not
-        # hampered by insufficient roles.
-
-        # Use member_id so that the Owner role is set for it.
-        tmp_user = CPSUnrestrictedUser(member_id, '',
-                                       ['Manager', 'Member'], '')
-        tmp_user = tmp_user.__of__(self.acl_users)
-        old_sm = getSecurityManager()
-        newSecurityManager(None, tmp_user)
-
-        try:
-            # Create member area
-            members.invokeFactory(self.memberfolder_portal_type,
-                                  member_area_id)
-            member_area = members._getOb(member_area_id)
-            member_area.changeOwnership(member)
-            member_area.manage_setLocalRoles(member_id,
-                                             list(self.memberfolder_roles))
-            member_area.reindexObjectSecurity()
-
-            self._createMemberContentAsManager(member, member_id, member_area)
-
-        finally:
-            # Revert to original user.
-            setSecurityManager(old_sm)
-
-        self._createMemberContent(member, member_id, member_area)
-
-        # Setting the member workspace title and other properties
-        self._notifyMemberAreaCreated(member, member_id, member_area)
-
-    security.declarePublic('createMemberarea')
-    createMemberarea = createMemberArea
-
-
-    security.declarePrivate('createMemberAreaUnrestricted')
-    def createMemberAreaUnrestricted(self, member_id=''):
-        """Create a member area for member_id.
-
-        Creates member area only if needed, so it can be called without doing
-        any check before.
-        """
-        logger = getLogger(LOG_KEY + '.createMemberAreaUnrestricted')
-        logger.debug("member_id = %s ..." % member_id)
-
-        # Getting the members folder
-        if not self.getMemberareaCreationFlag():
-            return None
-        members = self.getMembersFolder()
-        if members is None:
-            return None
-
-        # Getting the corresponding member
-        member = self.acl_users.getUserById(member_id, None)
-        if member:
-            member = member.__of__(self.acl_users)
+            if not member_id or member_id == user_id:
+                member = user
+                member_id = user_id
+                logger.debug("Actually using member_id = %s" % member_id)
+        elif (not check_permission
+              or check_permission and _checkPermission(ManageUsers, self)):
+            member = self.acl_users.getUserById(member_id, None)
+            if member:
+                member = member.__of__(self.acl_users)
+            else:
+                raise ValueError("Member %s does not exist" % member_id)
         else:
-            raise ValueError("Member %s does not exist" % member_id)
+            logger.debug("Creation of member area denied")
+            return None
 
         # Check if the member is homeless
         if self.isHomeless(member):
