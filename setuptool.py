@@ -127,7 +127,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
             req = info.get('requires')
             if req is not None and req[1] > self._getCurrentVersion(req[0]):
                 break # requirement is implicite for forthcoming steps too
-                
+
             info = info.copy()
             info['haspath'] = bool(info['source'] and info['dest'])
             info['ssource'] = '.'.join(info['source'] or ('all',))
