@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSCore 3.38.4
+===========================================================
+First release built by: madarche at: 2008-11-23T22:01:38
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.38.4
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@53051
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #1909: Importing the CPSSharedCalendar profile is too slow.
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.38.3
 ===========================================================
 First release built by: madarche at: 2008-04-18T12:56:40
