@@ -6,7 +6,8 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #1941: cpshousekeeping purge local roles force not effective (wrong parameter
+  passing).
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

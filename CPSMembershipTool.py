@@ -35,6 +35,7 @@ from AccessControl.SecurityManagement import setSecurityManager
 from AccessControl.User import nobody
 from AccessControl.User import UnrestrictedUser
 from AccessControl.Permissions import manage_users as ManageUsers
+from AccessControl.requestmethod import postonly
 from Acquisition import aq_base, aq_parent, aq_inner
 from ZODB.POSException import ConflictError
 from Products.CMFCore.interfaces import IMembershipTool
@@ -617,7 +618,7 @@ class CPSMembershipTool(MembershipTool):
         is set to False.
         """
         logger = getLogger(LOG_KEY + '.purgeDeletedMembersLocalRoles')
-        logger.debug("starting ...")
+        logger.debug("starting (lazy: %s) ..." % lazy)
         utool = getToolByName(self, 'portal_url')
         portal_catalog = getToolByName(self, 'portal_catalog')
         portal = utool.getPortalObject()
@@ -718,10 +719,13 @@ class CPSMembershipTool(MembershipTool):
                                       '?manage_tabs_message=%s' % message)
 
     security.declareProtected(ManagePortal, 'manage_purgeLocalRoles')
+    @postonly
     def manage_purgeLocalRoles(self, lazy=True, REQUEST=None):
         """Call 'purgeDeletedMembersLocalRoles' to clean localroles for ids
         stored in the pending_members property
         """
+        logger = getLogger(LOG_KEY + '.manage_purgeLocalRoles')
+        logger.debug("lazy = %s" % lazy)
         ids = self.purgeDeletedMembersLocalRoles(lazy)
         if ids:
             message = "Ids %s cleaned." % ids
