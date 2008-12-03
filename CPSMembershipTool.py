@@ -379,10 +379,11 @@ class CPSMembershipTool(MembershipTool):
                 member = user
                 member_id = user_id
                 logger.debug("Actually using member_id = %s" % member_id)
-        elif (not check_permission
+            elif (not check_permission
               or check_permission and _checkPermission(ManageUsers, self)):
-            member = self.acl_users.getUserById(member_id, None)
-            if member:
+                member = self.acl_users.getUserById(member_id, None)
+
+            if member is not None:
                 member = member.__of__(self.acl_users)
             else:
                 raise ValueError("Member %s does not exist" % member_id)
