@@ -369,27 +369,28 @@ class CPSMembershipTool(MembershipTool):
         if members is None:
             return None
 
-        # Getting the corresponding member
-        if not self.isAnonymousUser():
-            # Note: We can't use getAuthenticatedMember() and getMemberById()
-            # because they might be wrapped by MemberDataTool.
-            user = _getAuthenticatedUser(self)
-            user_id = user.getId()
-            if not member_id or member_id == user_id:
-                member = user
-                member_id = user_id
-                logger.debug("Actually using member_id = %s" % member_id)
-            elif (not check_permission
-              or check_permission and _checkPermission(ManageUsers, self)):
-                member = self.acl_users.getUserById(member_id, None)
-
-            if member is not None:
-                member = member.__of__(self.acl_users)
-            else:
-                raise ValueError("Member %s does not exist" % member_id)
-        else:
+        if self.isAnonymousUser():
             logger.debug("Creation of member area denied")
-            return None
+            return
+
+        # Getting the corresponding member
+        # Note: We can't use getAuthenticatedMember() and getMemberById()
+        # because they might be wrapped by MemberDataTool.
+        user = _getAuthenticatedUser(self)
+        user_id = user.getId()
+        if not member_id or member_id == user_id:
+            member = user
+            member_id = user_id
+            logger.debug("Actually using member_id = %s" % member_id)
+        elif not check_permission or _checkPermission(ManageUsers, self):
+            member = self.acl_users.getUserById(member_id, None)
+        else:
+            return
+
+        if member is not None:
+            member = member.__of__(self.acl_users)
+        else:
+            raise ValueError("Member %s does not exist" % member_id)
 
         # Check if the member is homeless
         if self.isHomeless(member):
