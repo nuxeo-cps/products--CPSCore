@@ -93,53 +93,20 @@ user folder) will have their own folder created upon first login or not</p>
 </table>
 </form>
 
-<p><hr></p>
+<p><hr/></p>
 
 <h2>Clean up local roles</h2>
 
-<p>Local roles for members are kept by default after a deletion. You
-can purge them by pressing the purge button.</p>
+<p>You can purge local roles corresponding to now deleted members and
+groups. Warning this can take some time, especially if the portal has many
+folders.</p>
 
-<dtml-if expr="pending_members">
-
-  <p>The following member ids are pending:</p>
-  <ul>
-    <dtml-in expr="pending_members">
-      <li><dtml-var name="sequence-item"></li>
-    </dtml-in>
-  </ul>
-  <form action="manage_purgeLocalRoles" method="post">
+<form action="manage_purgeLocalRoles" method="post">
+  <p>
+    <input type="hidden" name="lazy:boolean" value="False"/>
     <input class="form-element" type="submit" value=" Purge "/>
-  </form>
-
-  <p>Otherwise, you can clean up a subset of them by entering the list of
-  former member ids separated by spaces.</p>
-
-  <form action="manage_deleteLocalRoles" method="post">
-  <table cellspacing="2">
-  <tr>
-    <td align="left" valign="top">
-      <div class="form-label">Tokens of member ids:</div>
-    </td>
-    <td align="left" valign="top">
-      <input class="form-element" type="text" name="member_ids:tokens" value=""
-             size="40">
-    </td>
-
-  </tr>
-  <tr>
-    <td>
-    </td>
-    <td align="left" valign="top">
-      <input class="form-element" type="submit" value=" Clean selected ">
-    </td>
-  </tr>
-  </table>
-  </form>
-
-<dtml-else>
-  <p><em>There is currently no member id to purge</em></p>
-</dtml-if>
+  </p>
+</form>
 
 
 </body>

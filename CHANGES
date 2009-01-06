@@ -9,6 +9,9 @@ Bug fixes
 - #1944: crash when creating a member workspace for someone else 
 - #1941: cpshousekeeping purge local roles force not effective (wrong parameter
   passing).
+- Made it possible to purge local roles corresponding to both now deleted users
+  and groups in a full check fashion through the ZMI. Before only local roles
+  pertaining could be purged and only in a lazy fashion.
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

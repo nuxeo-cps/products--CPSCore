@@ -606,7 +606,7 @@ class CPSMembershipTool(MembershipTool):
 
     security.declareProtected(ManageUsers, 'purgeDeletedMembersLocalRoles')
     def purgeDeletedMembersLocalRoles(self, lazy=True):
-        """Purge the localroles corresponding to now deleted users.
+        """Purge the local roles corresponding to now deleted users and groups.
 
         If lazy is set to True it finds the deleted users through the
         "pending_members" property. Set lazy to False when :
