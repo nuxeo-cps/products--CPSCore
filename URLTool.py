@@ -171,7 +171,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
     security.declarePublic('getBreadCrumbs')
     def getBreadCrumbs(self, context=None, only_parents=False, show_root=None,
                        restricted=False, show_hidden_folders=True,
-                       first_item=None):
+                       first_item=1):
         """Return parents for context
 
         If only_parents is set to True, the object itself is not returned in bread
@@ -191,17 +191,17 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         else:
             vr = portal
 
-        if only_parents or context in (vr, portal, root):
-            parents = []
-        else:
-            parents = [context]
-
         current = context
         depth = len(self.getRelativeContentPath(context))
+
+        parents = []
+        if (depth >= first_item) and not (only_parents or current in (vr, portal, root)):
+            parents = [current]
+
         while True:
             parent = aq_parent(aq_inner(current))
             depth = depth -1
-            if first_item >= 1 and depth < first_item:
+            if depth < first_item:
                 break
             if parent not in (vr, portal, root):
                 if not show_hidden_folders:

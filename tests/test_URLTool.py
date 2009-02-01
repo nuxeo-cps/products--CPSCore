@@ -247,6 +247,13 @@ class URLToolTests(unittest.TestCase):
                                                       ),
                          [self.portal, self.doc])
 
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=True,
+                                                      first_item=3,
+                                                      ),
+                         [self.portal])
+
         # hiding the root should not affect the other items
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
                                                       only_parents=False,
@@ -268,6 +275,71 @@ class URLToolTests(unittest.TestCase):
                                                       first_item=2,
                                                       ),
                          [self.doc])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=False,
+                                                      first_item=3,
+                                                      ),
+                         [])
+
+        # only_parents=True, show_root=True
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=True,
+                                                      show_root=True,
+                                                      first_item=0,
+                                                      ),
+                         [self.portal, self.folder])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=True,
+                                                      show_root=True,
+                                                      first_item=1,
+                                                      ),
+                         [self.portal, self.folder])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=True,
+                                                      show_root=True,
+                                                      first_item=2,
+                                                      ),
+                         [self.portal])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=True,
+                                                      show_root=True,
+                                                      first_item=3,
+                                                      ),
+                         [self.portal])
+
+        # only_parents=True, show_root=False
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=True,
+                                                      show_root=False,
+                                                      first_item=0,
+                                                      ),
+                         [self.folder])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=True,
+                                                      show_root=False,
+                                                      first_item=1,
+                                                      ),
+                         [self.folder])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=True,
+                                                      show_root=False,
+                                                      first_item=2,
+                                                      ),
+                         [])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=True,
+                                                      show_root=False,
+                                                      first_item=3,
+                                                      ),
+                         [])
 
 class URLToolTestsVHB(URLToolTests):
 
