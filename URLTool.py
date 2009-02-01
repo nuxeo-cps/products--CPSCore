@@ -203,6 +203,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                 if not show_hidden_folders:
                     content = parent.getContent()
                     if getattr(content.aq_inner.aq_explicit, 'hidden_folder', False):
+                        current = parent
                         continue
                 if not restricted or _checkPermission(View, parent):
                     parents.append(parent)
