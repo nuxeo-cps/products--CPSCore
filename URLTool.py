@@ -197,8 +197,12 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             parents = [context]
 
         current = context
+        depth = len(self.getRelativeContentPath(context))
         while True:
             parent = aq_parent(aq_inner(current))
+            depth = depth -1
+            if first_item >= 1 and depth < first_item:
+                break
             if parent not in (vr, portal, root):
                 if not show_hidden_folders:
                     content = current.getContent()
@@ -216,9 +220,6 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             breadcrumbs_show_root = self.breadcrumbs_show_root
         else:
             breadcrumbs_show_root = show_root
-
-        if first_item:
-            parents = parents[:-first_item]
 
         if breadcrumbs_show_root:
             if len(parents) == 0 or parents[-1] != vr:
