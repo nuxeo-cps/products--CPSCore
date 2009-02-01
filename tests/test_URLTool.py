@@ -247,6 +247,27 @@ class URLToolTests(unittest.TestCase):
                                                       ),
                          [self.portal, self.doc])
 
+        # hiding the root should not affect the other items
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=False,
+                                                      first_item=0,
+                                                      ),
+                         [self.folder, self.doc])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=False,
+                                                      first_item=1,
+                                                      ),
+                         [self.folder, self.doc])
+
+        self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
+                                                      only_parents=False,
+                                                      show_root=False,
+                                                      first_item=2,
+                                                      ),
+                         [self.doc])
 
 class URLToolTestsVHB(URLToolTests):
 
