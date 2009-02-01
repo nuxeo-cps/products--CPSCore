@@ -238,14 +238,14 @@ class URLToolTests(unittest.TestCase):
                                                       show_root=True,
                                                       first_item=1,
                                                       ),
-                         [self.folder, self.doc])
+                         [self.portal, self.folder, self.doc])
 
         self.assertEqual(self.url_tool.getBreadCrumbs(context=self.doc,
                                                       only_parents=False,
                                                       show_root=True,
                                                       first_item=2,
                                                       ),
-                         [self.doc])
+                         [self.portal, self.doc])
 
 
 class URLToolTestsVHB(URLToolTests):
