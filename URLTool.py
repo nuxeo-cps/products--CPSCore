@@ -201,7 +201,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             parent = aq_parent(aq_inner(current))
             if parent not in (vr, portal, root):
                 if not show_hidden_folders:
-                    content = parent.getContent()
+                    content = current.getContent()
                     if getattr(content.aq_inner.aq_explicit, 'hidden_folder', False):
                         current = parent
                         continue
