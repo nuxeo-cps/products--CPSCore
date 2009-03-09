@@ -1,4 +1,30 @@
 ===========================================================
+Package: CPSCore 3.38.5
+===========================================================
+First release built by: madarche at: 2009-03-09T11:16:36
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/tags/3.38.5
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSCore/trunk@53520
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #1944: crash when creating a member workspace for someone else 
+- #1941: cpshousekeeping purge local roles force not effective (wrong parameter
+  passing).
+- Made it possible to purge local roles corresponding to both now deleted users
+  and groups in a full check fashion through the ZMI. Before only local roles
+  pertaining could be purged and only in a lazy fashion.
+- #1880 Fixed URLTool.getBreadcrumbsInfo() method
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.38.4
 ===========================================================
 First release built by: madarche at: 2008-11-23T22:01:38
