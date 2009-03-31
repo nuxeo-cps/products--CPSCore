@@ -38,6 +38,7 @@ from AccessControl.Permissions import manage_users as ManageUsers
 from AccessControl.requestmethod import postonly
 from Acquisition import aq_base, aq_parent, aq_inner
 from ZODB.POSException import ConflictError
+from ZTUtils import make_query
 from Products.CMFCore.interfaces import IMembershipTool
 
 from Products.CMFCore.permissions import View, ManagePortal
@@ -715,8 +716,8 @@ class CPSMembershipTool(MembershipTool):
 
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(self.absolute_url() +
-                                      '/manage_mapRoles' +
-                                      '?manage_tabs_message=%s' % message)
+                                      '/manage_mapRoles?' +
+                                      make_query(manage_tabs_message=message))
 
     security.declareProtected(ManagePortal, 'manage_purgeLocalRoles')
     @postonly
@@ -734,8 +735,8 @@ class CPSMembershipTool(MembershipTool):
 
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(self.absolute_url() +
-                                      '/manage_mapRoles' +
-                                      '?manage_tabs_message=%s' % message)
+                                      '/manage_mapRoles?' +
+                                      make_query(manage_tabs_message=message))
 
 
 InitializeClass(CPSMembershipTool)

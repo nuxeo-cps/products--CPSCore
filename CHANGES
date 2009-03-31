@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #1989: error log entry while purging localroles from cpshousekeeping
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
