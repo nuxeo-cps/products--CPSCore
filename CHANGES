@@ -3,7 +3,8 @@ Requires
 -
 New features
 ~~~~~~~~~~~~
--
+- #1995: unindexing now handled at transaction commit as well
+  (fixes uncatalog ERROR logs)
 Bug fixes
 ~~~~~~~~~
 - #1989: error log entry while purging localroles from cpshousekeeping

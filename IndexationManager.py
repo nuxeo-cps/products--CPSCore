@@ -2,6 +2,7 @@
 # (C) Copyright 2005 Nuxeo SARL <http://nuxeo.com>
 # Authors: Julien Anguenot <ja@nuxeo.com>
 #          Florent Guillaume <fg@nuxeo.com>
+#          Georges Racinet <georges@racinet.fr>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -29,11 +30,17 @@ import zope.interface
 
 from Acquisition import aq_base
 
+from Products.CMFCore.utils import getToolByName
+
 from Products.CPSCore.interfaces import IBeforeCommitSubscriber
 from Products.CPSCore.commithooks import BeforeCommitSubscriber
 from Products.CPSCore.commithooks import get_before_commit_subscribers_manager
 
 _TXN_MGR_ATTRIBUTE = '_cps_idx_manager'
+
+ACTION_INDEX = 'index'
+ACTION_REINDEX = 'reindex'
+ACTION_UNINDEX = 'un_index'
 
 # We don't want any other hooks executed before this one right now.  It
 # will have an order of -100
@@ -52,8 +59,8 @@ class IndexationManager(BeforeCommitSubscriber):
         self._queue = []
         self._infos = {}
 
-    def push(self, ob, idxs=None, with_security=False):
-        """Add / update an object to reindex to the reindexing queue.
+    def push(self, ob, idxs=None, with_security=False, action=ACTION_INDEX):
+        """Add / update an object to reindex or unindex to the reindexing queue.
 
         Copes with security reindexation as well.
         """
@@ -63,12 +70,12 @@ class IndexationManager(BeforeCommitSubscriber):
         # can be deactiveted for a while, thus won't queue, and then be
         # activated again and start queuing again.
         if not self.enabled:
-            logger.debug("is DISABLED. object %r won't be processed" % ob)
+            logger.debug("is DISABLED. object %r won't be processed", ob)
             return
 
         if self.isSynchronous():
-            logger.debug("index object %r" % ob)
-            self.process(ob, idxs, with_security)
+            logger.debug("Doing %s on object %r", action, ob)
+            self.process(action, ob, idxs=idxs, secu=with_security)
             return
 
         logger.debug("queue object %r idxs=%s secu=%s"
@@ -78,16 +85,29 @@ class IndexationManager(BeforeCommitSubscriber):
         # <id_of_ob, rpath>
         rpath = '/'.join(ob.getPhysicalPath())[1:]
         i = (id(aq_base(ob)), rpath) # XXX should use security manager too
+        if action == ACTION_UNINDEX:
+            self.pushUnIndex(i, ob)
+        else:
+            self.pushIndex(action, i, ob,
+                           idxs=idxs, with_security=with_security)
+
+    def pushIndex(self, action, i, ob, idxs=None, with_security=False):
         info = self._infos.get(i)
         if info is None:
             info = {
-                'id': i,
+                'action': action,
                 'object': ob,
                 'idxs': idxs,
                 'secu': with_security,
                 }
-            self._queue.append(info)
+            self._queue.append(i)
             self._infos[i] = info
+        elif info['action'] == ACTION_UNINDEX:
+            # me must consider this as a full indexing
+            self._infos[i] = dict(action=ACTION_REINDEX, object=ob, idxs=[],
+                                  secu=with_security)
+            self._queue.remove(i)
+            self._queue.append(i)
         else:
             # Update idxs
             if idxs is not None:
@@ -107,7 +127,23 @@ class IndexationManager(BeforeCommitSubscriber):
             # Update secu
             info['secu'] = info['secu'] or with_security
 
-        logger.debug("info %r" % info)
+        logger.debug("info %r", info)
+
+    def pushUnIndex(self, i, ob):
+        """Schedule for unindexing or cancels scheduled indexing."""
+
+        info = self._infos.get(i)
+        if info is None: # first call about ob in this txn
+            self._infos[i] = dict(action=ACTION_UNINDEX, object=ob)
+            self._queue.append(i)
+        elif info['action'] == ACTION_INDEX:
+            # creation and destruction in the same txn, just unschedule
+            del self._infos[i]
+        elif info['action'] == ACTION_REINDEX:
+            # still needs to be removed
+            info['action'] = ACTION_UNINDEX
+            self._queue.remove(i)
+            self._queue.append(i)
 
     def __call__(self):
         """Called when transaction commits.
@@ -124,21 +160,26 @@ class IndexationManager(BeforeCommitSubscriber):
 
         logger.debug("__call__")
 
-        while self._queue:
-            info = self._queue.pop(0)
-            del self._infos[info['id']]
+        for i in self._queue:
+            info = self._infos.pop(i, None)
+            if info is None:
+                # cancelled by later unindexing
+                continue
 
             logger.debug("__call__ processing %r" % info)
-            self.process(info['object'], info['idxs'], info['secu'])
+            self.process(info.pop('action'), info.pop('object'), **info)
+
+        self._queue = [] # for what it matters
 
         logger.debug("__call__ done")
 
-    def process(self, ob, idxs, secu):
+    def processIndex(self, ob, idxs, secu):
         """Process an object, to reindex it."""
         # The object may have been removed from its container since,
         # even if the value we have is still wrapped.
         # Re-acquire it from the root
-        # FIXME: do better, by treating also indexObject/unindexObject
+        # GR: not likely now that manager treats unindexing as well, but
+        # might still be good for robustness
         root = ob.getPhysicalRoot()
         path = ob.getPhysicalPath()
         old_ob = ob
@@ -154,6 +195,20 @@ class IndexationManager(BeforeCommitSubscriber):
                          (idxs and 'allowedRolesAndUsers' in idxs))
             logger.debug("reindexObjectSecurity %r skip=%s" % (ob, skip_self))
             ob._reindexObjectSecurity(skip_self=skip_self)
+
+    def processUnIndex(self, ob):
+        """unindexes the object.
+
+        We are pretty sure at this point that the object is still indexed
+        """
+        getToolByName(ob, 'portal_catalog').unindexObject(ob)
+
+    def process(self, action, ob, idxs=None, secu=None):
+        if action == ACTION_UNINDEX:
+            self.processUnIndex(ob)
+        else:
+            self.processIndex(ob, idxs, secu)
+
 
 def del_indexation_manager():
     txn = transaction.get()

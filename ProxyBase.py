@@ -60,6 +60,9 @@ from Products.CPSCore.CPSBase import CPSBaseDocument
 from Products.CPSCore.CPSBase import CPSBaseBTreeFolder
 
 from Products.CPSCore.IndexationManager import get_indexation_manager
+from Products.CPSCore.IndexationManager import ACTION_UNINDEX
+from Products.CPSCore.IndexationManager import ACTION_INDEX
+from Products.CPSCore.IndexationManager import ACTION_REINDEX
 
 
 PROBLEMATIC_FILES_SUFFIXES = ('.exe',)
@@ -425,13 +428,18 @@ class ProxyBase(Base):
     def reindexObject(self, idxs=[]):
         """Schedule object for reindexation
         """
-        get_indexation_manager().push(self, idxs=idxs)
+        get_indexation_manager().push(self, idxs=idxs, action=ACTION_REINDEX)
 
     # overloaded
     def indexObject(self):
         """Schedule object for indexing.
         """
-        get_indexation_manager().push(self, idxs=[])
+        get_indexation_manager().push(self, idxs=[], action=ACTION_INDEX)
+
+    # overloaded
+    def unindexObject(self):
+        """Schedule object for unindexing."""
+        get_indexation_manager().push(self, action=ACTION_UNINDEX)
 
     def _reindexObjectSecurity(self, skip_self=False):
         """Called to security-related indexes."""

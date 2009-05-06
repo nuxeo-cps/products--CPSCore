@@ -26,6 +26,9 @@ from OFS.SimpleItem import SimpleItem
 
 from Products.CPSCore.IndexationManager import IndexationManager
 from Products.CPSCore.IndexationManager import get_indexation_manager
+from Products.CPSCore.IndexationManager import ACTION_INDEX
+from Products.CPSCore.IndexationManager import ACTION_UNINDEX
+from Products.CPSCore.IndexationManager import ACTION_REINDEX
 
 import transaction
 
@@ -68,7 +71,17 @@ class FakeRoot:
 
 root = FakeRoot()
 
+
+class FakeCatalog:
+    """Does uncataloging by redirection to object, to allow logging stuff."""
+
+    def unindexObject(self, ob):
+        ob.unindex()
+
+
 class FakeContent:
+
+    portal_catalog = FakeCatalog()
 
     def __init__(self, id):
         self.id = id
@@ -92,6 +105,10 @@ class FakeContent:
     def _reindexObjectSecurity(self, skip_self=False):
         self.log.append('secu %s %r' % (self.id, skip_self))
 
+    def unindex(self):
+        """Specific of FakeContent"""
+        self.log.append('Unindex %s' % self.id)
+
 
 class FakeContentCausingReindex(FakeContent):
 
@@ -104,6 +121,9 @@ class FakeContentCausingReindex(FakeContent):
 
 
 class IndexationManagerTest(unittest.TestCase):
+
+    def tearDown(self):
+        root.clear()
 
     def get_stuff(self):
         return (IndexationManager(FakeBeforeCommitSubscribersManager()),
@@ -138,7 +158,13 @@ class IndexationManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(dummy.getLog(), [])
 
-        root.clear()
+    def test_unindex(self):
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, action=ACTION_UNINDEX)
+        mgr()
+        self.assertEquals(dummy.getLog(), ['Unindex %s' % dummy.id])
+        mgr()
+        self.assertEquals(dummy.getLog(), [])
 
     def test_several_times_1(self):
         mgr, dummy = self.get_stuff()
@@ -147,7 +173,6 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s ['a', 'b']"%dummy.id])
-        root.clear()
 
     def test_several_times_2(self):
         mgr, dummy = self.get_stuff()
@@ -156,7 +181,6 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
-        root.clear()
 
     def test_several_times_3(self):
         mgr, dummy = self.get_stuff()
@@ -165,7 +189,6 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
-        root.clear()
 
     def test_several_times_4(self):
         mgr, dummy = self.get_stuff()
@@ -174,7 +197,6 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s ['foo']"%dummy.id])
-        root.clear()
 
     def test_several_times_5(self):
         mgr, dummy = self.get_stuff()
@@ -183,7 +205,6 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s ['foo']"%dummy.id])
-        root.clear()
 
     def test_several_times_6(self):
         mgr, dummy = self.get_stuff()
@@ -192,7 +213,6 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
-        root.clear()
 
     def test_several_times_7(self):
         mgr, dummy = self.get_stuff()
@@ -201,7 +221,6 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id])
-        root.clear()
 
     def test_several_secu_1(self):
         mgr, dummy = self.get_stuff()
@@ -211,7 +230,6 @@ class IndexationManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s ['foo']"%dummy.id,
                                            "secu %s False"%dummy.id])
-        root.clear()
 
     def test_several_secu_2(self):
         mgr, dummy = self.get_stuff()
@@ -221,7 +239,6 @@ class IndexationManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s []"%dummy.id,
                                            "secu %s True"%dummy.id])
-        root.clear()
 
     def test_several_secu_3(self):
         mgr, dummy = self.get_stuff()
@@ -233,7 +250,74 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(),
                           ["idxs %s ['allowedRolesAndUsers', 'foo']"%dummy.id,
                            "secu %s True"%dummy.id])
-        root.clear()
+
+    def test_index_unindex(self):
+        # index + unindex == nothing to do
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=[], action=ACTION_INDEX)
+        mgr.push(dummy, action=ACTION_UNINDEX)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), [])
+
+    def test_reindex_unindex(self):
+        # index + unindex == unindex
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=[], action=ACTION_REINDEX)
+        mgr.push(dummy, action=ACTION_UNINDEX)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ["Unindex %s" % dummy.id])
+
+    def test_index_reindex_unindex(self):
+        # index + reindex == index
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, idxs=[], action=ACTION_INDEX)
+        mgr.push(dummy, idxs=[], action=ACTION_REINDEX)
+        mgr.push(dummy, action=ACTION_UNINDEX)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), [])
+
+    def test_unindex_index(self):
+        # unindex + index = reindex (full)
+        # this is to get (unindex + index) + unindex = unindex
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, action=ACTION_UNINDEX)
+        mgr.push(dummy, idxs=['foo'], action=ACTION_INDEX)
+        infos = mgr._infos
+        self.assertEquals(len(infos), 1)
+        self.assertEquals(infos.values()[0]['action'], ACTION_REINDEX)
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ['idxs %s []' % dummy.id])
+
+    def test_unindex_reindex(self):
+        # unindex + reindex = reindex (full)
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, action=ACTION_UNINDEX)
+        mgr.push(dummy, idxs=['foo'], action=ACTION_REINDEX)
+        infos = mgr._infos
+        self.assertEquals(len(infos), 1)
+        self.assertEquals(infos.values()[0]['action'], ACTION_REINDEX)
+
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ['idxs %s []' % dummy.id])
+
+    def test_unindex_reindex_secu(self):
+        # unindex + reindex = reindex (full)
+        mgr, dummy = self.get_stuff()
+        mgr.push(dummy, action=ACTION_UNINDEX)
+        mgr.push(dummy, idxs=['foo'], action=ACTION_REINDEX, with_security=True)
+        infos = mgr._infos
+        self.assertEquals(len(infos), 1)
+        self.assertEquals(infos.values()[0]['action'], ACTION_REINDEX)
+
+        self.assertEquals(dummy.getLog(), [])
+        mgr()
+        self.assertEquals(dummy.getLog(), ['idxs %s []' % dummy.id,
+                                           "secu %s True" %dummy.id])
 
     def test_synchronous(self):
         mgr, dummy = self.get_stuff()
@@ -251,7 +335,6 @@ class IndexationManagerTest(unittest.TestCase):
         self.assertEquals(dummy.getLog(), [])
         mgr()
         self.assertEquals(dummy.getLog(), ["idxs %s ['d']"%dummy.id])
-        root.clear()
 
     def test_enabled_api(self):
 
@@ -300,8 +383,6 @@ class IndexationManagerTest(unittest.TestCase):
         mgr()
         self.assertEquals(dummy.getLog(), [])
 
-        root.clear()
-
     def test_enabled_with_sync_subscriber(self):
 
         mgr, dummy = self.get_stuff()
@@ -331,8 +412,6 @@ class IndexationManagerTest(unittest.TestCase):
 
         # Object is gone from queue after that.
         self.assertEquals(dummy.getLog(), [])
-
-        root.clear()
 
 class TransactionIndexationManagerTest(unittest.TestCase):
 
