@@ -263,10 +263,16 @@ def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=
 CatalogTool.catalog_object = cat_catalog_object
 logger.log(TRACE, "Patching CMF CatalogTool.catalog_object")
 
-
 #XXX should be a patch of uncatalog_object
 def cat_unindexObject(self, object):
     """Remove from catalog."""
+
+    # Documents from repository are not in catalog.
+    # Unindexing produces an error
+    if getToolByName(self, 'portal_repository').isObjectInRepository(object):
+        logger.debug("unindexObject: ignored object from repository %s", object)
+        return
+
     default_uid = self._CatalogTool__url(object)
     proxy = None
     if isinstance(object, ProxyBase):
