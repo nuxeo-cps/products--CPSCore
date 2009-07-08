@@ -285,7 +285,8 @@ class CPSMembershipTool(MembershipTool):
                 try:
                     ob = brain.getObject()
                 except AttributeError, msg:
-                    logger.debug("Problem with this brain = %s: %s"
+                    logger.debug("Problem with this brain = %s: %s "
+                                 "=> Reindex all your indexes or objects"
                                  % (brain, msg))
                     continue
                 changed = changed or self._deleteLocalGroupRoles(ob, ids, removed_roles)
@@ -662,7 +663,8 @@ class CPSMembershipTool(MembershipTool):
                 try:
                     proxy = brain.getObject()
                 except AttributeError, msg:
-                    logger.debug("Problem with this brain = %s: %s"
+                    logger.debug("Problem with this brain = %s: %s "
+                                 "=> Reindex all your indexes or objects"
                                  % (brain, msg))
                     continue
                 proxy_rpath = utool.getRpath(proxy)
