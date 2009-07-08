@@ -247,6 +247,7 @@ class CPSMembershipTool(MembershipTool):
 
         Returns a boolean saying if something changed.
         """
+        logger = getLogger(LOG_KEY + '.deleteLocalGroupRoles')
         member = self.getAuthenticatedMember()
         my_roles = member.getRolesInContext(obj)
         if 'Manager' in my_roles:
@@ -279,7 +280,14 @@ class CPSMembershipTool(MembershipTool):
                                      portal_type=('Workspace', 'Section'),
                                      )
             for brain in results:
-                ob = brain.getObject()
+                if brain is None:
+                    continue
+                try:
+                    ob = brain.getObject()
+                except AttributeError, msg:
+                    logger.debug("Problem with this brain = %s: %s"
+                                 % (brain, msg))
+                    continue
                 changed = changed or self._deleteLocalGroupRoles(ob, ids, removed_roles)
         else:
             changed = self._deleteLocalGroupRoles(obj, ids, removed_roles)
@@ -649,7 +657,14 @@ class CPSMembershipTool(MembershipTool):
             # ensuring we only check a proxy once since?
             proxies_map = {}
             for brain in brains:
-                proxy = brain.getObject()
+                if brain is None:
+                    continue
+                try:
+                    proxy = brain.getObject()
+                except AttributeError, msg:
+                    logger.debug("Problem with this brain = %s: %s"
+                                 % (brain, msg))
+                    continue
                 proxy_rpath = utool.getRpath(proxy)
                 logger.debug("Checking roles on = %s" % proxy_rpath)
                 proxies_map[proxy_rpath] = proxy
