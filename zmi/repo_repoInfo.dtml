@@ -31,21 +31,27 @@
     </p>
   </dtml-if>
 
-  <dtml-if "nb_archived_revs">
   <h3>Archives</h3>
 
   <p class="form-text">
-    The &dtml-nb_live_docids; live docids have &dtml-nb_archived_revs;
-    archived revisions.
+    The &dtml-nb_live_docids; live documents have &dtml-nb_archived_revs;
+    archived revision(s).
   </p>
 
+  <dtml-if "nb_archived_revs">
+  <h4>Purging archived revisions</h4>
   <p class="form-text">
+    Maximum archived proxies per document to keep:
+    <input class="form-element" type="text" name="keep_max" value="2" size="4"/>
+    <br/>
+    Only consider archived proxies below rpath:
+    <input class="form-element" type="text" name="in_rpath"/>
+    <br/>
+    Only consider archived proxies not below rpath:
+    <input class="form-element" type="text" name="not_in_rpath"/>
+    <br/>
     <input class="form-element" type="submit" value="Purge archived revisions"
            name="manage_purgeArchivedRevisions:method" />
-    keeping no more than
-    <input class="form-element" type="text" name="keep_max" value="2"
-      size="2" />
-    archives per docid.
   </p>
   </dtml-if>
 

@@ -10,6 +10,8 @@ Bug fixes
 - #1989: error log entry while purging localroles from cpshousekeeping
 - #2007: Methods CPSMembershipTool.purgeDeletedMembersLocalRoles and
   CPSMembershipTool.deleteLocalGroupRoles should be made more resilient
+- #2006: ObjectRepositoryTool.purgeArchivedRevisions method should have
+  excluding and including parameters relative to rpath
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

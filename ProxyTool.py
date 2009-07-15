@@ -1,5 +1,7 @@
-# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
-# Author: Florent Guillaume <fg@nuxeo.com>
+# (C) Copyright 2002-2009 Nuxeo SAS <http://nuxeo.com>
+# Authors:
+# Florent Guillaume <fg@nuxeo.com>
+# M.-A. Darche
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -233,12 +235,11 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
     security.declarePrivate('listProxies')
     def listProxies(self, docid=None):
-        """List all proxies.
+        """Returns a sequence of (rpath, (docid, language_revs)).
 
-        If docid is not None, keep only those docids.
-
-        Returns a sequence of (rpath, (docid, language_revs)).
         NOTE that the language_revs mapping should not be mutated!
+
+        If docid is not None, return only the proxies linking to docid.
         """
         if docid is None:
             all = list(self._rpath_to_infos.items())
@@ -248,7 +249,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             for rpath in rpaths:
                 infos = self._rpath_to_infos[rpath]
                 all.append((rpath, infos))
-        all.sort() # Sort by rpath.
+        all.sort() # Sort by rpath
         return all
 
     security.declarePrivate('getBestRevision')
@@ -384,7 +385,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         else:
             return None
 
-    # XXX was def getProxyInfoFromRepoId(self, repoid, workflow_vars=()):
     security.declarePublic('getProxyInfosFromDocid')
     def getProxyInfosFromDocid(self, docid, workflow_vars=()):
         """Get the proxy infos from a docid.
@@ -429,7 +429,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             res.append(info)
         return res
 
-    # XXX was def getProxiesFromId(self, id):
     security.declarePublic('getProxiesFromObjectId')
     def getProxiesFromObjectId(self, id, proxy_rpath_prefix=None):
         """Get the proxy infos from an object id (gotten from the catalog).
@@ -447,7 +446,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         Only returns the proxies that are visible.
 
         (Called by user code after a catalog search.)
-        XXX should be transformed into a full searchResults method XXX
+        TODO: should be transformed into a full searchResults method
         """
         repotool = getToolByName(self, 'portal_repository')
         portal = aq_parent(aq_inner(self))
@@ -461,8 +460,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 continue
             docid2, language_revs = self._rpath_to_infos[rpath]
             try:
-                # XXX costly if search
-                # XXX We should be able to filter by visibility directly
+                # TODO: This is costly if search
+                # TODO: We should be able to filter by visibility directly
                 ob = portal.unrestrictedTraverse(rpath)
             except KeyError:
                 LOG('ProxyTool', DEBUG,
@@ -575,8 +574,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         for rpath in rpaths:
             docid2, language_revs = self._rpath_to_infos[rpath]
             try:
-                # XXX costly if search
-                # XXX We should be able to filter by visibility directly
+                # TODO: costly if search
+                # TODO: We should be able to filter by visibility directly
                 proxy = portal.unrestrictedTraverse(rpath)
             except KeyError:
                 LOG('ProxyTool', ERROR,
@@ -587,7 +586,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             proxy.reindexObject()
             evtool.notify('sys_modify_object', proxy, {})
 
-    # XXX implement this
+    # TODO: implement this
     security.declarePublic('searchResults')
     def searchResults(self, **kw):
         """Return the proxies matching a search in the catalog.
@@ -601,7 +600,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         (Also called by ProxyBase.)
         """
-        # XXX use an event?
+        # TODO: use an event?
         repotool = getToolByName(self, 'portal_repository')
         docid = proxy.getDocid()
         for lang, rev in proxy._getLanguageRevisions().items():
@@ -836,13 +835,13 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
     def getRevisionsUsed(self):
         """Return management info about all the proxies.
 
-        Return a dict of {docid: dict of {rev: None}}
+        Return a dict of {docid: dict of {rev: rpath}}
         """
         res = {}
         for rpath, infos in self._rpath_to_infos.items():
             docid, language_revs = infos
             for lang, rev in language_revs.items():
-                res.setdefault(docid, {})[rev] = None
+                res.setdefault(docid, {})[rev] = rpath
         return res
 
     security.declareProtected(ManagePortal, 'getBrokenProxies')

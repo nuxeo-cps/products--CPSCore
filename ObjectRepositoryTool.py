@@ -1,5 +1,7 @@
-# (C) Copyright 2002, 2003 Nuxeo SARL <http://nuxeo.com>
-# Author: Florent Guillaume <fg@nuxeo.com>
+# (C) Copyright 2002-2009 Nuxeo SAS <http://nuxeo.com>
+# Authors:
+# Florent Guillaume <fg@nuxeo.com>
+# M.-A. Darche
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -22,7 +24,7 @@ The object repository tool stores versions of documents.
 It also stores workflow-related information for those documents.
 """
 
-
+from copy import copy
 from logging import getLogger
 import random
 from Globals import InitializeClass, DTMLFile
@@ -32,6 +34,7 @@ from AccessControl import ClassSecurityInfo
 
 from Products.CMFCore.utils import UniqueObject
 from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.permissions import View
 from Products.CMFCore.permissions import ModifyPortalContent
 from Products.CMFCore.permissions import ManagePortal
 from Products.CMFCore.PortalFolder import PortalFolder
@@ -43,7 +46,8 @@ from Products.CPSWorkflow.workflowtool import Config_id
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
 from Products.CPSCore.EventServiceTool import getEventService
 
-logger = getLogger('CPSCore.ObjectRepositoryTool')
+LOG_KEY = 'CPSCore.ObjectRepositoryTool'
+logger = getLogger(LOG_KEY)
 
 class NoWorkflowConfiguration:
     """Class for a workflow configuration object that denies
@@ -376,7 +380,6 @@ class ObjectRepositoryTool(UniqueObject,
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool_infos = pxtool.getRevisionsUsed()
 
-
         nb_revs = 0
         docids_d = {} # all docids
         unused_docids_d = {} # all docids that are unused
@@ -423,37 +426,57 @@ class ObjectRepositoryTool(UniqueObject,
         self.manage_delObjects(ids_to_del)
 
     security.declareProtected(ManagePortal, 'purgeArchivedRevisions')
-    def purgeArchivedRevisions(self, keep_max):
-        """Purge archived revisions.
+    def purgeArchivedRevisions(self, keep_max=0,
+                               in_rpath=None, not_in_rpath=None):
+        """Purge archived revisions, that is archived proxies.
 
-        Keeps no more than keep_max archives per docid.
+        keep_max: Keeps no more than keep_max archived proxies per document.
         """
+        logger = getLogger(LOG_KEY + '.purgeArchivedRevisions')
+        logger.debug("keep_max=%s, in_rpath=%s, not_in_rpath=%s"
+                     % (keep_max, in_rpath, not_in_rpath))
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool_infos = pxtool.getRevisionsUsed()
 
         docids_archives = {}
+        rpath_selected_doc_ids = {}
 
         for id in self.objectIds():
             docid, rev = self._splitId(id)
             if docid is None:
+                # Here to strenghen the code, this should never be the case
                 continue
             if not pxtool_infos.has_key(docid):
-                # deleted
+                # The document corresponding to docid has been deleted
                 continue
             if pxtool_infos[docid].has_key(rev):
-                # live
+                # rev corresponds to a live proxy of the docid document
+                rpath = pxtool_infos[docid][rev]
+                if (in_rpath and rpath.startswith(in_rpath) or
+                    not_in_rpath and not rpath.startswith(not_in_rpath)):
+                    logger.debug("selecting this doc according to its rpath")
+                    rpath_selected_doc_ids[docid] = None
                 continue
+            # Else, rev corresponds to an archived (not live) proxy of the docid
+            # document, thus with no associated rpath.
             docids_archives.setdefault(docid, []).append((rev, id))
+
         ids_to_del = []
-        for docid, revids in docids_archives.items():
+        for docid, revisions_informations in docids_archives.items():
+            logger.debug("docid = %s" % docid)
+            # Pruning against rpath criteria if those criteria where specified
+            # and effective.
+            if docid not in rpath_selected_doc_ids.keys():
+                continue
             if keep_max > 0:
-                revids.sort()
-                revids = revids[:-keep_max]
-            for rev, id in revids:
+                revisions_informations.sort()
+                revisions_informations = revisions_informations[:-keep_max]
+            for rev, id in revisions_informations:
                 ids_to_del.append(id)
-        logger.debug('purgeArchivedRevisions keep_max=%s, deleting %s'
-                     % (keep_max, ids_to_del))
+        logger.debug("deleting: %s" % ids_to_del)
+        deleted_ids = copy(ids_to_del)
         self.manage_delObjects(ids_to_del)
+        return deleted_ids
 
     #
     # Id generation
@@ -519,16 +542,18 @@ class ObjectRepositoryTool(UniqueObject,
     manage_repoInfo = DTMLFile('zmi/repo_repoInfo', globals())
 
     security.declareProtected(ManagePortal, 'manage_purgeArchivedRevisions')
-    def manage_purgeArchivedRevisions(self, keep_max, REQUEST=None):
+    def manage_purgeArchivedRevisions(self, keep_max, in_rpath, not_in_rpath,
+                                      REQUEST=None):
         """Purge archived revisions.
 
         Keeps no more than keep_max archives per docid.
         """
         keep_max = int(keep_max)
-        self.purgeArchivedRevisions(keep_max)
+        ids = self.purgeArchivedRevisions(keep_max, in_rpath, not_in_rpath)
+        msg = "%s revisions purged" % len(ids)
         if REQUEST is not None:
             REQUEST.RESPONSE.redirect(self.absolute_url()+'/manage_repoInfo'
-                                      '?manage_tabs_message=Purged.&details=1')
+                                      '?manage_tabs_message=%s.&details=1' % msg)
 
     security.declareProtected(ManagePortal, 'manage_purgeDeletedRevisions')
     def manage_purgeDeletedRevisions(self, REQUEST=None):
@@ -538,13 +563,11 @@ class ObjectRepositoryTool(UniqueObject,
             REQUEST.RESPONSE.redirect(self.absolute_url()+'/manage_repoInfo'
                                       '?manage_tabs_message=Purged.&details=1')
 
-
-    # XXX security?
-    security.declarePublic('manage_redirectRevision')
+    security.declareProtected(View, 'manage_redirectRevision')
     def manage_redirectRevision(self, docid, rev, RESPONSE):
-        """Redirect to the object for a docid+rev."""
+        """Redirect to the repository object for a given docid+rev."""
         ob = self.getObjectRevision(docid, rev)
-        RESPONSE.redirect(ob.absolute_url()+'/manage_workspace')
+        RESPONSE.redirect(ob.absolute_url() + '/manage_workspace')
 
 
 InitializeClass(ObjectRepositoryTool)
