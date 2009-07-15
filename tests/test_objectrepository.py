@@ -1,4 +1,3 @@
-# -*- coding: iso-8859-15 -*-
 # (C) Copyright 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
@@ -41,7 +40,7 @@ def constructContent(self, type_name, id, *args, **kw):
 constructContent_old = ObjectRepositoryTool.constructContent
 
 class ObjectRepositoryToolTests(SecurityRequestTest, LogInterceptor):
-    """Test object repository ."""
+    """Test object repository."""
 
     def setUp(self):
         SecurityRequestTest.setUp(self)

@@ -58,3 +58,9 @@ groups. "Everybody" is formalized as 'group:role:Anonymous'.
 
 Because nobody or everybody is blocked for a given role, the
 allowedRolesAndUsers datastructure can still be computed.
+
+
+.. Local Variables:
+.. mode: rst
+.. End:
+.. vim: set filetype=rst:

@@ -153,3 +153,9 @@ CPS URLTool adds new methods:
   returns a list of parents info to be presented in a template.
   Info is a dictionary with various information (id, title,
   url...).
+
+
+.. Local Variables:
+.. mode: rst
+.. End:
+.. vim: set filetype=rst:

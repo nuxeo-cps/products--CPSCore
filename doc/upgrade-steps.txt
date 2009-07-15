@@ -14,9 +14,9 @@ It will be convenient for examples to have a pretty printer::
 
 
 Categories registration
------------------------
+=======================
 
-    The CPSCore product has already registered a category::
+The CPSCore product has already registered a category::
 
     >>> from Products.CPSCore.upgrade import _categories_registry
     >>> pretty_print(_categories_registry)
@@ -76,10 +76,12 @@ Categories registration
    CPSCore's version.
 
 Upgrade steps registration
---------------------------
+==========================
 
 In python
 ~~~~~~~~~
+
+Code ::
 
     >>> class SimplestConfigurationContext:
     ...     def action(self, discriminator, callable=None, args=()):
@@ -111,14 +113,17 @@ In python
 In ZCML
 ~~~~~~~
 
-    Use the <cps:upgradeStep> element. Mandatory attributes 'title'
-    and 'handlers' corrspond to positional args of the upgradeStep function,
-    while others correspond to kwargs (see also various examples
-    within CPS configuration)
+Use the <cps:upgradeStep> element. Mandatory attributes 'title'
+and 'handlers' corrspond to positional args of the upgradeStep function,
+while others correspond to kwargs (see also various examples
+within CPS configuration)
 
 
 Listing
 ~~~~~~~
+
+Code::
+
     >>> def up_my_app_1_1_1_2(portal):
     ...     print "my_app: 1.1 -> 1.2"
     >>> upgradeStep(context, 'Test Step 3', up_my_app_1_1_1_2,
@@ -172,7 +177,9 @@ Listing
 
 
 Setup Tool
-----------
+==========
+
+Code::
 
     >>> class FakePortal:
     ...     pass
@@ -217,6 +224,8 @@ Setup Tool
 
 Upgrades proposals
 ~~~~~~~~~~~~~~~~~~
+
+Code::
 
     >>> list_ups = tool.listUpgrades(category='my_app')
     >>> [up['title'] for up in list_ups]
@@ -281,7 +290,9 @@ Upgrades proposals
     []
 
 Launching the upgrades
-----------------------
+======================
+
+Code::
 
     >>> tool._setCurrentVersion('my_app', ('1', '1'))
     '1.1'
@@ -295,6 +306,7 @@ Launching the upgrades
 
     >>> tool._getCurrentVersion('my_app')
     ('1', '2')
+
 
 .. Emacs
 .. Local Variables:

@@ -1,4 +1,3 @@
-# -*- coding: iso-8859-15 -*-
 # (C) Copyright 2003 Nuxeo SARL <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
@@ -292,13 +291,13 @@ class ProxyThisTest(ZopeTestCase):
                      ).aq_base is self.root.folder.aq_base)
         self.assert_(self.root.folder.folderish.subfolderish.thisProxyFolder(
                      ).aq_base is self.root.folder.aq_base)
-        
+
         self.assert_(self.root.folder.subfolder.thisProxyFolder().aq_base is 
                      self.root.folder.subfolder.aq_base)
         self.assert_(self.root.folder.subfolder.subfolderdoc.thisProxyFolder(
                      ).aq_base is self.root.folder.subfolder.aq_base)
-    
-    
+
+
 class ProxyToolTest(ZopeTestCase, LogInterceptor):
     """Test CPS Proxy Tool."""
 
@@ -421,7 +420,6 @@ class ProxyToolTest(ZopeTestCase, LogInterceptor):
         passed_dm = passed['kw'].get('datamodel')
         self.assert_(passed_dm is dm)
         self.assertEquals(dm.getProxy(), proxy)
-
 
 
 def test_suite():

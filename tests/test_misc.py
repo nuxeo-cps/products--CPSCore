@@ -1,4 +1,3 @@
-# -*- coding: iso-8859-15 -*-
 import unittest
 from Testing.ZopeTestCase import ZopeTestCase
 
