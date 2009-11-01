@@ -439,7 +439,7 @@ class ObjectRepositoryTool(UniqueObject,
         pxtool_infos = pxtool.getRevisionsUsed()
 
         docids_archives = {}
-        rpath_selected_doc_ids = {}
+        rpath_selected_doc_ids = set()
 
         for id in self.objectIds():
             docid, rev = self._splitId(id)
@@ -452,10 +452,11 @@ class ObjectRepositoryTool(UniqueObject,
             if pxtool_infos[docid].has_key(rev):
                 # rev corresponds to a live proxy of the docid document
                 rpath = pxtool_infos[docid][rev]
-                if (in_rpath and rpath.startswith(in_rpath) or
+                if (not in_rpath and not not_in_rpath or
+                    in_rpath and rpath.startswith(in_rpath) or
                     not_in_rpath and not rpath.startswith(not_in_rpath)):
                     logger.debug("selecting this doc according to its rpath")
-                    rpath_selected_doc_ids[docid] = None
+                    rpath_selected_doc_ids.add(docid)
                 continue
             # Else, rev corresponds to an archived (not live) proxy of the docid
             # document, thus with no associated rpath.
@@ -466,7 +467,7 @@ class ObjectRepositoryTool(UniqueObject,
             logger.debug("docid = %s" % docid)
             # Pruning against rpath criteria if those criteria where specified
             # and effective.
-            if docid not in rpath_selected_doc_ids.keys():
+            if docid not in rpath_selected_doc_ids:
                 continue
             if keep_max > 0:
                 revisions_informations.sort()
