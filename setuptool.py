@@ -92,7 +92,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
         current = getattr(aq_base(portal), cat_info['portal_attr'], '')
         if not current:
             current = cat_info['floor_version']
-        return tuple(current.split('.'))
+        return tuple(int(x) for x in current.split('.'))
 
     def _setCurrentVersion(self, category, version):
         """Set version for a given category.
@@ -107,7 +107,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
             if version is None:
                 return
         else:
-            version = '.'.join(version)
+            version = '.'.join([str(x) for x in version])
         setattr(portal, cat_info['portal_attr'], version)
         return version
 
@@ -130,8 +130,8 @@ class CPSSetupTool(UniqueObject, SetupTool):
 
             info = info.copy()
             info['haspath'] = bool(info['source'] and info['dest'])
-            info['ssource'] = '.'.join(info['source'] or ('all',))
-            info['sdest'] = '.'.join(info['dest'] or ('all',))
+            info['ssource'] = '.'.join([str(x) for x in info['source']] or ('all',))
+            info['sdest'] = '.'.join([str(x) for x in info['dest']] or ('all',))
             res.append(info)
         return res
 
@@ -174,7 +174,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
         keys = ['title', 'description']
         res = dict((key, cat[key]) for key in keys)
         res['id'] = cat_id
-        res['version'] = '.'.join(self._getCurrentVersion(cat_id))
+        res['version'] = '.'.join((str(x) for x in self._getCurrentVersion(cat_id)))
         return res
 
     def listUpgradeCategories(self):

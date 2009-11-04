@@ -7,6 +7,7 @@ New features
   (fixes uncatalog ERROR logs)
 Bug fixes
 ~~~~~~~~~
+- #2015: Upgrade steps ordering partially alphabetical
 - #1989: error log entry while purging localroles from cpshousekeeping
 - #2007: Methods CPSMembershipTool.purgeDeletedMembersLocalRoles and
   CPSMembershipTool.deleteLocalGroupRoles should be made more resilient
