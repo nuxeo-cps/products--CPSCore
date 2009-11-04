@@ -142,7 +142,7 @@ Listing
     ...             requires='cpsplatform-3.4.5')
 
 
-    >>> steps = listUpgradeSteps(None, 'my_app', (1,0))
+    >>> steps = listUpgradeSteps(None, 'my_app', (1, 0))
 
     Let's remove some human non friendly data and display the ordered
     list of proposed steps::
@@ -151,22 +151,22 @@ Listing
     ...     del step['id']
     ...     del step['step']
     >>> pretty_print(steps)
-    [{'dest': ('1', '1'),
+    [{'dest': (1, 1),
       'proposed': True,
-      'source': ('1', '0'),
+      'source': (1, 0),
       'title': 'Test Step 1'},
-     {'dest': ('1', '2'),
+     {'dest': (1, 2),
       'proposed': True,
-      'source': ('1', '1'),
+      'source': (1, 1),
       'title': 'Test Step 2'},
-     {'dest': ('1', '2'),
+     {'dest': (1, 2),
       'proposed': True,
-      'source': ('1', '1'),
+      'source': (1, 1),
       'title': 'Test Step 3'},
-     {'dest': ('2', '0'),
+     {'dest': (2, 0),
       'proposed': True,
-      'requires': ('cpsplatform', ('3', '4', '5')),
-      'source': ('1', '2'),
+      'requires': ('cpsplatform', (3, 4, 5)),
+      'source': (1, 2),
       'title': 'Test Step 4'}]
 
 
@@ -189,13 +189,13 @@ Setup Tool
     missing, the category's floor version is used::
 
     >>> tool._getCurrentVersion('my_app')
-    ('0', '5')
+    (0, 5)
 
     The tool provides an API to update the version number.
-    >>> tool._setCurrentVersion('my_app', ('1', '0'))
+    >>> tool._setCurrentVersion('my_app', (1, 0))
     '1.0'
     >>> tool._getCurrentVersion('my_app')
-    ('1', '0')
+    (1, 0)
 
     >>> pretty_print(tool._getUpgradeCategoryDisplayInfo('my_app'))
     {'description': 'My very cool app on top of CPS',
@@ -239,12 +239,12 @@ Upgrades proposals
 
     Now, let's do as if we were on 1.1: step 1 shouldn't be presented anymore::
 
-    >>> tool._setCurrentVersion('my_app', ('1', '1'))
+    >>> tool._setCurrentVersion('my_app', (1, 1))
     '1.1'
     >>> list_ups = tool.listUpgrades(category='my_app')
     >>> [up['title'] for up in list_ups]
     ['Test Step 2', 'Test Step 3']
-    >>> tool._setCurrentVersion('my_app', ('1', '2'))
+    >>> tool._setCurrentVersion('my_app', (1, 2))
     '1.2'
     >>> tool.listUpgrades(category='my_app')
     []
@@ -252,7 +252,7 @@ Upgrades proposals
     Now we pretend that CPSPlatform has been upgraded to the required
     version for step 4::
 
-    >>> tool._setCurrentVersion('cpsplatform', ('3', '4', '5'))
+    >>> tool._setCurrentVersion('cpsplatform', (3, 4, 5))
     '3.4.5'
     >>> list_ups = tool.listUpgrades(category='my_app')
     >>> [up['title'] for up in list_ups]
@@ -260,7 +260,7 @@ Upgrades proposals
 
     The result would be the same for a later version::
 
-    >>> tool._setCurrentVersion('cpsplatform', ('3', '5'))
+    >>> tool._setCurrentVersion('cpsplatform', (3, 5))
     '3.5'
     >>> list_ups = tool.listUpgrades(category='my_app')
     >>> [up['title'] for up in list_ups]
@@ -275,7 +275,7 @@ Upgrades proposals
     ...             category='my_app',
     ...             source='2.0',
     ...             destination='3.0')
-    >>> tool._setCurrentVersion('cpsplatform', ('3', '4', '4'))
+    >>> tool._setCurrentVersion('cpsplatform', (3, 4, 4))
     '3.4.4'
     >>> tool.listUpgrades(category='my_app')
     []
@@ -283,7 +283,7 @@ Upgrades proposals
 Launching the upgrades
 ----------------------
 
-    >>> tool._setCurrentVersion('my_app', ('1', '1'))
+    >>> tool._setCurrentVersion('my_app', (1, 1))
     '1.1'
     >>> list_ups = tool.listUpgrades(category='my_app')
     >>> ids = [up['id'] for up in list_ups]
@@ -294,7 +294,7 @@ Launching the upgrades
     The stored version was updated:
 
     >>> tool._getCurrentVersion('my_app')
-    ('1', '2')
+    (1, 2)
 
 .. Emacs
 .. Local Variables:

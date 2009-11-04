@@ -41,11 +41,11 @@ class UpgradeStep(object):
         >>> ups.category
         'cpsgroupware'
         >>> ups.source
-        ('1', '0', '0')
+        (1, 0, 0)
         >>> ups.dest
-        ('1', '2')
+        (1, 2)
         >>> ups.requires
-        ('cpsplatform', ('3', '4', '1'))
+        ('cpsplatform', (3, 4, 1))
         """
 
         self.id = str(abs(hash('%s%s%s%s' % (title, source, dest, sortkey))))
@@ -53,12 +53,12 @@ class UpgradeStep(object):
         if source == '*':
             source = None
         elif isinstance(source, basestring):
-            source = tuple(source.split('.'))
+            source = tuple(int(x) for x in source.split('.'))
         self.source = source
         if dest == '*':
             dest = None
         elif isinstance(dest, basestring):
-            dest = tuple(dest.split('.'))
+            dest = tuple(int(x) for x in dest.split('.'))
         self.dest = dest
         self.handler = handler
         self.checker = checker
@@ -66,7 +66,7 @@ class UpgradeStep(object):
         self.category = category
         if requires:
             spl_req = requires.rsplit('-')
-            requires = (spl_req[0], tuple(spl_req[1].split('.')),)
+            requires = (spl_req[0], tuple(int(x) for x in spl_req[1].split('.')))
         self.requires = requires
 
     def versionMatch(self, portal, source):
