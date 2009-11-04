@@ -130,8 +130,12 @@ class CPSSetupTool(UniqueObject, SetupTool):
 
             info = info.copy()
             info['haspath'] = bool(info['source'] and info['dest'])
-            info['ssource'] = '.'.join([str(x) for x in info['source']] or ('all',))
-            info['sdest'] = '.'.join([str(x) for x in info['dest']] or ('all',))
+            info['ssource'] = '.'.join(info['source'] and
+                                       [str(x) for x in info['source']]
+                                       or ('all',))
+            info['sdest'] = '.'.join(info['dest'] and
+                                     [str(x) for x in info['dest']]
+                                     or ('all',))
             res.append(info)
         return res
 
