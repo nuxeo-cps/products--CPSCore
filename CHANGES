@@ -13,6 +13,8 @@ Bug fixes
   CPSMembershipTool.deleteLocalGroupRoles should be made more resilient
 - #2006: ObjectRepositoryTool.purgeArchivedRevisions method should have
   excluding and including parameters relative to rpath
+- #2064: Line returns in description of a Collector Document are not rendered
+  when in view mode
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

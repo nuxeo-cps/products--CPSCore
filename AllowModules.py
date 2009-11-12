@@ -39,6 +39,7 @@ ModuleSecurityInfo('urllib').declarePublic('urlencode')
 ModuleSecurityInfo('urllib').declarePublic('quote')
 ModuleSecurityInfo('urllib').declarePublic('unquote')
 ModuleSecurityInfo('cgi').declarePublic('escape')
+ModuleSecurityInfo('Products.PythonScripts.standard').declarePublic('newline_to_br')
 ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG', 'INFO')
 ModuleSecurityInfo('zExceptions').declarePublic('Forbidden')
 from logging import Logger
