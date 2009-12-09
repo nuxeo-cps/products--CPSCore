@@ -264,8 +264,20 @@ CatalogTool.catalog_object = cat_catalog_object
 logger.log(TRACE, "Patching CMF CatalogTool.catalog_object")
 
 #XXX should be a patch of uncatalog_object
+#GR: no: proxy is needed (for lang revs) and can't be found from the catalog if
+#already removed from ZODB
 def cat_unindexObject(self, object):
-    """Remove from catalog."""
+    """Remove from catalog.
+    """
+
+    self.unindexCPSObjectWithPath(object, self._CatalogTool__url(object))
+
+def cat_unindexCPSObjectWithPath(self, object, path):
+    """Remove from catalog using the provided path.
+
+    This is singled out because sometimes, the path read from object after
+    deletion is wrong, but we do know the correct one See #2004
+    """
 
     # Documents from repository are not in catalog.
     # Unindexing produces an error
@@ -273,7 +285,7 @@ def cat_unindexObject(self, object):
         logger.debug("unindexObject: ignored object from repository %s", object)
         return
 
-    default_uid = self._CatalogTool__url(object)
+    default_uid = path
     proxy = None
     if isinstance(object, ProxyBase):
         proxy = object
@@ -289,6 +301,9 @@ def cat_unindexObject(self, object):
 
 CatalogTool.unindexObject = cat_unindexObject
 logger.log(TRACE, "Patching CMF CatalogTool.unindexObject")
+
+CatalogTool.unindexCPSObjectWithPath = cat_unindexCPSObjectWithPath
+logger.log(TRACE, "Patching CMF CatalogTool.unindexCPSObjectWithPath")
 
 
 def cat_listAllowedRolesAndUsers(self, user):

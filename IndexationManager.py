@@ -167,7 +167,8 @@ class IndexationManager(BeforeCommitSubscriber):
                 continue
 
             logger.debug("__call__ processing %r" % info)
-            self.process(info.pop('action'), info.pop('object'), **info)
+            self.process(info.pop('action'), info.pop('object'), path=i[1],
+                         **info)
 
         self._queue = [] # for what it matters
 
@@ -196,16 +197,23 @@ class IndexationManager(BeforeCommitSubscriber):
             logger.debug("reindexObjectSecurity %r skip=%s" % (ob, skip_self))
             ob._reindexObjectSecurity(skip_self=skip_self)
 
-    def processUnIndex(self, ob):
+    def processUnIndex(self, ob, path):
         """unindexes the object.
 
         We are pretty sure at this point that the object is still indexed
+        We use the path passed at push time, because it's more reliable
+        than the one read from ob (see #2004(
         """
-        getToolByName(ob, 'portal_catalog').unindexObject(ob)
+        cat = getToolByName(ob, 'portal_catalog')
+        if path is None:
+            cat.unindexObject(ob)
+        else:
+            cat.unindexCPSObjectWithPath(ob, '/' + path)
 
-    def process(self, action, ob, idxs=None, secu=None):
+
+    def process(self, action, ob, idxs=None, secu=None, path=None):
         if action == ACTION_UNINDEX:
-            self.processUnIndex(ob)
+            self.processUnIndex(ob, path=path)
         else:
             self.processIndex(ob, idxs, secu)
 
