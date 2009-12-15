@@ -3,19 +3,10 @@ Requires
 -
 New features
 ~~~~~~~~~~~~
-- #1995: unindexing now handled at transaction commit as well
-  (fixes uncatalog ERROR logs)
+-
 Bug fixes
 ~~~~~~~~~
-- #2015: Upgrade steps ordering partially alphabetical
-- #2004: catalog inconsistency for rename operations after #1995
-- #1989: error log entry while purging localroles from cpshousekeeping
-- #2007: Methods CPSMembershipTool.purgeDeletedMembersLocalRoles and
-  CPSMembershipTool.deleteLocalGroupRoles should be made more resilient
-- #2006: ObjectRepositoryTool.purgeArchivedRevisions method should have
-  excluding and including parameters relative to rpath
-- #2064: Line returns in description of a Collector Document are not rendered
-  when in view mode
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
