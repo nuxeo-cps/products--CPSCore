@@ -19,8 +19,15 @@
 from Globals import DTMLFile
 from ZServer.HTTPServer import zhttp_server
 from App.Management import Navigation
+from portal import CPSSite
 
-zhttp_server.SERVER_IDENT += ' CPS/3.4'
+vlist = [str(x) for x in CPSSite.cps_version]
+vstr = ' ' + vlist[0] + '/' + '.'.join(vlist[1:4])
+if len(vlist) > 4:
+    vstr += '-' + vlist[4]
+
+zhttp_server.SERVER_IDENT += vstr
+
 
 manage_copyright = DTMLFile('zmi/copyright', globals())
 
