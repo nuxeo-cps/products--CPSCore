@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #2098: support HEAD requests
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

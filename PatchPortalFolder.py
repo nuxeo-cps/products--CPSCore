@@ -31,6 +31,9 @@ from Acquisition import aq_base
 
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.permissions import View
+from Products.CMFCore.utils import _getViewFor
+
+from interfaces import ICPSSite
 
 security = ClassSecurityInfo()
 
@@ -52,6 +55,8 @@ def HEAD(self):
     method_id = ti and ti.queryMethodID('(Default)', context=self)
     if method_id and method_id!='(Default)':
         method = getattr(self, method_id)
+    elif ICPSSite.providedBy(self):
+        method = self.index_html
     else:
         method = _getViewFor(self)
 
