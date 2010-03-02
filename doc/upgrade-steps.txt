@@ -307,7 +307,6 @@ Code::
     >>> tool._getCurrentVersion('my_app')
     (1, 2)
 
-
 .. Emacs
 .. Local Variables:
 .. mode: rst
