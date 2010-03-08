@@ -229,11 +229,8 @@ class TreeCacheUpdater(object):
         for excluded_rpath in self.cache.excluded_rpaths:
             if rpath_slash.startswith(excluded_rpath+'/'):
                 return False
-        # Check types
+        # Check portal types (meta_type already filtered)
         bob = aq_base(ob)
-        if (self.cache.meta_types and
-            getattr(bob, 'meta_type', None) not in self.cache.meta_types):
-            return False
         type_names = self.cache.type_names or ()
         if getattr(bob, 'portal_type', None) not in type_names:
             return False
@@ -317,7 +314,7 @@ class TreeCacheUpdater(object):
         children = []
         ptype = getattr(aq_base(ob), 'portal_type', None)
         if ptype not in self.cache.terminal_nodes:
-            for subob in ob.objectValues():
+            for subob in ob.objectValues(self.cache.meta_types):
                 if self.isCandidate(subob):
                     subrpath = self.getRpath(subob)
                     children.append(subrpath)

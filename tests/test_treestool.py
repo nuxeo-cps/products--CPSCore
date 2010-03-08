@@ -156,8 +156,6 @@ class TreeCacheTest(SecurityRequestTest):
         ob.portal_type = 'Ah'
         self.failIf(cache.isCandidate(ob))
         ob = DummyObject(path='/cmf/root/foo')
-        ob.meta_type = 'Hehe'
-        self.failIf(cache.isCandidate(ob))
 
         # Test excluded rpaths
         ob = DummyObject(path='/cmf/root/foo/members/me')
