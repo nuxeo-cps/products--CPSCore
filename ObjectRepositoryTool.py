@@ -195,6 +195,18 @@ class ObjectRepositoryTool(UniqueObject,
             items.append((docid, rev))
         return items
 
+    security.declarePrivate('iterItems')
+    def iterItems(self):
+        """Making sure that this is an iterator."""
+        for i, o in self._tree.iteritems():
+            yield i, o.__of__(self)
+
+    security.declarePrivate('iterValues')
+    def iterValues(self):
+        """Making sure that this is an iterator."""
+        for o in self._tree.itervalues():
+            yield o.__of__(self)
+
     security.declarePrivate('listDocids')
     def listDocids(self):
         """List all the docids in the repository."""
