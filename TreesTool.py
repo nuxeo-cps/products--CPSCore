@@ -339,7 +339,7 @@ class TreeCacheUpdater(object):
         children = []
         ptype = getattr(aq_base(ob), 'portal_type', None)
         if ptype not in self.cache.terminal_nodes:
-            for subob in ob.objectValues():
+            for subob in ob.objectValues(self.cache.meta_types):
                 if self.isCandidate(subob):
                     subrpath = self._makeTree(subob, subdepth)
                     children.append(subrpath)
@@ -359,7 +359,7 @@ class TreeCacheUpdater(object):
             info.update(self.getNodeSecurityInfo(ob))
             self.infos[rpath] = info
         # Recurse
-        for subob in ob.objectValues():
+        for subob in ob.objectValues(self.cache.meta_types):
             if self.isCandidate(subob):
                 self.updateSecurityUnder(subob)
 
