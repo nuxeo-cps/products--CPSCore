@@ -6,8 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- #2098: support HEAD requests
-- sync'ed version number in HTTP headers to info in CPSSite class
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
