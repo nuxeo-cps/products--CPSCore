@@ -1,4 +1,22 @@
 ===========================================================
+Package: CPSCore 3.39.1
+===========================================================
+First release built by: gracinet at: 2010-03-13T17:43:16
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2098: support HEAD requests
+- sync'ed version number in HTTP headers to info in CPSSite class
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.39.0
 ===========================================================
 First release built by: gracinet at: 2009-12-15T12:27:23
