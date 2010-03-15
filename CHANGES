@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #2128 (regression): could not edit folders anymore
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

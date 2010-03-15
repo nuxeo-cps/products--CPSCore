@@ -222,6 +222,20 @@ class TreeCacheUpdater(object):
         # Check under root
         if not self.root:
             return False
+
+        # Check types (right away: this is quick)
+        # GR: this has in particular the effect of filtering objects from
+        # the repository, that appear to be inside their proxy and would break
+        # the update
+        bob = aq_base(ob)
+        if (self.cache.meta_types and
+            getattr(bob, 'meta_type', None) not in self.cache.meta_types):
+            return False
+
+        type_names = self.cache.type_names or ()
+        if getattr(bob, 'portal_type', None) not in type_names:
+            return False
+
         rpath_slash = self.getRpath(ob)+'/'
         if not rpath_slash.startswith(self.root+'/'):
             return False
@@ -229,11 +243,6 @@ class TreeCacheUpdater(object):
         for excluded_rpath in self.cache.excluded_rpaths:
             if rpath_slash.startswith(excluded_rpath+'/'):
                 return False
-        # Check portal types (meta_type already filtered)
-        bob = aq_base(ob)
-        type_names = self.cache.type_names or ()
-        if getattr(bob, 'portal_type', None) not in type_names:
-            return False
 
         return True
 
