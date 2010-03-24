@@ -222,6 +222,20 @@ class TreeCacheUpdater(object):
         # Check under root
         if not self.root:
             return False
+
+        # Check types (right away: this is quick)
+        # GR: this has in particular the effect of filtering objects from
+        # the repository, that appear to be inside their proxy and would break
+        # the update
+        bob = aq_base(ob)
+        if (self.cache.meta_types and
+            getattr(bob, 'meta_type', None) not in self.cache.meta_types):
+            return False
+
+        type_names = self.cache.type_names or ()
+        if getattr(bob, 'portal_type', None) not in type_names:
+            return False
+
         rpath_slash = self.getRpath(ob)+'/'
         if not rpath_slash.startswith(self.root+'/'):
             return False
@@ -229,14 +243,6 @@ class TreeCacheUpdater(object):
         for excluded_rpath in self.cache.excluded_rpaths:
             if rpath_slash.startswith(excluded_rpath+'/'):
                 return False
-        # Check types
-        bob = aq_base(ob)
-        if (self.cache.meta_types and
-            getattr(bob, 'meta_type', None) not in self.cache.meta_types):
-            return False
-        type_names = self.cache.type_names or ()
-        if getattr(bob, 'portal_type', None) not in type_names:
-            return False
 
         return True
 
@@ -317,7 +323,7 @@ class TreeCacheUpdater(object):
         children = []
         ptype = getattr(aq_base(ob), 'portal_type', None)
         if ptype not in self.cache.terminal_nodes:
-            for subob in ob.objectValues():
+            for subob in ob.objectValues(self.cache.meta_types):
                 if self.isCandidate(subob):
                     subrpath = self.getRpath(subob)
                     children.append(subrpath)
@@ -342,7 +348,7 @@ class TreeCacheUpdater(object):
         children = []
         ptype = getattr(aq_base(ob), 'portal_type', None)
         if ptype not in self.cache.terminal_nodes:
-            for subob in ob.objectValues():
+            for subob in ob.objectValues(self.cache.meta_types):
                 if self.isCandidate(subob):
                     subrpath = self._makeTree(subob, subdepth)
                     children.append(subrpath)
@@ -362,7 +368,7 @@ class TreeCacheUpdater(object):
             info.update(self.getNodeSecurityInfo(ob))
             self.infos[rpath] = info
         # Recurse
-        for subob in ob.objectValues():
+        for subob in ob.objectValues(self.cache.meta_types):
             if self.isCandidate(subob):
                 self.updateSecurityUnder(subob)
 

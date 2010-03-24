@@ -78,6 +78,9 @@ class FakeCatalog:
     def unindexObject(self, ob):
         ob.unindex()
 
+    def unindexCPSObjectWithPath(self, ob, path):
+        ob.unindex(path=path)
+
 
 class FakeContent:
 
@@ -105,9 +108,12 @@ class FakeContent:
     def _reindexObjectSecurity(self, skip_self=False):
         self.log.append('secu %s %r' % (self.id, skip_self))
 
-    def unindex(self):
+    def unindex(self, path=None):
         """Specific of FakeContent"""
-        self.log.append('Unindex %s' % self.id)
+        msg = 'Unindex %s' % self.id
+        if path is not None:
+            msg += ' path=' + path
+        self.log.append(msg)
 
 
 class FakeContentCausingReindex(FakeContent):
@@ -162,7 +168,8 @@ class IndexationManagerTest(unittest.TestCase):
         mgr, dummy = self.get_stuff()
         mgr.push(dummy, action=ACTION_UNINDEX)
         mgr()
-        self.assertEquals(dummy.getLog(), ['Unindex %s' % dummy.id])
+        did = dummy.id
+        self.assertEquals(dummy.getLog(), ['Unindex %s path=/%s' % (did, did)])
         mgr()
         self.assertEquals(dummy.getLog(), [])
 
@@ -267,10 +274,11 @@ class IndexationManagerTest(unittest.TestCase):
         mgr.push(dummy, action=ACTION_UNINDEX)
         self.assertEquals(dummy.getLog(), [])
         mgr()
-        self.assertEquals(dummy.getLog(), ["Unindex %s" % dummy.id])
+        did = dummy.id
+        self.assertEquals(dummy.getLog(), ["Unindex %s path=/%s" % (did,did)],)
 
     def test_index_reindex_unindex(self):
-        # index + reindex == index
+        # index + reindex + unindex == nothing to do
         mgr, dummy = self.get_stuff()
         mgr.push(dummy, idxs=[], action=ACTION_INDEX)
         mgr.push(dummy, idxs=[], action=ACTION_REINDEX)
