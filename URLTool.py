@@ -99,7 +99,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             base_url += '/'
         return base_url
 
-    security.declarePrivate('getVirtualRootPhysicalPath')
+    security.declarePublic('getVirtualRootPhysicalPath')
     def getVirtualRootPhysicalPath(self):
         """Get the virtual root physical path
 
@@ -112,7 +112,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
             vr = ('',)
         return vr
 
-    security.declarePrivate('getVirtualHostPhysicalPath')
+    security.declarePublic('getVirtualHostPhysicalPath')
     def getVirtualHostPhysicalPath(self):
         """Get the virtual host physical path
 
