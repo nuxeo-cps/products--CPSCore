@@ -77,8 +77,6 @@ Note about events currently sent and their Five equivalents:
 
 """
 
-from zLOG import LOG, DEBUG
-
 from Products.CMFCore.utils import getToolByName
 
 import zope.interface

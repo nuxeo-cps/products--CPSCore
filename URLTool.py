@@ -25,8 +25,6 @@ Url Tool to add methods to the CMF url tool
 - deal with virtual hosting
 """
 
-from zLOG import LOG, DEBUG
-
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
 from Acquisition import aq_inner

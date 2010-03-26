@@ -21,7 +21,6 @@
 """
 
 import sys
-from zLOG import LOG, INFO
 from Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 from AccessControl.Permissions import copy_or_move
