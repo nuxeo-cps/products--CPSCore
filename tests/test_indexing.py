@@ -255,7 +255,6 @@ class ProxyIndexingTest(PortalTestCase):
         # --- Delete a language
         self.assertRaises(ValueError, proxy.delLanguageFromProxy, 'fr')
         proxy.delLanguageFromProxy('it')
-        #import pdb; pdb.set_trace()
         self.assertEquals(catalog_paths(catalog), [
             '/portal/foo',
             ])
