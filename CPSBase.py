@@ -21,6 +21,7 @@
 
 import sys
 import warnings
+import logging
 from types import StringType, UnicodeType
 
 from Globals import InitializeClass
@@ -32,7 +33,6 @@ from Acquisition import aq_parent, aq_inner
 from OFS.ObjectManager import ObjectManager
 from OFS.PropertyManager import PropertyManager
 from OFS.FindSupport import FindSupport
-from zLOG import LOG, ERROR
 
 from Products.CMFCore.permissions import View
 from Products.CMFCore.permissions import ModifyPortalContent
@@ -49,6 +49,7 @@ from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
 
 defaultencoding = sys.getdefaultencoding()
 
+logger = logging.getLogger('Products.CPSCore.CPSBase')
 
 class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
                       DefaultDublinCoreImpl, PropertyManager):
@@ -104,9 +105,9 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
         try:
             values = self.propertyValues()
         except AttributeError, err:
-            LOG('CPSBase.SearchableText', ERROR,
+            logger.error(
                 'unable to get propertyValues for obj %s, '
-                'AttributeError on %s' % (self.absolute_url(1), err))
+                'AttributeError on %s', self.absolute_url(1), err)
             values = []
         strings = []
         for val in values:
@@ -298,9 +299,9 @@ class CPSBaseBTreeDocument(CMFCatalogAware, CMFBTreeFolder, PortalContent,
         try:
             values = self.propertyValues()
         except AttributeError, err:
-            LOG('CPSBase.SearchableText', ERROR,
+            logger.error('CPSBase.SearchableText',
                 'unable to get propertyValues for obj %s, '
-                'AttributeError on %s' % (self.absolute_url(1), err))
+                'AttributeError on %s', self.absolute_url(1), err)
             values = []
         strings = []
         for val in values:

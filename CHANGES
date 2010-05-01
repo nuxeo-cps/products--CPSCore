@@ -7,7 +7,9 @@ New features
 Bug fixes
 ~~~~~~~~~
 - #2098: support HEAD requests
+- #2131: virtual hosting awareness of search (opening some URLTool methods)
 - sync'ed version number in HTTP headers to info in CPSSite class
+- #2128 (regression): could not edit folders anymore
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
