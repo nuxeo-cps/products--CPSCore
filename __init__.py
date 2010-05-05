@@ -37,6 +37,7 @@ import PatchPropertyManager
 import PatchCMFCore
 import PatchCopyright
 import PatchPortalFolder
+import PatchGenericSetup
 
 import EventServiceTool
 import EventServicePatches
