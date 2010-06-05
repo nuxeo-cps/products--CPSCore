@@ -56,7 +56,8 @@ class CatalogToolXMLAdapter(ZCatalogXMLAdapter):
         self._initColumns(node)
 
         if self.environ.shouldPurge():
-            self._refreshCatalog()
+            self._logger.warning("Profile import with purge. You most probably "
+                                 "have to reindex the catalog")
         else:
             # Refreshing single indexes is not refreshing the whole catalog
             cat = self.context
@@ -64,11 +65,8 @@ class CatalogToolXMLAdapter(ZCatalogXMLAdapter):
                 if child.nodeName != 'index':
                     continue
                 name = str(child.getAttribute('name'))
-                self._logger.info("reindexing index %s" % name)
-                pgthreshold = cat._getProgressThreshold() or 100
-                pghandler = ZLogHandler(pgthreshold)
-                cat.reindexIndex(name, None, pghandler=pghandler)
-                self._logger.info("reindexing index %s DONE" % name)
+                self._logger.warning(
+                    "You may have to refresh index '%s'" % name)
 
         self._logger.info("Catalog tool imported.")
 
