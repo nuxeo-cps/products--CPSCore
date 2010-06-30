@@ -1,4 +1,25 @@
 ===========================================================
+Package: CPSCore 3.39.2
+===========================================================
+First release built by: gracinet at: 2010-06-30T02:34:25
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #1510: stopped triggering reindex through profile imports
+- #2131: virtual hosting awareness of search (opening some URLTool methods)
+- sync'ed version number in HTTP headers to info in CPSSite class
+- #2128 (regression): could not edit folders anymore
+- #2098: support HEAD requests
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.39.1
 ===========================================================
 First release built by: gracinet at: 2010-03-13T17:43:16
