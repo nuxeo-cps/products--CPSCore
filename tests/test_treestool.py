@@ -264,6 +264,7 @@ class TreeCacheTest(SecurityRequestTest):
         tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
         tool.flushEvents()
         l = cache.getList(filter=False)
+        # XXX test fails if verbose-security is on !
         self.assertEquals(l, [{
             'allowed_roles_and_users': ['Manager'],
             'depth': 0,
@@ -485,7 +486,7 @@ class TreeCacheTest(SecurityRequestTest):
         l = cache.getList(filter=False)
         self.assertEquals([d['title'] for d in l],
                           ['Foo', 'NewBar'])
-        self.assertEquals(l[1], {
+        self.assertEquals(l[1], {# XXX fails if verbose-security is on !
             'allowed_roles_and_users': ['Manager'],
             'depth': 1,
             'id': 'bar',

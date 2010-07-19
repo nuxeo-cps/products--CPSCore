@@ -41,7 +41,7 @@ class CPSBaseDocumentTestCase(unittest.TestCase):
         # Excercise path related to obscure unicode problem.
         latin1_title = "An unicode title ביןעû"
         unicode_title = unicode(latin1_title, "latin-1")
-        doc.edit(title=unicode_title, description="üצ")
+        doc.edit(title=unicode_title, description=u"üצ")
         self.assertEquals(doc.Title(), unicode_title)
         self.assertEquals(
             doc.SearchableText().count(unicode_title), 1)

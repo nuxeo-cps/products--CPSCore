@@ -66,11 +66,12 @@ class CPSBaseDocument(CMFCatalogAware, PortalFolder, PortalContent,
     security = ClassSecurityInfo()
 
     _properties = (
-        {'id':'title', 'type':'string', 'mode':'w', 'label':'Title'},
-        {'id':'description', 'type':'text', 'mode':'w', 'label':'Description'},
+        {'id':'title', 'type':'ustring', 'mode':'w', 'label':'Title'},
+        {'id':'description', 'type':'utext', 'mode':'w',
+         'label':'Description'},
         )
-    title = ''
-    description = ''
+    title = u''
+    description = u''
 
     def __init__(self, id, **kw):
         self.id = id

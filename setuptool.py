@@ -58,7 +58,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
     def getEncoding(self):
         """See ISetupTool.
         """
-        return 'iso-8859-15'
+        return 'utf-8'
 
     security.declareProtected(ManagePortal, 'listProfileInfo')
     def listProfileInfo(self):
