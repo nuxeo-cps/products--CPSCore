@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- 
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
-- 
+- #2183: provided walking utilities and iterValues for CPSBaseBTreeFolder

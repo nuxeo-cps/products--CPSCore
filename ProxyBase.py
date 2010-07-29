@@ -58,6 +58,7 @@ from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder
 from Products.CPSCore.CPSBase import CPSBaseDocument
 from Products.CPSCore.CPSBase import CPSBaseBTreeFolder
+from Products.CPSCore.utils import walk
 
 from Products.CPSCore.IndexationManager import get_indexation_manager
 from Products.CPSCore.IndexationManager import ACTION_UNINDEX
@@ -1681,3 +1682,17 @@ def addProxyBTreeFolderishDocument(container, id, REQUEST=None, **kw):
     container._setObject(id, ob)
     if REQUEST is not None:
         REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
+
+def walk_cps_folders(base):
+    """Generator to walk the cps folders."""
+    for o in walk(base, meta_types=(ProxyFolder.meta_type,
+                                    ProxyBTreeFolder.meta_type)):
+        yield o
+
+def walk_cps_folderish(base):
+    """Generator to walk the cps folders and folderish documents"""
+    for o in walk(base, meta_types=(ProxyFolder.meta_type,
+                                    ProxyBTreeFolder.meta_type,
+                                    ProxyFolderishDocument.meta_type,
+                                    ProxyBTreeFolderishDocument.meta_type)):
+        yield o

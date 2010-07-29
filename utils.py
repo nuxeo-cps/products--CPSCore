@@ -187,3 +187,18 @@ def makeId(s, max_chars=80, lower=0, portal_type=None):
          DeprecationWarning)
     return generateId(s, max_chars=max_chars, lower=lower,
                       portal_type=portal_type)
+
+def walk(base, meta_types=()):
+    """Generator that walks the object hierarchy top-down.
+
+    If you use it in a loop, you must take care of not changing the relevant
+    part of hierarchy within that loop.
+    """
+    it = getattr(aq_base(base), 'iterValues', None)
+    if it is None:
+        it = base.objectValues
+
+    for ob in it(meta_types):
+        yield ob
+        for subob in walk(ob, meta_types=meta_types):
+            yield subob

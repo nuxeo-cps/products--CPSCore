@@ -321,6 +321,32 @@ class CPSBaseBTreeDocument(CMFCatalogAware, CMFBTreeFolder, PortalContent,
         return res
 
     #
+    # Iterators
+    #
+
+    security.declarePrivate('iterValues')
+    def iterValues(self, meta_types=None):
+        """like objectValues, but a proper generator.
+        TODO: also make iterIds and iterItems."""
+        if meta_types is None:
+            for o in self._tree.itervalues():
+                yield o.__of__(self)
+            return
+
+        for mt in meta_types:
+            ids = self._mt_index.get(mt)
+            if ids is None:
+                continue
+            for oid in ids.iterkeys():
+                o = self._getOb(oid, default=None)
+                if o is not None:
+                    yield o
+                else:
+                    logger.warn("Inconsistent id %r in %s, found in "
+                                "meta_types indexes, but could not fetch",
+                                oid, self)
+
+    #
     # ZMI
     #
 
