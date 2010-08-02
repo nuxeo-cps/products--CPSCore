@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSCore 3.41.0
+===========================================================
+First release built by: gracinet at: 2010-08-02T19:58:16
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- 
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- #2183: provided walking utilities and iterValues for CPSBaseBTreeFolder
+
+===========================================================
 Package: CPSCore 3.40.0
 ===========================================================
 First release built by: gracinet at: 2010-07-26T22:48:31
