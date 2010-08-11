@@ -20,6 +20,16 @@
 import os
 from logging import getLogger
 from types import DictType
+import re
+try:
+    import PIL.Image
+    PIL_OK = True
+except ImportError:
+    getLogger('Products.CPSCore').warn(
+        "No PIL library found: no new image resizing will be done")
+    PIL_OK = False
+
+from zExceptions import BadRequest
 from ExtensionClass import Base
 from cPickle import Pickler, Unpickler
 from cStringIO import StringIO
@@ -33,7 +43,8 @@ from AccessControl import Unauthorized
 import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
-from OFS.Image import File
+from OFS.Folder import Folder
+from OFS.Image import File, Image
 from OFS.Traversable import Traversable
 from webdav.WriteLockInterface import WriteLockInterface
 
@@ -49,11 +60,13 @@ from Products.CPSCore.permissions import ChangeSubobjectsOrder
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import getCache
+from Products.CPSUtil.file import OFSFileIO
 from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
      KEYWORD_VIEW_LANGUAGE, KEYWORD_VIEW_ZIP, SESSION_LANGUAGE_KEY, \
-     REQUEST_LANGUAGE_KEY, KEYWORD_SIZED_IMAGE
+     REQUEST_LANGUAGE_KEY, KEYWORD_SIZED_IMAGE, IMAGE_RESIZING_CACHE
+from Products.CPSCore.utils import bhasattr
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder
 from Products.CPSCore.CPSBase import CPSBaseDocument
@@ -750,6 +763,7 @@ class BaseDownloader(Acquisition.Explicit):
             self.meta_type = getattr(self.file, 'meta_type', '')
             return self
         elif name in ('index_html', 'absolute_url', 'content_type',
+                      'cache_clear',
                       'HEAD', 'PUT', 'LOCK', 'UNLOCK',):
             return getattr(self, name)
         else:
@@ -909,6 +923,9 @@ class FileDownloader(BaseDownloader):
 
 InitializeClass(FileDownloader)
 
+IMG_SZ_FULLSPEC_REGEXP = re.compile(r'^(\d+)x(\d+)$')
+IMG_SZ_HEIGHT_REGEXP = re.compile(r'^h(\d+)$')
+IMG_SZ_WIDTH_REGEXP = re.compile(r'^w(\d+)$')
 
 class ImageDownloader(BaseDownloader):
     """Intermediate object allowing for image download with resizing.
@@ -944,21 +961,144 @@ class ImageDownloader(BaseDownloader):
         self.logger.debug(
             "BadRequest: cannot %s (state=%d, additional=%s)",
             self.state, self.additional)
-        msg = "Cannot %s on incomplete or resizing URL" % meth_name
-        raise 'BadRequest', msg
+        raise BadRequest("Cannot %s on incomplete or resizing URL" % meth_name)
 
     security.declareProtected(View, 'index_html')
     def index_html(self, REQUEST, RESPONSE):
         """Publish the file or image."""
         if self.state != self.url_parts:
             return None
-        img = self.file
+        img = self.getImage()
         if img is not None:
             return img.index_html(REQUEST, RESPONSE)
         else:
             RESPONSE.setHeader('Content-Type', 'text/plain')
             RESPONSE.setHeader('Content-Length', '0')
             return ''
+
+    security.declareProtected(View, 'getImage')
+    def getImage(self):
+       """Get the image with appropriate size.
+       Supports persistent cache.
+       TODO: security hazard, someone could inflate ZODB simply by requesting
+       lots and lots of different ones: clean the oldest ones
+       """
+       spec = self.additional
+       orig = self.file
+       if spec == 'full':
+           return orig
+
+       if not self.ob.hasObject(IMAGE_RESIZING_CACHE):
+           self.ob._setObject(IMAGE_RESIZING_CACHE,
+                              Folder(IMAGE_RESIZING_CACHE))
+
+       cache = getattr(self.ob, IMAGE_RESIZING_CACHE)
+
+       w, h = self._parseSizeSpec(spec)
+       if w is None or h is None:
+           raise NotImplementedError
+
+       key = '%s-%dx%d' % (self.attrname, w, h)
+
+       pm = orig._p_mtime
+       orig_last_mod = orig._p_mtime
+       if orig_last_mod is not None: # not commited
+           orig_last_mod = long(orig_last_mod)
+
+       if cache.hasObject(key):
+           existing = cache[key]
+           ex_last_mod = existing._p_mtime
+           if orig_last_mod is None:
+               if ex_last_mod is None:
+                   # both non commited: case should appear in unit tests only
+                   return existing
+           else:
+               ex_last_mod = long(ex_last_mod)
+               if ex_last_mod >= orig_last_mod:
+                   return existing
+           # existing can't be served, purge it
+           cache._delObject(key)
+
+       resized = self.resize(w, h, key)
+       if resized is None: # failed for some reason, fallback
+           return orig
+
+       return self.setInCache(cache, resized)
+
+    security.declarePrivate('setInCache')
+    @classmethod
+    def setInCache(self, cache, img):
+        """Set in cache and do the housekeeping.
+
+        Keeps no more than 10 objects in cache. For different sizes of an image
+        that should be more than enough, and this protects against buggy or
+        malicious requests.
+        """
+
+        cache_ids = cache.objectIds()
+        if len(cache_ids) > 9: # len(cache) wouldn't work
+            oldest = None
+            for oid, ob in cache.objectItems():
+                ob_time = ob._p_mtime
+                if ob_time is None: # so recent it's uncommited
+                    continue
+                if oldest is None or ob_time < oldest:
+                    oldest = ob_time
+                    todel = oid
+
+            if oldest is None: # 10 existing, all uncommited, not really normal
+                todel = cache_ids[0]
+
+            cache._delObject(todel)
+
+        cache._setObject(img.getId(), img)
+        return img
+
+    security.declarePrivate('resize')
+    def resize(self, width, height, resized_id):
+        """Return OFS.Image.Image or None if cannot resize."""
+
+        self.logger.info("Computing %r for %s.", resized_id, self.ob)
+        if not PIL_OK:
+            self.logger.warn("Resizing can't be done until PIL is installed")
+            return
+
+        fileio = OFSFileIO(self.file)
+        img = PIL.Image.open(fileio)
+        img.thumbnail((width, height),
+                      resample=PIL.Image.ANTIALIAS)
+        # We now need a buffer to write to. It can't be the same
+        # as the inbuffer as the PNG writer will write over itself.
+        outfile = StringIO()
+        img.save(outfile, format=img.format)
+
+        return Image(resized_id, self.file.title, outfile)
+
+    @classmethod
+    def _parseSizeSpec(self, spec):
+        """Return width, height or raise BadRequest.
+
+        >>> ImageDownloader._parseSizeSpec('320x200')
+        (320, 200)
+        >>> ImageDownloader._parseSizeSpec('h500')
+        (None, 500)
+        >>> ImageDownloader._parseSizeSpec('w1024')
+        (1024, None)
+        >>> try: ImageDownloader._parseSizeSpec('x1024')
+        ... except BadRequest, m: print str(m).split(':')[1].strip()
+        x1024
+        """
+        m = IMG_SZ_FULLSPEC_REGEXP.match(spec)
+        if m is not None:
+            return int(m.group(1)), int(m.group(2))
+        m = IMG_SZ_WIDTH_REGEXP.match(spec)
+        if m is not None:
+            return int(m.group(1)), None
+        m = IMG_SZ_HEIGHT_REGEXP.match(spec)
+        if m is not None:
+            return None, int(m.group(1))
+
+        raise BadRequest('Incorrect image size specification: %s' % spec)
 
     # Attribut checked by ExternalEditor to know if it can "WebDAV" on this
     # object.
