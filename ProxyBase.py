@@ -989,6 +989,8 @@ class ImageDownloader(BaseDownloader):
            return orig
 
        if not self.ob.hasObject(IMAGE_RESIZING_CACHE):
+           # XXX this can lead to ConflictError in repository while
+           # accessing an ImageGallery (weird)
            self.ob._setObject(IMAGE_RESIZING_CACHE,
                               Folder(IMAGE_RESIZING_CACHE))
 
@@ -1064,13 +1066,20 @@ class ImageDownloader(BaseDownloader):
             return
 
         fileio = OFSFileIO(self.file)
-        img = PIL.Image.open(fileio)
-        img.thumbnail((width, height),
+        try:
+            img = PIL.Image.open(fileio)
+            img.thumbnail((width, height),
                       resample=PIL.Image.ANTIALIAS)
-        # We now need a buffer to write to. It can't be the same
-        # as the inbuffer as the PNG writer will write over itself.
-        outfile = StringIO()
-        img.save(outfile, format=img.format)
+            # We now need a buffer to write to. It can't be the same
+            # as the inbuffer as the PNG writer will write over itself.
+            outfile = StringIO()
+            img.save(outfile, format=img.format)
+        except (NameError, IOError, ValueError, SystemError), err:
+                self.logger.warning(
+                    "Failed to resize image %r at %r (%s), "
+                    "full size will be served",
+                    self.filename, self.attrname, err)
+                return
 
         return Image(resized_id, self.file.title, outfile)
 
