@@ -989,10 +989,12 @@ class ImageDownloader(BaseDownloader):
            return orig
 
        if not self.ob.hasObject(IMAGE_RESIZING_CACHE):
-           # XXX this can lead to ConflictError in repository while
-           # accessing an ImageGallery (weird)
+           # no events because the catalog hook can lead to ConflictError
+           # if lots of first time requests in parallel.
+           # in this case, indexing is useless, really
            self.ob._setObject(IMAGE_RESIZING_CACHE,
-                              Folder(IMAGE_RESIZING_CACHE))
+                              Folder(IMAGE_RESIZING_CACHE),
+                              suppress_events=True)
 
        cache = getattr(self.ob, IMAGE_RESIZING_CACHE)
 
