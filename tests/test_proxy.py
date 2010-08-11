@@ -28,6 +28,7 @@ from Products.CMFCore.tests.base.testcase import WarningInterceptor
 from AccessControl import Unauthorized
 from AccessControl import getSecurityManager
 from AccessControl.PermissionRole import rolesForPermissionOn
+from OFS.Image import File, Image
 from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
 
@@ -37,6 +38,7 @@ from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolder
 from Products.CPSCore.ProxyBase import ProxyDocument, ProxyFolderishDocument
 from Products.CPSCore.ProxyBase import ProxyBTreeFolder
 from Products.CPSCore.ProxyBase import ProxyBTreeFolderishDocument
+from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, KEYWORD_SIZED_IMAGE
 
 from dummy import DummyPortalUrl
 from dummy import DummyWorkflowTool
@@ -421,6 +423,81 @@ class ProxyToolTest(ZopeTestCase, LogInterceptor):
         self.assert_(passed_dm is dm)
         self.assertEquals(dm.getProxy(), proxy)
 
+class ProxyTraversalTest(ZopeTestCase):
+    """Test the special traversal tokens."""
+
+    def afterSetUp(self):
+        ZopeTestCase.afterSetUp(self)
+        self.root = DummyRoot()
+        root = self.root
+
+        self.folder._setObject('portal_proxies', DummyProxyTool())
+        ptool = self.folder.portal_proxies
+        self.folder.proxies = Folder('proxies')
+
+        # this relies on the dummy proxy tool behavior: getContent() creates
+        # the actual content
+        proxy = PlacefulProxy('proxy', docid=1, default_language='en',
+                              language_revs=dict(en=1))
+        self.folder.proxies._setObject('proxy', proxy)
+        self.proxy = self.folder.proxies.proxy
+
+    def test_file_downloader(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        # _setObject not availabale on doc (SimpleItem)
+        doc.fobj = File('fobj', 'myfile.txt', 'File contents')
+
+        # Starting traversal
+        # TODO better to have something hihger level
+        # (closer to what publisher would actually trigger)
+        # we call utility methods that should never break at each stage
+        # but don't check their outcome
+        dl = proxy[KEYWORD_DOWNLOAD_FILE]
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'fobj')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'hisfile.txt')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+
+        self.assertEquals(dl.attrname, 'fobj')
+        self.assertEquals(dl.file, doc.fobj)
+        self.assertEquals(dl.filename, 'hisfile.txt')
+        req = self.folder.REQUEST
+        self.assertEquals(dl.index_html(req, req.RESPONSE), 'File contents')
+        self.assertEquals(dl.content_type(), 'text/plain')
+
+    def test_img_downloader(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        # _setObject not availabale on doc (SimpleItem)
+        doc.fobj = Image('fobj', 'myimg.png', 'File contents')
+
+        # Starting traversal
+        # TODO better to have something hihger level
+        # (closer to what publisher would actually trigger)
+        # we call utility methods that should never break at each stage
+        # but don't check their outcome
+        dl = proxy[KEYWORD_SIZED_IMAGE]
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'fobj')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'full')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'hisimg.png')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+
+        self.assertEquals(dl.attrname, 'fobj')
+        self.assertEquals(dl.file, doc.fobj)
+        self.assertEquals(dl.filename, 'hisimg.png')
+        self.assertEquals(dl.additional, 'full')
+
+        self.assertTrue(dl.isFullSize())
+        dl.assertFullSize(meth_name='TEST')
+
+        req = self.folder.REQUEST
+        self.assertEquals(dl.index_html(req, req.RESPONSE), 'File contents')
+        self.assertEquals(dl.content_type(), 'text/plain')
 
 def test_suite():
     suite = unittest.TestSuite()
@@ -429,6 +506,7 @@ def test_suite():
     suite.addTest(loader.loadTestsFromTestCase(ProxyFolderTest))
     suite.addTest(loader.loadTestsFromTestCase(ProxyToolTest))
     suite.addTest(loader.loadTestsFromTestCase(ProxyThisTest))
+    suite.addTest(loader.loadTestsFromTestCase(ProxyTraversalTest))
     return suite
 
 if __name__ == '__main__':
