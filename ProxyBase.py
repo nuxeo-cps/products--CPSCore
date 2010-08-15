@@ -1067,7 +1067,12 @@ class ImageDownloader(BaseDownloader):
             self.logger.warn("Resizing can't be done until PIL is installed")
             return
 
-        fileio = OFSFileIO(self.file)
+        # take the proper stream (e.g. tramline)
+        if bhasattr(self.file, 'getFileHandler'):
+            fileio = self.file.getFileHandler()
+        else:
+            fileio = OFSFileIO(self.file)
+
         try:
             img = PIL.Image.open(fileio)
             img.thumbnail((width, height),
