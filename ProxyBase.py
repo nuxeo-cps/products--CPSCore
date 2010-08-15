@@ -60,7 +60,7 @@ from Products.CPSCore.permissions import ChangeSubobjectsOrder
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import getCache
-from Products.CPSUtil.file import OFSFileIO
+from Products.CPSUtil.file import ofsFileHandler
 from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
@@ -1067,12 +1067,7 @@ class ImageDownloader(BaseDownloader):
             self.logger.warn("Resizing can't be done until PIL is installed")
             return
 
-        # take the proper stream (e.g. tramline)
-        if bhasattr(self.file, 'getFileHandler'):
-            fileio = self.file.getFileHandler()
-        else:
-            fileio = OFSFileIO(self.file)
-
+        fileio = ofsFileHandler(self.file)
         try:
             img = PIL.Image.open(fileio)
             img.thumbnail((width, height),
