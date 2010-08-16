@@ -44,10 +44,27 @@ if True: # keep indentation
         if node.hasAttribute('i18n:domain'):
             i18n_domain = str(node.getAttribute('i18n:domain'))
             obj._updateProperty('i18n_domain', i18n_domain)
+
+        prop_dict = obj.propdict()
+
+        # #2211: upgrading existing properties
+        to_add = []
+        for p in obj.__class__._properties:
+            pid = p['id']
+            if pid not in prop_dict:
+                # typically, some prop has been added to object at a time when
+                # definition at class level didn't include this prop
+                to_add.append(p)
+                prop_dict[pid] = p # will be useful later (PERF comment below)
+
+        if to_add:
+            obj._properties = obj._properties + tuple(to_add)
+
         for child in node.childNodes:
             if child.nodeName != 'property':
                 continue
             prop_id = str(child.getAttribute('name'))
+            # GR PERF: costly propdict() is evaluated for each prop
             prop_map = obj.propdict().get(prop_id, None)
 
             if prop_map is None:
