@@ -1696,3 +1696,23 @@ def walk_cps_folderish(base):
                                     ProxyFolderishDocument.meta_type,
                                     ProxyBTreeFolderishDocument.meta_type)):
         yield o
+
+def walk_cps_proxies(base):
+    """Generator to walk all proxies below."""
+
+    for o in walk(base, meta_types=(ProxyDocument.meta_type,
+                                    ProxyFolder.meta_type,
+                                    ProxyBTreeFolder.meta_type,
+                                    ProxyFolderishDocument.meta_type,
+                                    ProxyBTreeFolderishDocument.meta_type)):
+        yield o
+
+def walk_cps_except_folders(base):
+    """Generator to walk all proxies below except folders.
+
+    Useful mostly within loops already going through all folders."""
+
+    for o in walk(base, meta_types=(ProxyDocument.meta_type,
+                                    ProxyFolderishDocument.meta_type,
+                                    ProxyBTreeFolderishDocument.meta_type)):
+        yield o
