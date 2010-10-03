@@ -6,8 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- #2211: new properties import error
-- #2183: provided new walking utilities : all proxies and all but folders
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
