@@ -21,13 +21,17 @@
 
 import unittest
 from Testing.ZopeTestCase import ZopeTestCase
+from Testing.ZopeTestCase import doctest
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 from Products.CMFCore.tests.base.testcase import LogInterceptor
 from Products.CMFCore.tests.base.testcase import WarningInterceptor
 
+import os
+from zExceptions import BadRequest
 from AccessControl import Unauthorized
 from AccessControl import getSecurityManager
 from AccessControl.PermissionRole import rolesForPermissionOn
+from OFS.Image import File, Image
 from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
 
@@ -37,6 +41,8 @@ from Products.CPSCore.ProxyBase import ProxyBase, ProxyFolder
 from Products.CPSCore.ProxyBase import ProxyDocument, ProxyFolderishDocument
 from Products.CPSCore.ProxyBase import ProxyBTreeFolder
 from Products.CPSCore.ProxyBase import ProxyBTreeFolderishDocument
+from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, KEYWORD_SIZED_IMAGE
+from Products.CPSCore.utils import IMAGE_RESIZING_CACHE
 
 from dummy import DummyPortalUrl
 from dummy import DummyWorkflowTool
@@ -48,10 +54,20 @@ from Products.CMFCore.permissions import View
 from Products.CPSCore.permissions import ViewArchivedRevisions
 ViewAR = ViewArchivedRevisions
 
+TEST_DATA_PATH = os.path.join(os.path.split(__file__)[0], 'data')
 
 class DummyProxyTool(Folder):
-    def __init__(self):
+
+    # this is configurable, because some tests need objects to be
+    # Folders (like CPSDocument are) but most of them should not
+    # rely on that, not even to speak of ProxyBase itself (img caching is
+    # an exception)
+    ObClass = SimpleItem
+
+    def __init__(self, ob_class=None):
         self.proxies = {}
+        if ob_class is not None:
+            self.ObClass = ob_class
 
     def _findRev(self, proxy, rev):
         if rev is not None:
@@ -62,7 +78,7 @@ class DummyProxyTool(Folder):
     def getContentByRevision(self, docid, rev):
         id = 'ob_%s_%s' % (docid, rev)
         if id not in self.objectIds():
-            doc = SimpleItem(id)
+            doc = self.ObClass(id)
             doc._setId(id)
             doc.portal_type = 'Some Type'
             self._setObject(id, doc)
@@ -421,14 +437,109 @@ class ProxyToolTest(ZopeTestCase, LogInterceptor):
         self.assert_(passed_dm is dm)
         self.assertEquals(dm.getProxy(), proxy)
 
+class ProxyTraversalTest(ZopeTestCase):
+    """Test the special traversal tokens."""
+
+    def afterSetUp(self):
+        ZopeTestCase.afterSetUp(self)
+        self.root = DummyRoot()
+        root = self.root
+
+        self.folder._setObject('portal_proxies', DummyProxyTool(
+            ob_class=Folder))
+        ptool = self.folder.portal_proxies
+        self.folder.proxies = Folder('proxies')
+
+        # this relies on the dummy proxy tool behavior: getContent() creates
+        # the actual content
+        proxy = PlacefulProxy('proxy', docid=1, default_language='en',
+                              language_revs=dict(en=1))
+        self.folder.proxies._setObject('proxy', proxy)
+        self.proxy = self.folder.proxies.proxy
+
+    def test_file_downloader(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        # _setObject not availabale on doc (SimpleItem)
+        doc.fobj = File('fobj', 'myfile.txt', 'File contents')
+
+        # Starting traversal
+        # TODO better to have something hihger level
+        # (closer to what publisher would actually trigger)
+        # we call utility methods that should never break at each stage
+        # but don't check their outcome
+        dl = proxy[KEYWORD_DOWNLOAD_FILE]
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'fobj')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'hisfile.txt')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+
+        self.assertEquals(dl.attrname, 'fobj')
+        self.assertEquals(dl.file, doc.fobj)
+        self.assertEquals(dl.filename, 'hisfile.txt')
+        req = self.folder.REQUEST
+        self.assertEquals(dl.index_html(req, req.RESPONSE), 'File contents')
+        self.assertEquals(dl.content_type(), 'text/plain')
+
+    def test_img_downloader_fullsize(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        doc._setObject('fobj', Image('fobj', 'myimg.png', 'File contents'))
+
+        # Starting traversal
+        # TODO better to have something hihger level
+        # (closer to what publisher would actually trigger)
+        # we call utility methods that should never break at each stage
+        # but don't check their outcome
+        dl = proxy[KEYWORD_SIZED_IMAGE]
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'fobj')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'full')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'hisimg.png')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+
+        self.assertEquals(dl.attrname, 'fobj')
+        self.assertEquals(dl.file, doc.fobj)
+        self.assertEquals(dl.filename, 'hisimg.png')
+        self.assertEquals(dl.additional, 'full')
+
+        self.assertTrue(dl.isFullSize())
+        dl.assertFullSize(meth_name='TEST')
+
+        req = self.folder.REQUEST
+        self.assertEquals(dl.index_html(req, req.RESPONSE), 'File contents')
+        self.assertEquals(dl.content_type(), 'text/plain')
+
+    def test_img_downloader_fullspec(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        f = open(os.path.join(TEST_DATA_PATH, 'logo_cps.png'))
+        doc._setObject('fobj', Image('fobj', 'myimg.png', f))
+
+        dl = proxy[KEYWORD_SIZED_IMAGE]
+        dl.__bobo_traverse__(None, 'fobj')
+        dl.__bobo_traverse__(None, '320x200')
+        dl.__bobo_traverse__(None, 'hisimg.png')
+
+        self.assertFalse(dl.isFullSize())
+        self.assertRaises(BadRequest, dl.assertFullSize, meth_name='TEST')
+
+        req = self.folder.REQUEST
+        img_content = dl.index_html(req, req.RESPONSE)
+        self.assertEquals(dl.content_type(), 'image/png')
 
 def test_suite():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
+    suite.addTest(doctest.DocTestSuite('Products.CPSCore.ProxyBase'))
     suite.addTest(loader.loadTestsFromTestCase(ProxyBaseTest))
     suite.addTest(loader.loadTestsFromTestCase(ProxyFolderTest))
     suite.addTest(loader.loadTestsFromTestCase(ProxyToolTest))
     suite.addTest(loader.loadTestsFromTestCase(ProxyThisTest))
+    suite.addTest(loader.loadTestsFromTestCase(ProxyTraversalTest))
     return suite
 
 if __name__ == '__main__':

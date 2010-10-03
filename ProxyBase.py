@@ -20,6 +20,16 @@
 import os
 from logging import getLogger
 from types import DictType
+import re
+try:
+    import PIL.Image
+    PIL_OK = True
+except ImportError:
+    getLogger('Products.CPSCore').warn(
+        "No PIL library found: no new image resizing will be done")
+    PIL_OK = False
+
+from zExceptions import BadRequest
 from ExtensionClass import Base
 from cPickle import Pickler, Unpickler
 from cStringIO import StringIO
@@ -33,7 +43,8 @@ from AccessControl import Unauthorized
 import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
-from OFS.Image import File
+from OFS.Folder import Folder
+from OFS.Image import File, Image
 from OFS.Traversable import Traversable
 from webdav.WriteLockInterface import WriteLockInterface
 
@@ -49,11 +60,13 @@ from Products.CPSCore.permissions import ChangeSubobjectsOrder
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import getCache
+from Products.CPSUtil.file import ofsFileHandler
 from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
      KEYWORD_VIEW_LANGUAGE, KEYWORD_VIEW_ZIP, SESSION_LANGUAGE_KEY, \
-     REQUEST_LANGUAGE_KEY
+     REQUEST_LANGUAGE_KEY, KEYWORD_SIZED_IMAGE, IMAGE_RESIZING_CACHE
+from Products.CPSCore.utils import bhasattr
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.CPSBase import CPSBaseFolder
 from Products.CPSCore.CPSBase import CPSBaseDocument
@@ -288,6 +301,9 @@ class ProxyBase(Base):
             raise KeyError(name)
         if name == KEYWORD_DOWNLOAD_FILE:
             downloader = FileDownloader(ob, self)
+            return downloader.__of__(self)
+        if name == KEYWORD_SIZED_IMAGE:
+            downloader = ImageDownloader(ob, self)
             return downloader.__of__(self)
         elif name == KEYWORD_VIEW_ZIP:
             zipview = ViewZip(ob, self)
@@ -672,25 +688,43 @@ class ProxyBase(Base):
 
 InitializeClass(ProxyBase)
 
-
-class FileDownloader(Acquisition.Explicit):
-    """Intermediate object allowing for file download.
-
-    Returned by a proxy during traversal of .../downloadFile/.
-
-    Parses URLs of the form .../downloadFile/attrname/mydocname.pdf
-    """
-
-    __implements__ = (WriteLockInterface,)
+class BaseDownloader(Acquisition.Explicit):
+    """Common part of intermediate objects allowing for downloads."""
 
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
-    logger = getLogger('CPSCore.ProxyBase.FileDownloader')
+    keyword = 'BaseDownloader should not appear'
+
+    __implements__ = (WriteLockInterface,)
+
+    url_parts = 2
+
+    def __repr__(self):
+        s = '<%s for %s' % (self.__class__.__name__, self.ob)
+        if self.state > 0:
+            s += '/'+self.attrname
+        if self.state > 1 and self.url_parts > 2:
+            s += '/' + self.additional
+        if self.state == self.url_parts:
+            s += '/' + self.filename
+        s += '>'
+        return s
+
+    security.declareProtected(View, 'absolute_url')
+    def absolute_url(self):
+        url = self.proxy.absolute_url() + '/' + self.keyword
+        if self.state > 0:
+            url += '/' + self.attrname
+        if self.state > 1 and self.url_parts > 2:
+            url += '/' + self.additional
+        if self.state == self.url_parts:
+            url += '/' + self.filename
+        return url
 
     def __init__(self, ob, proxy):
         """
-        Init the FileDownloader with the document and proxy to which it pertains.
+        Init the Downloader with the document and proxy to which it pertains.
 
         ob is the document that owns the file and proxy is the proxy of this
         same document
@@ -701,15 +735,7 @@ class FileDownloader(Acquisition.Explicit):
         self.attrname = None
         self.file = None
         self.filename = None
-
-    def __repr__(self):
-        s = '<FileDownloader for %s' % `self.ob`
-        if self.state > 0:
-            s += '/'+self.attrname
-        if self.state > 1:
-            s += '/'+self.filename
-        s += '>'
-        return s
+        self.additional = None # any relevant additional arg put in URL
 
     def __bobo_traverse__(self, request, name):
         state = self.state
@@ -725,32 +751,71 @@ class FileDownloader(Acquisition.Explicit):
             self.file = file_
             self.state = 1
             return self
-        elif state == 1:
-            # Got attribute, swallow filename
-            self.filename = name
+        elif state == 1 and self.url_parts > 2:
+            # Got attribute, swallow additional
+            self.additional = name
             self.state = 2
+            return self
+        elif state == self.url_parts - 1:
+            # Got everything, swallow filename
+            self.filename = name
+            self.state = self.url_parts
             self.meta_type = getattr(self.file, 'meta_type', '')
             return self
         elif name in ('index_html', 'absolute_url', 'content_type',
+                      'cache_clear',
                       'HEAD', 'PUT', 'LOCK', 'UNLOCK',):
             return getattr(self, name)
         else:
             raise KeyError(name)
 
-    security.declareProtected(View, 'absolute_url')
-    def absolute_url(self):
-        url = self.proxy.absolute_url() + '/' + KEYWORD_DOWNLOAD_FILE
-        if self.state > 0:
-            url += '/' + self.attrname
-        if self.state > 1:
-            url += '/' + self.filename
-        return url
-
     security.declareProtected(View, 'content_type')
     def content_type(self):
-        if self.state != 2:
+        if self.state != self.url_parts:
             return None
         return self.file.content_type
+
+    security.declareProtected(View, 'HEAD')
+    def HEAD(self, REQUEST, RESPONSE):
+        """Retrieve the HEAD information for HTTP."""
+        if self.state != self.url_parts:
+            return None
+        file = self.file
+        if file is not None:
+            return file.HEAD(REQUEST, RESPONSE)
+        else:
+            RESPONSE.setHeader('Content-Type', 'text/plain')
+            RESPONSE.setHeader('Content-Length', '0')
+            return ''
+
+    def _getFile(self, document, name):
+        if hasattr(aq_base(document), name):
+            # fast: usually file is stored as a subobject by the storage
+            # adapter
+            return getattr(document, name)
+        else:
+            # make it work when file is computed by a field read expression
+            return document.getDataModel(proxy=self.proxy)[name]
+
+InitializeClass(BaseDownloader)
+
+
+class FileDownloader(BaseDownloader):
+    """Intermediate object allowing for file download.
+
+   Returned by a proxy during traversal of .../downloadFile/.
+
+    Parses URLs of the form .../downloadFile/attrname/mydocname.pdf
+    """
+
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+
+    logger = getLogger('CPSCore.ProxyBase.FileDownloader')
+
+    keyword = KEYWORD_DOWNLOAD_FILE
+
+    url_parts = 2
 
     security.declareProtected(View, 'index_html')
     def index_html(self, REQUEST, RESPONSE):
@@ -793,19 +858,6 @@ class FileDownloader(Acquisition.Explicit):
         file = self.file
         if file is not None:
             return str(self.file.data)
-
-    security.declareProtected(View, 'HEAD')
-    def HEAD(self, REQUEST, RESPONSE):
-        """Retrieve the HEAD information for HTTP."""
-        if self.state != 2:
-            return None
-        file = self.file
-        if file is not None:
-            return file.HEAD(REQUEST, RESPONSE)
-        else:
-            RESPONSE.setHeader('Content-Type', 'text/plain')
-            RESPONSE.setHeader('Content-Length', '0')
-            return ''
 
     security.declareProtected(ModifyPortalContent, 'PUT')
     def PUT(self, REQUEST, RESPONSE):
@@ -869,17 +921,253 @@ class FileDownloader(Acquisition.Explicit):
         file_ = self._getFile(document, self.attrname)
         return file_.wl_isLocked()
 
-    def _getFile(self, document, name):
-        if hasattr(aq_base(document), name):
-            # fast: usually file is stored as a subobject by the storage
-            # adapter
-            return getattr(document, name)
-        else:
-            # make it work when file is computed by a field read expression
-            return document.getDataModel(proxy=self.proxy)[name]
-
-
 InitializeClass(FileDownloader)
+
+IMG_SZ_FULLSPEC_REGEXP = re.compile(r'^(\d+)x(\d+)$')
+IMG_SZ_HEIGHT_REGEXP = re.compile(r'^h(\d+)$')
+IMG_SZ_WIDTH_REGEXP = re.compile(r'^w(\d+)$')
+
+class ImageDownloader(BaseDownloader):
+    """Intermediate object allowing for image download with resizing.
+
+    Returned by a proxy during traversal of .../sizedImg/.
+
+    Parses URLs of the form .../sizedImg/size/myimg.jpg, where size can be
+       - full: untransformed
+       - 320x200: full size spec (width plus height)
+       - w320: width spec: height will keep aspect ratio
+       - h200: height spec: width will keep aspect ratio
+
+    Only 'full' allowed for content-changing requests.
+    Any non compliant spec or method should raise BadRequest
+    """
+
+    security = ClassSecurityInfo()
+    security.declareObjectPublic()
+
+    logger = getLogger('CPSCore.ProxyBase.FileDownloader')
+
+    keyword = KEYWORD_SIZED_IMAGE
+
+    url_parts = 3
+
+    security.declareProtected(View, 'isFullSize')
+    def isFullSize(self):
+        return self.state == self.url_parts and self.additional == 'full'
+
+    def assertFullSize(self, meth_name='METH'):
+        if self.isFullSize():
+            return
+        self.logger.debug(
+            "BadRequest: cannot %s (state=%d, additional=%s)",
+            self.state, self.additional)
+        raise BadRequest("Cannot %s on incomplete or resizing URL" % meth_name)
+
+    security.declareProtected(View, 'index_html')
+    def index_html(self, REQUEST, RESPONSE):
+        """Publish the file or image."""
+        if self.state != self.url_parts:
+            return None
+        img = self.getImage()
+        if img is not None:
+            return img.index_html(REQUEST, RESPONSE)
+        else:
+            RESPONSE.setHeader('Content-Type', 'text/plain')
+            RESPONSE.setHeader('Content-Length', '0')
+            return ''
+
+    security.declareProtected(View, 'getImage')
+    def getImage(self):
+       """Get the image with appropriate size.
+       Supports persistent cache.
+       TODO: security hazard, someone could inflate ZODB simply by requesting
+       lots and lots of different ones: clean the oldest ones
+       """
+       spec = self.additional
+       orig = self.file
+       if spec == 'full':
+           return orig
+
+       if not self.ob.hasObject(IMAGE_RESIZING_CACHE):
+           # no events because the catalog hook can lead to ConflictError
+           # if lots of first time requests in parallel.
+           # in this case, indexing is useless, really
+           self.ob._setObject(IMAGE_RESIZING_CACHE,
+                              Folder(IMAGE_RESIZING_CACHE),
+                              suppress_events=True)
+
+       cache = getattr(self.ob, IMAGE_RESIZING_CACHE)
+
+       w, h = self._parseSizeSpec(spec)
+       if w is None or h is None:
+           raise NotImplementedError
+
+       key = '%s-%dx%d' % (self.attrname, w, h)
+
+       pm = orig._p_mtime
+       orig_last_mod = orig._p_mtime
+       if orig_last_mod is not None: # not commited
+           orig_last_mod = long(orig_last_mod)
+
+       if cache.hasObject(key):
+           existing = cache[key]
+           ex_last_mod = existing._p_mtime
+           if orig_last_mod is None:
+               if ex_last_mod is None:
+                   # both non commited: case should appear in unit tests only
+                   return existing
+           else:
+               ex_last_mod = long(ex_last_mod)
+               if ex_last_mod >= orig_last_mod:
+                   return existing
+           # existing can't be served, purge it
+           cache._delObject(key)
+
+       resized = self.resize(w, h, key)
+       if resized is None: # failed for some reason, fallback
+           return orig
+
+       return self.setInCache(cache, resized)
+
+    security.declarePrivate('setInCache')
+    @classmethod
+    def setInCache(self, cache, img):
+        """Set in cache and do the housekeeping.
+
+        Keeps no more than 10 objects in cache. For different sizes of an image
+        that should be more than enough, and this protects against buggy or
+        malicious requests.
+        """
+
+        cache_ids = cache.objectIds()
+        if len(cache_ids) > 9: # len(cache) wouldn't work
+            oldest = None
+            for oid, ob in cache.objectItems():
+                ob_time = ob._p_mtime
+                if ob_time is None: # so recent it's uncommited
+                    continue
+                if oldest is None or ob_time < oldest:
+                    oldest = ob_time
+                    todel = oid
+
+            if oldest is None: # 10 existing, all uncommited, not really normal
+                todel = cache_ids[0]
+
+            cache._delObject(todel)
+
+        cache._setObject(img.getId(), img)
+        return img
+
+    security.declarePrivate('resize')
+    def resize(self, width, height, resized_id):
+        """Return OFS.Image.Image or None if cannot resize."""
+
+        self.logger.info("Computing %r for %s.", resized_id, self.ob)
+        if not PIL_OK:
+            self.logger.warn("Resizing can't be done until PIL is installed")
+            return
+
+        fileio = ofsFileHandler(self.file)
+        try:
+            img = PIL.Image.open(fileio)
+            img.thumbnail((width, height),
+                      resample=PIL.Image.ANTIALIAS)
+            # We now need a buffer to write to. It can't be the same
+            # as the inbuffer as the PNG writer will write over itself.
+            outfile = StringIO()
+            img.save(outfile, format=img.format)
+        except (NameError, IOError, ValueError, SystemError), err:
+                self.logger.warning(
+                    "Failed to resize image %r at %r (%s), "
+                    "full size will be served",
+                    self.filename, self.attrname, err)
+                return
+
+        return Image(resized_id, self.file.title, outfile)
+
+    @classmethod
+    def _parseSizeSpec(self, spec):
+        """Return width, height or raise BadRequest.
+
+        >>> ImageDownloader._parseSizeSpec('320x200')
+        (320, 200)
+        >>> ImageDownloader._parseSizeSpec('h500')
+        (None, 500)
+        >>> ImageDownloader._parseSizeSpec('w1024')
+        (1024, None)
+        >>> try: ImageDownloader._parseSizeSpec('x1024')
+        ... except BadRequest, m: print str(m).split(':')[1].strip()
+        x1024
+        """
+        m = IMG_SZ_FULLSPEC_REGEXP.match(spec)
+        if m is not None:
+            return int(m.group(1)), int(m.group(2))
+        m = IMG_SZ_WIDTH_REGEXP.match(spec)
+        if m is not None:
+            return int(m.group(1)), None
+        m = IMG_SZ_HEIGHT_REGEXP.match(spec)
+        if m is not None:
+            return None, int(m.group(1))
+
+        raise BadRequest('Incorrect image size specification: %s' % spec)
+
+    # Attribut checked by ExternalEditor to know if it can "WebDAV" on this
+    # object.
+    def EditableBody(self):
+        if not self.isFullSize():
+            return None
+        file = self.file
+        if file is not None:
+            return str(self.file.data)
+
+    security.declareProtected(ModifyPortalContent, 'PUT')
+    def PUT(self, REQUEST, RESPONSE):
+        """Handle HTTP (and presumably FTP?) PUT requests (WebDAV)."""
+        self.assertFullSize(meth_name='PUT')
+        document = self.proxy.getEditableContent()
+        file_ = self._getFile(document, self.attrname)
+        response = file_.PUT(REQUEST, RESPONSE)
+        # If the considered document is a CPSDocument we must use the edit()
+        # method since this method does important things such as setting dirty
+        # flags on modified fields.
+        # XXX: Note that using edit() modifies the file attribute twice.
+        # We shouldn't use the file.PUT() method but it is helpful to get the
+        # needed response object.
+        if getattr(aq_base(document), '_has_generic_edit_method', 0):
+            document.edit({self.attrname: file_}, proxy=self.proxy)
+        return response
+
+    security.declareProtected(ModifyPortalContent, 'LOCK')
+    def LOCK(self, REQUEST, RESPONSE):
+        """Handle HTTP (and presumably FTP?) LOCK requests (WebDAV)."""
+        self.assertFullSize(meth_name='LOCK')
+        document = self.proxy.getEditableContent()
+        file_ = self._getFile(document, self.attrname)
+        return file_.LOCK(REQUEST, RESPONSE)
+
+    security.declareProtected(ModifyPortalContent, 'UNLOCK')
+    def UNLOCK(self, REQUEST, RESPONSE):
+        """Handle HTTP (and presumably FTP?) UNLOCK requests (WebDAV)."""
+        self.assertFullSize(meth_name='UNLOCK')
+        document = self.proxy.getEditableContent()
+        file_ = self._getFile(document, self.attrname)
+        return file_.UNLOCK(REQUEST, RESPONSE)
+
+    def wl_lockValues(self, killinvalids=0):
+        """Handle HTTP (and presumably FTP?) wl_lockValues requests (WebDAV)."""
+        self.assertFullSize(meth_name='wl_lockValues')
+        document = self.proxy.getEditableContent()
+        file_ = self._getFile(document, self.attrname)
+        return file_.wl_lockValues(killinvalids)
+
+    def wl_isLocked(self):
+        """Handle HTTP (and presumably FTP?) wl_isLocked requests (WebDAV)."""
+        self.assertFullSize(meth_name='wl_isLocked')
+        document = self.proxy.getEditableContent()
+        file_ = self._getFile(document, self.attrname)
+        return file_.wl_isLocked()
+
+InitializeClass(ImageDownloader)
 
 
 class LanguageSwitcher(Acquisition.Explicit):
@@ -1083,6 +1371,7 @@ zip_cache.setTimeout(CACHE_ZIP_VIEW_TIMEOUT)
 class ViewZip(Acquisition.Explicit):
     """Intermediate object allowing to view zipped content
 
+    TODO subclass BaseDownloader to stop duplication and make unit tests
     Returned by a proxy during traversal of .../viewZip/.
 
     Parses URLs of the form .../viewZip/attrname/mydocname.zip/path/in/archive
@@ -1152,7 +1441,7 @@ class ViewZip(Acquisition.Explicit):
 
     security.declareProtected(View, 'content_type')
     def content_type(self):
-        if self.state != 2:
+        if self.state != self.url_parts:
             return None
         return self.file.content_type
 

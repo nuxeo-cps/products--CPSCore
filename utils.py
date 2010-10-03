@@ -44,6 +44,8 @@ from Products.CPSUtil.id import generateId
 # some shared constants
 # see AllowedModules to check if they are public
 KEYWORD_DOWNLOAD_FILE = 'downloadFile'
+KEYWORD_SIZED_IMAGE = 'sizedImg'
+IMAGE_RESIZING_CACHE = '.img_sizes'
 KEYWORD_ARCHIVED_REVISION = 'archivedRevision'
 KEYWORD_SWITCH_LANGUAGE = 'switchLanguage'
 KEYWORD_VIEW_LANGUAGE = 'viewLanguage'
