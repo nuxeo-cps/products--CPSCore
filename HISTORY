@@ -1,4 +1,22 @@
 ===========================================================
+Package: CPSCore 3.41.1
+===========================================================
+First release built by: gracinet at: 2010-10-03T11:46:30
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2211: new properties import error
+- #2183: provided new walking utilities : all proxies and all but folders
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.41.0
 ===========================================================
 First release built by: gracinet at: 2010-08-02T19:58:16
