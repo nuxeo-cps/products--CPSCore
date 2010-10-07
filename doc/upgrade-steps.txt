@@ -182,6 +182,23 @@ Code::
     ['Test Step 1', 'Test Step 2', 'Test Step 3']
 
 
+    Listing by handlers can be useful for scripts/jobs. This also
+    demonstrates that no signature check is done on the handler (this
+    one is really stupid)::
+    >>> upgradeStep(context, 'Test by handler', upgradeStep,
+    ...             category='my_app',
+    ...             source='2.0',
+    ...             destination='2.5', sortkey=10,
+    ...             requires='cpsplatform-3.5.2')
+    >>> from Products.CPSCore.upgrade import listUpgradesByHandler
+    >>> [s.title
+    ...  for s in listUpgradesByHandler('Products.CPSCore.upgrade.upgradeStep')]
+    ['Test by handler']
+
+    This works also by passing the handler callable itself::
+    >>> [s.title for s in listUpgradesByHandler(up_my_app_1_2_2_0)]
+    ['Test Step 4']
+
 
 Setup Tool
 ==========
@@ -228,6 +245,7 @@ Code::
       'id': 'my_app',
       'title': 'My Application',
       'version': '1.0'}]
+
 
 Upgrades proposals
 ~~~~~~~~~~~~~~~~~~
@@ -296,6 +314,8 @@ Code::
     '3.4.4'
     >>> tool.listUpgrades(category='my_app')
     []
+
+
 
 Launching the upgrades
 ======================

@@ -21,6 +21,7 @@ import os
 from logging import getLogger
 from os.path import abspath
 import Products
+from Products.GenericSetup.utils import _resolveDottedName
 
 logger = getLogger('CPSCore.upgrade')
 
@@ -192,6 +193,18 @@ def listUpgradeSteps(portal, category, source, max_dest=None):
     res = [i[1] for i in res]
 
     return res
+
+def listUpgradesByHandler(handler):
+    """Return all upgrade steps that have this handler.
+
+    The handler is the callable or a dotted name.
+    Note that the same handler can be used several times, e.g, after correction
+    of a step in a later version
+    """
+    if isinstance(handler, str):
+        handler = _resolveDottedName(handler)
+    return [s for  s in _upgrade_registry.values() if s.handler == handler]
+
 
 ######################################################################
 
