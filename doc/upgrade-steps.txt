@@ -241,16 +241,17 @@ Code::
     Our test step 4 was not proposed because it requires (the upgrade of)
     CPSPlatform to 3.4.5. Let's see what info is provided for each step::
 
-    >>> pretty_print(list_ups[0].keys())
-    ['source',
-     'step',
-     'proposed',
-     'title',
-     'dest',
+    >>> keys = list(list_ups[0]); keys.sort(); pretty_print(keys)
+    ['dest',
+     'done',
      'haspath',
-     'ssource',
      'id',
-     'sdest']
+     'proposed',
+     'sdest',
+     'source',
+     'ssource',
+     'step',
+     'title']
 
 
     Now, let's do as if we were on 1.1: step 1 shouldn't be presented anymore::
@@ -305,7 +306,7 @@ Code::
     '1.1'
     >>> list_ups = tool.listUpgrades(category='my_app')
     >>> ids = [up['id'] for up in list_ups]
-    >>> tool.doUpgrades(ids, 'my_app')
+    >>> tool.doUpgrades(ids, 'my_app', do_commit=False)
     my_app: 1.1 -> 1.2 (first)
     my_app: 1.1 -> 1.2
 
@@ -313,6 +314,34 @@ Code::
 
     >>> tool._getCurrentVersion('my_app')
     (1, 2)
+
+    The tool keeps track of applied steps and filters them, now:
+    >>> tool._getAppliedStepsIds('my_app') == tuple(ids)
+    True
+    >>> tool.listUpgrades(category='my_app')
+    []
+
+    Another scenario where one applies only the first of those
+    upgrades::
+
+    >>> tool._resetAppliedSteps()
+    >>> tool._setCurrentVersion('my_app', (1, 1))
+    '1.1'
+    >>> list_ups = tool.listUpgrades(category='my_app')
+    >>> ids = [list_ups[1]['id']]
+    >>> tool.doUpgrades(ids, 'my_app', do_commit=False)
+    my_app: 1.1 -> 1.2
+
+    In that case, the version has not been updated, because there
+    remains a step to be done::
+
+    >>> tool._getCurrentVersion('my_app')
+    (1, 1)
+
+    And the remaining step is still in the list::
+
+    >>> tool.listUpgrades(category='my_app') == list_ups[:1]
+    True
 
 .. Emacs
 .. Local Variables:

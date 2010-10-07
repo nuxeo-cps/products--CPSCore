@@ -22,13 +22,19 @@
 	<input type="hidden" name="show_old:int" value="VALUE"
 	       tal:attributes="value show_old" />
 	<table>
+	  <tr valign="top">
+	   <th></th>
+	   <th>Title</th>
+	   <th>Versions</th>
+	   <th>Details</th>
+	  </tr>
 	  <tr valign="top" tal:repeat="info upgrades">
 	    <td>
 	      <input type="checkbox" name="upgrades:list"
 		     value="VALUE" checked="CHECKED"
 		     tal:attributes="value info/id;
                                      id python:'selection-' + info['id'];
-				     checked python:info['proposed'] and not show_old;
+				     checked python:not show_old and info['proposed'] and not info['done'];
 				     "/>
 	    </td>
 	    <td>
@@ -40,8 +46,8 @@
 		   tal:content="structure string:(${info/ssource} &amp;#8594; ${info/sdest})">PATH</div>
 	    </td>
 	    <td class="form-help">
-	      <div tal:condition="not:info/proposed"
-		   tal:replace="default">(done)</div>
+	     <span tal:condition="info/done">done</span>
+	     <span tal:condition="not:info/proposed">not applicable</span>
 	    </td>
 	  </tr>
 

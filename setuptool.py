@@ -20,11 +20,13 @@
 """
 
 import time
+import transaction
 import logging
 from urllib import urlencode
 
 from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass
+from Globals import PersistentMapping
 from Acquisition import aq_base
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
 from Products.CMFCore.utils import getToolByName
@@ -51,6 +53,8 @@ class CPSSetupTool(UniqueObject, SetupTool):
     meta_type = 'CPS Setup Tool'
 
     security = ClassSecurityInfo()
+
+    applied_steps = None # mapping category id -> (steps ids)
 
     def __init__(self):
         SetupTool.__init__(self, self.id)
@@ -85,6 +89,29 @@ class CPSSetupTool(UniqueObject, SetupTool):
     #
     # Upgrades management
     #
+
+    def _getAppliedStepsMapping(self):
+        ast = self.applied_steps
+        if ast is None:
+            ast = self.applied_steps = PersistentMapping()
+        return ast
+
+    def _resetAppliedSteps(self):
+        self.applied_steps = None
+
+    def _getAppliedStepsIds(self, category):
+        return self._getAppliedStepsMapping().get(category, ())
+
+    def _markStepDone(self, step):
+        sid = step.id
+        category = step.category
+        mapping = self._getAppliedStepsMapping()
+        done = mapping.get(category, ())
+        if sid not in done:
+            mapping[category] = done + (sid,)
+
+    def _isStepDone(self, step):
+        return step.id in self._getAppliedStepsIds(step.category)
 
     def _getCurrentVersion(self, category):
         portal = getToolByName(self, 'portal_url').getPortalObject()
@@ -123,11 +150,19 @@ class CPSSetupTool(UniqueObject, SetupTool):
         else:
             source = version
         upgrades = listUpgradeSteps(portal, category, source, max_dest=max_dest)
+        done = self._getAppliedStepsIds(category)
         res = []
         for info in upgrades:
             req = info.get('requires')
             if req is not None and req[1] > self._getCurrentVersion(req[0]):
-                break # requirement is implicite for forthcoming steps too
+                break # requirement is implicit for forthcoming steps too
+
+            if info['id'] in done:
+                if not show_old:
+                    continue
+                info['done'] = True
+            else:
+                info['done'] = False
 
             info = info.copy()
             info['haspath'] = bool(info['source'] and info['dest'])
@@ -141,28 +176,36 @@ class CPSSetupTool(UniqueObject, SetupTool):
         return res
 
     security.declarePrivate('doUpgrades')
-    def doUpgrades(self, upgrades, category, show_old=False):
+    def doUpgrades(self, upgrades, category, show_old=False, do_commit=True):
         """Apply all applicable upgrades from the given list."""
         portal = getToolByName(self, 'portal_url').getPortalObject()
-        dests = {} # possible dest versions
-        skipped = {} # some skipped upgrades for dest version
+        dests = set() # seen dest versions
+        skipped = set() # keeps track of uncompleted dest versions
         for info in self.listUpgrades(category=category, show_old=show_old):
-            dest = info['dest']
-            dests[dest] = True
-            if info['id'] not in upgrades:
-                if info['proposed']:
-                    skipped[dest] = True
+            dest = info['dest'] # can be None
+            dests.add(dest)
+
+            sid = info['id']
+            if sid not in upgrades:
+                if info['proposed'] and not info['done']:
+                    skipped.add(dest)
                 continue
 
             LOG.info("Running upgrade step %s (%s to %s)",
                      info['title'], info['ssource'], info['sdest'])
-            info['step'].doStep(portal)
+            step = info['step']
+            step.doStep(portal)
+            self._markStepDone(step)
+            # many steps perform intermediate commits. We do not want the
+            # marking as done to be part of next step's intermediate
+            # transaction if it does so.
+            if do_commit:
+                transaction.commit()
 
         # Update last_upgraded_version
         version = self._getCurrentVersion(category)
-        if None in dests:
-            del dests[None]
-        dests = dests.keys()
+        dests.discard(None)
+        dests = list(dests)
         dests.sort()
         # Keep highest non-skipped dest
         next = None
@@ -171,6 +214,9 @@ class CPSSetupTool(UniqueObject, SetupTool):
                 break
             next = dest
         if next is not None and next > self._getCurrentVersion(category):
+            # GR at this point one may decide not to keep as done those steps
+            # that are under this new versions. This is a bit dangerous, though
+            # since checker results may change (bugfix, environment change...)
             version = self._setCurrentVersion(category, next)
             cat_title = _categories_registry[category]['title']
             LOG.info("Upgraded portal to %s-%s", cat_title, version)
