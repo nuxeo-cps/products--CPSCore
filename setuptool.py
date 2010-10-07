@@ -38,6 +38,7 @@ from Products.GenericSetup import BASE
 
 from Products.CPSCore.upgrade import listUpgradeSteps
 from Products.CPSCore.upgrade import _categories_registry
+from Products.CPSCore.portal import CPSSite
 from Products.CPSCore.interfaces import ICPSSite
 
 LOG = logging.getLogger('CPSCore.setuptool')
@@ -213,9 +214,16 @@ class CPSSetupTool(UniqueObject, SetupTool):
             if dest in skipped:
                 break
             next = dest
-        if next is not None and next > self._getCurrentVersion(category):
+
+        # TODO better logic to have devel versions for other categories too
+        # See #2251 for details
+        if next is not None and next > self._getCurrentVersion(category) and (
+            category != 'cpsplatform'
+            or CPSSite.cps_version_suffix not in ('devel', 'rc')
+            or next != CPSSite.cps_version[1:]):
             # GR at this point one may decide not to keep as done those steps
-            # that are under this new versions. This is a bit dangerous, though
+            # that are before this new reached version.
+            # This is a bit dangerous, though
             # since checker results may change (bugfix, environment change...)
             version = self._setCurrentVersion(category, next)
             cat_title = _categories_registry[category]['title']
