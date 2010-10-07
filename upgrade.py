@@ -157,7 +157,7 @@ def registerUpgradeCategory(cid, title='', floor_version='',
     _categories_registry[cid] = info
     logger.info('registered category %s with info %s', cid, info)
 
-def listUpgradeSteps(portal, category, source):
+def listUpgradeSteps(portal, category, source, max_dest=None):
     """Lists upgrade steps from given category available from a given version.
     """
     res = []
@@ -171,6 +171,10 @@ def listUpgradeSteps(portal, category, source):
             and source is not None
             and (step.source is None or source > step.source)):
             continue
+
+        if max_dest and step.dest > max_dest:
+            continue
+
         info = {
             'id': id,
             'step': step,

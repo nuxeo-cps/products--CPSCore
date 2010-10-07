@@ -6,7 +6,7 @@ New features
 - #2204: image resizing system
 Bug fixes
 ~~~~~~~~~
--
+- #2250: Upgrade steps up to a given version
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
