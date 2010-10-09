@@ -7,21 +7,22 @@
 		   categories here/listUpgradeCategories">
   <tal:block repeat="category categories">
     <form method="post" action="manage_doUpgrades">
+      <tal:block define="upgrades python:here.listUpgrades(category=category['id'], show_old=show_old)">
       <h4>
 	<span tal:content="category/title"/>
 	<span style="margin-left:2em"> currently upgraded to:</span>
 	<span tal:content="category/version"/>
+	<span tal:condition="not:upgrades">(no further upgrade available)
+	</span>
       </h4>
-      <tal:block define="upgrades python:here.listUpgrades(category=category['id'], show_old=show_old)">
-
-	<p class="form-help">
+	<p class="form-help" tal:condition="upgrades">
 	  Available upgrades:
 	</p>
 	<input type="hidden" name="category" value="VALUE"
 	       tal:attributes="value category/id" />
 	<input type="hidden" name="show_old:int" value="VALUE"
 	       tal:attributes="value show_old" />
-	<table>
+	<table tal:condition="upgrades">
 	  <tr valign="top">
 	   <th></th>
 	   <th>Title</th>
@@ -57,9 +58,6 @@
 	    </td>
 	  </tr>
 	</table>
-	<p tal:condition="not:upgrades">
-	  No upgrade available.
-	</p>
 
       </tal:block>
     </form>
