@@ -2,10 +2,22 @@
 Upgrade steps
 =============
 
-:Revision: $Id$
+.. sectnum::    :depth: 4
+.. contents::   :depth: 4
 
-.. contents:: :depth: 1
-.. sectnum::
+
+Introduction
+============
+
+Upgrade steps are the standard way within CPS to manage upgrade of
+data, such as documents, workflow history, user information if not
+from an outside source, in short everything's that stored within a
+portal.
+
+The upgrade steps API is divided in two parts: non-persistent
+(category and step registrations), and persistent, keeping notably
+track of applied steps, current level of upgrade for a given CPS
+portal. The persistent part is provided by CPS' Setup Tool.
 
 It will be convenient for examples to have a pretty printer::
 
@@ -15,7 +27,9 @@ It will be convenient for examples to have a pretty printer::
 
 Categories registration
 =======================
-
+Upgrade steps are divided in categories. These are pure markers that
+morally correspond to sets of products (base distributions, groups of
+extensions, custom projects, etc.).
 The CPSCore product has already registered a category::
 
     >>> from Products.CPSCore.upgrade import _categories_registry
@@ -26,7 +40,7 @@ The CPSCore product has already registered a category::
                      'title': 'CPS Platform'}}
 
 
-    Let's add one as if we were managing a side component.
+Let's add one as if we were managing a side component::
 
     >>> from Products.CPSCore.upgrade import registerUpgradeCategory
     >>> registerUpgradeCategory('my_app',
@@ -40,18 +54,18 @@ The CPSCore product has already registered a category::
      'portal_attr': 'my_app_up_version',
      'title': 'My Application'}
 
-    We can also specify a reference product for the upgrade
-    category by means of the ``ref_product`` keyword argument. The
-    current code version will be stored as well.
+We can also specify a reference product for the upgrade
+category by means of the ``ref_product`` keyword argument. The
+current code version will be stored as well.
 
-    We need to cheat a bit to avoid the example to rely on CPSCore's
-    version at the time of this writing::
+We need to cheat a bit to avoid the example to rely on CPSCore's
+version at the time of this writing::
 
     >>> import os
     >>> from Products.CPSCore import upgrade
     >>> upgrade.VERSION_FILE = os.path.join('tests', 'data', 'VERSION.sample')
 
-    Now let's go::
+Now let's go::
 
     >>> registerUpgradeCategory('my_app2',
     ...                 title='My Application',
@@ -69,11 +83,11 @@ The CPSCore product has already registered a category::
     >>> del _categories_registry['my_app2']
 
 
-   ``code_version`` can be used, e.g., by site factories to set the
-   database version at site creation time. It is normally read from the
-   VERSION file that should sit at the topmost level of the reference
-   product. Without the above monkey patching, we would have gotten
-   CPSCore's version.
+``code_version`` can be used, e.g., by site factories to set the
+database version at site creation time. It is normally read from the
+VERSION file that should sit at the topmost level of the reference
+product. Without the above monkey patching, we would have gotten
+CPSCore's version.
 
 Upgrade steps registration
 ==========================
@@ -81,7 +95,8 @@ Upgrade steps registration
 In python
 ~~~~~~~~~
 
-Code ::
+We need here to provide a configuration context for the Zope Component
+Architecture::
 
     >>> class SimplestConfigurationContext:
     ...     def action(self, discriminator, callable=None, args=()):
@@ -92,7 +107,9 @@ Code ::
     >>> context = SimplestConfigurationContext()
     >>> from Products.CPSCore.upgrade import upgradeStep, _upgrade_registry
 
-We have a few predefined sample handlers in the context of this doctest::
+We have a few predefined sample handlers in the context of this
+doctest. Of course a real-life handler should not directly print to
+the standard output. These ones do nothing else::
 
     >>> portal = None
     >>> up_my_app_1_0_1_1(portal)
@@ -113,8 +130,8 @@ So, let's register a step for 'My Application'::
     ...             source='1.0',
     ...             destination='1.1', sortkey=10)
 
-    Now, let's see if we can find it in the list of proposed steps 'My
-    Application'::
+Now, let's see if we can find it in the list of proposed steps for 'My
+Application'::
 
     >>> from Products.CPSCore.upgrade import listUpgradeSteps
     >>> listed = listUpgradeSteps(portal, 'my_app', (1, 0))
@@ -123,11 +140,12 @@ So, let's register a step for 'My Application'::
     >>> listed[0]['title']
     'Test Step 1'
 
-    Keeping this step object for further examples::
+We'll keep this step object for further examples::
+
     >>> my_step = listed[0]['step']
 
+One can disable the step by handler lookup::
 
-    One can disable the step by handler lookup::
     >>> from Products.CPSCore.upgrade import disableUpgradeSteps
     >>> my_step.isProposed(portal, 'my_app', (1,0))
     True
@@ -135,11 +153,13 @@ So, let's register a step for 'My Application'::
     >>> my_step.isProposed(portal, 'my_app', (1,0))
     False
 
-    This is actually implemented by changing the checker to a uniform False::
+This is actually implemented by changing the checker to a uniform False::
+
     >>> my_step.checker(portal)
     False
 
-    There's an API to change the checker for an upgrade step
+There's also an API to change the checker for an upgrade step::
+
     >>> from Products.CPSCore.upgrade import updateStepsChecker
     >>> def new_checker(portal):
     ...     return 'this is the new checker'
@@ -149,8 +169,8 @@ So, let's register a step for 'My Application'::
     'this is the new checker'
 
 
-    One can change a step's checker conditionnally, according to the
-    step's version::
+One can change a step's checker conditionnally, according to the
+step's version::
 
     >>> my_step.version
     1
@@ -195,10 +215,10 @@ while others correspond to kwargs (see also various examples
 within CPS configuration)
 
 
-Listing
-~~~~~~~
+Listing available steps
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Code::
+Let's register a few more steps::
 
     >>> upgradeStep(context, 'Test Step 3', up_my_app_1_1_1_2,
     ...             category='my_app',
@@ -219,8 +239,8 @@ Code::
 
     >>> steps = listUpgradeSteps(None, 'my_app', (1, 0))
 
-    Let's remove some human non friendly data and display the ordered
-    list of proposed steps::
+Let's remove some human non friendly data and display the ordered
+list of proposed steps::
 
     >>> for step in steps:
     ...     del step['id']
@@ -244,17 +264,17 @@ Code::
       'source': (1, 2),
       'title': 'Test Step 4'}]
 
-    It's also possible to bound the destination version from above
-    (see #2250)::
+It's also possible to bound the destination version from above (see #2250)::
 
     >>> steps = listUpgradeSteps(None, 'my_app', (1, 0), max_dest=(1, 2))
     >>> [step['title'] for step in steps]
     ['Test Step 1', 'Test Step 2', 'Test Step 3']
 
 
-    Listing by handlers can be useful for scripts/jobs. This also
-    demonstrates that no signature check is done on the handler (this
-    one is really stupid)::
+Listing by handlers can be useful for scripts/jobs. This also
+demonstrates that no signature check is done on the handler (the one
+we use is really stupid)::
+
     >>> upgradeStep(context, 'Test by handler', upgradeStep,
     ...             category='my_app',
     ...             source='2.0',
@@ -265,15 +285,16 @@ Code::
     ...  for s in listUpgradesByHandler('Products.CPSCore.upgrade.upgradeStep')]
     ['Test by handler']
 
-    This works also by passing the handler callable itself::
+This works also by passing the handler callable itself::
+
     >>> [s.title for s in listUpgradesByHandler(up_my_app_1_2_2_0)]
     ['Test Step 4']
 
 
-Setup Tool
-==========
+With persistence : Setup Tool API
+=================================
 
-Code::
+Let's instantiate the setup tool and prepare some context::
 
     >>> class FakePortal:
     ...     pass
@@ -286,8 +307,8 @@ Code::
     >>> tool = CPSSetupTool()
     >>> tool.portal_url = FakeUrlTool()
 
-    The version is kept as a property on the portal object. If
-    missing, the category's floor version is used::
+The version is kept as a property on the portal object. If
+missing, the category's floor version is used::
 
     >>> tool._getCurrentVersion('my_app')
     (0, 5)
@@ -304,7 +325,7 @@ Code::
      'title': 'My Application',
      'version': '1.0'}
 
-    Views have to use the following method::
+Views have to use the following method::
 
     >>> pretty_print(tool.listUpgradeCategories())
     [{'description': '',
@@ -320,14 +341,14 @@ Code::
 Upgrades proposals
 ~~~~~~~~~~~~~~~~~~
 
-Code::
+Let's ask the tool for available upgrades::
 
     >>> list_ups = tool.listUpgrades(category='my_app')
     >>> [up['title'] for up in list_ups]
     ['Test Step 1', 'Test Step 2', 'Test Step 3']
 
-    Our test step 4 was not proposed because it requires (the upgrade of)
-    CPSPlatform to 3.4.5. Let's see what info is provided for each step::
+Our test step 4 was not proposed because it requires (the upgrade of)
+CPSPlatform to 3.4.5. Let's see what info is provided for each step::
 
     >>> keys = list(list_ups[0]); keys.sort(); pretty_print(keys)
     ['dest',
@@ -342,7 +363,8 @@ Code::
      'title']
 
 
-    Now, let's do as if we were on 1.1: step 1 shouldn't be presented anymore::
+Now, let's do as if the portal were upgraded to 1.1: step 1 shouldn't
+be presented anymore::
 
     >>> tool._setCurrentVersion('my_app', (1, 1))
     '1.1'
@@ -354,8 +376,8 @@ Code::
     >>> tool.listUpgrades(category='my_app')
     []
 
-    Now we pretend that CPSPlatform has been upgraded to the required
-    version for step 4::
+Now we pretend that CPSPlatform has been upgraded to the required
+version for step 4::
 
     >>> tool._setCurrentVersion('cpsplatform', (3, 4, 5))
     '3.4.5'
@@ -363,7 +385,7 @@ Code::
     >>> [up['title'] for up in list_ups]
     ['Test Step 4']
 
-    The result would be the same for a later version::
+The result would be the same for a later version::
 
     >>> tool._setCurrentVersion('cpsplatform', (3, 5))
     '3.5'
@@ -371,8 +393,7 @@ Code::
     >>> [up['title'] for up in list_ups]
     ['Test Step 4']
 
-    Dependency requirement is implicit for all steps after one that
-    has some::
+Dependency requirement is implicit for all steps after one that has some::
 
     >>> upgradeStep(context, 'Test Step 5', up_my_app_2_0_3_0,
     ...             category='my_app',
@@ -386,9 +407,10 @@ Code::
 
 
 Launching the upgrades
-======================
+~~~~~~~~~~~~~~~~~~~~~~
 
-Code::
+One has to call the listing API to retrieve ids first to feed them to
+the general launcher::
 
     >>> tool._setCurrentVersion('my_app', (1, 1))
     '1.1'
@@ -398,7 +420,7 @@ Code::
     my_app: 1.1 -> 1.2 (first)
     my_app: 1.1 -> 1.2
 
-    The stored version was updated:
+The stored version was updated::
 
     >>> tool._getCurrentVersion('my_app')
     (1, 2)
@@ -409,8 +431,7 @@ Code::
     >>> tool.listUpgrades(category='my_app')
     []
 
-    Another scenario where one applies only the first of those
-    upgrades::
+Another scenario where one applies only the first of those upgrades::
 
     >>> tool._resetAppliedSteps()
     >>> tool._setCurrentVersion('my_app', (1, 1))
@@ -420,13 +441,13 @@ Code::
     >>> tool.doUpgrades(ids, 'my_app', do_commit=False)
     my_app: 1.1 -> 1.2
 
-    In that case, the version has not been updated, because there
-    remains a step to be done::
+In that case, the version has not been updated, because there
+remains a step to be done::
 
     >>> tool._getCurrentVersion('my_app')
     (1, 1)
 
-    And the remaining step is still in the list::
+and the remaining step is still in the list::
 
     >>> tool.listUpgrades(category='my_app') == list_ups[:1]
     True
