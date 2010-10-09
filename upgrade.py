@@ -73,6 +73,11 @@ class UpgradeStep(object):
             requires = (spl_req[0], tuple(int(x) for x in spl_req[1].split('.')))
         self.requires = requires
 
+    def __str__(self):
+        return ('<CPSUpgradeStep id=%r category=%r '
+                'source=%s dest=%s title=%r') % (
+        self.id, self.category, self.source, self.dest, self.title)
+
     def doStep(self, portal):
         self.handler(portal)
 
@@ -101,6 +106,7 @@ class UpgradeStep(object):
 
 def _registerUpgradeStep(step):
     _upgrade_registry[step.id] = step
+    logger.debug("registered %s", step)
 
 def upgradeStep(_context, title, handler, source='*', destination='*',
                 category='cpsplatform', sortkey=0, checker=None,
@@ -115,7 +121,6 @@ def upgradeStep(_context, title, handler, source='*', destination='*',
         callable = _registerUpgradeStep,
         args = (step,),
         )
-    logger.debug('Registered step %s', step.__dict__)
 
 def disableUpgradeSteps(handler, min_version=None, max_version=None):
     """Disable upgrade steps with given handler.

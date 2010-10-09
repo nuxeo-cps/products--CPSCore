@@ -65,6 +65,10 @@ class IUpgradeStepDirective(Interface):
         title=u"Upgrade checker",
         required=False)
 
+    requires = zope.schema.ASCII(
+        title=u"Required upgrade level (category-version)",
+        required=False)
+
 
 class ISecurityModificationDescription(IModificationDescription):
     """Modification of an object's security.
