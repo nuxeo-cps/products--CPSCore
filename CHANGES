@@ -8,6 +8,7 @@ Bug fixes
 ~~~~~~~~~
 - #2251: Persistence of the lists of ran upgrade steps
 - #2250: Upgrade steps up to a given version
+- #2256: disabling upgrade steps or changing checkers ; step versions
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

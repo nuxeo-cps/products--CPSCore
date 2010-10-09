@@ -35,7 +35,7 @@ class UpgradeStep(object):
     """A step to upgrade a component.
     """
     def __init__(self, category, title, source, dest, handler,
-                 checker=None, sortkey=0, requires=None):
+                 checker=None, sortkey=0, requires=None, version=1):
         """
         >>> ups = UpgradeStep('cpsgroupware', 'title', '1.0.0', '1.2', None,
         ...                   requires='cpsplatform-3.4.1')
@@ -49,6 +49,7 @@ class UpgradeStep(object):
         ('cpsplatform', (3, 4, 1))
         """
         self.id = str(abs(hash('%s%s%s%s' % (title, source, dest, sortkey))))
+
         self.title = title
         if source == '*':
             source = None
@@ -62,6 +63,7 @@ class UpgradeStep(object):
         self.dest = dest
         self.handler = handler
         self.checker = checker
+        self.version = version
         self.sortkey = sortkey
         self.category = category
         if requires:
@@ -108,6 +110,38 @@ def upgradeStep(_context, title, handler, source='*', destination='*',
         args = (step,),
         )
     logger.debug('Registered step %s', step.__dict__)
+
+def disableUpgradeSteps(handler, min_version=None, max_version=None):
+    """Disable upgrade steps with given handler.
+
+    min_version and max_version can be used to restrict this disabling to a
+    range of versions of the step itself.
+    """
+    updateStepsChecker(handler, lambda portal: False,
+                       min_version=min_version, max_version=max_version)
+
+def updateStepsChecker(handler, checker,
+                       min_version=None, max_version=None):
+    """Change the checker for steps with prescribed handler.
+
+    min_version and max_version can be used to restrict this disabling to a
+    range of versions of the step itself.
+    """
+
+    if (min_version, max_version) == (None, None):
+        version_check = lambda v: True
+    elif min_version is None:
+        version_check = lambda v: v <= max_version
+    elif max_version is None:
+        version_check = lambda v: v >= min_version
+    else:
+        version_check = lambda v: v >= min_version and v <= max_version
+
+    for step in listUpgradesByHandler(handler):
+        if not version_check(step.version):
+            continue
+        step.checker = checker
+
 
 def registerUpgradeCategory(cid, title='', floor_version='',
                             portal_attribute='', description='',

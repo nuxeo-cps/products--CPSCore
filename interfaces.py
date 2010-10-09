@@ -53,6 +53,10 @@ class IUpgradeStepDirective(Interface):
         title=u"Sort key",
         required=False)
 
+    version = zope.schema.Int(
+        title=u"Version of the step itself",
+        required=False)
+
     handler = GlobalObject(
         title=u"Upgrade handler",
         required=True)

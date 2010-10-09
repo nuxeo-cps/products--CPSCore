@@ -106,15 +106,80 @@ Code ::
 
     >>> from Products.CPSCore.upgrade import listUpgradeSteps
     >>> portal = None
-    >>> [step['title'] for step in listUpgradeSteps(portal, 'my_app', (1, 0))]
-    ['Test Step 1']
+    >>> listed = listUpgradeSteps(portal, 'my_app', (1, 0))
+    >>> len(listed)
+    1
+    >>> listed[0]['title']
+    'Test Step 1'
+
+    Keeping this step object for further examples::
+    >>> my_step = listed[0]['step']
+
+
+    One can disable the step by handler lookup::
+    >>> from Products.CPSCore.upgrade import disableUpgradeSteps
+    >>> my_step.isProposed(portal, 'my_app', (1,0))
+    True
+    >>> disableUpgradeSteps(up_my_app_1_0_1_1)
+    >>> my_step.isProposed(portal, 'my_app', (1,0))
+    False
+
+    This is actually implemented by changing the checker to a uniform False::
+    >>> my_step.checker(portal)
+    False
+
+    There's an API to change the checker for an upgrade step
+    >>> from Products.CPSCore.upgrade import updateStepsChecker
+    >>> def new_checker(portal):
+    ...     return 'this is the new checker'
+
+    >>> updateStepsChecker(up_my_app_1_0_1_1, new_checker)
+    >>> my_step.checker(portal)
+    'this is the new checker'
+
+
+    One can change a step's checker conditionnally, according to the
+    step's version::
+
+    >>> my_step.version
+    1
+    >>> updateStepsChecker(up_my_app_1_0_1_1, new_checker,
+    ...                    max_version=1)
+    >>> my_step.checker(portal)
+    'this is the new checker'
+    >>> updateStepsChecker(up_my_app_1_0_1_1, None)
+    >>> my_step.checker is None
+    True
+    >>> my_step.version = 2
+    >>> updateStepsChecker(up_my_app_1_0_1_1, new_checker,
+    ...                    max_version=1)
+    >>> my_step.checker is None
+    True
+    >>> updateStepsChecker(up_my_app_1_0_1_1, new_checker,
+    ...                    min_version=1)
+    >>> my_step.checker(portal)
+    'this is the new checker'
+    >>> updateStepsChecker(up_my_app_1_0_1_1, None,
+    ...                    min_version=1, max_version=2)
+    >>> my_step.checker is None
+    True
+    >>> updateStepsChecker(up_my_app_1_0_1_1, new_checker,
+    ...                    min_version=3, max_version=5)
+    >>> my_step.checker is None
+    True
+
+    Getting back to absence of checker for further examples, no matter what::
+    >>> updateStepsChecker(up_my_app_1_0_1_1, None)
 
 
 In ZCML
 ~~~~~~~
+There's a dedicated XML namespace for CPS ZCML directives::
+  <configure xmlns:cps="http://namespaces.nuxeo.org/cps">
 
 Use the <cps:upgradeStep> element. Mandatory attributes 'title'
-and 'handlers' corrspond to positional args of the upgradeStep function,
+and 'handlers' corrspond to positional args of the upgradeStep
+function (except ```context```, which is for ZCML handling internals),
 while others correspond to kwargs (see also various examples
 within CPS configuration)
 
