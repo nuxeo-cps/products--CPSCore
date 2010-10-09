@@ -92,10 +92,22 @@ Code ::
     >>> context = SimplestConfigurationContext()
     >>> from Products.CPSCore.upgrade import upgradeStep, _upgrade_registry
 
-    So, let's register a step for 'My Application'::
+We have a few predefined sample handlers in the context of this doctest::
 
-    >>> def up_my_app_1_0_1_1(portal):
-    ...     print "my_app: 1.0 -> 1.1"
+    >>> portal = None
+    >>> up_my_app_1_0_1_1(portal)
+    my_app: 1.0 -> 1.1
+    >>> up_my_app_1_1_1_2(portal)
+    my_app: 1.1 -> 1.2
+    >>> up_my_app_1_1_1_2first(portal)
+    my_app: 1.1 -> 1.2 (first)
+    >>> up_my_app_1_2_2_0(portal)
+    my_app: 1.2 -> 2.0
+    >>> up_my_app_2_0_3_0(portal)
+    my_app: 2.0 -> 3.0
+
+So, let's register a step for 'My Application'::
+
     >>> upgradeStep(context, 'Test Step 1', up_my_app_1_0_1_1,
     ...             category='my_app',
     ...             source='1.0',
@@ -105,7 +117,6 @@ Code ::
     Application'::
 
     >>> from Products.CPSCore.upgrade import listUpgradeSteps
-    >>> portal = None
     >>> listed = listUpgradeSteps(portal, 'my_app', (1, 0))
     >>> len(listed)
     1
@@ -189,22 +200,16 @@ Listing
 
 Code::
 
-    >>> def up_my_app_1_1_1_2(portal):
-    ...     print "my_app: 1.1 -> 1.2"
     >>> upgradeStep(context, 'Test Step 3', up_my_app_1_1_1_2,
     ...             category='my_app',
     ...             source='1.1',
     ...             destination='1.2', sortkey=10)
 
-    >>> def up_my_app_1_1_1_2first(portal):
-    ...     print "my_app: 1.1 -> 1.2 (first)"
     >>> upgradeStep(context, 'Test Step 2', up_my_app_1_1_1_2first,
     ...             category='my_app',
     ...             source='1.1',
     ...             destination='1.2', sortkey=6)
 
-    >>> def up_my_app_1_2_2_0(portal):
-    ...     print "my_app: 1.2 -> 2.0"
     >>> upgradeStep(context, 'Test Step 4', up_my_app_1_2_2_0,
     ...             category='my_app',
     ...             source='1.2',
@@ -369,8 +374,6 @@ Code::
     Dependency requirement is implicit for all steps after one that
     has some::
 
-    >>> def up_my_app_2_0_3_0():
-    ...     print "my_app: 2.0 -> 3.0"
     >>> upgradeStep(context, 'Test Step 5', up_my_app_2_0_3_0,
     ...             category='my_app',
     ...             source='2.0',
@@ -427,6 +430,26 @@ Code::
 
     >>> tool.listUpgrades(category='my_app') == list_ups[:1]
     True
+
+If a step version changes (with due registration again), it's not
+considered as done anymore::
+
+    >>> upgradeStep(context, 'Test Step 3', up_my_app_1_1_1_2,
+    ...             category='my_app',
+    ...             source='1.1',
+    ...             destination='1.2', sortkey=10,
+    ...             version=2)
+    >>> list_ups = tool.listUpgrades(category='my_app')
+    >>> len(list_ups)
+    2
+    >>> [info['title'] for info in list_ups]
+    ['Test Step 2', 'Test Step 3']
+    >>> step_info = list_ups[1]
+    >>> step_info['done']
+    False
+    >>> step_info['step'].version
+    2
+
 
 .. Emacs
 .. Local Variables:

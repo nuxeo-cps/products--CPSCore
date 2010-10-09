@@ -20,6 +20,7 @@
 import os
 from logging import getLogger
 from os.path import abspath
+import pickle
 import Products
 from Products.GenericSetup.utils import _resolveDottedName
 
@@ -48,7 +49,8 @@ class UpgradeStep(object):
         >>> ups.requires
         ('cpsplatform', (3, 4, 1))
         """
-        self.id = str(abs(hash('%s%s%s%s' % (title, source, dest, sortkey))))
+        self.id = str(hash((pickle.dumps(handler), category, version,
+                            source, dest, sortkey)))
 
         self.title = title
         if source == '*':
@@ -101,8 +103,12 @@ def _registerUpgradeStep(step):
     _upgrade_registry[step.id] = step
 
 def upgradeStep(_context, title, handler, source='*', destination='*',
-                category='cpsplatform', sortkey=0, checker=None, requires=None):
-    step = UpgradeStep(category, title, source, destination, handler, checker, sortkey, requires)
+                category='cpsplatform', sortkey=0, checker=None,
+                version=1, requires=None):
+
+    step = UpgradeStep(category, title, source, destination, handler,
+                       checker=checker, sortkey=sortkey, requires=requires,
+                       version=version)
     _context.action(
         discriminator = ('upgradeStep',
                          category, source, destination, handler, sortkey),
