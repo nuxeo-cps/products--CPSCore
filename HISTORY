@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSCore 3.42.0
+===========================================================
+First release built by: gracinet at: 2010-10-13T11:34:46
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+- #2204: image resizing system
+Bug fixes
+~~~~~~~~~
+- #2251: Persistence of the lists of ran upgrade steps
+- #2250: Upgrade steps up to a given version
+- #2256: disabling upgrade steps or changing checkers ; step versions
+- #2257: upgrade step "requires" now in ZCML
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.41.1
 ===========================================================
 First release built by: gracinet at: 2010-10-03T11:46:30
