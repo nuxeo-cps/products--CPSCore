@@ -196,8 +196,9 @@ def walk(base, meta_types=()):
     If you use it in a loop, you must take care of not changing the relevant
     part of hierarchy within that loop.
     """
-    it = getattr(aq_base(base), 'iterValues', None)
-    if it is None:
+    if bhasattr(base, 'iterValues'):
+        it = base.iterValues
+    else:
         it = base.objectValues
 
     for ob in it(meta_types):
