@@ -24,7 +24,7 @@ import pickle
 import Products
 from Products.GenericSetup.utils import _resolveDottedName
 
-logger = getLogger('CPSCore.upgrade')
+logger = getLogger(__name__)
 
 _upgrade_registry = {} # id -> step
 # id -> dict with keys: title, portal_attr, floor_version
