@@ -41,7 +41,7 @@ from Products.CPSCore.upgrade import _categories_registry
 from Products.CPSCore.portal import CPSSite
 from Products.CPSCore.interfaces import ICPSSite
 
-LOG = logging.getLogger('CPSCore.setuptool')
+logger = logging.getLogger(__name__)
 
 class CPSSetupTool(UniqueObject, SetupTool):
     """CPS Setup Tool.
@@ -192,7 +192,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
                     skipped.add(dest)
                 continue
 
-            LOG.info("Running upgrade step %s (%s to %s)",
+            logger.info("Running upgrade step %s (%s to %s)",
                      info['title'], info['ssource'], info['sdest'])
             step = info['step']
             step.doStep(portal)
@@ -227,7 +227,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
             # since checker results may change (bugfix, environment change...)
             version = self._setCurrentVersion(category, next)
             cat_title = _categories_registry[category]['title']
-            LOG.info("Upgraded portal to %s-%s", cat_title, version)
+            logger.info("Upgraded portal to %s-%s", cat_title, version)
 
     def _getUpgradeCategoryDisplayInfo(self, cat_id):
         cat = _categories_registry[cat_id]
