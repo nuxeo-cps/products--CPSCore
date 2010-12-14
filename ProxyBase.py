@@ -1031,6 +1031,7 @@ class ImageDownloader(BaseDownloader):
        Supports persistent cache.
        TODO: security hazard, someone could inflate ZODB simply by requesting
        lots and lots of different ones: clean the oldest ones
+       TODO move the actual image processing to CPSUtil
        """
        orig = self.file
        if self.additional == 'full':
@@ -1158,6 +1159,65 @@ class ImageDownloader(BaseDownloader):
             return None, int(m.group(1))
 
         raise BadRequest('Incorrect image size specification: %s' % spec)
+
+    @classmethod
+    def _parseSizeSpecAsDict(cls, spec):
+        """Return a dict suitable as kwargs for e.g., makeSizeSpec
+
+        >>> ImageDownloader._parseSizeSpecAsDict('320x200')
+        {'width': 320, 'height': 200}
+        >>> ImageDownloader._parseSizeSpecAsDict('h500')
+        {'height': 500}
+        >>> ImageDownloader._parseSizeSpecAsDict('w1024')
+        {'width': 1024}
+        >>> ImageDownloader._parseSizeSpecAsDict('l800')
+        {'largest': 800}
+        >>> try: ImageDownloader._parseSizeSpecAsDict('x1024')
+        ... except BadRequest, m: print str(m).split(':')[1].strip()
+        x1024
+        """
+        parsed = cls._parseSizeSpec(spec)
+
+        if isinstance(parsed, int):
+            return dict(largest=parsed)
+
+        return dict((k, v) for k, v in zip(('width', 'height'), parsed)
+                    if v is not None)
+
+    @classmethod
+    def makeSizeSpec(self, height=0, width=0, largest=0):
+        """ Create a size specification.
+
+        >>> ImageDownloader.makeSizeSpec(height=200)
+        'h200'
+        >>> ImageDownloader.makeSizeSpec(width=320)
+        'w320'
+        >>> ImageDownloader.makeSizeSpec(width=320, height=200)
+        '320x200'
+        >>> ImageDownloader.makeSizeSpec(largest=800)
+        'l800'
+        >>> ImageDownloader.makeSizeSpec()
+        'full'
+        """
+        if largest and height and width:
+            raise ValueError("Specifying all of largest, height and width "
+                             "is a contradiction")
+        elif largest:
+            return 'l%d' % largest
+        elif width and height:
+            return '%dx%d' % (width, height)
+        elif width:
+            return 'w%d' % width
+        elif height:
+            return 'h%d' % height
+        return 'full'
+
+    @classmethod
+    def makeSizeUriPart(cls, height=0, width=0, largest=0):
+        """Return the part or URI that will trigger appropriate resizing."""
+        # split in half to avoid testing the constant
+        spec = cls.makeSizeSpec(height=height, width=width, largest=largest)
+        return KEYWORD_SIZED_IMAGE + '/' + spec
 
     # Attribut checked by ExternalEditor to know if it can "WebDAV" on this
     # object.
