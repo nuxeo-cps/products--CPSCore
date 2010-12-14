@@ -45,7 +45,7 @@ import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
 from OFS.Folder import Folder
-from OFS.Image import File, Image, getImageInfo
+from OFS.Image import File, Image
 from OFS.Traversable import Traversable
 from webdav.WriteLockInterface import WriteLockInterface
 
@@ -979,15 +979,6 @@ class ImageDownloader(BaseDownloader):
             RESPONSE.setHeader('Content-Type', 'text/plain')
             RESPONSE.setHeader('Content-Length', '0')
             return ''
-
-#    def getPhysicalPath(self):
-#        """Just to make usage of getImageInfo possible. Don't use !"""
-#
-#
-#        indeed getImageInfo calls absolute_url() on image, and the latter is
-#        wrapped in this instance.
-#        """
-#        return ()
 
     def geometryFromLargest(self, size):
         """Compute width, height from the wished largest dimension."""
