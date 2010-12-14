@@ -89,7 +89,7 @@ PROBLEMATIC_FILES_SUFFIXES = ('.exe',)
 CACHE_ZIP_VIEW_KEY = 'CPS_ZIP_VIEW'
 CACHE_ZIP_VIEW_TIMEOUT = 7200           # time to cache in second
 
-logger = getLogger('CPSCore.ProxyBase')
+logger = getLogger(__name__)
 
 class ProxyBase(Base):
     """Mixin class for proxy types.
