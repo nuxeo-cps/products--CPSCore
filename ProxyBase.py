@@ -1213,11 +1213,11 @@ class ImageDownloader(BaseDownloader):
         return 'full'
 
     @classmethod
-    def makeSizeUriPart(cls, height=0, width=0, largest=0):
+    def makeSizeUriPart(cls, attr, height=0, width=0, largest=0):
         """Return the part or URI that will trigger appropriate resizing."""
         # split in half to avoid testing the constant
         spec = cls.makeSizeSpec(height=height, width=width, largest=largest)
-        return KEYWORD_SIZED_IMAGE + '/' + spec
+        return '/'.join((KEYWORD_SIZED_IMAGE, attr, spec))
 
     # Attribut checked by ExternalEditor to know if it can "WebDAV" on this
     # object.
