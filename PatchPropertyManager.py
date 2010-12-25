@@ -116,7 +116,31 @@ if True: # keep indentation
                 value=type_converters[proptype](value)
         self._setPropValue(id, value)
 
+    def _purgeProperties(self):
+        # see #2276
+        for prop_map in self.context._propertyMap():
+            mode = prop_map.get('mode', 'wd')
+            if 'w' not in mode:
+                continue
+            prop_id = prop_map['id']
+            if 'd' in mode and not prop_id == 'title':
+                try:
+                    self.context._delProperty(prop_id)
+                except AttributeError:
+                    pass
+            else:
+                prop_type = prop_map.get('type')
+                if prop_type == 'multiple selection':
+                    prop_value = ()
+                elif prop_type in ('int', 'float'):
+                    prop_value = 0
+                else:
+                    prop_value = ''
+                self.context._updateProperty(prop_id, prop_value)
+
+
 # Do the patching
 
 PropertyManagerHelpers._initProperties = _initProperties
 PropertyManager._updateProperty = _updateProperty
+PropertyManagerHelpers._purgeProperties = _purgeProperties

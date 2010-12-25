@@ -1,4 +1,22 @@
 ===========================================================
+Package: CPSCore 3.42.1
+===========================================================
+First release built by: gracinet at: 2010-11-27T04:24:33
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2272: walking utilities lose acquisition with BTree Folders
+- #2276: robustness of properties purge in GenericSetup if deletable
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.42.0
 ===========================================================
 First release built by: gracinet at: 2010-10-13T11:34:46

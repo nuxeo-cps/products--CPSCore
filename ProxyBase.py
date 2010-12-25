@@ -18,6 +18,7 @@
 # $Id$
 
 import os
+import math
 from logging import getLogger
 from types import DictType
 import re
@@ -89,7 +90,7 @@ PROBLEMATIC_FILES_SUFFIXES = ('.exe',)
 CACHE_ZIP_VIEW_KEY = 'CPS_ZIP_VIEW'
 CACHE_ZIP_VIEW_TIMEOUT = 7200           # time to cache in second
 
-logger = getLogger('CPSCore.ProxyBase')
+logger = getLogger(__name__)
 
 class ProxyBase(Base):
     """Mixin class for proxy types.
@@ -926,6 +927,7 @@ InitializeClass(FileDownloader)
 IMG_SZ_FULLSPEC_REGEXP = re.compile(r'^(\d+)x(\d+)$')
 IMG_SZ_HEIGHT_REGEXP = re.compile(r'^h(\d+)$')
 IMG_SZ_WIDTH_REGEXP = re.compile(r'^w(\d+)$')
+IMG_SZ_LARGEST_REGEXP = re.compile(r'^l(\d+)$')
 
 class ImageDownloader(BaseDownloader):
     """Intermediate object allowing for image download with resizing.
@@ -937,6 +939,8 @@ class ImageDownloader(BaseDownloader):
        - 320x200: full size spec (width plus height)
        - w320: width spec: height will keep aspect ratio
        - h200: height spec: width will keep aspect ratio
+       - l540: largest dimension spec: wished size of the largest dimension,
+                                       keeping aspect ratio
 
     Only 'full' allowed for content-changing requests.
     Any non compliant spec or method should raise BadRequest
@@ -976,16 +980,61 @@ class ImageDownloader(BaseDownloader):
             RESPONSE.setHeader('Content-Length', '0')
             return ''
 
+    def geometryFromLargest(self, size):
+        """Compute width, height from the wished largest dimension."""
+        img = self.file
+        srcw, srch = img.width, img.height
+        if srcw > srch:
+            return size, self.heightFromWidth(size)
+        else:
+            return self.widthFromHeight(size), size
+
+    def heightFromWidth(self, size):
+        """Deduce target height from wished width keeping aspect ratio."""
+        srcw, srch = self.srcGeometry()
+        return int(math.floor(srch * float(size)/srcw + 0.5))
+
+    def widthFromHeight(self, size):
+        """Deduce target width from wished height keeping aspect ratio."""
+        srcw, srch = self.srcGeometry()
+        return int(math.floor(srcw * float(size)/srch + 0.5))
+
+    def srcGeometry(self):
+        """Return width, height for the orignal image."""
+        # 24 bytes are always supposed to be in the first range
+        # Pdata implement slices
+        fileio = ofsFileHandler(self.file)
+        try:
+            img = PIL.Image.open(fileio)
+            return img.size
+        except: # TODO a lot
+            return -1, -1
+
+    def targetGeometry(self):
+       spec = self.additional
+       sz = self._parseSizeSpec(spec)
+       if isinstance(sz, int):
+           return self.geometryFromLargest(sz)
+
+       w, h = sz
+       if w is None:
+           return self.widthFromHeight(h), h
+       elif h is None:
+           return w, self.heightFromWidth(w)
+
+       return w, h
+
+
     security.declareProtected(View, 'getImage')
     def getImage(self):
        """Get the image with appropriate size.
        Supports persistent cache.
        TODO: security hazard, someone could inflate ZODB simply by requesting
        lots and lots of different ones: clean the oldest ones
+       TODO move the actual image processing to CPSUtil
        """
-       spec = self.additional
        orig = self.file
-       if spec == 'full':
+       if self.additional == 'full':
            return orig
 
        if not self.ob.hasObject(IMAGE_RESIZING_CACHE):
@@ -998,9 +1047,7 @@ class ImageDownloader(BaseDownloader):
 
        cache = getattr(self.ob, IMAGE_RESIZING_CACHE)
 
-       w, h = self._parseSizeSpec(spec)
-       if w is None or h is None:
-           raise NotImplementedError
+       w, h = self.targetGeometry()
 
        key = '%s-%dx%d' % (self.attrname, w, h)
 
@@ -1070,12 +1117,9 @@ class ImageDownloader(BaseDownloader):
         fileio = ofsFileHandler(self.file)
         try:
             img = PIL.Image.open(fileio)
-            img.thumbnail((width, height),
-                      resample=PIL.Image.ANTIALIAS)
-            # We now need a buffer to write to. It can't be the same
-            # as the inbuffer as the PNG writer will write over itself.
+            newimg = img.resize((width, height), PIL.Image.ANTIALIAS)
             outfile = StringIO()
-            img.save(outfile, format=img.format)
+            newimg.save(outfile, format=img.format)
         except (NameError, IOError, ValueError, SystemError), err:
                 self.logger.warning(
                     "Failed to resize image %r at %r (%s), "
@@ -1095,10 +1139,15 @@ class ImageDownloader(BaseDownloader):
         (None, 500)
         >>> ImageDownloader._parseSizeSpec('w1024')
         (1024, None)
+        >>> ImageDownloader._parseSizeSpec('l800')
+        800
         >>> try: ImageDownloader._parseSizeSpec('x1024')
         ... except BadRequest, m: print str(m).split(':')[1].strip()
         x1024
         """
+        m = IMG_SZ_LARGEST_REGEXP.match(spec)
+        if m is not None:
+            return int(m.group(1))
         m = IMG_SZ_FULLSPEC_REGEXP.match(spec)
         if m is not None:
             return int(m.group(1)), int(m.group(2))
@@ -1110,6 +1159,65 @@ class ImageDownloader(BaseDownloader):
             return None, int(m.group(1))
 
         raise BadRequest('Incorrect image size specification: %s' % spec)
+
+    @classmethod
+    def _parseSizeSpecAsDict(cls, spec):
+        """Return a dict suitable as kwargs for e.g., makeSizeSpec
+
+        >>> ImageDownloader._parseSizeSpecAsDict('320x200')
+        {'width': 320, 'height': 200}
+        >>> ImageDownloader._parseSizeSpecAsDict('h500')
+        {'height': 500}
+        >>> ImageDownloader._parseSizeSpecAsDict('w1024')
+        {'width': 1024}
+        >>> ImageDownloader._parseSizeSpecAsDict('l800')
+        {'largest': 800}
+        >>> try: ImageDownloader._parseSizeSpecAsDict('x1024')
+        ... except BadRequest, m: print str(m).split(':')[1].strip()
+        x1024
+        """
+        parsed = cls._parseSizeSpec(spec)
+
+        if isinstance(parsed, int):
+            return dict(largest=parsed)
+
+        return dict((k, v) for k, v in zip(('width', 'height'), parsed)
+                    if v is not None)
+
+    @classmethod
+    def makeSizeSpec(self, height=0, width=0, largest=0):
+        """ Create a size specification.
+
+        >>> ImageDownloader.makeSizeSpec(height=200)
+        'h200'
+        >>> ImageDownloader.makeSizeSpec(width=320)
+        'w320'
+        >>> ImageDownloader.makeSizeSpec(width=320, height=200)
+        '320x200'
+        >>> ImageDownloader.makeSizeSpec(largest=800)
+        'l800'
+        >>> ImageDownloader.makeSizeSpec()
+        'full'
+        """
+        if largest and height and width:
+            raise ValueError("Specifying all of largest, height and width "
+                             "is a contradiction")
+        elif largest:
+            return 'l%d' % largest
+        elif width and height:
+            return '%dx%d' % (width, height)
+        elif width:
+            return 'w%d' % width
+        elif height:
+            return 'h%d' % height
+        return 'full'
+
+    @classmethod
+    def makeSizeUriPart(cls, attr, height=0, width=0, largest=0):
+        """Return the part or URI that will trigger appropriate resizing."""
+        # split in half to avoid testing the constant
+        spec = cls.makeSizeSpec(height=height, width=width, largest=largest)
+        return '/'.join((KEYWORD_SIZED_IMAGE, attr, spec))
 
     # Attribut checked by ExternalEditor to know if it can "WebDAV" on this
     # object.

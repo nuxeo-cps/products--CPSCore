@@ -531,6 +531,63 @@ class ProxyTraversalTest(ZopeTestCase):
         img_content = dl.index_html(req, req.RESPONSE)
         self.assertEquals(dl.content_type(), 'image/png')
 
+    def test_img_downloader_largest(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        f = open(os.path.join(TEST_DATA_PATH, 'logo_cps.png'))
+        doc._setObject('fobj', Image('fobj', 'myimg.png', f))
+
+        dl = proxy[KEYWORD_SIZED_IMAGE]
+        dl.__bobo_traverse__(None, 'fobj')
+        dl.__bobo_traverse__(None, 'l320')
+        dl.__bobo_traverse__(None, 'hisimg.png')
+
+        self.assertFalse(dl.isFullSize())
+        self.assertEquals(dl.targetGeometry(), (320, 98))
+        self.assertRaises(BadRequest, dl.assertFullSize, meth_name='TEST')
+
+        req = self.folder.REQUEST
+        img_content = dl.index_html(req, req.RESPONSE)
+        self.assertEquals(dl.content_type(), 'image/png')
+
+    def test_img_downloader_width(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        f = open(os.path.join(TEST_DATA_PATH, 'logo_cps.png'))
+        doc._setObject('fobj', Image('fobj', 'myimg.png', f))
+
+        dl = proxy[KEYWORD_SIZED_IMAGE]
+        dl.__bobo_traverse__(None, 'fobj')
+        dl.__bobo_traverse__(None, 'w320')
+        dl.__bobo_traverse__(None, 'hisimg.png')
+
+        self.assertFalse(dl.isFullSize())
+        self.assertEquals(dl.targetGeometry(), (320, 98))
+        self.assertRaises(BadRequest, dl.assertFullSize, meth_name='TEST')
+
+        req = self.folder.REQUEST
+        img_content = dl.index_html(req, req.RESPONSE)
+        self.assertEquals(dl.content_type(), 'image/png')
+
+    def test_img_downloader_height(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        f = open(os.path.join(TEST_DATA_PATH, 'logo_cps.png'))
+        doc._setObject('fobj', Image('fobj', 'myimg.png', f))
+
+        dl = proxy[KEYWORD_SIZED_IMAGE]
+        dl.__bobo_traverse__(None, 'fobj')
+        dl.__bobo_traverse__(None, 'h130')
+        dl.__bobo_traverse__(None, 'hisimg.png')
+
+        self.assertFalse(dl.isFullSize())
+        self.assertEquals(dl.targetGeometry(), (425, 130))
+        self.assertRaises(BadRequest, dl.assertFullSize, meth_name='TEST')
+
+        req = self.folder.REQUEST
+        img_content = dl.index_html(req, req.RESPONSE)
+        self.assertEquals(dl.content_type(), 'image/png')
+
 def test_suite():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
