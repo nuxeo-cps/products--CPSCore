@@ -21,6 +21,7 @@ import os
 from logging import getLogger
 from os.path import abspath
 import pickle
+from ZODB.POSException import ConflictError
 import Products
 from Products.GenericSetup.utils import _resolveDottedName
 
@@ -211,7 +212,15 @@ def listUpgradeSteps(portal, category, source, max_dest=None):
         if step.category != category:
             continue
 
-        proposed = step.isProposed(portal, category, source)
+        try:
+            proposed = step.isProposed(portal, category, source)
+        except ConflictError:
+            raise
+        except:
+            # if the checker can't even run, not a good idea to propose the
+            # step
+            proposed = False
+
         # TODO: (GR) Document this obscure condition. what's the use case ?
         if (not proposed
             and source is not None

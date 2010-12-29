@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #2251: -devel version also prevented marking to the previous one
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
