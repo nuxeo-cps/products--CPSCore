@@ -62,6 +62,7 @@ from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import getCache
 from Products.CPSUtil.file import ofsFileHandler
+from Products.CPSUtil.image import parse_size_spec
 from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
@@ -1012,7 +1013,7 @@ class ImageDownloader(BaseDownloader):
 
     def targetGeometry(self):
        spec = self.additional
-       sz = self._parseSizeSpec(spec)
+       sz = parse_size_spec(spec)
        if isinstance(sz, int):
            return self.geometryFromLargest(sz)
 
@@ -1128,61 +1129,6 @@ class ImageDownloader(BaseDownloader):
                 return
 
         return Image(resized_id, self.file.title, outfile)
-
-    @classmethod
-    def _parseSizeSpec(self, spec):
-        """Return width, height or raise BadRequest.
-
-        >>> ImageDownloader._parseSizeSpec('320x200')
-        (320, 200)
-        >>> ImageDownloader._parseSizeSpec('h500')
-        (None, 500)
-        >>> ImageDownloader._parseSizeSpec('w1024')
-        (1024, None)
-        >>> ImageDownloader._parseSizeSpec('l800')
-        800
-        >>> try: ImageDownloader._parseSizeSpec('x1024')
-        ... except BadRequest, m: print str(m).split(':')[1].strip()
-        x1024
-        """
-        m = IMG_SZ_LARGEST_REGEXP.match(spec)
-        if m is not None:
-            return int(m.group(1))
-        m = IMG_SZ_FULLSPEC_REGEXP.match(spec)
-        if m is not None:
-            return int(m.group(1)), int(m.group(2))
-        m = IMG_SZ_WIDTH_REGEXP.match(spec)
-        if m is not None:
-            return int(m.group(1)), None
-        m = IMG_SZ_HEIGHT_REGEXP.match(spec)
-        if m is not None:
-            return None, int(m.group(1))
-
-        raise BadRequest('Incorrect image size specification: %s' % spec)
-
-    @classmethod
-    def _parseSizeSpecAsDict(cls, spec):
-        """Return a dict suitable as kwargs for e.g., makeSizeSpec
-
-        >>> ImageDownloader._parseSizeSpecAsDict('320x200')
-        {'width': 320, 'height': 200}
-        >>> ImageDownloader._parseSizeSpecAsDict('h500')
-        {'height': 500}
-        >>> ImageDownloader._parseSizeSpecAsDict('w1024')
-        {'width': 1024}
-        >>> ImageDownloader._parseSizeSpecAsDict('l800')
-        {'largest': 800}
-        >>> try: ImageDownloader._parseSizeSpecAsDict('x1024')
-        ... except BadRequest, m: print str(m).split(':')[1].strip()
-        x1024
-        """
-        parsed = cls._parseSizeSpec(spec)
-
-        if isinstance(parsed, int):
-            return dict(largest=parsed)
-
-        return dict((k, v) for k, v in zip(('width', 'height'), parsed)
-                    if v is not None)
 
     @classmethod
     def makeSizeSpec(self, height=0, width=0, largest=0):
