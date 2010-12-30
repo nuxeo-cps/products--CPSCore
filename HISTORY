@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSCore 3.42.2
+===========================================================
+First release built by: gracinet at: 2010-12-30T12:08:35
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2251: -devel version also prevented marking to the previous one
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.42.1
 ===========================================================
 First release built by: gracinet at: 2010-11-27T04:24:33
