@@ -1081,13 +1081,13 @@ class ImageDownloader(BaseDownloader):
     def setInCache(self, cache, img):
         """Set in cache and do the housekeeping.
 
-        Keeps no more than 10 objects in cache. For different sizes of an image
-        that should be more than enough, and this protects against buggy or
-        malicious requests.
+        Keeps no more than 5 objects in cache. For different sizes of an image
+        that should be enough, and this protects against buggy or malicious
+        requests.
         """
 
         cache_ids = cache.objectIds()
-        if len(cache_ids) > 9: # len(cache) wouldn't work
+        if len(cache_ids) > 4: # len(cache) wouldn't work
             oldest = None
             for oid, ob in cache.objectItems():
                 ob_time = ob._p_mtime
@@ -1097,7 +1097,7 @@ class ImageDownloader(BaseDownloader):
                     oldest = ob_time
                     todel = oid
 
-            if oldest is None: # 10 existing, all uncommited, not really normal
+            if oldest is None: # 5 existing, all uncommited, not really normal
                 todel = cache_ids[0]
 
             cache._delObject(todel)

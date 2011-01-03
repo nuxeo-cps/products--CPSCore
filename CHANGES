@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #2204: keeping only 5 resized image in cache
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
