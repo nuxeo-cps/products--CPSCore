@@ -1795,7 +1795,7 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
     def thisProxyFolder(self):
         """Get the closest proxy folder from a context.
 
-        Used by acquisition.
+        Works through acquisition.
         """
         return self
 
