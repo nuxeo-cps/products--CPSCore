@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSCore 3.42.4
+===========================================================
+First release built by: gracinet at: 2011-01-04T02:43:18
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2204: keeping only 5 resized image in cache
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.42.3
 ===========================================================
 First release built by: gracinet at: 2011-01-03T01:08:39
