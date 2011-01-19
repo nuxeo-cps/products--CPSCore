@@ -977,7 +977,7 @@ class ImageDownloader(BaseDownloader):
         because this method is tested (and easy to test)."""
 
         try:
-            return image.resized_img_geometry(self.file, self.additional)
+            return image.resized_geometry(self.file, self.additional)
         except image.SizeSpecError, e:
             raise BadRequest("Invalid size specification: %r" % self.additional)
 
