@@ -6,8 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- #2330: don't show by default older upgrade steps, checker or not
-- #2325: Moved image resizing methods to CPSUtil
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
