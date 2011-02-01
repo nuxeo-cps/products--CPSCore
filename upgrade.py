@@ -89,10 +89,8 @@ class UpgradeStep(object):
         True means can be applied.
         """
         checker = self.checker
-        if checker is None:
-            return self.versionMatch(portal, source)
-        else:
-            return checker(portal)
+        vm = self.versionMatch(portal, source)
+        return vm and (checker is None or checker(portal))
 
     def versionMatch(self, portal, source):
         """Check if a step should be applied relatively to its version.
@@ -211,7 +209,6 @@ def listUpgradeSteps(portal, category, source, max_dest=None):
     for id, step in _upgrade_registry.items():
         if step.category != category:
             continue
-
         try:
             proposed = step.isProposed(portal, category, source)
         except ConflictError:
