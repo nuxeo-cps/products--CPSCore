@@ -1,4 +1,22 @@
 ===========================================================
+Package: CPSCore 3.42.5
+===========================================================
+First release built by: gracinet at: 2011-02-01T21:21:58
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2330: don't show by default older upgrade steps, checker or not
+- #2325: Moved image resizing methods to CPSUtil
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.42.4
 ===========================================================
 First release built by: gracinet at: 2011-01-04T02:43:18
