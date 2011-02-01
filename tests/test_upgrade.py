@@ -33,9 +33,11 @@ def up_my_app_1_2_2_0(portal):
     print "my_app: 1.2 -> 2.0"
 def up_my_app_2_0_3_0(portal):
     print "my_app: 2.0 -> 3.0"
+def up_noop(portal):
+    pass
 
 handlers = dict((k, v) for k, v in globals().items()
-                if k.startswith('up_my_app'))
+                if k.startswith('up_'))
 
 def test_suite():
     return unittest.TestSuite((

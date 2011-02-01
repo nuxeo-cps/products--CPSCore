@@ -22,13 +22,6 @@ import math
 from logging import getLogger
 from types import DictType
 import re
-try:
-    import PIL.Image
-    PIL_OK = True
-except ImportError:
-    getLogger('Products.CPSCore').warn(
-        "No PIL library found: no new image resizing will be done")
-    PIL_OK = False
 
 from zExceptions import BadRequest
 from ExtensionClass import Base
@@ -61,7 +54,7 @@ from Products.CPSCore.permissions import ChangeSubobjectsOrder
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import getCache
-from Products.CPSUtil.file import ofsFileHandler
+from Products.CPSUtil import image
 from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
      KEYWORD_ARCHIVED_REVISION, KEYWORD_SWITCH_LANGUAGE, \
@@ -812,7 +805,7 @@ class FileDownloader(BaseDownloader):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
-    logger = getLogger('CPSCore.ProxyBase.FileDownloader')
+    logger = getLogger(__name__ + '.FileDownloader')
 
     keyword = KEYWORD_DOWNLOAD_FILE
 
@@ -934,13 +927,9 @@ class ImageDownloader(BaseDownloader):
 
     Returned by a proxy during traversal of .../sizedImg/.
 
-    Parses URLs of the form .../sizedImg/size/myimg.jpg, where size can be
-       - full: untransformed
-       - 320x200: full size spec (width plus height)
-       - w320: width spec: height will keep aspect ratio
-       - h200: height spec: width will keep aspect ratio
-       - l540: largest dimension spec: wished size of the largest dimension,
-                                       keeping aspect ratio
+    Parses URLs of the form .../sizedImg/size_spec/myimg.jpg
+    For information about size specifications (size_spec),
+    see Products.CPSUtil.image.
 
     Only 'full' allowed for content-changing requests.
     Any non compliant spec or method should raise BadRequest
@@ -949,7 +938,7 @@ class ImageDownloader(BaseDownloader):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
-    logger = getLogger('CPSCore.ProxyBase.FileDownloader')
+    logger = getLogger(__name__ + '.FileDownloader')
 
     keyword = KEYWORD_SIZED_IMAGE
 
@@ -980,58 +969,23 @@ class ImageDownloader(BaseDownloader):
             RESPONSE.setHeader('Content-Length', '0')
             return ''
 
-    def geometryFromLargest(self, size):
-        """Compute width, height from the wished largest dimension."""
-        img = self.file
-        srcw, srch = img.width, img.height
-        if srcw > srch:
-            return size, self.heightFromWidth(size)
-        else:
-            return self.widthFromHeight(size), size
-
-    def heightFromWidth(self, size):
-        """Deduce target height from wished width keeping aspect ratio."""
-        srcw, srch = self.srcGeometry()
-        return int(math.floor(srch * float(size)/srcw + 0.5))
-
-    def widthFromHeight(self, size):
-        """Deduce target width from wished height keeping aspect ratio."""
-        srcw, srch = self.srcGeometry()
-        return int(math.floor(srcw * float(size)/srch + 0.5))
-
-    def srcGeometry(self):
-        """Return width, height for the orignal image."""
-        # 24 bytes are always supposed to be in the first range
-        # Pdata implement slices
-        fileio = ofsFileHandler(self.file)
-        try:
-            img = PIL.Image.open(fileio)
-            return img.size
-        except: # TODO a lot
-            return -1, -1
-
+    security.declareProtected(View, 'targetGeometry')
     def targetGeometry(self):
-       spec = self.additional
-       sz = self._parseSizeSpec(spec)
-       if isinstance(sz, int):
-           return self.geometryFromLargest(sz)
+        """Return width and heigh for the request we're handling.
 
-       w, h = sz
-       if w is None:
-           return self.widthFromHeight(h), h
-       elif h is None:
-           return w, self.heightFromWidth(w)
+        GR: mostly kept while the actual logic has moved to CPSUtil
+        because this method is tested (and easy to test)."""
 
-       return w, h
-
+        try:
+            return image.resized_geometry(self.file, self.additional)
+        except image.SizeSpecError, e:
+            raise BadRequest("Invalid size specification: %r" % self.additional)
 
     security.declareProtected(View, 'getImage')
     def getImage(self):
        """Get the image with appropriate size.
+
        Supports persistent cache.
-       TODO: security hazard, someone could inflate ZODB simply by requesting
-       lots and lots of different ones: clean the oldest ones
-       TODO move the actual image processing to CPSUtil
        """
        orig = self.file
        if self.additional == 'full':
@@ -1048,7 +1002,6 @@ class ImageDownloader(BaseDownloader):
        cache = getattr(self.ob, IMAGE_RESIZING_CACHE)
 
        w, h = self.targetGeometry()
-
        key = '%s-%dx%d' % (self.attrname, w, h)
 
        pm = orig._p_mtime
@@ -1070,7 +1023,8 @@ class ImageDownloader(BaseDownloader):
            # existing can't be served, purge it
            cache._delObject(key)
 
-       resized = self.resize(w, h, key)
+       self.logger.info("Computing %r for %s.", key, self.ob)
+       resized = image.resize(self.file, w, h, key)
        if resized is None: # failed for some reason, fallback
            return orig
 
@@ -1081,13 +1035,13 @@ class ImageDownloader(BaseDownloader):
     def setInCache(self, cache, img):
         """Set in cache and do the housekeeping.
 
-        Keeps no more than 10 objects in cache. For different sizes of an image
-        that should be more than enough, and this protects against buggy or
-        malicious requests.
+        Keeps no more than 5 objects in cache. For different sizes of an image
+        that should be enough, and this protects against buggy or malicious
+        requests.
         """
 
         cache_ids = cache.objectIds()
-        if len(cache_ids) > 9: # len(cache) wouldn't work
+        if len(cache_ids) > 4: # len(cache) wouldn't work
             oldest = None
             for oid, ob in cache.objectItems():
                 ob_time = ob._p_mtime
@@ -1097,37 +1051,13 @@ class ImageDownloader(BaseDownloader):
                     oldest = ob_time
                     todel = oid
 
-            if oldest is None: # 10 existing, all uncommited, not really normal
+            if oldest is None: # 5 existing, all uncommited, not really normal
                 todel = cache_ids[0]
 
             cache._delObject(todel)
 
         cache._setObject(img.getId(), img)
         return img
-
-    security.declarePrivate('resize')
-    def resize(self, width, height, resized_id):
-        """Return OFS.Image.Image or None if cannot resize."""
-
-        self.logger.info("Computing %r for %s.", resized_id, self.ob)
-        if not PIL_OK:
-            self.logger.warn("Resizing can't be done until PIL is installed")
-            return
-
-        fileio = ofsFileHandler(self.file)
-        try:
-            img = PIL.Image.open(fileio)
-            newimg = img.resize((width, height), PIL.Image.ANTIALIAS)
-            outfile = StringIO()
-            newimg.save(outfile, format=img.format)
-        except (NameError, IOError, ValueError, SystemError), err:
-                self.logger.warning(
-                    "Failed to resize image %r at %r (%s), "
-                    "full size will be served",
-                    self.filename, self.attrname, err)
-                return
-
-        return Image(resized_id, self.file.title, outfile)
 
     @classmethod
     def _parseSizeSpec(self, spec):
@@ -1795,7 +1725,7 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
     def thisProxyFolder(self):
         """Get the closest proxy folder from a context.
 
-        Used by acquisition.
+        Works through acquisition.
         """
         return self
 

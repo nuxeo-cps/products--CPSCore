@@ -19,6 +19,10 @@ The upgrade steps API is divided in two parts: non-persistent
 track of applied steps, current level of upgrade for a given CPS
 portal. The persistent part is provided by CPS' Setup Tool.
 
+This document is a doctest, meaning that the examples are actually
+checked as part of the test suite. This can make for a special writing
+style.
+
 It will be convenient for examples to have a pretty printer::
 
     >>> from pprint import PrettyPrinter
@@ -122,6 +126,7 @@ the standard output. These ones do nothing else::
     my_app: 1.2 -> 2.0
     >>> up_my_app_2_0_3_0(portal)
     my_app: 2.0 -> 3.0
+    >>> up_noop(portal)
 
 So, let's register a step for 'My Application'::
 
@@ -471,6 +476,58 @@ considered as done anymore::
     >>> step_info['step'].version
     2
 
+There's a special rule for the ``cpsplatform`` category. Development
+or release candidate versions are never marked as reached. Let's see
+that, but first let's pretend the code is at CPS 3.3.17-devel (we're using
+versions that will never exist intentionnaly to avoid mixing up with
+real upgrade steps)::
+
+    >>> from Products.CPSCore.portal import CPSSite
+    >>> saved = CPSSite.cps_version, CPSSite.cps_version_suffix
+    >>> CPSSite.cps_version = ('CPS', 3, 3, 17)
+    >>> CPSSite.cps_version_suffix = 'devel'
+    >>> tool._setCurrentVersion('cpsplatform', (3, 3, 15))
+    '3.3.15'
+
+Let's register upgrade steps to CPS 3.3.16 and 3.3.17::
+
+    >>> upgradeStep(context, 'Test Platform 3.3.16', up_noop,
+    ...             source='3.3.15', destination='3.3.16')
+    >>> upgradeStep(context, 'Test Platform 3.3.17', up_noop,
+    ...             source='3.3.16', destination='3.3.17')
+    >>> list_ups = tool.listUpgrades();
+    >>> ids = [up['id'] for up in list_ups
+    ...       if up['sdest'] in ('3.3.16', '3.3.17')]
+    >>> len(ids)
+    2
+    >>> tool.doUpgrades(ids, 'cpsplatform', do_commit=False)
+    >>> tool._getCurrentVersion('cpsplatform')
+    (3, 3, 16)
+
+Same with the suffix for release candidates
+
+    >>> tool._resetAppliedSteps()
+    >>> tool._setCurrentVersion('cpsplatform', (3, 3, 15))
+    '3.3.15'
+    >>> CPSSite.cps_version_suffix = 'rc'
+    >>> tool.doUpgrades(ids, 'cpsplatform', do_commit=False)
+    >>> tool._getCurrentVersion('cpsplatform')
+    (3, 3, 16)
+
+Now without any version suffix::
+
+    >>> tool._resetAppliedSteps()
+    >>> tool._setCurrentVersion('cpsplatform', (3, 3, 15))
+    '3.3.15'
+    >>> CPSSite.cps_version_suffix = ''
+    >>> tool.doUpgrades(ids, 'cpsplatform', do_commit=False)
+    >>> tool._getCurrentVersion('cpsplatform')
+    (3, 3, 17)
+
+Finally, we restore the current code version, in order to avoid side effects in
+other tests::
+
+    >>> CPSSite.cps_version, CPSSite.cps_version_suffix = saved
 
 .. Emacs
 .. Local Variables:

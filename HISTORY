@@ -1,4 +1,73 @@
 ===========================================================
+Package: CPSCore 3.42.5
+===========================================================
+First release built by: gracinet at: 2011-02-01T21:21:58
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2330: don't show by default older upgrade steps, checker or not
+- #2325: Moved image resizing methods to CPSUtil
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
+Package: CPSCore 3.42.4
+===========================================================
+First release built by: gracinet at: 2011-01-04T02:43:18
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2204: keeping only 5 resized image in cache
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
+Package: CPSCore 3.42.3
+===========================================================
+First release built by: gracinet at: 2011-01-03T01:08:39
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- marked CPS version as rc
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
+Package: CPSCore 3.42.2
+===========================================================
+First release built by: gracinet at: 2010-12-30T12:08:35
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2251: -devel version also prevented marking to the previous one
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.42.1
 ===========================================================
 First release built by: gracinet at: 2010-11-27T04:24:33

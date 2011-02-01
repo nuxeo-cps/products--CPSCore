@@ -206,28 +206,32 @@ class CPSSetupTool(UniqueObject, SetupTool):
         # Update last_upgraded_version
         version = self._getCurrentVersion(category)
         dests.discard(None)
+
+        # Prevent marking as upgraded to a -devel or -rc version (see #2251)
+        # TODO better logic to have devel versions for other categories too
+        # See #2251 for details
+        if (category == 'cpsplatform'
+            and CPSSite.cps_version_suffix in ('devel', 'rc')):
+            skipped.add(CPSSite.cps_version[1:])
+
         dests = list(dests)
+        # Keep highest dest with no skipped upgrade
         dests.sort()
-        # Keep highest non-skipped dest
         next = None
         for dest in dests:
             if dest in skipped:
                 break
             next = dest
 
-        # TODO better logic to have devel versions for other categories too
-        # See #2251 for details
-        if next is not None and next > self._getCurrentVersion(category) and (
-            category != 'cpsplatform'
-            or CPSSite.cps_version_suffix not in ('devel', 'rc')
-            or next != CPSSite.cps_version[1:]):
+        if next is not None and next > self._getCurrentVersion(category):
             # GR at this point one may decide not to keep as done those steps
             # that are before this new reached version.
             # This is a bit dangerous, though
             # since checker results may change (bugfix, environment change...)
             version = self._setCurrentVersion(category, next)
             cat_title = _categories_registry[category]['title']
-            logger.info("Upgraded portal to %s-%s", cat_title, version)
+            logger.info("Marked the portal as upgraded to %s-%s",
+                        cat_title, version)
 
     def _getUpgradeCategoryDisplayInfo(self, cat_id):
         cat = _categories_registry[cat_id]
