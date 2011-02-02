@@ -22,7 +22,7 @@ from App.Management import Navigation
 from portal import CPSSite
 
 vlist = [str(x) for x in CPSSite.cps_version]
-vstr = ' ' + vlist[0] + '/' + '.'.join(vlist)
+vstr = ' ' + vlist[0] + '/' + '.'.join(vlist[1:])
 vsuffix = getattr(CPSSite, 'cps_version_suffix', '')
 if vsuffix:
     vstr += '-' + vsuffix
