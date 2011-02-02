@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSCore 3.42.6
+===========================================================
+First release built by: gracinet at: 2011-02-02T15:41:15
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- Set version to 3.5.2, Server HTTP header cosmit
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.42.5
 ===========================================================
 First release built by: gracinet at: 2011-02-01T21:21:58
