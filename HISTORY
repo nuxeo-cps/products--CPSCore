@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSCore 3.42.7
+===========================================================
+First release built by: gracinet at: 2011-02-14T02:57:40
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- meta_types kwarg for repository tool's iterValues()
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.42.6
 ===========================================================
 First release built by: gracinet at: 2011-02-02T15:41:15
