@@ -202,10 +202,29 @@ class ObjectRepositoryTool(UniqueObject,
             yield i, o.__of__(self)
 
     security.declarePrivate('iterValues')
-    def iterValues(self):
-        """Making sure that this is an iterator."""
-        for o in self._tree.itervalues():
-            yield o.__of__(self)
+    def iterValues(self, meta_types=None):
+        """Making sure that this is an iterator.
+
+        TODO copy/pasted from CPSBase, refactor!
+        """
+
+        if meta_types is None:
+            for o in self._tree.itervalues():
+                yield o.__of__(self)
+            return
+
+        for mt in meta_types:
+            ids = self._mt_index.get(mt)
+            if ids is None:
+                continue
+            for oid in ids.iterkeys():
+                o = self._getOb(oid, default=None)
+                if o is not None:
+                    yield o
+                else:
+                    logger.warn("Inconsistent id %r in %s, found in "
+                                "meta_types indexes, but could not fetch",
+                                oid, self)
 
     security.declarePrivate('listDocids')
     def listDocids(self):

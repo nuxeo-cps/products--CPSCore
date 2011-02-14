@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- meta_types kwarg for repository tool's iterValues()
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
