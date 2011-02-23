@@ -472,6 +472,31 @@ class ProxyTraversalTest(ZopeTestCase):
         s, r, u = str(dl), repr(dl), dl.absolute_url()
         dl.__bobo_traverse__(None, 'fobj')
         s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'myfile.txt')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+
+        self.assertEquals(dl.attrname, 'fobj')
+        self.assertEquals(dl.file, doc.fobj)
+        self.assertEquals(dl.filename, 'myfile.txt')
+        req = self.folder.REQUEST
+        self.assertEquals(dl.index_html(req, req.RESPONSE), 'File contents')
+        self.assertEquals(dl.content_type(), 'text/plain')
+
+    def test_file_downloader_redirect(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        # _setObject not availabale on doc (SimpleItem)
+        doc.fobj = File('fobj', 'myfile.txt', 'File contents')
+
+        # Starting traversal
+        # TODO better to have something hihger level
+        # (closer to what publisher would actually trigger)
+        # we call utility methods that should never break at each stage
+        # but don't check their outcome
+        dl = proxy[KEYWORD_DOWNLOAD_FILE]
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
+        dl.__bobo_traverse__(None, 'fobj')
+        s, r, u = str(dl), repr(dl), dl.absolute_url()
         dl.__bobo_traverse__(None, 'hisfile.txt')
         s, r, u = str(dl), repr(dl), dl.absolute_url()
 
@@ -479,8 +504,12 @@ class ProxyTraversalTest(ZopeTestCase):
         self.assertEquals(dl.file, doc.fobj)
         self.assertEquals(dl.filename, 'hisfile.txt')
         req = self.folder.REQUEST
-        self.assertEquals(dl.index_html(req, req.RESPONSE), 'File contents')
-        self.assertEquals(dl.content_type(), 'text/plain')
+        resp = req.RESPONSE
+        self.assertEquals(dl.index_html(req, resp), '')
+        self.assertEquals(resp.status, 302)
+        location = resp.getHeader('location')
+        i = location.find('proxy')
+        self.assertEquals(location[i:], 'proxy/downloadFile/fobj/myfile.txt')
 
     def test_img_downloader_fullsize(self):
         proxy = self.proxy
@@ -498,12 +527,12 @@ class ProxyTraversalTest(ZopeTestCase):
         s, r, u = str(dl), repr(dl), dl.absolute_url()
         dl.__bobo_traverse__(None, 'full')
         s, r, u = str(dl), repr(dl), dl.absolute_url()
-        dl.__bobo_traverse__(None, 'hisimg.png')
+        dl.__bobo_traverse__(None, 'myimg.png')
         s, r, u = str(dl), repr(dl), dl.absolute_url()
 
         self.assertEquals(dl.attrname, 'fobj')
         self.assertEquals(dl.file, doc.fobj)
-        self.assertEquals(dl.filename, 'hisimg.png')
+        self.assertEquals(dl.filename, 'myimg.png')
         self.assertEquals(dl.additional, 'full')
 
         self.assertTrue(dl.isFullSize())
@@ -512,6 +541,29 @@ class ProxyTraversalTest(ZopeTestCase):
         req = self.folder.REQUEST
         self.assertEquals(dl.index_html(req, req.RESPONSE), 'File contents')
         self.assertEquals(dl.content_type(), 'text/plain')
+
+    def test_img_downloader_redirect(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        f = open(os.path.join(TEST_DATA_PATH, 'logo_cps.png'))
+        doc._setObject('fobj', Image('fobj', 'myimg.png', f))
+
+        dl = proxy[KEYWORD_SIZED_IMAGE]
+        dl.__bobo_traverse__(None, 'fobj')
+        dl.__bobo_traverse__(None, '320x200')
+        dl.__bobo_traverse__(None, 'hisimg.png')
+
+        self.assertFalse(dl.isFullSize())
+        self.assertRaises(BadRequest, dl.assertFullSize, meth_name='TEST')
+
+        req = self.folder.REQUEST
+        resp = req.RESPONSE
+        self.assertEquals(dl.index_html(req, resp), '')
+        self.assertEquals(resp.status, 302)
+        location = resp.getHeader('location')
+        i = location.find('proxy')
+        self.assertEquals(location[i:],
+                          'proxy/sizedImg/fobj/320x200/myimg.png')
 
     def test_img_downloader_fullspec(self):
         proxy = self.proxy
@@ -522,7 +574,7 @@ class ProxyTraversalTest(ZopeTestCase):
         dl = proxy[KEYWORD_SIZED_IMAGE]
         dl.__bobo_traverse__(None, 'fobj')
         dl.__bobo_traverse__(None, '320x200')
-        dl.__bobo_traverse__(None, 'hisimg.png')
+        dl.__bobo_traverse__(None, 'myimg.png')
 
         self.assertFalse(dl.isFullSize())
         self.assertRaises(BadRequest, dl.assertFullSize, meth_name='TEST')

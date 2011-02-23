@@ -731,6 +731,19 @@ class BaseDownloader(Acquisition.Explicit):
         self.filename = None
         self.additional = None # any relevant additional arg put in URL
 
+    def redirect(self, RESPONSE):
+        """Perform redirection if needed and return True."""
+        fobj = self.file
+        if fobj is None:
+            return
+
+        filename = self.filename
+        fobjname = fobj.title
+        if filename is not None and fobjname and fobjname != filename:
+            self.filename = fobjname # corrects self.absolute_url()
+            RESPONSE.redirect(self.absolute_url())
+            return True
+
     def __bobo_traverse__(self, request, name):
         state = self.state
         ob = self.ob
@@ -816,6 +829,10 @@ class FileDownloader(BaseDownloader):
         """Publish the file or image."""
         if self.state != 2:
             return None
+
+        if self.redirect(RESPONSE):
+            return ''
+
         file = self.file
         if file is not None:
             file_basename, file_suffix = os.path.splitext(self.filename)
@@ -961,6 +978,10 @@ class ImageDownloader(BaseDownloader):
         """Publish the file or image."""
         if self.state != self.url_parts:
             return None
+
+        if self.redirect(RESPONSE):
+            return ''
+
         img = self.getImage()
         if img is not None:
             return img.index_html(REQUEST, RESPONSE)
