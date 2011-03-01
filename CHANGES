@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- FileDownlader and ImageDownloader redirect to enforce actual filenames
+- #2348: FileDownlader and ImageDownloader redirect to enforce actual filenames
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
