@@ -7,6 +7,7 @@ New features
 Bug fixes
 ~~~~~~~~~
 - #2348: FileDownlader and ImageDownloader redirect to enforce actual filenames
+- Improved robustness of Proxy Tool wrt broken indexes
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

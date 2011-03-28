@@ -22,6 +22,7 @@
 """
 
 from zLOG import LOG, ERROR, DEBUG, TRACE
+import logging
 from Globals import InitializeClass, DTMLFile
 from types import DictType
 from Acquisition import aq_base, aq_parent, aq_inner
@@ -53,6 +54,7 @@ from zope.app.container.interfaces import IObjectMovedEvent
 from OFS.interfaces import IObjectWillBeMovedEvent
 from Products.CPSCore.interfaces import ICPSProxy
 
+logger = logging.getLogger(__name__)
 
 def handleObjectEvent(ob, event):
     """Notification from the event service.
@@ -741,32 +743,40 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
 
     security.declarePrivate('_delProxy')
-    def _delProxy(self, rpath):
+    def _delProxy(self, rpath, proxy=None):
         """Delete knowledge about a proxy.
 
         Maintains internal indexes.
+        For broken indexes cases, the proxy can be supplied to read docid and
+        language_revs directly from it. This is newer, but is still a kw
+        argument in order to not to break the API,
+
+        The directly supplied proxy info takes precedence over what has been
+        in _rpath_to_infos (not sure this is the best policy to purge
+        inconsistent indexes, but that's good enough for now).
         """
-        docid, language_revs = self._rpath_to_infos[rpath]
-        del self._rpath_to_infos[rpath]
+        infos = self._rpath_to_infos.pop(rpath, None)
+        if infos is None:
+            logger.warn("_delProxy: no info for rpath %r", rpath)
+            if proxy is None: # can't do more
+                return
 
-        rpaths = list(self._docid_to_rpaths[docid])
-        rpaths.remove(rpath)
-        if rpaths:
-            self._docid_to_rpaths[docid] = tuple(rpaths)
+        if proxy is None:
+            docid, lang_revs = infos
         else:
-            del self._docid_to_rpaths[docid]
+            docid, lang_revs = proxy.getDocid(), proxy.getLanguageRevisions()
 
-        revs = {}
-        for lang, rev in language_revs.items():
-            revs[rev] = None
-        for rev in revs.keys():
-            key = (docid, rev)
-            rpaths = list(self._docid_rev_to_rpaths[key])
-            rpaths.remove(rpath)
-            if rpaths:
-                self._docid_rev_to_rpaths[key] = tuple(rpaths)
+        def remove_rpath(registry, key, rpath):
+            rpaths = registry.pop(key, None)
+            if rpaths is not None:
+                registry[key] = tuple(r for r in rpaths if r != rpath)
             else:
-                del self._docid_rev_to_rpaths[key]
+                logger.warn("_delProxy: entry %r for %r was missing",
+                            key, rpath)
+
+        remove_rpath(self. _docid_to_rpaths, docid, rpath)
+        for rev in lang_revs.values():
+            remove_rpath(self._docid_rev_to_rpaths, (docid, rev), rpath)
 
     security.declarePrivate('_modifyProxy')
     def _modifyProxy(self, proxy, rpath):

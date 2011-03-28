@@ -368,6 +368,34 @@ class ProxyToolTest(ZopeTestCase, LogInterceptor):
         ptool._delProxy('/foo')
         self.assertEquals(len(ptool.listProxies()), 0)
 
+    def test_del2(self):
+        ptool = self.root.portal_proxies
+        self.assertEqual(ptool.listProxies(), [])
+
+        proxy1 = ProxyBase(1357, language_revs={'en': 78})
+        proxy2 = ProxyBase(1357, language_revs={'fr': 90})
+
+        ptool._addProxy(proxy1, '/foo')
+        self.assertEquals(ptool.listProxies(),
+            [('/foo', (1357, {'en': 78}))])
+
+        ptool._addProxy(proxy2, '/bar')
+        items = ptool.listProxies()
+        items.sort()
+        self.assertEquals(items, [('/bar', (1357, {'fr': 90})),
+                                  ('/foo', (1357, {'en': 78}))])
+
+        ptool._delProxy('/bar', proxy=proxy2)
+        self.assertEquals(ptool.listProxies(),
+            [('/foo', (1357, {'en': 78}))])
+
+        # simulate ultimately broken index
+        ptool._delProxy('/bar', proxy=proxy2)
+        self.assertEquals(ptool.listProxies(),
+            [('/foo', (1357, {'en': 78}))])
+        self.assertEquals(ptool.listProxies(docid=1357), # uses other index
+                          [('/foo', (1357, {'en': 78}))])
+
     def testBestRevision(self):
         ptool = self.root.portal_proxies
         proxy = ProxyBase(language_revs={'fr': 33, 'en': 78})
