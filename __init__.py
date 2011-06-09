@@ -38,6 +38,7 @@ import PatchCMFCore
 import PatchCopyright
 import PatchPortalFolder
 import PatchGenericSetup
+import PatchCMFActionsExportImport
 
 import EventServiceTool
 import EventServicePatches
