@@ -200,6 +200,7 @@ def test_events():
 
       >>> res = folder.manage_clone(folder.firefly, 'serenity')
       ObjectCopiedEvent serenity
+      ObjectCopiedEvent mel
       ObjectWillBeAddedEvent serenity
       ObjectWillBeAddedEvent mel
       ObjectAddedEvent serenity
@@ -250,9 +251,10 @@ def test_eventservice_compat():
       >>> from zope.event import notify
       >>> from zope.app.event.objectevent import ObjectModifiedEvent
 
+    GR: this cannot be a conditional testing on Zope version
       >>> notify(ObjectModifiedEvent(ob))
-      compat sys_modify_object ob
       ObjectModifiedEvent ob
+      compat sys_modify_object ob
 
     Cleanup::
 
