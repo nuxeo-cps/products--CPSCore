@@ -1,0 +1,24 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+
+  <!-- This duplicates Five/event.zcml, but without the inclusion of
+  zope.app.event, which has the side effect of registering objectNotifyEvent
+  twice (main object event dispatcher to (obj, event) subscriber adapters)
+  -->
+
+  <!-- Adapter giving sublocations for ObjectManagers, used
+       by dispatchToSublocations -->
+  <adapter factory="OFS.subscribers.ObjectManagerSublocations" />
+
+  <!-- dispatch IObjectWillBeMovedEvent with "bottom-up" semantics -->
+  <subscriber handler="OFS.subscribers.dispatchObjectWillBeMovedEvent" />
+
+  <!-- dispatch IObjectMovedEvent with "top-down" semantics -->
+  <subscriber handler="OFS.subscribers.dispatchObjectMovedEvent" />
+
+  <!-- dispatch IObjectClonedEvent with "top-down" semantics -->
+  <subscriber handler="OFS.subscribers.dispatchObjectClonedEvent" />
+
+  <!-- dispatch IObjectCopiedEvent with "top-down" semantics -->
+  <subscriber handler="OFS.subscribers.dispatchObjectCopiedEvent" />
+
+</configure>

@@ -3,7 +3,7 @@ Requires
 -
 New features
 ~~~~~~~~~~~~
--
+- Support for Zope 2.9 & 2.10
 Bug fixes
 ~~~~~~~~~
 - #2405: Can't import actions with non ascii titles

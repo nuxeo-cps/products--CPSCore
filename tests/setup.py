@@ -26,11 +26,13 @@ from zope.component import getGlobalServices
 from zope.component.exceptions import ComponentLookupError
 from zope.app.testing import ztapi
 from zope.app.testing import placelesssetup
+from Products.CPSUtil.testing.introspect import ZOPE_VERSION
 from Products.Five import zcml
 
 import transaction
 
 from zope.app.event.interfaces import IObjectEvent
+from zope.app.event.interfaces import IObjectCopiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
 from OFS.interfaces import IObjectWillBeMovedEvent
 from OFS.interfaces import IObjectClonedEvent
@@ -49,7 +51,11 @@ class EventTest(placelesssetup.PlacelessSetup):
         zcml = file('meta.zcml', Products.Five, execute=False)
         #file('i18n.zcml', Products.Five, execute=False, context=zcml)
         #file('permissions.zcml', Products.Five, execute=False, context=zcml)
-        file('event.zcml', Products.Five, execute=False, context=zcml)
+        if ZOPE_VERSION > (2, 10):
+            file('tests/five_events.zcml', Products.CPSCore, execute=False,
+                 context=zcml)
+        else:
+            file('event.zcml', Products.Five, execute=False, context=zcml)
         file('deprecated.zcml', Products.Five, execute=False, context=zcml)
         #file('configure.zcml', Products.CMFCore, execute=False, context=zcml)
         file('meta.zcml', Products.CPSCore, execute=False, context=zcml)
@@ -126,7 +132,13 @@ class EventObserverTest(EventTest):
                         self.printObjectEventExceptSome)
 
     def printObjectEvent(self, object, event):
-        info = '%s %s' % (event.__class__.__name__, object.getId())
+        try:
+            oid = object.getId()
+        except AttributeError:
+            # there are in Zope 2.10 object events, e.g., AdapterRegistration,
+            # that don't have a getId(), and we aren't interested in those
+            return
+        info = '%s %s' % (event.__class__.__name__, oid)
         # We strip to avoid having to say NORMALIZE_WHITESPACE in doctests
         print info.strip()
 
@@ -134,6 +146,8 @@ class EventObserverTest(EventTest):
         if (IObjectMovedEvent.providedBy(event) or
             IObjectWillBeMovedEvent.providedBy(event) or
             IObjectClonedEvent.providedBy(event)):
+            return
+        if ZOPE_VERSION < (2, 10) and IObjectCopiedEvent.providedBy(event):
             return
         self.printObjectEvent(object, event)
 
