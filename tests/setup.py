@@ -32,6 +32,7 @@ from Products.Five import zcml
 import transaction
 
 from zope.app.event.interfaces import IObjectEvent
+from zope.app.event.interfaces import IObjectCopiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
 from OFS.interfaces import IObjectWillBeMovedEvent
 from OFS.interfaces import IObjectClonedEvent
@@ -145,6 +146,8 @@ class EventObserverTest(EventTest):
         if (IObjectMovedEvent.providedBy(event) or
             IObjectWillBeMovedEvent.providedBy(event) or
             IObjectClonedEvent.providedBy(event)):
+            return
+        if ZOPE_VERSION < (2, 10) and IObjectCopiedEvent.providedBy(event):
             return
         self.printObjectEvent(object, event)
 
