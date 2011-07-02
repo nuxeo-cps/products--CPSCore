@@ -72,7 +72,8 @@ def cheatSerenity(object, event):
         # there are in Zope 2.10 object events, e.g., AdapterRegistration,
         # that don't have a getId(), and we aren't interested in those
         return
-    print 'ObjectCopiedEvent ' + oid
+    if oid != 'mel':
+        print 'ObjectCopiedEvent ' + oid
     if oid == 'serenity':
         print 'ObjectCopiedEvent mel'
 
