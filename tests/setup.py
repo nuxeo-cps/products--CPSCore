@@ -26,6 +26,7 @@ from zope.component import getGlobalServices
 from zope.component.exceptions import ComponentLookupError
 from zope.app.testing import ztapi
 from zope.app.testing import placelesssetup
+from Products.CPSUtil.testing.introspect import ZOPE_VERSION
 from Products.Five import zcml
 
 import transaction
@@ -49,8 +50,11 @@ class EventTest(placelesssetup.PlacelessSetup):
         zcml = file('meta.zcml', Products.Five, execute=False)
         #file('i18n.zcml', Products.Five, execute=False, context=zcml)
         #file('permissions.zcml', Products.Five, execute=False, context=zcml)
-        file('tests/five_events.zcml', Products.CPSCore, execute=False,
-             context=zcml)
+        if ZOPE_VERSION > (2, 10):
+            file('tests/five_events.zcml', Products.CPSCore, execute=False,
+                 context=zcml)
+        else:
+            file('event.zcml', Products.Five, execute=False, context=zcml)
         file('deprecated.zcml', Products.Five, execute=False, context=zcml)
         #file('configure.zcml', Products.CMFCore, execute=False, context=zcml)
         file('meta.zcml', Products.CPSCore, execute=False, context=zcml)
