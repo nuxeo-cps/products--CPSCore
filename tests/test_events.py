@@ -242,23 +242,21 @@ def test_eventservice_compat():
       'portal_eventservice'
       >>> ob = MyContent('ob').__of__(f)
 
-    Setup observing::
+    Setup testing event system::
 
-      >>> root = setup.eventObserverSetUp()
+      >>> root = setup.eventSetUp()
 
     Check redispatch occurs::
 
       >>> from zope.event import notify
       >>> from zope.app.event.objectevent import ObjectModifiedEvent
 
-    GR: this cannot be a conditional testing on Zope version
       >>> notify(ObjectModifiedEvent(ob))
-      ObjectModifiedEvent ob
       compat sys_modify_object ob
 
     Cleanup::
 
-      >>> setup.eventObserverTearDown()
+      >>> setup.eventTearDown()
     """
 
 
