@@ -177,7 +177,7 @@ class IndexableObjectWrapper:
 
 
 ### Patching CatalogTool methods
-def cat_catalog_object(self, object, uid, idxs=[], update_metadata=1, pghandler=None):
+def cat_catalog_object(self, object, uid=None, idxs=[], update_metadata=1, pghandler=None):
     """Wraps the object before cataloging.
 
     Also takes into account multiple CPS languages.
