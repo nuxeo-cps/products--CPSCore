@@ -3,12 +3,10 @@ Requires
 -
 New features
 ~~~~~~~~~~~~
-- Support for Zope 2.9 & 2.10
+-
 Bug fixes
 ~~~~~~~~~
-- #2405: Can't import actions with non ascii titles
-- #2348: FileDownlader and ImageDownloader redirect to enforce actual filenames
-- Improved robustness of Proxy Tool wrt broken indexes
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
