@@ -73,10 +73,11 @@ if True: # keep indentation
                     obj._setProperty(prop_id, val, child.getAttribute('type'))
                     prop_map = obj.propdict().get(prop_id, None)
                 else:
-                    raise ValueError("undefined property '%s'" % prop_id)
+                    raise ValueError("undefined property %r for %r" % (prop_id,
+                                                                       obj))
 
             if not 'w' in prop_map.get('mode', 'wd'):
-                raise BadRequest('%s cannot be changed' % prop_id)
+                raise BadRequest('%r cannot be changed on %r' % (prop_id, obj))
 
             elements = []
             for sub in child.childNodes:
@@ -109,7 +110,8 @@ if True: # keep indentation
         # the value to the type of the existing property.
         self._wrapperCheck(value)
         if not self.hasProperty(id):
-            raise BadRequest, 'The property %s does not exist' % escape(id)
+            raise BadRequest, 'The property %s does not exist on %r' % (
+                escape(id), self)
         if isinstance(value, basestring): # not only str
             proptype=self.getPropertyType(id) or 'string'
             if type_converters.has_key(proptype):
