@@ -74,7 +74,8 @@ class Upgrade335to336TestCase(unittest.TestCase):
 
 
     def test_upgrade(self):
-        from Products.CPSCore.upgrade import upgrade_335_336_catalog_unicode
+        from Products.CPSCore.upgradesteps import (
+            upgrade_335_336_catalog_unicode)
         self._makeOne()
         portal = self.root.portal
         catalog = portal.portal_catalog

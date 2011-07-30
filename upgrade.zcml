@@ -5,13 +5,13 @@
   <cps:upgradeStep
       title="Upgrade repository security"
       source="3.3.4" destination="3.3.5"
-      handler=".upgrade.upgrade_334_335_repository_security"
+      handler=".upgradesteps.upgrade_334_335_repository_security"
       />
 
   <cps:upgradeStep
       title="Upgrade catalog"
       source="3.3.5" destination="3.3.6"
-      handler=".upgrade.upgrade_335_336_catalog_unicode"
+      handler=".upgradesteps.upgrade_335_336_catalog_unicode"
       />
 
 </configure>
