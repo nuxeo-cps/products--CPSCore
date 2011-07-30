@@ -14,4 +14,19 @@
       handler=".upgradesteps.upgrade_335_336_catalog_unicode"
       />
 
+  <!-- GR version numbers aren't that pertinent : it has become necessary
+  for Zope 2.10 in our context at some point between those two Five versions,
+  but not sure where exactly.
+  This step cannot be run in ZMI with Zope 2.10, because of systematic errors
+  due to the condition it fixes with authenticated sessions.
+  No problem as a CPS job, though (CPSDefault's cpsupgrade.py for instance).
+  -->
+  <cps:upgradeStep
+      category="five"
+      title="Cleanup of local site hook"
+      source="1.3.2" destination="1.5"
+      handler="Products.Five.site.localsite.disableLocalSiteHook"
+      checker=".upgradesteps.check_disable_local_site_hook"
+      />
+
 </configure>

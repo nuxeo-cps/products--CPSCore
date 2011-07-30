@@ -1,3 +1,4 @@
+from App.version_txt import getZopeVersion
 from Products.PluginIndexes.common.UnIndex import UnIndex
 
 def upgrade_334_335_repository_security(context):
@@ -125,3 +126,11 @@ def upgrade_335_336_catalog_unicode(context):
     return ("Cleaned up: %s index entries, %s metadata entries, "
             "%s lexicon entries, %s objects" % (
             nbindexes, nbmetadata, nblexicons, nbobjects))
+
+def check_disable_local_site_hook(portal):
+    """Simple version check on Zope.
+
+    This is necessary because the notion of upgraded version is quite different
+    from actual code version.
+    """
+    return getZopeVersion() >= (2, 10)
