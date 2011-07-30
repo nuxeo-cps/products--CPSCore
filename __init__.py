@@ -28,6 +28,13 @@ import utils # To quickly force the patching of localroles.
 
 from Products.CMFCore import utils as cmfutils
 from Products.CMFCore.permissions import AddPortalContent, ManagePortal
+from Products.CPSCore.upgrade import registerUpgradeCategory
+
+registerUpgradeCategory('five',
+                        title='Five',
+                        floor_version='1.3.2',
+                        portal_attribute='five_upgraded_version')
+
 
 # Don't remove.
 import AllowModules

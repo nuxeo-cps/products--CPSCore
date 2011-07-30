@@ -34,14 +34,15 @@ Categories registration
 Upgrade steps are divided in categories. These are pure markers that
 morally correspond to sets of products (base distributions, groups of
 extensions, custom projects, etc.).
-The CPSCore product has already registered a category::
+The CPSCore product has already registered some categories, notably
+the main one (cpsplatform)::
 
     >>> from Products.CPSCore.upgrade import _categories_registry
-    >>> pretty_print(_categories_registry)
-    {'cpsplatform': {'description': '',
-                     'floor_version': '3.2.0',
-                     'portal_attr': 'last_upgraded_version',
-                     'title': 'CPS Platform'}}
+    >>> pretty_print(_categories_registry['cpsplatform'])
+    {'description': '',
+     'floor_version': '3.2.0',
+     'portal_attr': 'last_upgraded_version',
+     'title': 'CPS Platform'}
 
 
 Let's add one as if we were managing a side component::
@@ -332,12 +333,9 @@ missing, the category's floor version is used::
 
 Views have to use the following method::
 
-    >>> pretty_print(tool.listUpgradeCategories())
-    [{'description': '',
-      'id': 'cpsplatform',
-      'title': 'CPS Platform',
-      'version': '3.2.0'},
-     {'description': 'My very cool app on top of CPS',
+    >>> listed = tool.listUpgradeCategories()
+    >>> pretty_print([l for l in listed  if l['id'] == 'my_app'])
+    [{'description': 'My very cool app on top of CPS',
       'id': 'my_app',
       'title': 'My Application',
       'version': '1.0'}]
