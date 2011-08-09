@@ -6,8 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- #2427: new exclude_steps options in runAllImportSteps and friends
-- Upgrade step for Zope 2.10
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
