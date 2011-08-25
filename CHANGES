@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #2425: ZODB conflicts with the new image resizing system
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

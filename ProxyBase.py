@@ -37,7 +37,6 @@ from AccessControl import Unauthorized
 import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from OFS.SimpleItem import Item
-from OFS.Folder import Folder
 from OFS.Image import File, Image
 from OFS.Traversable import Traversable
 from webdav.WriteLockInterface import WriteLockInterface
@@ -54,6 +53,7 @@ from Products.CPSCore.permissions import ChangeSubobjectsOrder
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 
 from Products.CPSUtil.timeoutcache import getCache
+from Products.CPSUtil.conflictresolvers import FolderWithoutConflicts
 from Products.CPSUtil import image
 from Products.CPSUtil.integration import isUserAgentMsie
 from Products.CPSCore.utils import KEYWORD_DOWNLOAD_FILE, \
@@ -1017,7 +1017,7 @@ class ImageDownloader(BaseDownloader):
            # if lots of first time requests in parallel.
            # in this case, indexing is useless, really
            self.ob._setObject(IMAGE_RESIZING_CACHE,
-                              Folder(IMAGE_RESIZING_CACHE),
+                              FolderWithoutConflicts(IMAGE_RESIZING_CACHE),
                               suppress_events=True)
 
        cache = getattr(self.ob, IMAGE_RESIZING_CACHE)
