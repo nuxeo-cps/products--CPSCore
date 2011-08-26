@@ -14,6 +14,12 @@
       handler=".upgradesteps.upgrade_335_336_catalog_unicode"
       />
 
+  <cps:upgradeStep
+      title="Upgrade resized images cache for conflict resolution"
+      source="3.5.2" destination="3.5.3"
+      handler=".upgradesteps.upgrade_image_caches"
+      />
+
   <!-- GR version numbers aren't that pertinent : it has become necessary
   for Zope 2.10 in our context at some point between those two Five versions,
   but not sure where exactly.
