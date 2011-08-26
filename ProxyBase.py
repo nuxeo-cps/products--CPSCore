@@ -1049,20 +1049,22 @@ class ImageDownloader(BaseDownloader):
        if resized is None: # failed for some reason, fallback
            return orig
 
-       return self.setInCache(cache, resized)
+       nb_imgs = len(self.ob.objectIds('Image'))
+       return self.setInCache(cache, resized, nb_imgs)
 
     security.declarePrivate('setInCache')
     @classmethod
-    def setInCache(self, cache, img):
+    def setInCache(self, cache, img, nb_imgs):
         """Set in cache and do the housekeeping.
 
-        Keeps no more than 5 objects in cache. For different sizes of an image
+        Keeps no more than 5 times the total number of images object in cache
+        For different sizes of an image, a mean value of 5
         that should be enough, and this protects against buggy or malicious
         requests.
         """
 
         cache_ids = cache.objectIds()
-        if len(cache_ids) > 4: # len(cache) wouldn't work
+        if len(cache_ids) >= nb_imgs*5: # len(cache) wouldn't work
             oldest = None
             for oid, ob in cache.objectItems():
                 ob_time = ob._p_mtime
