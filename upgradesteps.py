@@ -141,7 +141,7 @@ def check_disable_local_site_hook(portal):
 
 def upgrade_image_caches(portal):
     logger = logging.getLogger(
-        'Products.CPSDocument.upgrades.image_gallery_unidim_thumbnails')
+        'Products.CPSCore.upgradesteps.image_caches')
     logger.info("Starting.")
 
     repotool = portal.portal_repository
