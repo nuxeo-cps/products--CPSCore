@@ -715,6 +715,22 @@ class ProxyTraversalTest(ZopeTestCase):
         img_content = dl.index_html(req, req.RESPONSE)
         self.assertEquals(dl.content_type(), 'image/png')
 
+    def test_img_downloader_none(self):
+        proxy = self.proxy
+        doc = proxy.getContent()
+        doc.fobj = None
+
+        dl = proxy[KEYWORD_SIZED_IMAGE]
+        dl.__bobo_traverse__(None, 'fobj')
+        dl.__bobo_traverse__(None, 'h130')
+        dl.__bobo_traverse__(None, 'hisimg.png')
+
+        req = self.folder.REQUEST
+        img_content = dl.index_html(req, req.RESPONSE)
+        self.assertEquals(img_content, '')
+        self.assertEquals(req.RESPONSE['content-length'], '0')
+
+
 def test_suite():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()

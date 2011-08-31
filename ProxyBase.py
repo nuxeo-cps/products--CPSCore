@@ -1009,7 +1009,7 @@ class ImageDownloader(BaseDownloader):
        Supports persistent cache.
        """
        orig = self.file
-       if self.additional == 'full':
+       if orig is None or self.additional == 'full':
            return orig
 
        if not self.ob.hasObject(IMAGE_RESIZING_CACHE):
