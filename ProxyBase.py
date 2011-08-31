@@ -1023,7 +1023,8 @@ class ImageDownloader(BaseDownloader):
        cache = getattr(self.ob, IMAGE_RESIZING_CACHE)
 
        w, h = self.targetGeometry()
-       key = '%s-%dx%d' % (self.attrname, w, h)
+       thumb_prefix = self.attrname + '-'
+       key = '%s%dx%d' % (thumb_prefix, w, h)
 
        pm = orig._p_mtime
        orig_last_mod = orig._p_mtime
@@ -1049,22 +1050,22 @@ class ImageDownloader(BaseDownloader):
        if resized is None: # failed for some reason, fallback
            return orig
 
-       nb_imgs = len(self.ob.objectIds('Image'))
-       return self.setInCache(cache, resized, nb_imgs)
+       return self.setInCache(cache, resized, prefix=thumb_prefix)
 
     security.declarePrivate('setInCache')
     @classmethod
-    def setInCache(self, cache, img, nb_imgs):
+    def setInCache(self, cache, img, prefix='', max_size_per_prefix=5):
         """Set in cache and do the housekeeping.
 
-        Keeps no more than 5 times the total number of images object in cache
-        For different sizes of an image, a mean value of 5
-        that should be enough, and this protects against buggy or malicious
+        Keeps no more than max_size_per_prefix values for a given prefix.
+        For different sizes of an image, a value of 5 should be enough,
+        and this protects against buggy or malicious
         requests.
         """
 
         cache_ids = cache.objectIds()
-        if len(cache_ids) >= nb_imgs*5: # len(cache) wouldn't work
+        size = sum(1 for i in cache_ids if i.startswith(prefix))
+        if size >= max_size_per_prefix:
             oldest = None
             for oid, ob in cache.objectItems():
                 ob_time = ob._p_mtime
