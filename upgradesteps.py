@@ -137,7 +137,11 @@ def check_disable_local_site_hook(portal):
     This is necessary because the notion of upgraded version is quite different
     from actual code version.
     """
-    return getZopeVersion() >= (2, 10)
+    try:
+        from zope.app.component.interfaces import ISite
+    except ImportError:
+        return False
+    return getZopeVersion() >= (2, 10) and ISite.providedBy(portal)
 
 def upgrade_image_caches(portal):
     logger = logging.getLogger(
