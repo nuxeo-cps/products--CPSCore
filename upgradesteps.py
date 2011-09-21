@@ -1,5 +1,9 @@
+import logging
+import transaction
 from App.version_txt import getZopeVersion
 from Products.PluginIndexes.common.UnIndex import UnIndex
+from Products.CPSCore.utils import IMAGE_RESIZING_CACHE
+
 
 def upgrade_334_335_repository_security(context):
     """Upgrade the repository to remove security synthesis remnants.
@@ -133,4 +137,34 @@ def check_disable_local_site_hook(portal):
     This is necessary because the notion of upgraded version is quite different
     from actual code version.
     """
-    return getZopeVersion() >= (2, 10)
+    try:
+        from zope.app.component.interfaces import ISite
+    except ImportError:
+        return False
+    return getZopeVersion() >= (2, 10) and ISite.providedBy(portal)
+
+def upgrade_image_caches(portal):
+    logger = logging.getLogger(
+        'Products.CPSCore.upgradesteps.image_caches')
+    logger.info("Starting.")
+
+    repotool = portal.portal_repository
+    done = 0
+    todo = len(repotool)
+
+    def commit_log():
+        logger.info(
+            "Upgraded %d documents over %d", done, todo)
+        transaction.commit()
+
+    for c, doc in enumerate(repotool.iterValues()):
+        if doc.hasObject(IMAGE_RESIZING_CACHE):
+            cache = getattr(doc, IMAGE_RESIZING_CACHE)
+            if cache.meta_type == 'Folder':
+                doc._delObject(IMAGE_RESIZING_CACHE, suppress_events=True)
+                done += 1
+
+        if c and not (c % 100):
+            commit_log()
+
+    commit_log()

@@ -301,16 +301,63 @@ class CPSSetupTool(UniqueObject, SetupTool):
         """
         return self.listContextInfos(only_bases=True)
 
+    security.declarePrivate('_runImportStepsFromContext')
+    def _runImportStepsFromContext(self, context, steps=None,
+                                   excluded_steps=None, purge_old=None):
+        """This override provides the possibility to exclude some steps.
+
+        Of course this makes sense mostly if steps=None, ie, we import all
+        steps but some.
+        """
+        self.applyContext(context)
+
+        if steps is None:
+            steps = self._import_registry.sortSteps()
+        messages = {}
+
+        if excluded_steps is None:
+            excluded_steps = ()
+
+        for step in steps:
+            if step in excluded_steps:
+                messages[step] = "This step is being explicitely excluded."
+                continue
+            message = self._doRunImportStep(step, context)
+            message_list = filter(None, [message])
+            message_list.extend( ['%s: %s' % x[1:]
+                                  for x in context.listNotes()] )
+            messages[step] = '\n'.join(message_list)
+            context.clearNotes()
+
+        return { 'steps' : steps, 'messages' : messages }
+
+    security.declareProtected(ManagePortal, 'runAllImportSteps')
+    def runAllImportSteps(self, purge_old=None, excluded_steps=None):
+
+        """ This override adds excluded_steps kwarg
+        """
+        __traceback_info__ = self._import_context_id
+
+        context = self._getImportContext(self._import_context_id, purge_old)
+
+        return self._runImportStepsFromContext(context, purge_old=purge_old,
+                                               excluded_steps=excluded_steps)
+
     security.declarePrivate('reinstallProfile')
-    def reinstallProfile(self, context_id, create_report=True):
+    def reinstallProfile(self, context_id, create_report=True,
+                         excluded_steps=None):
         """Reinstall a profile, with purge.
+
+        A list of steps to exclude can be provided. Useful to do a full
+        upgrade with no catalog configuration change.
         """
         # Wipe out old registries
         self.__init__()
 
         # Import, with purge
         self.setImportContext(context_id)
-        result = self.runAllImportSteps(purge_old=True)
+        result = self.runAllImportSteps(purge_old=True,
+                                        excluded_steps=excluded_steps)
         steps_run = "Steps run: %s" % ', '.join(result['steps'])
 
         # Create a report

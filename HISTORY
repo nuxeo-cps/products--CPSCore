@@ -1,4 +1,22 @@
 ===========================================================
+Package: CPSCore 3.43.1
+===========================================================
+First release built by: gracinet at: 2011-08-09T19:36:08
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2427: new exclude_steps options in runAllImportSteps and friends
+- Upgrade step for Zope 2.10
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.43.0
 ===========================================================
 First release built by: gracinet at: 2011-07-07T17:47:13
