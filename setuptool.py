@@ -38,6 +38,7 @@ from Products.GenericSetup import BASE
 
 from Products.CPSCore.upgrade import listUpgradeSteps
 from Products.CPSCore.upgrade import _categories_registry
+from Products.CPSCore.upgrade import is_category_applicable
 from Products.CPSCore.portal import CPSSite
 from Products.CPSCore.interfaces import ICPSSite
 
@@ -248,7 +249,9 @@ class CPSSetupTool(UniqueObject, SetupTool):
                  if c_id != 'cpsplatform']
         c_ids.insert(0, 'cpsplatform')
 
-        return [self._getUpgradeCategoryDisplayInfo(c_id) for c_id in c_ids]
+        portal = getToolByName(self, 'portal_url').getPortalObject()
+        return [self._getUpgradeCategoryDisplayInfo(c_id) for c_id in c_ids
+                if is_category_applicable(c_id, portal)]
 
     #
     # Improved I/O

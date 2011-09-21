@@ -41,6 +41,7 @@ the main one (cpsplatform)::
     >>> pretty_print(_categories_registry['cpsplatform'])
     {'description': '',
      'floor_version': '3.2.0',
+     'is_applicable': None,
      'portal_attr': 'last_upgraded_version',
      'title': 'CPS Platform'}
 
@@ -56,6 +57,7 @@ Let's add one as if we were managing a side component::
     >>> pretty_print(_categories_registry['my_app'])
     {'description': 'My very cool app on top of CPS',
      'floor_version': '0.5',
+     'is_applicable': None,
      'portal_attr': 'my_app_up_version',
      'title': 'My Application'}
 
@@ -82,6 +84,7 @@ Now let's go::
     {'code_version': '19.0.0',
      'description': 'My very cool app on top of CPS',
      'floor_version': '0.1',
+     'is_applicable': None,
      'portal_attr': 'my_app2_up_version',
      'ref_product': 'CPSCore',
      'title': 'My Application'}
@@ -340,6 +343,31 @@ Views have to use the following method::
       'title': 'My Application',
       'version': '1.0'}]
 
+The listing of categories is affected by the 'is_applicable'
+checker. In this example, we only get the cpsplatform category::
+
+    >>> _categories_registry['my_app']['is_applicable'] = lambda x: False
+    >>> 'my_app' in [c['id'] for c in tool.listUpgradeCategories()]
+    False
+
+But the applicability filtering usually really involves the portal::
+
+    >>> def is_my_app(portal):
+    ...    return getattr(portal, 'is_my_app', False)
+    >>> _categories_registry['my_app']['is_applicable'] = is_my_app
+    >>> 'my_app' in [c['id'] for c in tool.listUpgradeCategories()]
+    False
+    >>> portal.is_my_app = True
+    >>> 'my_app' in [c['id'] for c in tool.listUpgradeCategories()]
+    True
+
+Actual applicability checkers may rely on interfaces, meta_types, the
+import of a given profile having set a property, the presence of a
+tool. In any case for further examples, let's get back to the absence
+of check::
+
+    >>> _categories_registry['my_app']['is_applicable'] = None
+
 
 Upgrades proposals
 ~~~~~~~~~~~~~~~~~~
@@ -364,6 +392,13 @@ CPSPlatform to 3.4.5. Let's see what info is provided for each step::
      'ssource',
      'step',
      'title']
+
+If the applicable checker returns ``False``, then the list is empty.
+
+    >>> _categories_registry['my_app']['is_applicable'] = lambda x: False
+    >>> tool.listUpgrades(category='my_app')
+    []
+    >>> _categories_registry['my_app']['is_applicable'] = None
 
 
 Now, let's do as if the portal were upgraded to 1.1: step 1 shouldn't

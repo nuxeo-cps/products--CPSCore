@@ -6,6 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
+- #2451: applicability checkers for upgrade categories
 - Upgrade step for Zope 2.10
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~

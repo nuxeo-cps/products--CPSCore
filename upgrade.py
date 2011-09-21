@@ -155,7 +155,7 @@ def updateStepsChecker(handler, checker,
 
 def registerUpgradeCategory(cid, title='', floor_version='',
                             portal_attribute='', description='',
-                            ref_product=''):
+                            ref_product='', is_applicable=None):
 
     if not title:
         title = cid
@@ -169,10 +169,14 @@ def registerUpgradeCategory(cid, title='', floor_version='',
             "There's already a category with id %s registered in %s" %
             (cid, _categories_registry[cid]['defined_in']))
 
+    if is_applicable is not None and not callable(is_applicable):
+        raise ValueError("'is_applicable' must be a callable")
+
     info = {'title': title,
             'floor_version': floor_version,
             'portal_attr': portal_attribute,
             'description': description,
+            'is_applicable': is_applicable,
     }
 
     if ref_product:
@@ -202,9 +206,31 @@ def registerUpgradeCategory(cid, title='', floor_version='',
     _categories_registry[cid] = info
     logger.info('registered category %s with info %s', cid, info)
 
+def is_category_applicable(name, portal):
+    """Self explanatory."""
+
+    cat_info = _categories_registry.get(name)
+    if cat_info is None:
+        logger.warn("Upgrade category %r does not exist", name, exc_info=True)
+        return False
+
+    is_applicable = cat_info['is_applicable']
+    if is_applicable is None:
+        logger.info("Upgrade category %r is always applicable", name)
+        return True
+
+    res = is_applicable(portal)
+    logger.info("Upgrade category %r applicability to %r: %r",
+                name, portal, res)
+    return res
+
+
 def listUpgradeSteps(portal, category, source, max_dest=None):
     """Lists upgrade steps from given category available from a given version.
     """
+    if not is_category_applicable(category, portal):
+        return ()
+
     res = []
     for id, step in _upgrade_registry.items():
         if step.category != category:
