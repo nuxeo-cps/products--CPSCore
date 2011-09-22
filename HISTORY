@@ -1,4 +1,23 @@
 ===========================================================
+Package: CPSCore 3.43.2
+===========================================================
+First release built by: gracinet at: 2011-09-23T00:28:31
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2451: applicability checkers for upgrade categories
+- #2425: ZODB conflicts with the new image resizing system
+- #2438: Error in image resizing if image is empty
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.43.1
 ===========================================================
 First release built by: gracinet at: 2011-08-09T19:36:08
