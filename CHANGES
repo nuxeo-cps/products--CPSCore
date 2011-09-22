@@ -6,9 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- #2451: applicability checkers for upgrade categories
-- #2425: ZODB conflicts with the new image resizing system
-- #2438: Error in image resizing if image is empty
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
