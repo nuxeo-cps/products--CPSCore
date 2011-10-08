@@ -42,12 +42,10 @@ from Products.DCWorkflow.utils import modifyRolesForPermission
 from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2
 from BTrees.OOBTree import OOBTree
 
-from Products.CPSWorkflow.workflowtool import Config_id
 from Products.CPSCore.CPSTypes import TypeConstructor, TypeContainer
 from Products.CPSCore.EventServiceTool import getEventService
 
-LOG_KEY = 'CPSCore.ObjectRepositoryTool'
-logger = getLogger(LOG_KEY)
+logger = getLogger(__name__)
 
 class NoWorkflowConfiguration:
     """Class for a workflow configuration object that denies
@@ -606,8 +604,12 @@ InitializeClass(ObjectRepositoryTool)
 
 
 # Create a workflow configuration object that denies any workflow
-setattr(ObjectRepositoryTool, Config_id,
+try:
+    from Products.CPSWorkflow.workflowtool import LOCAL_WORKFLOW_CONFIG_ID
+except ImportError:
+    LOCAL_WORKFLOW_CONFIG_ID = '.cps_workflow_configuration'
+setattr(ObjectRepositoryTool, LOCAL_WORKFLOW_CONFIG_ID,
         NoWorkflowConfiguration())
 # security.declarePrivate(...)
-setattr(ObjectRepositoryTool, Config_id+'__roles__', ())
+setattr(ObjectRepositoryTool, LOCAL_WORKFLOW_CONFIG_ID + '__roles__', ())
 

@@ -20,6 +20,7 @@
 """Tests for the CPScore export/import mechanism
 """
 
+import os
 import unittest
 from Acquisition import Implicit, aq_parent, aq_inner
 from OFS.Folder import Folder
@@ -27,6 +28,8 @@ from Testing import ZopeTestCase
 from Products.CPSUtil.testing.genericsetup import ExportImportTestCase
 
 ZopeTestCase.installProduct('CPSCore')
+
+TEST_DIR = os.path.split(__file__)[0]
 
 # generic class giving info needed by tree caches
 class FakeFolder(Folder):
@@ -160,8 +163,8 @@ class TreesToolExportImportTest(ExportImportTestCase):
             'trees/root.xml',
             'trees.xml',
            ]
-        self._checkExportProfile('CPSCore/tests/profiles/minimal_trees',
-                                 toc_list)
+        self._checkExportProfile(os.path.join(
+                TEST_DIR, 'profiles', 'minimal_trees'), toc_list)
 
 
 def test_suite():

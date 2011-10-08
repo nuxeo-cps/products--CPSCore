@@ -43,7 +43,7 @@ import AllowModules
 import PatchPropertyManager
 import PatchCMFCore
 import PatchCopyright
-import PatchPortalFolder
+#import PatchPortalFolder
 import PatchGenericSetup
 import PatchCMFActionsExportImport
 
