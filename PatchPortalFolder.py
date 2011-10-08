@@ -31,7 +31,6 @@ from Acquisition import aq_base
 
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.permissions import View
-from Products.CMFCore.utils import _getViewFor
 
 from interfaces import ICPSSite
 
@@ -58,7 +57,8 @@ def HEAD(self):
     elif ICPSSite.providedBy(self):
         method = self.index_html
     else:
-        method = _getViewFor(self)
+        logger.error('No (Default) alias defined for %r (ti=%r)', self, ti)
+        method = lambda : ''
 
     req = self.REQUEST
     resp = req.RESPONSE
