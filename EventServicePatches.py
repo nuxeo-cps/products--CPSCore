@@ -16,8 +16,9 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 #
-# $Id$
 """Remains of events, will go away.
+GR: to completely remove for CMF 2.1.1 compat
+there should be no need to redispatch using CPS EventServiceTool now
 """
 
 from Products.CPSCore.EventServiceTool import getEventService
@@ -36,7 +37,6 @@ from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 def manage_afterCMFAdd(self, item, container):
     """Notify object and event service of CMF add finalization."""
     notify(self, 'sys_add_cmf_object', self)
-    self._CMFCatalogAware__recurse('manage_afterCMFAdd', item, container)
 
 CMFCatalogAware.manage_afterCMFAdd = manage_afterCMFAdd
 
