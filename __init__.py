@@ -74,23 +74,12 @@ tools = (
     CPSSetupTool,
 )
 
-contentClasses = (ProxyBase.ProxyFolder,
-                  ProxyBase.ProxyDocument,
-                  ProxyBase.ProxyFolderishDocument,
-                  ProxyBase.ProxyBTreeFolder,
-                  ProxyBase.ProxyBTreeFolderishDocument,
-                  )
+contentClasses = ()
 
-contentConstructors = (ProxyBase.addProxyFolder,
-                       ProxyBase.addProxyDocument,
-                       ProxyBase.addProxyFolderishDocument,
-                       ProxyBase.addProxyBTreeFolder,
-                       ProxyBase.addProxyBTreeFolderishDocument,
-                       CPSRegistrationTool.addCPSRegistrationTool,
+contentConstructors = (CPSRegistrationTool.addCPSRegistrationTool,
                        )
 
-fti = (ProxyBase.factory_type_information +
-       ())
+fti = ()
 
 def initialize(registrar):
     cmfutils.ToolInit(

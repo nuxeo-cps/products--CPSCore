@@ -1595,68 +1595,18 @@ for attr, val in NotAProxy.__dict__.items():
 # Concrete types for proxies.
 #
 
-factory_type_information = (
-    {'id': 'CPS Proxy Folder',
-     'description': 'A proxy to a folder.',
-     'title': '',
-     'content_icon': 'folder_icon.png',
-     'product': 'CPSCore',
-     'meta_type': 'CPS Proxy Folder',
-     'factory': 'addProxyFolder',
-     'immediate_view': '',
-     'filter_content_types': 1,
-     'allowed_content_types': (),
-     'actions': (),
-     },
-    {'id': 'CPS Proxy Document',
-     'description': 'A proxy to a document.',
-     'title': '',
-     'content_icon': 'document_icon.png',
-     'product': 'CPSCore',
-     'meta_type': 'CPS Proxy Document',
-     'factory': 'addProxyDocument',
-     'immediate_view': '',
-     'filter_content_types': 1,
-     'allowed_content_types': (),
-     'actions': (),
-     },
-    {'id': 'CPS Proxy Folderish Document',
-     'description': 'A proxy to a folderish document.',
-     'title': '',
-     'content_icon': 'folder_icon.png',
-     'product': 'CPSCore',
-     'meta_type': 'CPS Proxy Folderish Document',
-     'factory': 'addProxyFolderishDocument',
-     'immediate_view': '',
-     'filter_content_types': 1,
-     'allowed_content_types': (),
-     'actions': (),
-     },
-    {'id': 'CPS Proxy BTree Folder',
-     'description': 'A proxy to a folder.',
-     'title': '',
-     'content_icon': 'folder_icon.png',
-     'product': 'CPSCore',
-     'meta_type': 'CPS Proxy BTree Folder',
-     'factory': 'addProxyBTreeFolder',
-     'immediate_view': '',
-     'filter_content_types': 1,
-     'allowed_content_types': (),
-     'actions': (),
-     },
-    {'id': 'CPS Proxy BTree Folderish Document',
-     'description': 'A proxy to a folderish document.',
-     'title': '',
-     'content_icon': 'folder_icon.png',
-     'product': 'CPSCore',
-     'meta_type': 'CPS Proxy BTree Folderish Document',
-     'factory': 'addProxyBTreeFolderishDocument',
-     'immediate_view': '',
-     'filter_content_types': 1,
-     'allowed_content_types': (),
-     'actions': (),
-     },
-    )
+# GR Registry proxy meta_type -> proxy class
+# this used to be handled by Factory Type Informations, but we don't need that
+# kind of flexibility, and the types tool is already quite busy and slow
+# Actually the good old Z2 meta_type construction could also do it, but why
+# bother ?
+# Custom projects can register new proxy types in there.
+# A ZCML directive could provide good looking flexibility, but it's unlikely
+# we'd need that
+_proxy_class_registry = {}
+
+def registerProxyClass(klass):
+    _proxy_class_registry[klass.meta_type] = klass
 
 class ProxyFolder(ProxyBase, CPSBaseFolder):
     """A proxy folder is a folder whose data is indirected to a document
@@ -1720,7 +1670,7 @@ class ProxyFolder(ProxyBase, CPSBaseFolder):
 
 
 InitializeClass(ProxyFolder)
-
+registerProxyClass(ProxyFolder)
 
 class ProxyDocument(ProxyBase, CPSBaseDocument):
     """A proxy document is a document whose data is indirected to a document
@@ -1738,7 +1688,7 @@ class ProxyDocument(ProxyBase, CPSBaseDocument):
                       )
 
 InitializeClass(ProxyDocument)
-
+registerProxyClass(ProxyDocument)
 
 class ProxyFolderishDocument(ProxyFolder):
     """A proxy folderish document is a folderish document,
@@ -1807,7 +1757,7 @@ class ProxyFolderishDocument(ProxyFolder):
             self._freezeProxyRecursive(subob, pxtool)
 
 InitializeClass(ProxyFolderishDocument)
-
+registerProxyClass(ProxyFolderishDocument)
 
 class ProxyBTreeFolder(ProxyBase, CPSBaseBTreeFolder):
     """A proxy btree folder is a folder whose data is indirected to a document
@@ -1863,7 +1813,7 @@ class ProxyBTreeFolder(ProxyBase, CPSBaseBTreeFolder):
                       )
 
 InitializeClass(ProxyBTreeFolder)
-
+registerProxyClass(ProxyBTreeFolder)
 
 class ProxyBTreeFolderishDocument(ProxyBTreeFolder):
     """A proxy btree folderish document is a folderish document,
@@ -1932,52 +1882,7 @@ class ProxyBTreeFolderishDocument(ProxyBTreeFolder):
             self._freezeProxyRecursive(subob, pxtool)
 
 InitializeClass(ProxyBTreeFolderishDocument)
-
-
-def addProxyFolder(container, id, REQUEST=None, **kw):
-    """Add a proxy folder."""
-    # container is a dispatcher when called from ZMI
-    ob = ProxyFolder(id, **kw)
-    id = ob.getId()
-    container._setObject(id, ob)
-    if REQUEST is not None:
-        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
-
-def addProxyDocument(container, id, REQUEST=None, **kw):
-    """Add a proxy document."""
-    # container is a dispatcher when called from ZMI
-    ob = ProxyDocument(id, **kw)
-    id = ob.getId()
-    container._setObject(id, ob)
-    if REQUEST is not None:
-        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
-
-def addProxyFolderishDocument(container, id, REQUEST=None, **kw):
-    """Add a proxy folderish document."""
-    # container is a dispatcher when called from ZMI
-    ob = ProxyFolderishDocument(id, **kw)
-    id = ob.getId()
-    container._setObject(id, ob)
-    if REQUEST is not None:
-        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
-
-def addProxyBTreeFolder(container, id, REQUEST=None, **kw):
-    """Add a proxy btree folder."""
-    # container is a dispatcher when called from ZMI
-    ob = ProxyBTreeFolder(id, **kw)
-    id = ob.getId()
-    container._setObject(id, ob)
-    if REQUEST is not None:
-        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
-
-def addProxyBTreeFolderishDocument(container, id, REQUEST=None, **kw):
-    """Add a proxy btree folderish document."""
-    # container is a dispatcher when called from ZMI
-    ob = ProxyBTreeFolderishDocument(id, **kw)
-    id = ob.getId()
-    container._setObject(id, ob)
-    if REQUEST is not None:
-        REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
+registerProxyClass(ProxyBTreeFolderishDocument)
 
 def walk_cps_folders(base):
     """Generator to walk the cps folders."""

@@ -40,6 +40,10 @@ from Products.CMFCore.TypesTool import ScriptableTypeInformation
 from Products.CPSCore.EventServiceTool import getEventService
 from Products.CPSCore.ProxyBase import ProxyBase, SESSION_LANGUAGE_KEY, \
      REQUEST_LANGUAGE_KEY
+from Products.CPSCore.ProxyBase import _proxy_class_registry
+from Products.CPSCore.ProxyBase import ProxyDocument
+from Products.CPSCore.ProxyBase import ProxyFolderishDocument
+
 from Products.CPSUtil.session import sessionGet
 try:
     from Products.CPSSchemas.DataModel import DataModel
@@ -65,6 +69,7 @@ def handleObjectEvent(ob, event):
     if pxtool is None:
         return
     pxtool.handleObjectEvent(ob, event)
+
 
 
 class ProxyTool(UniqueObject, SimpleItemWithProperties):
@@ -636,35 +641,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repotool = getToolByName(self, 'portal_repository')
         self._unshareContentDoRecursion(proxy, repotool)
 
-    #
-    # XXX
-    # This does object construction like TypesTool but without security
-    # checks (which are already done by WorkflowTool).
-    #
-
-    def _constructInstance_fti(self, container, ti, id, *args, **kw):
-        if not ti.product or not ti.factory:
-            raise ValueError('Product factory for %s was undefined: %s.%s'
-                             % (ti.getId(), ti.product, ti.factory))
-        p = container.manage_addProduct[ti.product]
-        meth = getattr(p, ti.factory, None)
-        if meth is None:
-            raise ValueError('Product factory for %s was invalid: %s.%s'
-                             % (ti.getId(), ti.product, ti.factory))
-        if getattr(aq_base(meth), 'isDocTemp', 0):
-            newid = meth(meth.aq_parent, self.REQUEST, id=id, *args, **kw)
-        else:
-            newid = meth(id, *args, **kw)
-        newid = newid or id
-        return container._getOb(newid)
-
-    def _constructInstance_sti(self, container, ti, id, *args, **kw):
-        constr = container.restrictedTraverse(ti.constructor_path)
-        constr = aq_base(constr).__of__(container)
-        return constr(container, id, *args, **kw)
-
     security.declarePrivate('constructContent')
-    def constructContent(self, container, type_name, id, final_type_name=None,
+    def constructContent(self, container, proxy_type, id, final_type_name=None,
                          *args, **kw):
         """Construct an CMFish object without all the security checks.
 
@@ -672,18 +650,14 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
 
         Returns the object.
         """
-        ttool = getToolByName(self, 'portal_types')
-        ti = ttool.getTypeInfo(type_name)
-        if ti is None:
-            raise ValueError('No type information for %s' % type_name)
-        if isinstance(ti, FactoryTypeInformation):
-            ob = self._constructInstance_fti(container, ti, id, *args, **kw)
-        elif isinstance(ti, ScriptableTypeInformation):
-            ob = self._constructInstance_sti(container, ti, id, *args, **kw)
-        else:
-            raise ValueError('Unknown type information class for %s' %
-                             type_name)
-        if ob.getId() != id:
+        klass = _proxy_class_registry.get(proxy_type)
+        if klass is None:
+            raise ValueError('Unknown proxy type %r' % type_name)
+        ob = klass(id, *args, **kw)
+        newid = container._setObject(ob.getId(), ob)
+        ob = container._getOb(newid)
+
+        if newid != id:
             # Sanity check
             raise ValueError('Constructing %s, id changed from %s to %s' %
                              (type_name, id, ob.getId()))
