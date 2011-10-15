@@ -45,8 +45,8 @@ import PatchCMFCore
 import PatchCopyright
 import PatchPortalFolder
 import PatchGenericSetup
-import PatchCMFActionsExportImport
 
+# tools
 import EventServiceTool
 import EventServicePatches
 import ProxyTool
