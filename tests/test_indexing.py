@@ -161,10 +161,6 @@ class ProxyIndexingTest(PortalTestCase):
 
         portal._setObject('portal_types', TypesTool())
         ttool = portal.portal_types
-        ttool.manage_addTypeInformation(
-            id='CPS Proxy Document',
-            add_meta_type='Factory-based Type Information',
-            typeinfo_name='CPSCore: CPS Proxy Document (CPS Proxy Document)')
         ttool.Dummy = FakeTI()
 
         portal._setObject('portal_catalog', CPSCatalogTool())
