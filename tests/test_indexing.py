@@ -164,6 +164,7 @@ class ProxyIndexingTest(PortalTestCase):
         ttool.Dummy = FakeTI()
 
         portal._setObject('portal_catalog', CPSCatalogTool())
+        portal.portal_catalog.addColumn('Title')
 
     def test_proxy_indexing(self):
         catalog = self.portal.portal_catalog
