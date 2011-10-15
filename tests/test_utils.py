@@ -2,10 +2,14 @@ import unittest
 from Testing import ZopeTestCase
 
 from Products.CPSCore import utils
-from Products.CPSCore.ProxyBase import addProxyFolder
-from Products.CPSCore.ProxyBase import addProxyBTreeFolder
-from Products.CPSCore.ProxyBase import addProxyDocument
+from Products.CPSCore.ProxyBase import ProxyFolder
+from Products.CPSCore.ProxyBase import ProxyBTreeFolder
+from Products.CPSCore.ProxyBase import ProxyDocument
 
+def add(klass, container, oid, **kw):
+    ob = klass(oid, **kw)
+    container._setObject(ob.getId(), ob)
+    return ob.getId()
 
 class Test(unittest.TestCase):
 
@@ -31,14 +35,14 @@ class TestWalk(ZopeTestCase.ZopeTestCase):
         pass
 
     def test_walk(self):
-        addProxyFolder(self.folder, 'a')
-        addProxyFolder(self.folder, 'b')
-        addProxyDocument(self.folder, 'c')
-        addProxyBTreeFolder(self.folder.a, 'abt')
+        add(ProxyFolder, self.folder, 'a')
+        add(ProxyFolder, self.folder, 'b')
+        add(ProxyDocument, self.folder, 'c')
+        add(ProxyBTreeFolder, self.folder.a, 'abt')
         for x in range(10):
-            addProxyDocument(self.folder.a.abt, 'abtc%d' % x)
-        addProxyFolder(self.folder.a.abt, 'abtf')
-        addProxyFolder(self.folder.b, 'ba')
+            add(ProxyDocument, self.folder.a.abt, 'abtc%d' % x)
+        add(ProxyFolder, self.folder.a.abt, 'abtf')
+        add(ProxyFolder, self.folder.b, 'ba')
 
         gen = utils.walk(self.folder, meta_types=('CPS Proxy Folder',))
         self.assertEquals([f.getId() for f in gen], ['a', 'b', 'ba'])
@@ -50,11 +54,11 @@ class TestWalk(ZopeTestCase.ZopeTestCase):
 
     def test_iterValues(self):
         # TODO: to be moved and adapted to test_base
-        addProxyBTreeFolder(self.folder, 'bt')
+        addi(ProxyBTreeFolder, self.folder, 'bt')
         bt = self.folder.bt
         oids = ['abtc%d' % x for x in range(10)]
         for oid in oids:
-            addProxyDocument(bt, oid)
+            add(ProxyDocument, bt, oid)
         self.assertEquals([o.getId() for o in bt.iterValues()], oids)
 
 
