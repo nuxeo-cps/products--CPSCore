@@ -21,7 +21,6 @@
 """Proxy Tool that manages proxy objects and their links to real documents.
 """
 
-from zLOG import LOG, ERROR, DEBUG, TRACE
 import logging
 from Globals import InitializeClass, DTMLFile
 from types import DictType
@@ -416,8 +415,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
             try:
                 ob = portal.unrestrictedTraverse(rpath)
             except KeyError:
-                LOG('ProxyTool', DEBUG,
-                    'getProxiesFromRepoId no ob rpath=%s' % rpath)
+                logger.debug('getProxiesFromRepoId no ob rpath=%r', rpath)
                 continue
             docid2, language_revs = self._rpath_to_infos[rpath]
             visible = _checkPermission(View, ob)
@@ -466,8 +464,8 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 # TODO: We should be able to filter by visibility directly
                 ob = portal.unrestrictedTraverse(rpath)
             except KeyError:
-                LOG('ProxyTool', DEBUG,
-                    'getProxiesFromObjectId rpath=%s id=%s' % (rpath, id))
+                logger.debug('getProxiesFromObjectId rpath=%r id=%r',
+                             rpath, id)
                 continue
             if _checkPermission(View, ob):
                 info = {'object': ob,
@@ -568,8 +566,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repotool = getToolByName(self, 'portal_repository')
         portal = aq_parent(aq_inner(self))
         docid, rev = repotool.getDocidAndRevisionFromObjectId(ob.getId())
-        #LOG('ProxyTool', TRACE, '_reindexProxiesForObject docid=%s rev=%s'
-        #    % (docid, rev))
         if docid is None:
             return
         rpaths = self._docid_rev_to_rpaths.get((docid, rev), ())
@@ -580,11 +576,9 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
                 # TODO: We should be able to filter by visibility directly
                 proxy = portal.unrestrictedTraverse(rpath)
             except KeyError:
-                LOG('ProxyTool', ERROR,
-                    '_reindexProxiesForObject no rpath=%s id=%s' % (rpath, id))
+                logger.error('_reindexProxiesForObject no rpath=%r id=%r',
+                             rpath, id)
                 continue
-            #LOG('ProxyTool', TRACE, '_reindexProxiesForObject reindexing '
-            #    'rpath=%s' % rpath)
             proxy.reindexObject()
             evtool.notify('sys_modify_object', proxy, {})
 
@@ -606,8 +600,6 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         repotool = getToolByName(self, 'portal_repository')
         docid = proxy.getDocid()
         for lang, rev in proxy._getLanguageRevisions().items():
-            #LOG('ProxyTool', DEBUG, ' Freezeing repoid=%s v=%s'
-            #    % (repoid, version_info))
             repotool.freezeRevision(docid, rev)
 
     def _unshareContent(self, proxy, repotool):
@@ -942,7 +934,7 @@ class ProxyTool(UniqueObject, SimpleItemWithProperties):
         portal = aq_parent(aq_inner(self))
         broken = self.getBrokenProxies()
         for rpath, infos in broken:
-            LOG('purgeBrokenProxies', DEBUG, 'Purging %s' % rpath)
+            logger.debug('Purging %r', rpath)
             ob = portal.unrestrictedTraverse(rpath)
             container = aq_parent(aq_inner(ob))
             container.manage_delObjects([ob.getId()])
