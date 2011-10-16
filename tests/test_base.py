@@ -20,8 +20,8 @@
 """Tests for the CPSBaseDocument
 """
 
-import Testing.ZopeTestCase.ZopeLite as Zope
 import unittest
+from Testing import ZopeTestCase
 
 from OFS.Folder import Folder
 from Products.CPSCore.CPSBase import CPSBaseDocument, CPSBase_adder
@@ -53,10 +53,28 @@ class CPSBaseDocumentTestCase(unittest.TestCase):
         CPSBase_adder(folder, doc)
         self.assert_('doc' in folder.objectIds())
 
+class CPSBaseDocumentZopeTestCase(ZopeTestCase.ZopeTestCase):
+
+    def test_HEAD(self):
+        doc = CPSBaseDocument(id='doc')
+        CPSBase_adder(self.folder, doc)
+        doc = self.folder.doc
+
+        class FakeTI:
+            def queryMethodID(self, name, context=None):
+                if name == '(Default)':
+                    return 'default_view'
+        doc.getTypeInfo = lambda: FakeTI()
+        doc.default_view = lambda: 'default view result'
+
+        doc.HEAD()
+
+
 def test_suite():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
     suite.addTest(loader.loadTestsFromTestCase(CPSBaseDocumentTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(CPSBaseDocumentZopeTestCase))
     return suite
 
 if __name__ == '__main__':
