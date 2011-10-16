@@ -43,6 +43,7 @@ ModuleSecurityInfo('Products.PythonScripts.standard').declarePublic('newline_to_
 ModuleSecurityInfo('Products.PythonScripts.standard').declarePublic('url_quote')
 ModuleSecurityInfo('zLOG').declarePublic('LOG', 'DEBUG', 'INFO')
 ModuleSecurityInfo('zExceptions').declarePublic('Forbidden')
+ModuleSecurityInfo('zExceptions').declarePublic('Redirect')
 from logging import Logger
 allow_class(Logger)
 ModuleSecurityInfo('logging').declarePublic('getLogger')
