@@ -120,6 +120,8 @@ class TreesToolTest(unittest.TestCase):
 
 
 class TreeCacheTest(SecurityRequestTest):
+    """TODO fixture is weird (replaces app by a DummyApp
+    This test should be entirely rewritten once we switch to pure z3 events."""
 
     def makeOne(self):
         cache = TreeCache('cache')
@@ -188,7 +190,13 @@ class TreeCacheTest(SecurityRequestTest):
         cache.root = '/hack/this'
         self.assertEquals(cache.getRoot(), '')
 
+    def tearDown(self):
+        if hasattr(self, '_zapp'):
+            self.app = self._zapp # otherwise ZopeTestCase TearDown fails
+        super(TreeCacheTest, self).tearDown()
+
     def makeInfrastructure(self):
+        self._zapp = self.app # for tearDown issues
         self.app = DummyApp()
         # fake acl_users
         self.app.acl_users = Folder()
