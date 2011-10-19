@@ -89,7 +89,11 @@ eventTearDown = _eventTest.tearDown
 def fullFiveSetup():
     from Products.Five import zcml
     # Cleanup everything first
-    placelesssetup.tearDown()
+    try:
+        placelesssetup.tearDown()
+    except KeyError, ValueError: # GenericSetup.zcml.cleanUp not robust
+        pass
+
     # Now reload Five setup
     zcml._initialized = False
     zcml.load_site()
