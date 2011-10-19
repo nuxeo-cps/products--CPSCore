@@ -59,7 +59,6 @@ class IndexableObjectWrapper:
         """This is the indexable wrapper getter for CPS,
         proxy try to get the repository document attributes,
         document in the repository hide some attributes to save some space."""
-        self._cps_patch_logger.error('Getattr %r', name)
         vars = self.__vars
         if vars.has_key(name):
             return vars[name]

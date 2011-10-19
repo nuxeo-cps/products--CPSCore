@@ -78,7 +78,12 @@ class FakeTI:
 
 from Products.CMFCore.CatalogTool import CatalogTool
 class CPSCatalogTool(CatalogTool):
-    pass
+
+    def __init__(self, *a, **kw):
+        CatalogTool.__init__(self, *a, **kw)
+        self.addIndex('allowedRolesAndUsers', 'KeywordIndex')
+        self.addIndex('localUsersWithRoles', 'KeywordIndex')
+        self.addIndex('Language', 'FieldIndex')
 
 class IndexingTest(PortalTestCase):
 
@@ -92,9 +97,6 @@ class IndexingTest(PortalTestCase):
     def afterSetUp(self):
         self.portal._setObject('portal_catalog', CPSCatalogTool())
         cat = self.portal.portal_catalog
-        cat.addIndex('allowedRolesAndUsers', 'KeywordIndex')
-        cat.addIndex('localUsersWithRoles', 'KeywordIndex')
-        cat.addIndex('Language', 'FieldIndex')
         self.portal.dummy = DummyOb('dummy')
 
     def test_cmf_security_indexes(self):
