@@ -30,6 +30,7 @@ from Acquisition import aq_base
 from OFS.Folder import Folder
 
 from Products.CPSCore.ObjectRepositoryTool import ObjectRepositoryTool
+from Products.CPSCore.ObjectRepositoryTool import logger as repotool_logger
 
 from dummy import DummyContent
 
@@ -113,7 +114,7 @@ class ObjectRepositoryToolTests(SecurityRequestTest, LogInterceptor):
 
         # Check getObjectRevision
         self._catch_log_errors(ignored_level=logging.ERROR,
-                               subsystem='CPSCore.ObjectRepositoryTool')
+                               subsystem=repotool_logger.name)
         self.logged = None
         self.assertRaises(KeyError, ortool.getObjectRevision, 'foo', 99)
         self.assert_(self.logged)
