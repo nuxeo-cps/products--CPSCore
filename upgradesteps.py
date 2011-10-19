@@ -37,7 +37,13 @@ def upgrade_335_336_catalog_unicode(context):
 
     Fixes indexes, metadata and lexicons.
     Also fixes bad objects that still have unicode titles.
+
+    GR XXX this upgrade step is probably more harmful than anything, now
+    this should be investigated, though it's a bit unlikely that some runs
+    it straight from 3.3.x to 3.6.x
     """
+    raise RuntimeError("This upgrade step has to be rewritten now that CPS"
+                       "is internally fully unicode")
     INDEX_NAMES = ('Title', 'SearchableText')
     METADATA_NAMES = ('Title',)
     LEXICON_NAMES = ('cps_defaut_lexicon',) # sic

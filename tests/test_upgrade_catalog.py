@@ -17,6 +17,9 @@
 #
 # $Id$
 """Tests for catalog upgrade (3.3.5 to 3.3.6).
+
+This test is disabled, because the upgrade step is probably more harmful than
+anything, now.
 """
 
 import unittest
@@ -118,7 +121,7 @@ class Upgrade335to336TestCase(unittest.TestCase):
 
 def test_suite():
     return unittest.TestSuite((
-        unittest.makeSuite(Upgrade335to336TestCase),
+        # unittest.makeSuite(Upgrade335to336TestCase),
         ))
 
 if __name__ == '__main__':

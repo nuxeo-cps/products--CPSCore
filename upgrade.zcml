@@ -8,11 +8,13 @@
       handler=".upgradesteps.upgrade_334_335_repository_security"
       />
 
-  <cps:upgradeStep
+  <!-- GR disabled this upgrade step that actually reencodes stuff in the
+  catalog, which is weird in CPS Unicode days -->
+  <!--cps:upgradeStep
       title="Upgrade catalog"
       source="3.3.5" destination="3.3.6"
       handler=".upgradesteps.upgrade_335_336_catalog_unicode"
-      />
+      /-->
 
   <cps:upgradeStep
       title="Upgrade resized images cache for conflict resolution"
