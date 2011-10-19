@@ -54,7 +54,7 @@ class TestWalk(ZopeTestCase.ZopeTestCase):
 
     def test_iterValues(self):
         # TODO: to be moved and adapted to test_base
-        addi(ProxyBTreeFolder, self.folder, 'bt')
+        add(ProxyBTreeFolder, self.folder, 'bt')
         bt = self.folder.bt
         oids = ['abtc%d' % x for x in range(10)]
         for oid in oids:
