@@ -23,6 +23,7 @@ import time
 import transaction
 import logging
 from urllib import urlencode
+from warnings import warn
 
 from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass
@@ -336,12 +337,37 @@ class CPSSetupTool(UniqueObject, SetupTool):
 
         """ This override adds excluded_steps kwarg
         """
+        warn('The runAllImportSteps method is deprecated.  Please use '
+             'runAllImportStepsFromProfile instead.',
+             DeprecationWarning, stacklevel=2)
         __traceback_info__ = self._import_context_id
 
         context = self._getImportContext(self._import_context_id, purge_old)
 
         return self._runImportStepsFromContext(context, purge_old=purge_old,
                                                excluded_steps=excluded_steps)
+
+    security.declareProtected(ManagePortal, 'runAllImportSteps')
+    def runAllImportStepsFromProfile(self, profile_id, purge_old=None,
+                                     excluded_steps=None):
+
+        """ This override adds excluded_steps kwarg
+        """
+
+        __traceback_info__ = profile_id
+
+        old_context = self._import_context_id
+        context = self._getImportContext(profile_id, purge_old)
+
+        return self._runImportStepsFromContext(context, purge_old=purge_old,
+                                               excluded_steps=excluded_steps)
+        prefix = 'import-all-%s' % profile_id.replace(':', '_')
+        name = self._mangleTimestampName(prefix, 'log')
+        self._createReport(name, result['steps'], result['messages'])
+
+        self._import_context_id = old_context
+
+        return result
 
     security.declarePrivate('reinstallProfile')
     def reinstallProfile(self, context_id, create_report=True,
@@ -354,9 +380,7 @@ class CPSSetupTool(UniqueObject, SetupTool):
         # Wipe out old registries
         self.__init__()
 
-        # Import, with purge
-        self.setImportContext(context_id)
-        result = self.runAllImportSteps(purge_old=True,
+        result = self.runAllImportStepsFromProfile(purge_old=True,
                                         excluded_steps=excluded_steps)
         steps_run = "Steps run: %s" % ', '.join(result['steps'])
 
@@ -369,18 +393,12 @@ class CPSSetupTool(UniqueObject, SetupTool):
         """Import a profile, without purge.
         """
         # Import, without purge
-        old_context_id = self.getImportContextID()
-        self.setImportContext(context_id)
-        result = self.runAllImportSteps(purge_old=False)
+        result = self.runAllImportStepsFromProfile(context_id, purge_old=False)
         steps_run = "Steps run: %s" % ', '.join(result['steps'])
 
         # Create a report
         if create_report:
             self._makeReport('import', context_id, result)
-
-        # Keep context as current if it's not a snapshot
-        if not context_id.startswith('profile-'):
-            self.setImportContext(old_context_id)
 
     #
     # ZMI
