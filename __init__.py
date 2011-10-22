@@ -74,7 +74,13 @@ tools = (
     CPSSetupTool,
 )
 
-contentClasses = ()
+contentClasses = (ProxyBase.ProxyFolder,
+                  ProxyBase.ProxyDocument,
+                  ProxyBase.ProxyFolderishDocument,
+                  ProxyBase.ProxyBTreeFolder,
+                  ProxyBase.ProxyBTreeFolderishDocument,
+                  )
+
 
 contentConstructors = (CPSRegistrationTool.addCPSRegistrationTool,
                        )
