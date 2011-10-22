@@ -461,9 +461,9 @@ class ObjectRepositoryTool(UniqueObject,
 
         keep_max: Keeps no more than keep_max archived proxies per document.
         """
-        logger = getLogger(LOG_KEY + '.purgeArchivedRevisions')
-        logger.debug("keep_max=%s, in_rpath=%s, not_in_rpath=%s"
-                     % (keep_max, in_rpath, not_in_rpath))
+        logger.debug("purgeArchivedRevisions: keep_max=%s, "
+                     "in_rpath=%r, not_in_rpath=%r",
+                     keep_max, in_rpath, not_in_rpath)
         pxtool = getToolByName(self, 'portal_proxies')
         pxtool_infos = pxtool.getRevisionsUsed()
 
