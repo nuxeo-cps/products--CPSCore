@@ -380,8 +380,8 @@ class CPSSetupTool(UniqueObject, SetupTool):
         # Wipe out old registries
         self.__init__()
 
-        result = self.runAllImportStepsFromProfile(purge_old=True,
-                                        excluded_steps=excluded_steps)
+        result = self.runAllImportStepsFromProfile(
+            context_id, purge_old=True, excluded_steps=excluded_steps)
         steps_run = "Steps run: %s" % ', '.join(result['steps'])
 
         # Create a report
