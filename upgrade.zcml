@@ -37,4 +37,7 @@
       checker=".upgradesteps.check_disable_local_site_hook"
       />
 
+  <!-- TODO an upgrade to remove broken tools under CMF 2.1.1:
+  'portal_webmail', 'portal_fiveactions', 'portal_themes' -->
+
 </configure>

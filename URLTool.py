@@ -95,6 +95,12 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
         base_url = portal.absolute_url_path()
         if not base_url.endswith('/'):
             base_url += '/'
+
+        # for straighton compatibility with the caching CPSSkins used to do
+        request = getattr(self, 'REQUEST', None)
+        if request is not None:
+            setattr(request, 'cps_base_url', base_url)
+
         return base_url
 
     security.declarePublic('getVirtualRootPhysicalPath')
