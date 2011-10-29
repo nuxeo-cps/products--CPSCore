@@ -19,26 +19,21 @@
 
 from ZODB.loglevels import TRACE
 from logging import getLogger
-logger = getLogger('CPSCore.PatchCMFCore')
+logger = getLogger(__name__)
 
-#############################################################
 # Patch mergedLocalRoles to use aclu mergedLocalRoles if any
-#
 from Products.CMFCore import utils
 from Products.CPSCore.utils import mergedLocalRoles
-
 logger.log(TRACE, "Patched mergedLocalRoles to use aclu")
 utils.mergedLocalRoles = mergedLocalRoles
 utils._mergedLocalRoles = mergedLocalRoles
 
-
-#############################################################
 # Patch TypesTool so that TypeInformation's properties are editable.
-#
 import PatchCMFCoreTypesTool
 
-
-#############################################################
 # Patching CatalogTool to handle proxies search
-#
 import PatchCMFCoreCatalogTool
+
+# make the Five Actions Tool easy to be registered as a provider
+from Products.CMFCore.exportimport import actions
+actions._SPECIAL_PROVIDERS += ('portal_fiveactions',)
