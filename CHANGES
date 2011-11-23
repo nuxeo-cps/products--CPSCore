@@ -3,10 +3,10 @@ Requires
 -
 New features
 ~~~~~~~~~~~~
-- #2493: (related) Made Zope2 major version available for zcml:condition
+-
 Bug fixes
 ~~~~~~~~~
-- #2476: allow unrestricted code to import zExceptions.Redirect
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
