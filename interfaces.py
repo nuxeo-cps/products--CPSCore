@@ -25,7 +25,7 @@ from zope.interface import Attribute
 import zope.schema
 from zope.configuration.fields import GlobalObject
 
-from zope.app.event.interfaces import IModificationDescription
+from zope.lifecycleevent.interfaces import IModificationDescription
 from OFS.interfaces import IPropertyManager
 
 

@@ -31,8 +31,8 @@ from Products.Five import zcml
 
 import transaction
 
-from zope.app.event.interfaces import IObjectEvent
-from zope.app.event.interfaces import IObjectCopiedEvent
+from zope.lifecycleevent.interfaces import IObjectEvent
+from zope.lifecycleevent.interfaces import IObjectCopiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
 from OFS.interfaces import IObjectWillBeMovedEvent
 from OFS.interfaces import IObjectClonedEvent

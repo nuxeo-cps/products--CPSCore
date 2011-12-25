@@ -54,13 +54,13 @@
 
   <subscriber
       for="OFS.interfaces.IItem
-           zope.app.event.interfaces.IObjectEvent"
+           zope.lifecycleevent.interfaces.IObjectEvent"
       handler=".events.handleObjectEvent"
       />
 
   <subscriber
       for="OFS.interfaces.IItem
-           zope.app.event.interfaces.IObjectEvent"
+           zope.lifecycleevent.interfaces.IObjectEvent"
       handler=".ProxyTool.handleObjectEvent"
       />
 

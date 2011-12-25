@@ -43,7 +43,7 @@ from OFS.OrderedFolder import OrderedFolder
 import zope.event
 from zope.app.container.contained import ObjectAddedEvent
 from zope.app.container.contained import ContainerModifiedEvent
-from zope.app.event.objectevent import ObjectModifiedEvent
+from zope.lifecycleevent import ObjectModifiedEvent
 from OFS.event import ObjectWillBeRemovedEvent
 
 from zope.interface import implements

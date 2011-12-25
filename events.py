@@ -80,14 +80,14 @@ Note about events currently sent and their Five equivalents:
 from Products.CMFCore.utils import getToolByName
 
 import zope.interface
-from zope.app.event.interfaces import IObjectModifiedEvent
+from zope.lifecycleevent.interfaces import IObjectModifiedEvent
 from zope.app.container.interfaces import IContainerModifiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
 from OFS.interfaces import IObjectWillBeMovedEvent
 
 from Products.CPSCore.interfaces import ISecurityModificationDescription
 
-from zope.app.event.objectevent import ObjectModifiedEvent
+from zope.lifecycleevent import ObjectModifiedEvent
 
 
 def handleObjectEvent(ob, event):

@@ -52,7 +52,7 @@ except ImportError:
 else:
     DATAMODEL_PRESENT = True
 
-from zope.app.event.interfaces import IObjectModifiedEvent
+from zope.lifecycleevent.interfaces import IObjectModifiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
 from OFS.interfaces import IObjectWillBeMovedEvent
 from Products.CPSCore.interfaces import ICPSProxy

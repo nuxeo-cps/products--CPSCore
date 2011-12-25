@@ -48,7 +48,7 @@ from Products.CPSCore.treemodification import ADD, REMOVE, MODIFY
 from Products.CPSCore.treemodification import printable_op
 
 
-from zope.app.event.interfaces import IObjectModifiedEvent
+from zope.lifecycleevent.interfaces import IObjectModifiedEvent
 from zope.app.container.interfaces import IObjectMovedEvent
 from zope.app.container.interfaces import IContainerModifiedEvent
 from OFS.interfaces import IObjectWillBeMovedEvent

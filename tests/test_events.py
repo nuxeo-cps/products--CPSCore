@@ -34,7 +34,7 @@ from OFS.Folder import Folder
 from OFS.OrderedFolder import OrderedFolder
 from Products.BTreeFolder2.BTreeFolder2 import BTreeFolder2
 
-from zope.app.event.interfaces import IObjectCopiedEvent
+from zope.lifecycleevent.interfaces import IObjectCopiedEvent
 from OFS.interfaces import IItem
 
 class MyApp(Folder):
@@ -283,7 +283,7 @@ def test_eventservice_compat():
     Check redispatch occurs::
 
       >>> from zope.event import notify
-      >>> from zope.app.event.objectevent import ObjectModifiedEvent
+      >>> from zope.lifecycleevent import ObjectModifiedEvent
 
       >>> notify(ObjectModifiedEvent(ob))
       compat sys_modify_object ob
