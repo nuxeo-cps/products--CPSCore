@@ -84,4 +84,20 @@ class CPSSite(CMFSite):
         version = self.cps_version[1:] # skip 'CPS' part
         self.last_upgraded_version = '.'.join(map(str, version))
 
+    def opaqueItems(self):
+        """Performance shortcut.
+
+        The mere fact that this is a CMFCatalogAware is a bit problematic.
+        In any case without this, CMFCatalogAware.dispatchToOpaqueItems()
+        function would dispatch all events (including BeforeTraverseEvent)
+        to all attributes of the portal.
+
+        This disabling saves a lot of render time in fast renderings, such as a
+        single portlet from cache (30%) or a void response (304 etc.).
+        """
+        return ()
+
+    opaqueValues = opaqueIds = opaqueItems
+
+
 InitializeClass(CPSSite)
