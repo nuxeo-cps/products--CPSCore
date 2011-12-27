@@ -1979,28 +1979,28 @@ def addProxyBTreeFolderishDocument(container, id, REQUEST=None, **kw):
     if REQUEST is not None:
         REQUEST.RESPONSE.redirect(container.absolute_url() + '/manage_main')
 
+PROXY_FOLDER_META_TYPES = (ProxyFolder.meta_type,
+                     ProxyBTreeFolder.meta_type)
+
+PROXY_FOLDERISH_META_TYPES = PROXY_FOLDER_META_TYPES + (
+    ProxyFolderishDocument.meta_type,
+    ProxyBTreeFolderishDocument.meta_type)
+
+ALL_PROXY_META_TYPES = (ProxyDocument.meta_type,) + PROXY_FOLDERISH_META_TYPES
+
 def walk_cps_folders(base):
     """Generator to walk the cps folders."""
-    for o in walk(base, meta_types=(ProxyFolder.meta_type,
-                                    ProxyBTreeFolder.meta_type)):
+    for o in walk(base, meta_types=PROXY_FOLDER_META_TYPES):
         yield o
 
 def walk_cps_folderish(base):
     """Generator to walk the cps folders and folderish documents"""
-    for o in walk(base, meta_types=(ProxyFolder.meta_type,
-                                    ProxyBTreeFolder.meta_type,
-                                    ProxyFolderishDocument.meta_type,
-                                    ProxyBTreeFolderishDocument.meta_type)):
+    for o in walk(base, meta_types=PROXY_FOLDERISH_META_TYPES):
         yield o
 
 def walk_cps_proxies(base):
     """Generator to walk all proxies below."""
-
-    for o in walk(base, meta_types=(ProxyDocument.meta_type,
-                                    ProxyFolder.meta_type,
-                                    ProxyBTreeFolder.meta_type,
-                                    ProxyFolderishDocument.meta_type,
-                                    ProxyBTreeFolderishDocument.meta_type)):
+    for o in walk(base, meta_types=ALL_PROXY_META_TYPES):
         yield o
 
 def walk_cps_except_folders(base):
