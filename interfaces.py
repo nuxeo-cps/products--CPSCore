@@ -29,6 +29,8 @@ from zope.lifecycleevent.interfaces import IModificationDescription
 from OFS.interfaces import IPropertyManager
 
 
+class IZopeVersionAsFeature(Interface):
+    """For ZCML directive that puts zope version number in features list."""
 
 class IUpgradeStepDirective(Interface):
     """Register an upgrade setup.

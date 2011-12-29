@@ -119,3 +119,16 @@ def initialize(registrar):
         extra_constructors=contentConstructors,
         fti=fti,
     ).initialize(registrar)
+
+
+def zopeVersionAsFeature(_context, *a, **kw):
+    from Products.CPSUtil.testing.introspect import getZopeVersion
+    zv = getZopeVersion()
+    if zv[:2] == (2, 9):
+        feature = 'zope-2.9'
+    elif zv[:2] == (2, 10):
+        feature = 'zope-2.10'
+    else:
+        raise RuntimeError("Unsupported Zope Version %r. This version of CPS "
+                           "runs on Zope >= 2.9.7 and Zope 2.10")
+    _context.provideFeature(feature)

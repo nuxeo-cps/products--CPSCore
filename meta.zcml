@@ -1,6 +1,7 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
-    xmlns:meta="http://namespaces.zope.org/meta">
+    xmlns:meta="http://namespaces.zope.org/meta"
+    xmlns:cps="http://namespaces.nuxeo.org/cps">
 
   <meta:directives namespace="http://namespaces.nuxeo.org/cps">
 
@@ -9,7 +10,16 @@
        schema=".interfaces.IUpgradeStepDirective"
        handler=".upgrade.upgradeStep"
        />
+    <meta:directive
+       name="zopeVersionAsFeature"
+       schema=".interfaces.IZopeVersionAsFeature"
+       handler=".zopeVersionAsFeature"
+     />
 
   </meta:directives>
+
+  <!-- insterting the Zope version in zcml context feature lists right away,
+       so that it's available for all configure.zcml files -->
+  <cps:zopeVersionAsFeature/>
 
 </configure>

@@ -7,7 +7,7 @@ New features
 Bug fixes
 ~~~~~~~~~
 - Breadcrumbs link now relative (with absolute path)
-- #2476: allow unrestricted code to import zExceptions.Redirect
+- Defined importable constants for proxy meta types
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
