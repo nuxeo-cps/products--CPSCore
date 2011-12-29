@@ -269,7 +269,7 @@ class URLTool(CMFURLTool, SimpleItemWithProperties):
                     url = ''
                     rpath = ''
                 else:
-                    url = obj.absolute_url()
+                    url = obj.absolute_url_path()
                     rpath = self.getRpath(obj)
                 items.append({'id': obj.getId(),
                               'title': truncateText(title, size=title_size),
