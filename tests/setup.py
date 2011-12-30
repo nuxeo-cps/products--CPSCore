@@ -21,6 +21,7 @@
 
 from time import time
 import unittest
+import logging
 import ZODB.tests.util
 from zope.component import getGlobalServices
 from zope.component.exceptions import ComponentLookupError
@@ -88,11 +89,7 @@ eventTearDown = _eventTest.tearDown
 
 def fullFiveSetup():
     from Products.Five import zcml
-    # Cleanup everything first
-    try:
-        placelesssetup.tearDown()
-    except KeyError, ValueError: # GenericSetup.zcml.cleanUp not robust
-        pass
+    placelesssetup.tearDown()
 
     # Now reload Five setup
     zcml._initialized = False
