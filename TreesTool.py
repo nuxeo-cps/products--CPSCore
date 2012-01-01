@@ -273,7 +273,7 @@ class TreeCacheUpdater(object):
             'portal_type': ob.portal_type,
             })
         if ICPSProxy.providedBy(ob):
-            info['l10_titles'] = ob.getL10nTitles()
+            info['l10n_titles'] = ob.getL10nTitles()
         info.update(self.getNodeSecurityInfo(ob))
         return info
 

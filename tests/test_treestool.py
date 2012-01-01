@@ -559,8 +559,8 @@ class TreeCacheTest(SecurityRequestTest):
                                  'local_roles': {
             'user:Anonymous User': ('Owner',)},
                                  'title': 'English title',
-                                 'l10_titles': {'fr': 'French title',
-                                                'en': 'English title'},
+                                 'l10n_titles': {'fr': 'French title',
+                                                 'en': 'English title'},
                                  'rpath': 'root/bar',
                                  'portal_type': 'ThePortalType',
                                  'id': 'bar'})
