@@ -137,33 +137,6 @@ class TreesTool(UniqueObject, Folder):
                     raise ValueError("Invalid event type %s" % event_type)
                 get_treecache_manager().push(cache, op, path, info)
 
-        """
-        LOG('TreesTool', DEBUG, "Got %s for %s" %
-            (event.__class__.__name__, '/'.join(path)))
-        for cache in self.objectValues():
-            if cache.isCandidate(ob):
-                op = None
-                info = None
-                if IObjectWillBeMovedEvent.providedBy(event):
-                    if event.oldParent is not None:
-                        op = REMOVE
-                elif IObjectMovedEvent.providedBy(event):
-                    if event.newParent is not None:
-                        op = ADD
-                elif IContainerModifiedEvent.providedBy(event):
-                    op = MODIFY
-                    info = {'order': True}
-                elif IObjectModifiedEvent.providedBy(event):
-                    # XXX check descriptions for security here
-                    # XXX also security is recursive!
-                    op = MODIFY
-                    info = {'full': True}
-                if op is None:
-                    continue
-                get_treecache_manager().push(cache, op, path, info)
-        """
-
-
     security.declarePrivate('flushEvents')
     def flushEvents(self):
         """Flush tree cache manager, which executes the modifications.
