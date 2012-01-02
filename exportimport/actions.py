@@ -24,6 +24,7 @@ hardcoded to purge=False
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.exportimport.actions import ActionsToolXMLAdapter
+from Products.CPSCore.utils import bhasattr
 
 class CPSActionsToolXMLAdapter(ActionsToolXMLAdapter):
 
@@ -33,6 +34,10 @@ class CPSActionsToolXMLAdapter(ActionsToolXMLAdapter):
             provider = getToolByName(self.context, provider_id, None)
             if provider is None:
                 # could have disappeared, we'll start from scratch anyway
+                continue
+            if not bhasattr(provider, 'listActions'):
+                # some providers (portal_properties) aren't providers any more
+                tool.deleteActionProvider(provider.getId())
                 continue
             actions = provider.listActions()
             if actions:
