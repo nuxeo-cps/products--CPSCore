@@ -458,6 +458,46 @@ class TreeCacheUpdater(object):
 
 class TreeCache(SimpleItemWithProperties):
     """Tree cache object, caches information about one hierarchy.
+
+    These are primarily meant to hasten navigation views by avoiding lengthy
+    crawls of the object hierarchy, although it's been a while since anyone
+    benchmarked against optimized crawls such as walk_cps_folders and
+    its siblings. The idea is to keep information only about those documents
+    that are perceived as folder-like.
+    An object can very well be tracked by several TreeCache instances. This
+    can be useful for specialized applications.
+
+    Tree Caches usually react to object events to maintain the information.
+    It is important to configure the properties carefully. Most of them are
+    about determining whether an object should be tracked in the cache:
+
+    - root: the starting point (rpath) of the hierarchy.
+      Objects outside the root will be ignored.
+    - excluded_rpaths: all objects *below* these rpaths will be ignored. In
+      other words, the meaning is recursive.
+    - meta_types: Would typically be at the minimum ('CPS Proxy Folder',). This
+      is the first layer of filtering.
+      It is redundant with type_names (see below), because a given
+      type name implies a given meta_type. Nevertheless, this filter layer is
+      very useful for performance reasons, while rebuilding parts of the tree
+      cache : Zope's ObjectManager API provides filtering by meta_type, which
+      can make a huge difference for some folder types (BTree...)
+    - type_names (Portal Types): This is the second layer of filtering. It
+      gives finer control than meta_types. For now, leaving this empty has the
+      consequence of caching nothing (one could expect it to mean not to check,
+      therefore providing a pure meta_type based filtering to accept, e.g, all
+      folder objects.) This may change in the future.
+    - terminal_nodes: This is a list of document types (aka portal_type) used
+      to indicate that these types *never* contain any document to be cached.
+      They may be themselves cached, but their contents won't be scanned, and
+      events occurring *below* them should be discarded.
+
+    The information extraction is controlled by 'info_method': a method to be
+    looked up by acquisition (typically from skins).
+    The canonical example is 'getFolderInfo' from the 'cps_default' skin layer.
+
+    Events are actually stored for processing in transaction before commit
+    hook (to avoid processing them tens of times).
     """
 
     implements(ITreeCache)
