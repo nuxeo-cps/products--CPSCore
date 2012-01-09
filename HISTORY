@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSCore 3.45.1-CPS-3.5
+===========================================================
+First release built by: gracinet at: 2012-01-09T16:10:45
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- Defined importable constants for proxy meta types
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.45.0-CPS-3.5
 ===========================================================
 First release built by: gracinet at: 2011-11-23T19:44:07
