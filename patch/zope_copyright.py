@@ -19,7 +19,7 @@
 from Globals import DTMLFile
 from ZServer.HTTPServer import zhttp_server
 from App.Management import Navigation
-from portal import CPSSite
+from Products.CPSCore.portal import CPSSite
 
 vlist = [str(x) for x in CPSSite.cps_version]
 vstr = ' ' + vlist[0] + '/' + '.'.join(vlist[1:])

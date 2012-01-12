@@ -32,7 +32,7 @@ from Acquisition import aq_base
 from Products.CMFCore.PortalFolder import PortalFolder
 from Products.CMFCore.permissions import View
 
-from interfaces import ICPSSite
+from Products.CPSCore.interfaces import ICPSSite
 
 security = ClassSecurityInfo()
 

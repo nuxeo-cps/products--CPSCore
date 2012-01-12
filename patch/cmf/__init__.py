@@ -13,8 +13,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
-#
-# $Id$
 """This file contains all patches for the CMFCore product."""
 
 from ZODB.loglevels import TRACE
@@ -29,11 +27,13 @@ utils.mergedLocalRoles = mergedLocalRoles
 utils._mergedLocalRoles = mergedLocalRoles
 
 # Patch TypesTool so that TypeInformation's properties are editable.
-import PatchCMFCoreTypesTool
+import typestool
 
 # Patching CatalogTool to handle proxies search
-import PatchCMFCoreCatalogTool
+import catalog
 
 # make the Five Actions Tool easy to be registered as a provider
 from Products.CMFCore.exportimport import actions
 actions._SPECIAL_PROVIDERS += ('portal_fiveactions',)
+
+import portalfolder

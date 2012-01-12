@@ -36,15 +36,8 @@ registerUpgradeCategory('five',
                         portal_attribute='five_upgraded_version')
 
 
-# Don't remove.
 import AllowModules
-
-# Patches
-import PatchPropertyManager
-import PatchCMFCore
-import PatchCopyright
-import PatchPortalFolder
-import PatchGenericSetup
+import patch
 
 # tools
 import EventServiceTool

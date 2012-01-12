@@ -282,7 +282,7 @@ class IndexableObjectWrapperTestCase(ZopeTestCase.PortalTestCase):
         item = getattr(btree, 'item')
 
         self.assertEqual(aq_parent(aq_inner(item)), btree)
-        from Products.CPSCore.PatchCMFCoreCatalogTool import \
+        from Products.CPSCore.patch.cmf.catalog import \
              IndexableObjectWrapper
 
         wrapper = IndexableObjectWrapper({}, item)
