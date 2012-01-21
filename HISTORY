@@ -1,4 +1,22 @@
 ===========================================================
+Package: CPSCore 3.46.0
+===========================================================
+First release built by: gracinet at: 2012-01-21T22:23:46
+Requires
+~~~~~~~~
+- Zope 2.10 / CMF 2.1.1
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- Breadcrumbs link now relative (with absolute path)
+- Defined importable constants for proxy meta types
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.45.1-CPS-3.5
 ===========================================================
 First release built by: gracinet at: 2012-01-09T16:10:45
