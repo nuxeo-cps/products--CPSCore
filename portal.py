@@ -37,7 +37,7 @@ class CPSSite(CMFSite):
     portal_type = 'Portal'
 
     cps_version = ('CPS', 3, 6, 0)
-    cps_version_suffix = 'dev'
+    cps_version_suffix = ''
 
     _properties = (
         {'id': 'title', 'type': 'ustring',
