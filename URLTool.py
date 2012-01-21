@@ -1,4 +1,3 @@
-# -*- coding: iso-8859-15 -*-
 # (C) Copyright 2005-2008 Nuxeo SAS <http://nuxeo.com>
 # Authors:
 # Anahide Tchertchian <at@nuxeo.com>
@@ -17,8 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
-#
-# $Id$
 """
 Url Tool to add methods to the CMF url tool
 
