@@ -1,5 +1,5 @@
 
-This product declares the key framework services for the Nuxeo Collaborative
+is product declares the key framework services for the Nuxeo Collaborative
 Portal Server (CPS) v3 (or CPS3).
 
 Features
