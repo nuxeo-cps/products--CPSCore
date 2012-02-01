@@ -2,13 +2,12 @@
 allowedRolesAndUsers and Roles Blocking
 =======================================
 
-:Revision: $Id$
-
 .. sectnum::    :depth: 4
 .. contents::   :depth: 4
 
 
-Miscellaneous notes.
+Miscellaneous notes about the security index (``allowedRolesAndUsers``) and 
+roles blocking in CPS
 
 Standard Behavior
 =================
