@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #2544: now tests pass with verbose-security, too
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
