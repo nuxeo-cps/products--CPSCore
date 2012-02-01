@@ -30,6 +30,7 @@ from OFS.OrderedFolder import OrderedFolder
 from Products.CMFCore.tests.base.testcase import SecurityRequestTest
 from Products.CPSCore.TreesTool import TreesTool, TreeCache, TreeCacheUpdater
 from Products.CPSCore.treemodification import ADD, REMOVE, MODIFY
+from Products.CPSCore.tests import verbose_security_roles_clean
 
 class DummyTreeCache(SimpleItem):
     def __init__(self, id):
@@ -264,7 +265,7 @@ class TreeCacheTest(SecurityRequestTest):
         tool.notify_tree('sys_add_cmf_object', cmf.root.foo)
         tool.flushEvents()
         l = cache.getList(filter=False)
-        # XXX test fails if verbose-security is on !
+        verbose_security_roles_clean(l[0]['allowed_roles_and_users'])
         self.assertEquals(l, [{
             'allowed_roles_and_users': ['Manager'],
             'depth': 0,
@@ -442,8 +443,11 @@ class TreeCacheTest(SecurityRequestTest):
         l = cache.getList(filter=False)
         self.assertEquals([d['rpath'] for d in l],
                           ['root/foo', 'root/foo/bar'])
-        self.assertEquals([d['allowed_roles_and_users'] for d in l],
-                          [['Manager'], ['Manager']])
+
+        allowed = [d['allowed_roles_and_users'] for d in l]
+        for a in allowed:
+            verbose_security_roles_clean(a)
+        self.assertEquals(allowed, [['Manager'], ['Manager']])
         self.assertEquals([d['local_roles'] for d in l],
                           [{'user:Anonymous User': ('Owner',)},
                            {'user:Anonymous User': ('Owner',)}])
@@ -454,7 +458,10 @@ class TreeCacheTest(SecurityRequestTest):
         tool.notify_tree('sys_modify_security', bar)
         cache.flushEvents()
         l = cache.getList(filter=False)
-        self.assertEquals([d['allowed_roles_and_users'] for d in l],
+        allowed = [d['allowed_roles_and_users'] for d in l]
+        for a in allowed:
+            verbose_security_roles_clean(a)
+        self.assertEquals(allowed,
                           [['Manager'], ['SomeRole', 'user:bob']])
         self.assertEquals([d['local_roles'] for d in l],
                           [{'user:Anonymous User': ('Owner',)},
@@ -486,7 +493,8 @@ class TreeCacheTest(SecurityRequestTest):
         l = cache.getList(filter=False)
         self.assertEquals([d['title'] for d in l],
                           ['Foo', 'NewBar'])
-        self.assertEquals(l[1], {# XXX fails if verbose-security is on !
+        verbose_security_roles_clean(l[1]['allowed_roles_and_users'])
+        self.assertEquals(l[1], {
             'allowed_roles_and_users': ['Manager'],
             'depth': 1,
             'id': 'bar',
@@ -507,6 +515,8 @@ class TreeCacheTest(SecurityRequestTest):
 
         # test on ordinary object
         info = cache_upd.getNodeInfo(cmf.root.foo)
+
+        verbose_security_roles_clean(info['allowed_roles_and_users'])
         self.assertEquals(info,
                           {'allowed_roles_and_users': ['Manager'],
                            'title': 'Foo',
@@ -547,6 +557,7 @@ class TreeCacheTest(SecurityRequestTest):
         bar.getProxyLanguages = getProxyLanguages
 
         info = cache_upd.getNodeInfo(cmf.root.bar)
+        verbose_security_roles_clean(info['allowed_roles_and_users'])
         self.assertEquals(info, {'allowed_roles_and_users': ['Manager'],
                                  'local_roles': {
             'user:Anonymous User': ('Owner',)},
