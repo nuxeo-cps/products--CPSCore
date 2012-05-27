@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSCore 3.46.1
+===========================================================
+First release built by: gracinet at: 2012-05-27T20:59:32
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2544: now tests pass with verbose-security, too
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSCore 3.46.0
 ===========================================================
 First release built by: gracinet at: 2012-01-21T22:23:46
